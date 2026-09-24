@@ -1002,3 +1002,32 @@ a:hover { color: var(--pizarra); }
   padding: 9px 14px 9px 33px;
 }
 .lugar .visita .ir { color: var(--texto-tenue); font-size: 15px; }
+
+.seleccion-area-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 560px) {
+  .seleccion-area-grid { grid-template-columns: 1fr 1fr; }
+}
+.seleccion-area-opcion {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+.seleccion-area-opcion:hover,
+.seleccion-area-opcion:focus-visible {
+  border-color: var(--naranja);
+}
+.seleccion-area-etiqueta {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--naranja);
+}

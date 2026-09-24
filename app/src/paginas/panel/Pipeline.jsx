@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import './Pipeline.css';
@@ -305,6 +306,13 @@ function TarjetaProspecto({ p, equipo, guardando, onEditar, onCambiarEtapa }) {
           {ETAPAS.map(([clave, texto]) => <option key={clave} value={clave}>{texto}</option>)}
         </select>
       </div>
+
+      {p.etapa !== 'ganado' && p.etapa !== 'perdido' && (
+        <Link to={`/nuevo?prospecto=${p.id}`} className="boton boton-secundario boton-ancho"
+              style={{ marginTop: 10, textAlign: 'center' }}>
+          Iniciar diagnóstico
+        </Link>
+      )}
     </article>
   );
 }

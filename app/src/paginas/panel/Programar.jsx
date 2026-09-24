@@ -16,13 +16,16 @@ import { useSesion } from '../../lib/sesion';
  * programados, porque un levantamiento en curso no puede cambiar de preguntas a
  * mitad del recorrido.
  *
- * Si se entra desde /comunidades/:id se usa ?comunidad=<id>. No existe un segundo
- * formulario: este mismo flujo abre con la comunidad preseleccionada.
+ * Si se entra desde /comunidades/:id se usa ?comunidad=<id>. Si se entra
+ * desde el Pipeline con "Iniciar diagnóstico" se usa ?prospecto=<id>, y de
+ * paso se preselecciona la plantilla de diagnóstico comercial. No existen
+ * formularios aparte: este mismo flujo abre con el destino preseleccionado.
  */
 export default function Programar() {
   const { id } = useParams();          // sin id = uno nuevo
   const [searchParams] = useSearchParams();
   const comunidadInicial = searchParams.get('comunidad');
+  const prospectoInicial = searchParams.get('prospecto');
   const navegar = useNavigate();
   const { perfil } = useSesion();
   const editando = Boolean(id);
@@ -64,9 +67,15 @@ export default function Programar() {
 
       if (!editando) {
         const comunidadValida = comunidadInicial && (com.data ?? []).some(c => c.id === comunidadInicial);
+        const prospectoValido = prospectoInicial && (pro.data ?? []).some(p => p.id === prospectoInicial);
+        const plantillaDiagnostico = prospectoValido
+          ? (pla.data ?? []).find(p => p.codigo === 'diagnostico_comercial')
+          : null;
         setDatos(d => ({
           ...d,
-          destino: comunidadValida ? `comunidad:${comunidadInicial}` : d.destino,
+          destino: comunidadValida ? `comunidad:${comunidadInicial}`
+            : prospectoValido ? `prospecto:${prospectoInicial}` : d.destino,
+          plantilla_id: plantillaDiagnostico?.id ?? d.plantilla_id,
           responsable_id: perfil?.id ?? '',
           periodo: mesEnCurso()
         }));
@@ -93,7 +102,7 @@ export default function Programar() {
           : ''
       });
     })();
-  }, [id, comunidadInicial, perfil?.id]);
+  }, [id, comunidadInicial, prospectoInicial, perfil?.id]);
 
   function mesEnCurso() {
     const d = new Date();
@@ -103,6 +112,7 @@ export default function Programar() {
 
   function volver() {
     if (comunidadInicial) return navegar(`/comunidades/${comunidadInicial}?seccion=levantamientos`);
+    if (prospectoInicial) return navegar('/pipeline');
     navegar('/');
   }
 
@@ -204,7 +214,7 @@ export default function Programar() {
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={volver}>
-            {comunidadInicial ? '‹ Comunidad' : '‹ Inicio'}
+            {comunidadInicial ? '‹ Comunidad' : prospectoInicial ? '‹ Pipeline' : '‹ Inicio'}
           </button>
         </div>
         <h1 className="h3">{editando ? 'Editar levantamiento' : 'Nuevo levantamiento'}</h1>

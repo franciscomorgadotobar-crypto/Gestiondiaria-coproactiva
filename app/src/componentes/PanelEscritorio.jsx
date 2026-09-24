@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
+import { limpiarArea } from '../lib/area';
 
 function activa(pathname, ruta) {
   if (ruta === '/') return pathname === '/';
@@ -11,6 +12,7 @@ function activa(pathname, ruta) {
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
   const { pathname } = useLocation();
+  const navegar = useNavigate();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
 
   useEffect(() => {
@@ -75,6 +77,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             <span className="micro apagado" style={{ display: 'block', marginBottom: 6 }}>
               Cliente
             </span>
+          )}
+          {puedeConfigurar && (
+            <button type="button" className="boton boton-texto" style={{ padding: 0, display: 'block', marginBottom: 6 }}
+                    onClick={() => { limpiarArea(); navegar('/'); }}>
+              Cambiar de área
+            </button>
           )}
           <button type="button" className="boton boton-texto" style={{ padding: 0 }} onClick={salir}>
             Salir

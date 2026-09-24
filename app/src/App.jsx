@@ -11,7 +11,9 @@ import Equipo from './paginas/panel/Equipo';
 import Comunidades from './paginas/panel/Comunidades';
 import Clientes from './paginas/panel/Clientes';
 import Pipeline from './paginas/panel/Pipeline';
+import SeleccionArea from './paginas/SeleccionArea';
 import PanelEscritorio from './componentes/PanelEscritorio';
+import { areaGuardada } from './lib/area';
 
 const Mapa = lazy(() => import('./paginas/panel/Mapa'));
 // El portal de cliente arrastra el mismo Leaflet que el mapa interno —de
@@ -51,10 +53,22 @@ function SoloCliente({ children }) {
   return children;
 }
 
+/* Solo admin, jefatura y superadmin tienen CRM además de la operación: son
+ * quienes necesitan elegir. El resto (terreno, etc.) no tiene nada que
+ * elegir y va directo a Inicio, sin una capa de por medio. */
+function tieneCRM(perfil) {
+  return Boolean(perfil) && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
+}
+
 function Entrada() {
   const { perfil } = useSesion();
   if (perfil?.rol === 'cliente') return <Navigate to="/portal" replace />;
-  return <PanelEscritorio><Inicio /></PanelEscritorio>;
+  if (!tieneCRM(perfil)) return <PanelEscritorio><Inicio /></PanelEscritorio>;
+
+  const area = areaGuardada();
+  if (area === 'crm') return <Navigate to="/pipeline" replace />;
+  if (area === 'operacion') return <PanelEscritorio><Inicio /></PanelEscritorio>;
+  return <SeleccionArea />;
 }
 
 function Interna({ children, anchoCompleto = false }) {
