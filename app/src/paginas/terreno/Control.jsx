@@ -285,7 +285,7 @@ export default function Levantamiento() {
     await encolar({ tipo: 'pausa', fila });
     await encolar({ tipo: 'control', id, cambios: { estado: 'pausado' } });
     sincronizar();
-    navegar('/');
+    navegar('/inicio');
   }
 
   async function reanudar() {
@@ -506,7 +506,7 @@ export default function Levantamiento() {
     await encolar({ tipo: 'control', id, cambios });
     await sincronizar();
     setEnviando(false);
-    navegar('/');
+    navegar('/inicio');
   }
 
   // --------------------------------------------------------------- Vistas
@@ -516,7 +516,7 @@ export default function Levantamiento() {
       <div className="cuerpo">
         <div className="aviso aviso-critico">{error}</div>
         <button className="boton boton-secundario boton-movil boton-ancho"
-                style={{ marginTop: 14 }} onClick={() => navegar('/')}>
+                style={{ marginTop: 14 }} onClick={() => navegar('/inicio')}>
           Volver
         </button>
       </div>
@@ -533,7 +533,7 @@ export default function Levantamiento() {
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/')} aria-label="Volver">
+                  onClick={() => navegar('/inicio')} aria-label="Volver">
             ‹ Volver
           </button>
           <span className="crece" />

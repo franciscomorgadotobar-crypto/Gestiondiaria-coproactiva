@@ -93,7 +93,7 @@ export default function Plantillas() {
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/')}>
+                  onClick={() => navegar('/inicio')}>
             ‹ Inicio
           </button>
         </div>

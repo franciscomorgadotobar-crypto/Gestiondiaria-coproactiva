@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import './Pipeline.css';
@@ -52,6 +52,7 @@ function fechaCL(valor, conHora = false) {
 
 export default function Pipeline() {
   const { perfil } = useSesion();
+  const navegar = useNavigate();
   const [prospectos, setProspectos] = useState(null);
   const [equipo, setEquipo] = useState([]);
   const [error, setError] = useState(null);
@@ -203,6 +204,11 @@ export default function Pipeline() {
   return (
     <div className="pantalla">
       <header className="encabezado">
+        <div className="fila" style={{ marginBottom: 8 }}>
+          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar('/inicio')}>
+            ‹ Inicio
+          </button>
+        </div>
         <div className="fila">
           <div className="crece">
             <h1 className="h3">Pipeline comercial</h1>

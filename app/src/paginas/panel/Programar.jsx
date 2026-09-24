@@ -113,7 +113,7 @@ export default function Programar() {
   function volver() {
     if (comunidadInicial) return navegar(`/comunidades/${comunidadInicial}?seccion=levantamientos`);
     if (prospectoInicial) return navegar('/pipeline');
-    navegar('/');
+    navegar('/inicio');
   }
 
   async function guardar() {

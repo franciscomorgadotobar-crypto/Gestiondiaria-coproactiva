@@ -112,7 +112,11 @@ export default function App() {
         </Cliente>
       } />
 
-      {/* Operación interna. El guard evita que un cliente entre pegando URLs. */}
+      {/* Operación interna. El guard evita que un cliente entre pegando URLs.
+          "/inicio" es fijo, sin el redirect de área de "/": todo botón "‹
+          Inicio" del panel apunta acá, para no quedar en loop de vuelta al
+          CRM cuando la área elegida es 'crm'. */}
+      <Route path="/inicio" element={<Interna><Inicio /></Interna>} />
       <Route path="/plantillas" element={<Interna><Plantillas /></Interna>} />
       <Route path="/plantillas/:id" element={<Interna><EditorPlantilla /></Interna>} />
       <Route path="/equipo" element={<Interna><Equipo /></Interna>} />

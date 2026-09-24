@@ -134,7 +134,7 @@ export default function Clientes() {
   return (
     <div className="pantalla">
       <header className="encabezado">
-        <button className="boton boton-texto" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar('/')}>
+        <button className="boton boton-texto" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar('/inicio')}>
           ‹ Inicio
         </button>
         <h1 className="h3">Clientes y accesos</h1>
