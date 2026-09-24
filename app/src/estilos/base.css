@@ -282,6 +282,24 @@ a:hover { color: var(--pizarra); }
 
 .cuerpo { flex: 1; padding: 18px 16px; }
 
+/* Solo bajo el punto de quiebre: en escritorio "Cambiar de área" ya vive en
+ * la barra lateral, y repetirla acá sería ruido sobre cada pantalla. */
+.barra-area-movil {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  background: var(--papel);
+  border-bottom: 1px solid var(--borde-suave);
+}
+.barra-area-movil button {
+  border: none;
+  background: none;
+  padding: 4px 0;
+  font: 600 12.5px/1 var(--fuente-cuerpo);
+  color: var(--naranja);
+  cursor: pointer;
+}
+
 /* ------------------------------------------------------- Panel de escritorio */
 
 /* Bajo el punto de quiebre esto no existe: la barra lateral queda oculta y
@@ -338,6 +356,7 @@ a:hover { color: var(--pizarra); }
 
   /* Los mismos destinos ya están en la barra lateral. */
   .accesos-inicio { display: none; }
+  .barra-area-movil { display: none; }
 }
 
 .fila { display: flex; align-items: center; gap: 12px; }

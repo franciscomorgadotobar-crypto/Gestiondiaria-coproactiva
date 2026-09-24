@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
 import { limpiarArea, inicioSegunArea } from '../lib/area';
@@ -8,10 +8,19 @@ function activa(pathname, ruta) {
   return pathname === ruta || pathname.startsWith(ruta + '/');
 }
 
+/* Recarga completa en vez de navegar: "Cambiar de área" puede apretarse
+ * estando ya en "/" (cuando el área es 'operacion', Entrada muestra Inicio
+ * ahí mismo), y navegar a la misma ruta en la que ya se está no vuelve a
+ * renderizar nada en React Router. Una recarga completa no tiene ese
+ * problema: Entrada vuelve a evaluar el área desde cero, siempre. */
+function cambiarArea() {
+  limpiarArea();
+  window.location.href = import.meta.env.BASE_URL;
+}
+
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
   const { pathname } = useLocation();
-  const navegar = useNavigate();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
 
   useEffect(() => {
@@ -79,7 +88,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           )}
           {puedeConfigurar && (
             <button type="button" className="boton boton-texto" style={{ padding: 0, display: 'block', marginBottom: 6 }}
-                    onClick={() => { limpiarArea(); navegar('/'); }}>
+                    onClick={cambiarArea}>
               Cambiar de área
             </button>
           )}
@@ -90,6 +99,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       </nav>
 
       <div className={'area-escritorio' + (anchoCompleto ? ' ancho-completo' : '')}>
+        {/* En el teléfono la barra lateral no existe (se oculta con CSS), así
+            que sin esto "Cambiar de área" no tenía dónde vivir y quedaba
+            fijo en la que se eligió la primera vez, sin salida. */}
+        {puedeConfigurar && (
+          <div className="barra-area-movil">
+            <button type="button" onClick={cambiarArea}>Cambiar de área</button>
+          </div>
+        )}
         {children}
       </div>
     </div>
