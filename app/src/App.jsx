@@ -18,7 +18,7 @@ const Mapa = lazy(() => import('./paginas/panel/Mapa'));
 // cargarlo aparte, quien va a terreno con el teléfono también lo bajaría,
 // sin usarlo nunca.
 const PortalCliente = lazy(() => import('./paginas/cliente/PortalCliente'));
-import Levantamiento from './paginas/terreno/Control';
+import Despacho from './paginas/terreno/Despacho';
 
 function Privada({ children }) {
   const { sesion, perfil, cargando } = useSesion();
@@ -116,7 +116,7 @@ export default function App() {
       } />
       <Route path="/nuevo" element={<Interna><Programar /></Interna>} />
       <Route path="/control/:id/editar" element={<Interna><Programar /></Interna>} />
-      <Route path="/control/:id" element={<Privada><SoloInterno><Levantamiento /></SoloInterno></Privada>} />
+      <Route path="/control/:id" element={<Privada><SoloInterno><Despacho /></SoloInterno></Privada>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

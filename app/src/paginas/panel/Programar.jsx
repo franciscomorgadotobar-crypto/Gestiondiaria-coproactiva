@@ -53,7 +53,7 @@ export default function Programar() {
           .not('etapa', 'in', '("ganado","perdido")')
           .order('nombre_condominio'),
         supabase.from('plantillas_control')
-          .select('id, nombre, secuencial, plantilla_items(count)')
+          .select('id, nombre, codigo, secuencial, plantilla_items(count)')
           .eq('activa', true).order('nombre'),
         supabase.from('perfiles').select('id, nombre, rol, activo').order('nombre')
       ]);
@@ -126,16 +126,17 @@ export default function Programar() {
       // Se copia al crear, igual que los puntos: si la plantilla cambia
       // después, este levantamiento no tiene por qué cambiar de reglas a
       // mitad del recorrido.
-      secuencial: plantillaElegida?.secuencial ?? false
+      secuencial: plantillaElegida?.secuencial ?? false,
+      // El diagnóstico comercial usa una pantalla propia (puntaje ponderado,
+      // ítems condicionales), no el renderer genérico de levantamientos.
+      es_diagnostico: plantillaElegida?.codigo === 'diagnostico_comercial'
     };
 
     if (editando) {
       // La plantilla no viaja en el update: no es editable, y enviarla arriesga
       // borrarla si el desplegable no alcanzó a cargar su valor. `secuencial`
-      // tampoco: se copió al crear, y si viajara acá tomaría el valor actual
-      // de la plantilla en vez de quedarse con el que tenía el levantamiento
-      // desde el principio.
-      const { plantilla_id, secuencial, ...cambios } = fila;
+      // y `es_diagnostico` tampoco: se fijaron al crear y no cambian después.
+      const { plantilla_id, secuencial, es_diagnostico, ...cambios } = fila;
       const { error } = await supabase.from('controles').update(cambios).eq('id', id);
       setGuardando(false);
       if (error) return setError(error.message);
