@@ -10,6 +10,7 @@ import Programar from './paginas/panel/Programar';
 import Equipo from './paginas/panel/Equipo';
 import Comunidades from './paginas/panel/Comunidades';
 import Clientes from './paginas/panel/Clientes';
+import Pipeline from './paginas/panel/Pipeline';
 import PanelEscritorio from './componentes/PanelEscritorio';
 
 const Mapa = lazy(() => import('./paginas/panel/Mapa'));
@@ -102,6 +103,7 @@ export default function App() {
       <Route path="/plantillas/:id" element={<Interna><EditorPlantilla /></Interna>} />
       <Route path="/equipo" element={<Interna><Equipo /></Interna>} />
       <Route path="/clientes" element={<Interna><Clientes /></Interna>} />
+      <Route path="/pipeline" element={<Interna><Pipeline /></Interna>} />
       <Route path="/comunidades" element={<Interna><Comunidades /></Interna>} />
       <Route path="/comunidades/:id" element={<Interna><Comunidades /></Interna>} />
       <Route path="/historico" element={<Navigate to="/comunidades" replace />} />

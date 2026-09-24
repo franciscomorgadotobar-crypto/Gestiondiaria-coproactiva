@@ -140,7 +140,43 @@ const TABLAS = {
     { id: 'com-costanera', nombre: 'Costanera Norte', comuna: 'Providencia' },
     { id: 'com-zen', nombre: 'Edificio Zen', comuna: 'Peñalolén' }
   ],
-  prospectos: [{ id: PROSPECTO_ID, nombre_condominio: 'Las Palmeras', comuna: 'Providencia', etapa: 'diagnostico' }],
+  prospectos: [
+    { id: PROSPECTO_ID, nombre_condominio: 'Las Palmeras', direccion: 'Av. Providencia 1234', comuna: 'Providencia',
+      unidades: 64, nombre_contacto: 'Diego Barrios', cargo_contacto: 'Presidente del comité',
+      telefono: '+56 9 8877 6655', email: 'diego.barrios@example.cl', tipo_servicio: 'administracion',
+      fuente: 'Referido', etapa: 'diagnostico', responsable_id: 'u2', responsable_nombre: 'Marta Silva',
+      proxima_accion: 'Agendar visita de diagnóstico', fecha_proxima_accion: hace(-2),
+      fecha_primer_contacto: hace(20), fecha_ultima_interaccion: hace(3), motivo_perdida: null,
+      observaciones: null, comunidad_id: null, creado_en: hace(20), editado_en: hace(3) },
+    { id: 'pros-nuevo', nombre_condominio: 'Torres del Sol', direccion: 'Los Militares 5200', comuna: 'Las Condes',
+      unidades: 120, nombre_contacto: 'Paula Vidal', cargo_contacto: 'Secretaria del comité',
+      telefono: '+56 9 1122 3344', email: 'paula.vidal@example.cl', tipo_servicio: null,
+      fuente: 'Formulario web', etapa: 'nuevo', responsable_id: null, responsable_nombre: null,
+      proxima_accion: null, fecha_proxima_accion: null,
+      fecha_primer_contacto: hace(1), fecha_ultima_interaccion: hace(1), motivo_perdida: null,
+      observaciones: null, comunidad_id: null, creado_en: hace(1), editado_en: hace(1) },
+    { id: 'pros-contacto', nombre_condominio: 'Edificio Mirasol', direccion: 'Vitacura 3400', comuna: 'Vitacura',
+      unidades: 80, nombre_contacto: 'Rodrigo Ortiz', cargo_contacto: 'Tesorero',
+      telefono: '+56 9 5566 7788', email: 'rodrigo.ortiz@example.cl', tipo_servicio: 'auditoria',
+      fuente: 'Llamada', etapa: 'contacto', responsable_id: PERFIL.id, responsable_nombre: PERFIL.nombre,
+      proxima_accion: 'Llamar para coordinar visita', fecha_proxima_accion: hace(1),
+      fecha_primer_contacto: hace(8), fecha_ultima_interaccion: hace(2), motivo_perdida: null,
+      observaciones: null, comunidad_id: null, creado_en: hace(8), editado_en: hace(2) },
+    { id: 'pros-negociacion', nombre_condominio: 'Parque Alto', direccion: 'Manquehue 900', comuna: 'Vitacura',
+      unidades: 45, nombre_contacto: 'Isidora Prat', cargo_contacto: 'Presidenta',
+      telefono: '+56 9 3344 5566', email: 'isidora.prat@example.cl', tipo_servicio: 'administracion',
+      fuente: 'Referido', etapa: 'negociacion', responsable_id: 'u2', responsable_nombre: 'Marta Silva',
+      proxima_accion: 'Enviar contrato ajustado', fecha_proxima_accion: hace(-5),
+      fecha_primer_contacto: hace(35), fecha_ultima_interaccion: hace(4), motivo_perdida: null,
+      observaciones: 'Piden ajustar honorarios.', comunidad_id: null, creado_en: hace(35), editado_en: hace(4) },
+    { id: 'pros-perdido', nombre_condominio: 'Bosques del Alba', direccion: 'Camino Real 220', comuna: 'Peñalolén',
+      unidades: 30, nombre_contacto: 'Felipe Rojas', cargo_contacto: 'Presidente',
+      telefono: '+56 9 7788 9900', email: 'felipe.rojas@example.cl', tipo_servicio: 'administracion',
+      fuente: 'Web', etapa: 'perdido', responsable_id: 'u2', responsable_nombre: 'Marta Silva',
+      proxima_accion: null, fecha_proxima_accion: null,
+      fecha_primer_contacto: hace(50), fecha_ultima_interaccion: hace(30), motivo_perdida: 'Se quedaron con la administradora actual.',
+      observaciones: null, comunidad_id: null, creado_en: hace(50), editado_en: hace(30) }
+  ],
   controles: [CONTROL],
   // El propio CONTROL entra acá también: es el que abre la pantalla de
   // levantamiento en /control/:id, y esa pantalla consulta esta tabla, no
@@ -180,6 +216,12 @@ const TABLAS = {
 function consulta(tabla) {
   let filas = [...(TABLAS[tabla] ?? [])];
   let pedirConteo = false;
+  let actualizacionPendiente = null;
+  function aplicarActualizacionPendiente() {
+    if (!actualizacionPendiente) return;
+    filas.forEach(f => Object.assign(f, actualizacionPendiente));
+    actualizacionPendiente = null;
+  }
   const api = {
     select: (_campos, opciones) => {
       if (opciones?.count) pedirConteo = true;
@@ -201,17 +243,28 @@ function consulta(tabla) {
     insert: d => {
       registrar('insert', tabla, d);
       const fila = Array.isArray(d) ? d[0] : d;
-      filas.unshift({ id: 'nuevo-' + tabla, ...fila });
+      // Se agrega también a TABLAS, no solo a la copia local: si no, una
+      // consulta posterior (update, select) en otra llamada a `consulta()`
+      // no la encuentra, porque cada llamada parte de una copia fresca.
+      const nueva = { id: crypto.randomUUID(), ...fila };
+      filas.unshift(nueva);
+      if (TABLAS[tabla]) TABLAS[tabla].unshift(nueva);
       return api;
     },
-    update: d => { registrar('update', tabla, d); return api; },
+    // El `update` no se aplica al llamarlo: en la cadena real (`.update(d).eq(...)`)
+    // el WHERE se resuelve junto con la escritura recién al ejecutar la consulta,
+    // no en el orden en que se escriben los métodos. Aplicarlo de inmediato
+    // mutaría toda la tabla, porque `.eq()` todavía no alcanzó a filtrar `filas`.
+    update: d => { registrar('update', tabla, d); actualizacionPendiente = d; return api; },
     upsert: d => { registrar('upsert', tabla, d); return api; },
     delete: () => api,
-    single: () => Promise.resolve({ data: filas[0] ?? null, error: null }),
-    maybeSingle: () => Promise.resolve({ data: filas[0] ?? null, error: null }),
-    then: (resolver, rechazar) =>
-      Promise.resolve({ data: filas, count: pedirConteo ? filas.length : null, error: null })
-        .then(resolver, rechazar)
+    single: () => { aplicarActualizacionPendiente(); return Promise.resolve({ data: filas[0] ?? null, error: null }); },
+    maybeSingle: () => { aplicarActualizacionPendiente(); return Promise.resolve({ data: filas[0] ?? null, error: null }); },
+    then: (resolver, rechazar) => {
+      aplicarActualizacionPendiente();
+      return Promise.resolve({ data: filas, count: pedirConteo ? filas.length : null, error: null })
+        .then(resolver, rechazar);
+    }
   };
   return api;
 }

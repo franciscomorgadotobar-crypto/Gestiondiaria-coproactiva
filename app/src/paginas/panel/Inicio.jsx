@@ -222,6 +222,7 @@ export default function Inicio() {
               </button>
               {ajustes && (
                 <div className="dentro">
+                  <Link to="/pipeline">Pipeline comercial</Link>
                   <Link to="/plantillas">Plantillas de levantamiento</Link>
                   {esAdministracion && <Link to="/equipo">Equipo y permisos</Link>}
                   {perfil?.rol === 'superadmin' && <Link to="/clientes">Clientes y accesos</Link>}

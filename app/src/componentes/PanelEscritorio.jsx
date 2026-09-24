@@ -39,6 +39,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       ]
     : [
         { ruta: '/', etiqueta: 'Inicio', mostrar: true },
+        { ruta: '/pipeline', etiqueta: 'Pipeline comercial', mostrar: puedeConfigurar },
         { ruta: '/nuevo', etiqueta: 'Nuevo levantamiento', mostrar: puedeConfigurar },
         { ruta: '/comunidades', etiqueta: alertasMantencion > 0 ? `Comunidades (${alertasMantencion})` : 'Comunidades', mostrar: true },
         { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
