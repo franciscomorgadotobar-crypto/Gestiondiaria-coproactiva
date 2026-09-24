@@ -954,28 +954,6 @@ a:hover { color: var(--pizarra); }
   white-space: nowrap;
 }
 
-/* ------------------------------------------------------- Configuración */
-
-.configuracion { margin-bottom: 8px; }
-.configuracion .acceso { width: 100%; margin-bottom: 0; cursor: pointer; }
-.configuracion.abierta .acceso { border-bottom-color: transparent; }
-.configuracion .dentro {
-  border: 1px solid var(--borde);
-  border-top: none;
-  border-radius: 0 0 var(--radio-control) var(--radio-control);
-  background: var(--tarjeta);
-}
-.configuracion .dentro a {
-  display: flex;
-  align-items: center;
-  min-height: var(--tactil);
-  padding: 12px 14px;
-  border-top: 1px solid var(--borde-suave);
-  font-size: 13.5px;
-  color: var(--texto-cuerpo);
-  text-decoration: none;
-}
-
 /* ------------------------------------------------ Agrupación por persona */
 
 .grupo-trabajador { margin-bottom: 10px; }
@@ -1034,8 +1012,8 @@ a:hover { color: var(--pizarra); }
   grid-template-columns: 1fr;
   gap: 12px;
 }
-@media (min-width: 560px) {
-  .seleccion-area-grid { grid-template-columns: 1fr 1fr; }
+@media (min-width: 720px) {
+  .seleccion-area-grid { grid-template-columns: 1fr 1fr 1fr; }
 }
 .seleccion-area-opcion {
   display: block;

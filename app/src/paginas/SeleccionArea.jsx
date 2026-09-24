@@ -8,8 +8,11 @@ import { guardarArea } from '../lib/area';
  * vivía "el CRM". Terreno y demás roles sin acceso al CRM nunca ven esta
  * pantalla: van directo a Inicio.
  *
- * La elección se guarda en el navegador; "Cambiar de área" en el panel la
- * borra y vuelve a mostrar esta pantalla. */
+ * La elección de CRM u Operación se guarda en el navegador; "Cambiar de
+ * área" en el panel la borra y vuelve a mostrar esta pantalla. Configuración
+ * no se guarda como área: no es un modo de trabajo del día a día, es una
+ * visita ocasional, así que entrar ahí no cambia a qué área se vuelve
+ * después. */
 export default function SeleccionArea() {
   const { perfil, salir } = useSesion();
   const navegar = useNavigate();
@@ -23,7 +26,7 @@ export default function SeleccionArea() {
 
   return (
     <div className="pantalla" style={{ justifyContent: 'center', padding: '24px 20px' }}>
-      <div style={{ width: '100%', maxWidth: 620, margin: '0 auto' }}>
+      <div style={{ width: '100%', maxWidth: 860, margin: '0 auto' }}>
         <img src={import.meta.env.BASE_URL + 'logo-coproactiva.svg'}
              alt="CoproActiva" style={{ height: 26, marginBottom: 28 }} />
 
@@ -48,6 +51,14 @@ export default function SeleccionArea() {
             <h2 className="h4" style={{ margin: '6px 0 4px' }}>Operación</h2>
             <p className="chico apagado" style={{ margin: 0 }}>
               Comunidades administradas, levantamientos y mantención.
+            </p>
+          </button>
+
+          <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => navegar('/configuracion')}>
+            <span className="seleccion-area-etiqueta">Ajustes</span>
+            <h2 className="h4" style={{ margin: '6px 0 4px' }}>Configuración</h2>
+            <p className="chico apagado" style={{ margin: 0 }}>
+              Plantillas, equipo y clientes.
             </p>
           </button>
         </div>

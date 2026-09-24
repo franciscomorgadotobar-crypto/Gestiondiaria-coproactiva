@@ -21,7 +21,6 @@ export default function Inicio() {
   const { perfil, salir } = useSesion();
   const [controles, setControles] = useState(null);
   const [error, setError] = useState(null);
-  const [ajustes, setAjustes] = useState(false);
   // Qué grupos están abiertos, por sección. Se abre el propio en lo pendiente:
   // lo primero que uno mira al entrar es su propio día. Lo realizado arranca
   // cerrado, porque es consulta y no trabajo.
@@ -29,8 +28,6 @@ export default function Inicio() {
   const [abiertosHechos, setAbiertosHechos] = useState(() => new Set());
 
   const puedeConfigurar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
-  // Jefatura arma plantillas y programa visitas, pero no da de alta usuarios.
-  const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   // Borrar un levantamiento se lleva su historia completa —fotos, respuestas,
   // firma—: un alcance mayor que editarlo, reservado al superadmin.
   const puedeBorrar = perfil?.rol === 'superadmin';
@@ -212,22 +209,12 @@ export default function Inicio() {
               <span aria-hidden="true">+</span>
             </Link>
 
-            {/* Plantillas y equipo se tocan poco y no son trabajo del día:
-                agrupadas ocupan una línea en vez de tres. */}
-            <div className={'configuracion' + (ajustes ? ' abierta' : '')}>
-              <button type="button" className="acceso" aria-expanded={ajustes}
-                      onClick={() => setAjustes(v => !v)}>
-                <span>Configuración</span>
-                <span aria-hidden="true">{ajustes ? '−' : '+'}</span>
-              </button>
-              {ajustes && (
-                <div className="dentro">
-                  <Link to="/plantillas">Plantillas de levantamiento</Link>
-                  {esAdministracion && <Link to="/equipo">Equipo y permisos</Link>}
-                  {perfil?.rol === 'superadmin' && <Link to="/clientes">Clientes y accesos</Link>}
-                </div>
-              )}
-            </div>
+            {/* Plantillas, equipo y clientes viven en su propia pantalla:
+                un enlace directo, no un acordeón a expandir. */}
+            <Link to="/configuracion" className="acceso">
+              <span>Configuración</span>
+              <span aria-hidden="true">›</span>
+            </Link>
 
             {/* Página aparte y no una sección más: consultar el historial de
                 una comunidad es una pregunta distinta a la del día a día que
