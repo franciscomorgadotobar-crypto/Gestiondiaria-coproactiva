@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { diagnosticoHtml } from '../../lib/diagnosticoInforme';
+import { imprimirInforme } from '../../lib/informe';
 import './DiagnosticoComercial.css';
 
 /* Diagnóstico comercial: el mismo cuestionario y la misma lógica de puntaje
@@ -79,13 +81,15 @@ export default function DiagnosticoComercial({ id }) {
     setItems(ri.data ?? []);
     setResultado(rr.data ?? null);
 
-    const r = {}, n = {};
+    const r = {};
     for (const it of ri.data ?? []) {
       if (it.respuesta && typeof it.respuesta === 'object' && 'valor' in it.respuesta) r[it.id] = it.respuesta.valor;
-      if (it.respuesta && typeof it.respuesta === 'object' && it.respuesta.nota) n[it.id] = it.respuesta.nota;
     }
     setRespuestas(r);
-    setNotas(n);
+    // Las observaciones son por área (la caja de texto al pie de cada área),
+    // no por ítem: viven en diagnosticos_resultado.notas_areas, no en el
+    // control_item.
+    setNotas(rr.data?.notas_areas ?? {});
   }
 
   useEffect(() => { cargar(); }, [id]);
@@ -182,7 +186,7 @@ export default function DiagnosticoComercial({ id }) {
 
     const actualizaciones = (items ?? []).map(it => ({
       id: it.id,
-      respuesta: { valor: respuestas[it.id] ?? null, nota: notas[it.id] || null },
+      respuesta: { valor: respuestas[it.id] ?? null },
       evaluado_en: respuestas[it.id] !== undefined ? new Date().toISOString() : it.evaluado_en
     }));
 
@@ -198,7 +202,8 @@ export default function DiagnosticoComercial({ id }) {
       nivel: diagnostico.nivel,
       linea_sugerida: diagnostico.linea,
       linea_elegida: resultado?.linea_elegida ?? diagnostico.linea,
-      hallazgos_criticos: diagnostico.hallazgosCriticos
+      hallazgos_criticos: diagnostico.hallazgosCriticos,
+      notas_areas: notas
     };
     const { data: guardado, error: eRes } = resultado
       ? await supabase.from('diagnosticos_resultado').update(filaResultado).eq('control_id', id).select().single()
@@ -224,6 +229,22 @@ export default function DiagnosticoComercial({ id }) {
     setGuardando(false);
     if (e || !data) return setError(e?.message || 'No se pudo guardar la línea elegida.');
     setResultado(data);
+  }
+
+  function generarPdf() {
+    const lineaElegida = resultado?.linea_elegida ?? diagnostico.linea;
+    const areasInforme = AREAS.map(a => ({ id: a.id, label: a.label, pct: scoreArea(a)?.pct ?? null }));
+    const html = diagnosticoHtml({
+      prospecto,
+      diagnostico,
+      areas: areasInforme,
+      notasAreas: notas,
+      lineaElegida,
+      logo: import.meta.env.BASE_URL + 'logo-coproactiva.svg'
+    });
+    if (!imprimirInforme(html)) {
+      setError('El navegador bloqueó la ventana del informe. Permite las ventanas emergentes para este sitio.');
+    }
   }
 
   if (error) {
@@ -283,7 +304,7 @@ export default function DiagnosticoComercial({ id }) {
         {paso === 'revision' && (
           <PasoRevision diagnostico={diagnostico} resultado={resultado} guardando={guardando}
                         onGuardar={() => guardarTodo(false)} onEnviar={() => guardarTodo(true)}
-                        onElegirLinea={cambiarLineaElegida} />
+                        onElegirLinea={cambiarLineaElegida} onGenerarPdf={generarPdf} />
         )}
 
         <div className="fila-botones" style={{ marginTop: 20 }}>
@@ -427,7 +448,7 @@ function ResumenDato({ etiqueta, valor }) {
   );
 }
 
-function PasoRevision({ diagnostico, resultado, guardando, onGuardar, onEnviar, onElegirLinea }) {
+function PasoRevision({ diagnostico, resultado, guardando, onGuardar, onEnviar, onElegirLinea, onGenerarPdf }) {
   const linea = resultado?.linea_elegida ?? diagnostico.linea;
   return (
     <section className="diag-seccion">
@@ -477,6 +498,11 @@ function PasoRevision({ diagnostico, resultado, guardando, onGuardar, onEnviar, 
         <button type="button" className="boton boton-secundario" onClick={onGuardar} disabled={guardando}>Guardar avance</button>
         <button type="button" className="boton" onClick={onEnviar} disabled={guardando}>Guardar y enviar</button>
       </div>
+      {resultado && (
+        <button type="button" className="boton boton-texto" style={{ marginTop: 10 }} onClick={onGenerarPdf}>
+          Generar PDF del informe
+        </button>
+      )}
     </section>
   );
 }
