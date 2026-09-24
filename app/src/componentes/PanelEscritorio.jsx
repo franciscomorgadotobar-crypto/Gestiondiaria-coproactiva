@@ -47,16 +47,23 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           mostrar: true
         }
       ]
+    // El Pipeline no va acá: es exclusivo del CRM, y ya se llega a él
+    // como "Inicio" al elegir esa área. Listarlo también del lado de
+    // Operación mezclaría las dos áreas que la capa de selección separa.
     : [
         { ruta: inicioSegunArea(), etiqueta: 'Inicio', mostrar: true },
-        { ruta: '/pipeline', etiqueta: 'Pipeline comercial', mostrar: puedeConfigurar },
         { ruta: '/nuevo', etiqueta: 'Nuevo levantamiento', mostrar: puedeConfigurar },
         { ruta: '/comunidades', etiqueta: alertasMantencion > 0 ? `Comunidades (${alertasMantencion})` : 'Comunidades', mostrar: true },
-        { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
-        { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: esAdministracion },
-        { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true }
       ];
+
+  // Se tocan poco y no son trabajo del día: agrupados bajo "Configuración",
+  // igual que en el acordeón del celular.
+  const configuracion = esCliente ? [] : [
+    { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
+    { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: esAdministracion },
+    { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
+  ];
 
   const inicio = esCliente ? '/portal' : inicioSegunArea();
 
@@ -74,6 +81,17 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               {a.etiqueta}
             </Link>
           ))}
+          {configuracion.some(a => a.mostrar) && (
+            <>
+              <span className="micro apagado etiqueta-lateral">Configuración</span>
+              {configuracion.filter(a => a.mostrar).map(a => (
+                <Link key={a.ruta} to={a.ruta}
+                      className={'enlace-lateral' + (activa(pathname, a.ruta) ? ' activo' : '')}>
+                  {a.etiqueta}
+                </Link>
+              ))}
+            </>
+          )}
         </div>
 
         <div className="crece" />

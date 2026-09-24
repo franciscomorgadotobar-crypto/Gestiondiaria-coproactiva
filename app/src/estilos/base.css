@@ -344,6 +344,13 @@ a:hover { color: var(--pizarra); }
   .enlace-lateral:hover { background: var(--hover); color: var(--texto-titulo); }
   .enlace-lateral.activo { background: var(--tinta); color: var(--texto-inverso); }
 
+  .etiqueta-lateral {
+    display: block;
+    margin: 10px 10px 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
   .usuario-lateral { padding-top: 14px; border-top: 1px solid var(--borde-suave); }
 
   /* El contenido se centra en el espacio que queda: a lo ancho de una
