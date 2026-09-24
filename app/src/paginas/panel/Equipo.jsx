@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { inicioSegunArea } from '../../lib/area';
 
 /* Administración del equipo: quién entra y qué ve.
  *
@@ -160,7 +161,7 @@ export default function Equipo() {
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/inicio')}>
+                  onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
           </button>
           <span className="crece" />

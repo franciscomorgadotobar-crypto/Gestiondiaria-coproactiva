@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { inicioSegunArea } from '../../lib/area';
 import Confirmar from '../../componentes/Confirmar';
 
 /* Las plantillas del catálogo estándar (comunidad_id nulo) sirven para todas
@@ -93,7 +94,7 @@ export default function Plantillas() {
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/inicio')}>
+                  onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
           </button>
         </div>

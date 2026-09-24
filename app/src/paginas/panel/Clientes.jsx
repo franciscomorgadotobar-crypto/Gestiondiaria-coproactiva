@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { inicioSegunArea } from '../../lib/area';
 import './Clientes.css';
 
 export default function Clientes() {
@@ -134,7 +135,7 @@ export default function Clientes() {
   return (
     <div className="pantalla">
       <header className="encabezado">
-        <button className="boton boton-texto" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar('/inicio')}>
+        <button className="boton boton-texto" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar(inicioSegunArea())}>
           ‹ Inicio
         </button>
         <h1 className="h3">Clientes y accesos</h1>

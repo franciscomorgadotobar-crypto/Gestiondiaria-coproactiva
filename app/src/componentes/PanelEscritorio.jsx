@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
-import { limpiarArea } from '../lib/area';
+import { limpiarArea, inicioSegunArea } from '../lib/area';
 
 function activa(pathname, ruta) {
   return pathname === ruta || pathname.startsWith(ruta + '/');
@@ -39,7 +39,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         }
       ]
     : [
-        { ruta: '/inicio', etiqueta: 'Inicio', mostrar: true },
+        { ruta: inicioSegunArea(), etiqueta: 'Inicio', mostrar: true },
         { ruta: '/pipeline', etiqueta: 'Pipeline comercial', mostrar: puedeConfigurar },
         { ruta: '/nuevo', etiqueta: 'Nuevo levantamiento', mostrar: puedeConfigurar },
         { ruta: '/comunidades', etiqueta: alertasMantencion > 0 ? `Comunidades (${alertasMantencion})` : 'Comunidades', mostrar: true },
@@ -49,7 +49,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true }
       ];
 
-  const inicio = esCliente ? '/portal' : '/inicio';
+  const inicio = esCliente ? '/portal' : inicioSegunArea();
 
   return (
     <div className="layout-escritorio">

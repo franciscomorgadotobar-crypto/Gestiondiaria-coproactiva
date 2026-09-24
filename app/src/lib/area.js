@@ -19,3 +19,11 @@ export function guardarArea(area) {
 export function limpiarArea() {
   try { localStorage.removeItem(CLAVE); } catch { /* modo privado, etc. */ }
 }
+
+/* A dónde vuelve "Inicio" según el área elegida: el Pipeline si se está en
+ * CRM, el panel de levantamientos si se está en Operación (o si el usuario
+ * no tiene CRM y nunca eligió nada). "Inicio" es el home del área en la que
+ * se está, no siempre el mismo destino fijo. */
+export function inicioSegunArea() {
+  return areaGuardada() === 'crm' ? '/pipeline' : '/inicio';
+}

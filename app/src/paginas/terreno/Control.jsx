@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { inicioSegunArea } from '../../lib/area';
 import { AvisoConexion } from '../../lib/estado';
 import CampoPunto from '../../componentes/CampoPunto';
 import { informeHtml, imprimirInforme } from '../../lib/informe';
@@ -285,7 +286,7 @@ export default function Levantamiento() {
     await encolar({ tipo: 'pausa', fila });
     await encolar({ tipo: 'control', id, cambios: { estado: 'pausado' } });
     sincronizar();
-    navegar('/inicio');
+    navegar(inicioSegunArea());
   }
 
   async function reanudar() {
@@ -506,7 +507,7 @@ export default function Levantamiento() {
     await encolar({ tipo: 'control', id, cambios });
     await sincronizar();
     setEnviando(false);
-    navegar('/inicio');
+    navegar(inicioSegunArea());
   }
 
   // --------------------------------------------------------------- Vistas
@@ -516,7 +517,7 @@ export default function Levantamiento() {
       <div className="cuerpo">
         <div className="aviso aviso-critico">{error}</div>
         <button className="boton boton-secundario boton-movil boton-ancho"
-                style={{ marginTop: 14 }} onClick={() => navegar('/inicio')}>
+                style={{ marginTop: 14 }} onClick={() => navegar(inicioSegunArea())}>
           Volver
         </button>
       </div>
@@ -533,7 +534,7 @@ export default function Levantamiento() {
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/inicio')} aria-label="Volver">
+                  onClick={() => navegar(inicioSegunArea())} aria-label="Volver">
             ‹ Volver
           </button>
           <span className="crece" />

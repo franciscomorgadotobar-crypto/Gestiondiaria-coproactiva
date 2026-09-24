@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { inicioSegunArea } from '../../lib/area';
 
 /* Programar o editar un levantamiento.
  *
@@ -113,7 +114,7 @@ export default function Programar() {
   function volver() {
     if (comunidadInicial) return navegar(`/comunidades/${comunidadInicial}?seccion=levantamientos`);
     if (prospectoInicial) return navegar('/pipeline');
-    navegar('/inicio');
+    navegar(inicioSegunArea());
   }
 
   async function guardar() {

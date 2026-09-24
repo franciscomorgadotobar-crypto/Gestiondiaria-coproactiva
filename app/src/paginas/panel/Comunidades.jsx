@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { inicioSegunArea } from '../../lib/area';
 import './Comunidades.css';
 
 const SECCIONES = [
@@ -209,7 +210,7 @@ function ListadoComunidades() {
     <div className="pantalla">
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
-          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar('/inicio')}>
+          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
           </button>
         </div>

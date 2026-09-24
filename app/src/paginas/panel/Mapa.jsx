@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '../../lib/supabase';
+import { inicioSegunArea } from '../../lib/area';
 
 /* Mapa de lo hecho en terreno.
  *
@@ -232,7 +233,7 @@ export default function Mapa() {
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/inicio')}>
+                  onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
           </button>
           <span className="crece" />

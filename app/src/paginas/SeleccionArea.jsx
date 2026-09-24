@@ -16,7 +16,9 @@ export default function SeleccionArea() {
 
   function elegir(area) {
     guardarArea(area);
-    navegar(area === 'crm' ? '/pipeline' : '/', { replace: true });
+    // Nunca "/": esta pantalla ya está montada ahí, y navegar a la misma
+    // ruta en la que se está no vuelve a renderizar nada en React Router.
+    navegar(area === 'crm' ? '/pipeline' : '/inicio', { replace: true });
   }
 
   return (
