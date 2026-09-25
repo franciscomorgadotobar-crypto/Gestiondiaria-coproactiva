@@ -72,7 +72,8 @@ const ALCANCE: Record<string, string> = {
   terreno: 'Verás los levantamientos que se te asignen en las comunidades donde trabajas.',
   jefatura: 'Verás las comunidades asignadas, el embudo comercial, y podrás corregir levantamientos del equipo.',
   admin: 'Tendrás acceso a todas las comunidades y a la administración del equipo.',
-  superadmin: 'Tendrás acceso completo al sistema.'
+  superadmin: 'Tendrás acceso completo al sistema.',
+  cliente: 'Podrás consultar el estado de tu comunidad: levantamientos, mantención y lo que administración decida compartir contigo.'
 };
 
 function escapar(t: string) {
@@ -158,11 +159,27 @@ function plantilla(o: {
 export function invitacion(nombre: string, rol: string, enlace: string, horas: number) {
   const asunto = 'Tu acceso a CoproActiva';
   const dura = vigencia(horas);
+  const esCliente = rol === 'cliente';
+
+  // Instalar la PWA y trabajar sin señal es del recorrido en terreno: un
+  // cliente solo consulta desde el portal, nunca lo necesita.
+  const introduccion = esCliente
+    ? 'Se te dio acceso al portal de CoproActiva, donde puedes consultar el estado de tu comunidad.'
+    : 'Se te dio acceso a CoproActiva, el sistema con que registramos los levantamientos en terreno.';
+  const instalacion = esCliente ? '' : [
+    '',
+    'La aplicación se instala en el teléfono desde el menú del navegador, con la opción',
+    'Agregar a pantalla principal. Funciona sin señal: puedes recorrer un edificio',
+    'completo sin datos y todo se sube al recuperar cobertura.'
+  ].join('\n');
+  const instalacionHtml = esCliente ? '' : '<br><br>Puedes instalarla en el teléfono desde el menú del navegador, con la opción ' +
+    '<em>Agregar a pantalla principal</em>. Funciona sin señal: se recorre un edificio ' +
+    'completo sin datos y todo se sube al recuperar cobertura.';
 
   const texto = [
     `Hola ${nombre.split(' ')[0]},`,
     '',
-    'Se te dio acceso a CoproActiva, el sistema con que registramos los levantamientos en terreno.',
+    introduccion,
     '',
     'Abre este enlace para crear tu contraseña:',
     enlace,
@@ -170,26 +187,20 @@ export function invitacion(nombre: string, rol: string, enlace: string, horas: n
     `El enlace sirve una sola vez y vence en ${dura}. Si vence, la misma pantalla te deja pedir uno nuevo.`,
     '',
     ALCANCE[rol] ?? '',
-    '',
-    'La aplicación se instala en el teléfono desde el menú del navegador, con la opción',
-    'Agregar a pantalla principal. Funciona sin señal: puedes recorrer un edificio',
-    'completo sin datos y todo se sube al recuperar cobertura.',
+    instalacion,
     '',
     'CoproActiva',
     'contacto@coproactiva.cl'
   ].join('\n');
 
   const html = plantilla({
-    titulo: 'Acceso al sistema',
+    titulo: esCliente ? 'Acceso al portal' : 'Acceso al sistema',
     saludo: `Hola, ${nombre.split(' ')[0]}`,
-    parrafo: 'Se te dio acceso a CoproActiva, el sistema con que registramos los levantamientos en terreno. Para entrar, primero crea tu contraseña.',
+    parrafo: `${introduccion} Para entrar, primero crea tu contraseña.`,
     boton: 'Crear mi contraseña',
     enlace,
     aviso: `<strong>El enlace sirve una sola vez y vence en ${dura}.</strong> Si alcanza a vencer, la misma pantalla te deja pedir uno nuevo.`,
-    cierre: `${escapar(ALCANCE[rol] ?? '')}<br><br>` +
-      'Puedes instalarla en el teléfono desde el menú del navegador, con la opción ' +
-      '<em>Agregar a pantalla principal</em>. Funciona sin señal: se recorre un edificio ' +
-      'completo sin datos y todo se sube al recuperar cobertura.'
+    cierre: `${escapar(ALCANCE[rol] ?? '')}${instalacionHtml}`
   });
 
   return { asunto, html, texto };

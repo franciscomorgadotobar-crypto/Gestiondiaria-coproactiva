@@ -122,11 +122,16 @@ Deno.serve(async (req) => {
 
       if (!nombre) return responder({ error: 'Falta el nombre' }, 400);
       if (!email.includes('@')) return responder({ error: 'Correo inválido' }, 400);
-      if (!['superadmin', 'admin', 'jefatura', 'terreno'].includes(rol)) {
+      if (!['superadmin', 'admin', 'jefatura', 'terreno', 'cliente'].includes(rol)) {
         return responder({ error: 'Rol desconocido' }, 400);
       }
       if (rol === 'superadmin' && !esSuperadmin) {
         return responder({ error: 'Solo un superadmin puede crear otro superadmin' }, 403);
+      }
+      // Mismo permiso que asignar_rol_cliente: solo el superadmin decide
+      // quién es cliente.
+      if (rol === 'cliente' && !esSuperadmin) {
+        return responder({ error: 'Solo un superadmin puede crear un cliente' }, 403);
       }
       if (!hayCorreo()) {
         return responder({
@@ -150,7 +155,10 @@ Deno.serve(async (req) => {
         return responder({ error: errorPerfil.message }, 400);
       }
 
-      if (comunidades.length) {
+      // `perfil_comunidades` es la visibilidad de alguien del equipo, no la
+      // de un cliente: la de un cliente vive en `portal_cliente_comunidades`
+      // y se arma aparte, desde "Clientes y accesos".
+      if (comunidades.length && rol !== 'cliente') {
         await admin.from('perfil_comunidades').insert(
           comunidades.map((c: string) => ({ perfil_id: creado.user.id, comunidad_id: c }))
         );
