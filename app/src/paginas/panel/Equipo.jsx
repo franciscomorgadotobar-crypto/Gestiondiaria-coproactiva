@@ -64,7 +64,13 @@ export default function Equipo() {
       supabase.from('perfil_comunidades').select('perfil_id, comunidad_id')
     ]);
     if (p.error) return setError(p.error.message);
-    setGente(p.data ?? []);
+    // Cliente no es un rol de equipo: es alguien externo, sin comunidades
+    // asignadas ni acceso al CRM, que se gestiona aparte en "Clientes y
+    // accesos". Mezclarlo acá significaba ofrecer un desplegable de Rol que
+    // ni siquiera tenía "Cliente" como opción —mostraba "Terreno" por
+    // defecto sin serlo, y tocarlo lo hubiera revertido a rol interno sin
+    // pasar por esa conversión.
+    setGente((p.data ?? []).filter(x => x.rol !== 'cliente'));
     setComunidades(c.data ?? []);
 
     const mapa = {};

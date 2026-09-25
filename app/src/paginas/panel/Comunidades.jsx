@@ -324,8 +324,10 @@ function DetalleComunidad({ id }) {
       supabase.from('mantenimiento_actividades').select('*').eq('comunidad_id', id).eq('activa', true).order('creado_en'),
       supabase.from('mantenimiento_agendamientos').select('*').eq('comunidad_id', id).order('programado_para', { ascending: true }),
       supabase.from('ejecuciones_mantenimiento').select('*').eq('comunidad_id', id).order('realizado_en', { ascending: false }),
+      // Un cliente no es responsable de mantención: es externo, no parte
+      // del equipo.
       puedeGestionar
-        ? supabase.from('perfiles').select('id, nombre, rol, activo').eq('activo', true).order('nombre')
+        ? supabase.from('perfiles').select('id, nombre, rol, activo').eq('activo', true).neq('rol', 'cliente').order('nombre')
         : Promise.resolve({ data: [], error: null }),
       puedeGestionar
         ? supabase.from('mantenimiento_alertas_config').select('*').eq('comunidad_id', id)

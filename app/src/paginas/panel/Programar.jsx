@@ -59,7 +59,9 @@ export default function Programar() {
         supabase.from('plantillas_control')
           .select('id, nombre, codigo, secuencial, plantilla_items(count)')
           .eq('activa', true).order('nombre'),
-        supabase.from('perfiles').select('id, nombre, rol, activo').order('nombre')
+        // Un cliente no es responsable de un levantamiento: es externo, no
+        // parte del equipo.
+        supabase.from('perfiles').select('id, nombre, rol, activo').neq('rol', 'cliente').order('nombre')
       ]);
       setComunidades(com.data ?? []);
       setProspectos(pro.data ?? []);

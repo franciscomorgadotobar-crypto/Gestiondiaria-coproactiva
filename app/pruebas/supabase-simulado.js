@@ -22,7 +22,8 @@ const EQUIPO = [
   PERFIL,
   { id: 'u2', nombre: 'Marta Silva',  email: 'marta@coproactiva.cl',  rol: 'jefatura', activo: true },
   { id: 'u3', nombre: 'Luis Cárcamo', email: 'luis@coproactiva.cl',   rol: 'terreno',  activo: true },
-  { id: 'u4', nombre: 'Ana Pinto',    email: 'ana@coproactiva.cl',    rol: 'terreno',  activo: false }
+  { id: 'u4', nombre: 'Ana Pinto',    email: 'ana@coproactiva.cl',    rol: 'terreno',  activo: false },
+  { id: 'u5', nombre: 'Jorge Salas',  email: 'jorge@example.cl',      rol: 'cliente',  activo: true }
 ];
 
 const COMUNIDAD_ID = 'c0000000-0000-4000-8000-000000000001';

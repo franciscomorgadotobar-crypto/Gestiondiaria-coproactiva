@@ -66,7 +66,9 @@ export default function Pipeline() {
     setError(null);
     const [rp, re] = await Promise.all([
       supabase.from('prospectos').select('*').order('creado_en', { ascending: false }),
-      supabase.from('perfiles').select('id, nombre, rol, activo').eq('activo', true).order('nombre')
+      // Un cliente no es responsable de un lead: es externo, no parte del
+      // equipo comercial.
+      supabase.from('perfiles').select('id, nombre, rol, activo').eq('activo', true).neq('rol', 'cliente').order('nombre')
     ]);
     if (rp.error) return setError(rp.error.message);
     if (re.error) return setError(re.error.message);
