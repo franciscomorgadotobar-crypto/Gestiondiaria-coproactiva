@@ -1,6 +1,10 @@
 /* El diagnóstico usa los componentes del levantamiento (pestañas, selector,
    marcas, tablero, pasos). Acá solo va lo que es propio de su disposición. */
 
+.diag-campos { border: 0; padding: 0; margin: 0; min-width: 0; }
+.diag-campos:disabled .selector button:not([aria-pressed='true']),
+.diag-campos:disabled .marca:not(.activa) { opacity: .55; }
+.diag-campos:disabled button, .diag-campos:disabled label { cursor: default; }
 .diag-seccion { margin-bottom: 8px; }
 .diag-bloque { margin-top: 24px; }
 .diag-lista { display: grid; gap: 10px; }

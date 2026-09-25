@@ -27,6 +27,15 @@ const ETAPAS = [
   ['perdido', 'Perdido']
 ];
 
+// Estado del diagnóstico: los mismos chips que un levantamiento en el panel.
+const ESTADO_DIAGNOSTICO = {
+  pendiente: ['chip-pendiente', 'Pendiente'],
+  en_curso: ['chip-alerta', 'En curso'],
+  pausado: ['chip-pausado', 'En pausa'],
+  enviado: ['chip-cumple', 'Enviado']
+};
+const LINEAS = { L1: 'Administración integral', L2: 'Nueva administración', L3: 'Asesoría externa' };
+
 const TIPOS_SERVICIO = [
   ['administracion', 'Administración'],
   ['auditoria', 'Auditoría'],
@@ -55,6 +64,7 @@ export default function Pipeline() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
   const [prospectos, setProspectos] = useState(null);
+  const [diagnosticos, setDiagnosticos] = useState(new Map());   // prospecto_id → { control, resultado }
   const [equipo, setEquipo] = useState([]);
   const [error, setError] = useState(null);
   const [etapa, setEtapa] = useState('nuevo');
@@ -64,16 +74,27 @@ export default function Pipeline() {
 
   async function cargar() {
     setError(null);
-    const [rp, re] = await Promise.all([
+    const [rp, re, rd, rr] = await Promise.all([
       supabase.from('prospectos').select('*').order('creado_en', { ascending: false }),
       // Un cliente no es responsable de un lead: es externo, no parte del
       // equipo comercial.
-      supabase.from('perfiles').select('id, nombre, rol, activo').eq('activo', true).neq('rol', 'cliente').order('nombre')
+      supabase.from('perfiles').select('id, nombre, rol, activo').eq('activo', true).neq('rol', 'cliente').order('nombre'),
+      // El diagnóstico vigente de cada prospecto (uno por prospecto: la base
+      // no admite un segundo salvo que el anterior esté anulado).
+      supabase.from('controles')
+        .select('id, prospecto_id, estado, responsable_id, programado_para, enviado_en')
+        .eq('es_diagnostico', true).neq('estado', 'anulado'),
+      supabase.from('diagnosticos_resultado').select('control_id, score, nivel, linea_sugerida, linea_elegida')
     ]);
     if (rp.error) return setError(rp.error.message);
     if (re.error) return setError(re.error.message);
     setProspectos(rp.data ?? []);
     setEquipo(re.data ?? []);
+    // Sin diagnósticos legibles la tarjeta simplemente no los muestra.
+    const resultados = new Map((rr.data ?? []).map(r => [r.control_id, r]));
+    setDiagnosticos(new Map((rd.data ?? [])
+      .filter(c => c.prospecto_id)
+      .map(c => [c.prospecto_id, { control: c, resultado: resultados.get(c.id) ?? null }])));
   }
 
   useEffect(() => { cargar(); }, []);
@@ -270,6 +291,7 @@ export default function Pipeline() {
                   {deEtapa.length === 0 && <p className="vacio">No hay prospectos en esta etapa.</p>}
                   {deEtapa.map(p => (
                     <TarjetaProspecto key={p.id} p={p} equipo={equipo} guardando={guardando}
+                                      diagnostico={diagnosticos.get(p.id)}
                                       onEditar={() => abrirEdicion(p)}
                                       onCambiarEtapa={nuevaEtapa => cambiarEtapa(p, nuevaEtapa)} />
                   ))}
@@ -283,7 +305,7 @@ export default function Pipeline() {
   );
 }
 
-function TarjetaProspecto({ p, equipo, guardando, onEditar, onCambiarEtapa }) {
+function TarjetaProspecto({ p, equipo, guardando, diagnostico, onEditar, onCambiarEtapa }) {
   const responsable = equipo.find(e => e.id === p.responsable_id);
   const vencida = p.fecha_proxima_accion && new Date(p.fecha_proxima_accion) < new Date();
 
@@ -330,13 +352,50 @@ function TarjetaProspecto({ p, equipo, guardando, onEditar, onCambiarEtapa }) {
         </select>
       </div>
 
-      {p.etapa !== 'ganado' && p.etapa !== 'perdido' && (
+      {/* Con un diagnóstico ya creado no se ofrece iniciar otro: se muestra
+          su estado y, si ya tiene resultado, el puntaje, el nivel y la línea. */}
+      {diagnostico ? (
+        <TarjetaDiagnostico diagnostico={diagnostico} equipo={equipo} />
+      ) : p.etapa !== 'ganado' && p.etapa !== 'perdido' && (
         <Link to={`/nuevo?prospecto=${p.id}`} className="boton boton-secundario boton-ancho"
               style={{ marginTop: 10, textAlign: 'center' }}>
           Iniciar diagnóstico
         </Link>
       )}
     </article>
+  );
+}
+
+function TarjetaDiagnostico({ diagnostico, equipo }) {
+  const { control, resultado } = diagnostico;
+  const [clase, texto] = ESTADO_DIAGNOSTICO[control.estado] ?? ESTADO_DIAGNOSTICO.pendiente;
+  const responsable = equipo.find(e => e.id === control.responsable_id);
+  const linea = resultado ? LINEAS[resultado.linea_elegida ?? resultado.linea_sugerida] : null;
+
+  return (
+    <div className="pipeline-diagnostico">
+      <div className="fila" style={{ gap: 8 }}>
+        <span className="etiqueta-campo crece" style={{ margin: 0 }}>Diagnóstico</span>
+        <span className={'chip ' + clase}>{texto}</span>
+      </div>
+      {resultado ? (
+        <>
+          <p className="pipeline-diagnostico-puntaje">
+            <strong>{resultado.score}%</strong> · {resultado.nivel}
+          </p>
+          {linea && <p className="micro" style={{ margin: '2px 0 0' }}>{linea}</p>}
+        </>
+      ) : (
+        <p className="micro" style={{ margin: '6px 0 0' }}>
+          {responsable ? responsable.nombre : 'Sin asignar'}
+          {control.programado_para && ` · ${fechaCL(control.programado_para, true)}`}
+        </p>
+      )}
+      <Link to={`/control/${control.id}`} className="boton boton-secundario boton-ancho"
+            style={{ marginTop: 10, textAlign: 'center' }}>
+        Ver diagnóstico
+      </Link>
+    </div>
   );
 }
 

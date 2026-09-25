@@ -50,6 +50,7 @@ const CONTROL = {
   items_totales: 4,
   items_criticos: 0,
   secuencial: true,
+  es_diagnostico: false,
   comunidades: { nombre: 'Edificio de prueba', direccion: 'América 755', comuna: 'San Bernardo' }
 };
 
@@ -216,7 +217,12 @@ const TABLAS = {
     id: 'p' + n, plantilla_id: 'pl1', grupo: it.grupo, texto: it.texto,
     orden: n, orden_grupo: 0, tipo_ingreso: it.tipo_ingreso, config: it.config, activo: true
   })),
-  diagnosticos_resultado: [],
+  // Resultado ya guardado del diagnóstico de Las Palmeras: lo muestran la
+  // tarjeta del Pipeline y, una vez ganado, la ficha de la comunidad.
+  diagnosticos_resultado: [
+    { control_id: CONTROL_DIAGNOSTICO_ID, score: 62, nivel: 'En riesgo', linea_sugerida: 'L2', linea_elegida: 'L2',
+      hallazgos_criticos: [{ area: 'Legal', texto: 'Reglamento no inscrito', tipo: 'no_cumple' }], notas_areas: {} }
+  ],
   adjuntos: [],
   activos_comunidad: [
     { id: 'act1', comunidad_id: COMUNIDAD_ID, nombre: 'Ascensor principal', categoria: 'ascensor',

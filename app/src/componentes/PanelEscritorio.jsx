@@ -42,7 +42,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // La barra muestra solo el área en la que se está, igual que en el
   // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
   // comunidades y mapa. Para ir a la otra área está "Cambiar de área".
-  const enCRM = !esCliente && puedeConfigurar && areaGuardada() === 'crm';
+  // El Pipeline es del CRM aunque se llegue a él sin haber elegido área
+  // (un enlace directo, por ejemplo).
+  const enCRM = !esCliente && puedeConfigurar
+    && (areaGuardada() === 'crm' || activa(pathname, '/pipeline'));
   const nombreArea = esCliente ? null : enCRM ? 'CRM' : puedeConfigurar ? 'Operación' : null;
 
   const accesos = esCliente

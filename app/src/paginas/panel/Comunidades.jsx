@@ -291,6 +291,7 @@ function DetalleComunidad({ id }) {
   const [equipo, setEquipo] = useState([]);
   const [reglas, setReglas] = useState([]);
   const [notificaciones, setNotificaciones] = useState([]);
+  const [diagnosticoInicial, setDiagnosticoInicial] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -358,9 +359,32 @@ function DetalleComunidad({ id }) {
     setCargando(false);
   }
 
+  /* El diagnóstico que se hizo cuando la comunidad todavía era un prospecto.
+   * Queda ligado al prospecto, no a la comunidad: se busca el prospecto que se
+   * ganó como esta comunidad y su diagnóstico vigente. Es información
+   * comercial: solo la leen quienes trabajan el CRM (la base no se la entrega
+   * a terreno), así que para los demás simplemente no aparece. */
+  async function cargarDiagnosticoInicial() {
+    if (!puedeGestionar) return setDiagnosticoInicial(null);
+    const { data: origen } = await supabase.from('prospectos').select('id').eq('comunidad_id', id).limit(1);
+    const prospectoId = origen?.[0]?.id;
+    if (!prospectoId) return setDiagnosticoInicial(null);
+    const { data: ctl } = await supabase.from('controles')
+      .select('id, estado, enviado_en, creado_en')
+      .eq('prospecto_id', prospectoId).eq('es_diagnostico', true).neq('estado', 'anulado')
+      .limit(1);
+    const control = ctl?.[0];
+    if (!control) return setDiagnosticoInicial(null);
+    const { data: resultado } = await supabase.from('diagnosticos_resultado')
+      .select('score, nivel, linea_sugerida, linea_elegida, hallazgos_criticos')
+      .eq('control_id', control.id).maybeSingle();
+    setDiagnosticoInicial({ control, resultado: resultado ?? null });
+  }
+
   useEffect(() => {
     if (!perfil?.id) return;
     cargar();
+    cargarDiagnosticoInicial();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, perfil?.id]);
 
@@ -663,6 +687,7 @@ function DetalleComunidad({ id }) {
             kpis={kpisMantencion}
             notificaciones={notificaciones}
             marcarLeida={marcarLeida}
+            diagnosticoInicial={diagnosticoInicial}
           />
         )}
 
@@ -1002,7 +1027,37 @@ function DetalleComunidad({ id }) {
   );
 }
 
-function Resumen({ controles, activos, actividades, agenda, kpis, notificaciones, marcarLeida }) {
+const LINEAS_DIAGNOSTICO = { L1: 'Administración integral', L2: 'Nueva administración', L3: 'Asesoría externa' };
+
+function DiagnosticoInicial({ diagnostico }) {
+  const { control, resultado } = diagnostico;
+  const [clase, texto] = CHIP_CONTROL[control.estado] ?? CHIP_CONTROL.pendiente;
+  const linea = resultado ? LINEAS_DIAGNOSTICO[resultado.linea_elegida ?? resultado.linea_sugerida] : null;
+  const criticos = resultado?.hallazgos_criticos?.length ?? 0;
+  return (
+    <Link to={`/control/${control.id}`} className="tarjeta" style={{ padding: 14, marginBottom: 12, display: 'block' }}>
+      <div className="fila" style={{ gap: 8, marginBottom: 6 }}>
+        <h2 className="h4 crece" style={{ margin: 0 }}>Diagnóstico inicial</h2>
+        <span className={'chip ' + clase}>{texto}</span>
+      </div>
+      {resultado ? (
+        <>
+          <p className="dato-chico" style={{ margin: 0 }}>{resultado.score}% · {resultado.nivel}</p>
+          <p className="micro" style={{ margin: '3px 0 0' }}>
+            {[linea, `${criticos} hallazgo${criticos === 1 ? '' : 's'} crítico${criticos === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
+          </p>
+        </>
+      ) : (
+        <p className="micro" style={{ margin: 0 }}>Sin resultado guardado.</p>
+      )}
+      <p className="micro apagado" style={{ margin: '6px 0 0' }}>
+        Hecho antes de ganar la comunidad · {fechaCL(control.enviado_en ?? control.creado_en)}
+      </p>
+    </Link>
+  );
+}
+
+function Resumen({ controles, activos, actividades, agenda, kpis, notificaciones, marcarLeida, diagnosticoInicial }) {
   const criticos = controles.reduce((n, c) => n + (c.items_criticos ?? 0), 0);
   const abiertos = controles.filter(c => !['enviado', 'anulado'].includes(c.estado)).length;
   const proximas = agenda
@@ -1017,6 +1072,8 @@ function Resumen({ controles, activos, actividades, agenda, kpis, notificaciones
         <div><p className="n">{kpis.agendadas}</p><p className="r">Mantenciones agendadas</p></div>
         <div><p className="n">{kpis.pendientes}</p><p className="r">Mantenciones pendientes</p></div>
       </div>
+
+      {diagnosticoInicial && <DiagnosticoInicial diagnostico={diagnosticoInicial} />}
 
       <div className="comunidad-grid-2">
         <article className="tarjeta" style={{ padding: 14 }}>

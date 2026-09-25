@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useSesion } from '../../lib/sesion';
 import { diagnosticoHtml } from '../../lib/diagnosticoInforme';
 import { imprimirInforme } from '../../lib/informe';
 import './DiagnosticoComercial.css';
@@ -54,6 +55,10 @@ function lineaSugerida(score, areasRed, hasCritFail) {
 
 export default function DiagnosticoComercial({ id }) {
   const navegar = useNavigate();
+  const { perfil } = useSesion();
+  // Lo completa un superadministrador. Admin y jefatura lo programan y lo
+  // consultan, pero no responden ni guardan (la base tampoco se los permite).
+  const soloLectura = perfil?.rol !== 'superadmin';
   const [control, setControl] = useState(null);
   const [prospecto, setProspecto] = useState(null);
   const [items, setItems] = useState(null);
@@ -184,6 +189,7 @@ export default function DiagnosticoComercial({ id }) {
   }, [items, respuestas]);
 
   function responder(itemId, valor) {
+    if (soloLectura) return;
     setRespuestas(r => ({ ...r, [itemId]: r[itemId] === valor ? undefined : valor }));
   }
 
@@ -291,9 +297,10 @@ export default function DiagnosticoComercial({ id }) {
     <div className="pantalla pantalla-angosta">
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
+          {/* Ganado el prospecto, el diagnóstico se consulta desde su comunidad. */}
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/pipeline')}>
-            ‹ Pipeline
+                  onClick={() => navegar(prospecto.comunidad_id ? `/comunidades/${prospecto.comunidad_id}` : '/pipeline')}>
+            {prospecto.comunidad_id ? '‹ Comunidad' : '‹ Pipeline'}
           </button>
           <span className="crece" />
           {control.estado === 'enviado' && <span className="chip chip-cumple">Enviado</span>}
@@ -327,6 +334,15 @@ export default function DiagnosticoComercial({ id }) {
           ))}
         </nav>
 
+        {soloLectura && (
+          <div className="aviso" style={{ marginBottom: 14 }}>
+            Solo lectura: las respuestas y el resultado los registra un superadministrador.
+          </div>
+        )}
+
+        {/* Un fieldset deshabilitado apaga de una vez todos los campos y botones
+            de respuesta; las pestañas y la navegación quedan fuera. */}
+        <fieldset className="diag-campos" disabled={soloLectura}>
         {paso === 'contexto' && (
           <PasoContexto prospecto={prospecto} items={contexto} respuestas={respuestas} onResponder={responder} />
         )}
@@ -340,9 +356,10 @@ export default function DiagnosticoComercial({ id }) {
                     setNotas={setNotas} itemAplica={itemAplica} areaAplica={areaAplica} scoreArea={scoreArea}
                     onResponder={responder} />
         ))}
+        </fieldset>
 
         {paso === 'revision' && (
-          <PasoRevision diagnostico={diagnostico} resultado={resultado} guardando={guardando}
+          <PasoRevision diagnostico={diagnostico} resultado={resultado} guardando={guardando} soloLectura={soloLectura}
                         onGuardar={() => guardarTodo(false)} onEnviar={() => guardarTodo(true)}
                         onElegirLinea={cambiarLineaElegida} onGenerarPdf={generarPdf} />
         )}
@@ -514,7 +531,7 @@ function ResumenDato({ etiqueta, valor }) {
   );
 }
 
-function PasoRevision({ diagnostico, resultado, guardando, onGuardar, onEnviar, onElegirLinea, onGenerarPdf }) {
+function PasoRevision({ diagnostico, resultado, guardando, soloLectura, onGuardar, onEnviar, onElegirLinea, onGenerarPdf }) {
   const linea = resultado?.linea_elegida ?? diagnostico.linea;
   return (
     <section className="diag-seccion">
@@ -556,7 +573,7 @@ function PasoRevision({ diagnostico, resultado, guardando, onGuardar, onEnviar, 
           {Object.entries(LINEAS).map(([clave, l]) => (
             <button key={clave} type="button" className="tarjeta diag-linea"
                     aria-pressed={linea === clave}
-                    onClick={() => onElegirLinea(clave)} disabled={!resultado}>
+                    onClick={() => onElegirLinea(clave)} disabled={!resultado || soloLectura}>
               <span className="fila" style={{ gap: 8 }}>
                 <span className="dato-chico crece">{l.label}</span>
                 {diagnostico.linea === clave && <span className="chip chip-pendiente">Sugerida</span>}
@@ -565,17 +582,19 @@ function PasoRevision({ diagnostico, resultado, guardando, onGuardar, onEnviar, 
             </button>
           ))}
         </div>
-        {!resultado && <p className="micro" style={{ margin: '8px 0 0' }}>Guarda el diagnóstico para poder elegir la línea.</p>}
+        {!resultado && !soloLectura && <p className="micro" style={{ margin: '8px 0 0' }}>Guarda el diagnóstico para poder elegir la línea.</p>}
       </div>
 
-      <div className="fila-botones" style={{ marginTop: 20 }}>
-        <button type="button" className="boton boton-secundario boton-movil crece" onClick={onGuardar} disabled={guardando}>
-          Guardar avance
-        </button>
-        <button type="button" className="boton boton-movil crece" onClick={onEnviar} disabled={guardando}>
-          Guardar y enviar
-        </button>
-      </div>
+      {!soloLectura && (
+        <div className="fila-botones" style={{ marginTop: 20 }}>
+          <button type="button" className="boton boton-secundario boton-movil crece" onClick={onGuardar} disabled={guardando}>
+            Guardar avance
+          </button>
+          <button type="button" className="boton boton-movil crece" onClick={onEnviar} disabled={guardando}>
+            Guardar y enviar
+          </button>
+        </div>
+      )}
       {resultado && (
         <button type="button" className="boton boton-secundario boton-movil boton-ancho"
                 style={{ marginTop: 8 }} onClick={onGenerarPdf}>

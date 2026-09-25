@@ -197,9 +197,26 @@ export default function Programar() {
       return volver();
     }
 
+    // Un diagnóstico vigente por prospecto (la base tampoco admite un
+    // segundo): si ya hay uno, se avisa en vez de dejar que falle el insert.
+    if (fila.es_diagnostico) {
+      const { data: previo } = await supabase.from('controles').select('id')
+        .eq('prospecto_id', fila.prospecto_id).eq('es_diagnostico', true).neq('estado', 'anulado')
+        .limit(1);
+      if (previo?.length) {
+        setGuardando(false);
+        return setError('Este prospecto ya tiene un diagnóstico. Ábrelo desde su tarjeta en el Pipeline.');
+      }
+    }
+
     const { data: nuevo, error: e1 } = await supabase
       .from('controles').insert(fila).select().single();
-    if (e1) { setGuardando(false); return setError(e1.message); }
+    if (e1) {
+      setGuardando(false);
+      return setError(e1.code === '23505'
+        ? 'Este prospecto ya tiene un diagnóstico. Ábrelo desde su tarjeta en el Pipeline.'
+        : e1.message);
+    }
 
     /* Los puntos se copian con su texto, su categoría y su tipo de ingreso. Se
      * copian y no se referencian: si la plantilla cambia el mes que viene, este
