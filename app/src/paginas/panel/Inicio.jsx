@@ -222,12 +222,10 @@ export default function Inicio() {
               <span aria-hidden="true">›</span>
             </Link>
 
-            {/* Equipo y clientes viven en su propia pantalla, alcanzable
-                también desde la capa de entrada junto a CRM y Operación. */}
-            <Link to="/configuracion" className="acceso">
-              <span>Configuración</span>
-              <span aria-hidden="true">›</span>
-            </Link>
+            {/* Configuración no va acá: ya es su propia tarjeta en la capa de
+                entrada, al mismo nivel que CRM y Operación. Repetirla adentro
+                de Operación la volvería a mezclar con esa área en vez de
+                dejarla aparte. Se llega con "Cambiar de área". */}
           </div>
         )}
 
