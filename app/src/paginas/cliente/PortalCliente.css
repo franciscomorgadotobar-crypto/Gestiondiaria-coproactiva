@@ -214,6 +214,14 @@
   .portal-kpi strong { font-size: 1.8rem; }
 }
 
+/* Escritorio: las actividades en rejilla, no una tarjeta por fila estirada a
+   todo el ancho. La línea de tiempo se lee de arriba abajo: va acotada. */
+@media (min-width: 900px) {
+  .portal-lista { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; }
+  .portal-comunidades { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .portal-timeline { max-width: 760px; }
+}
+
 @media (max-width: 520px) {
   .portal-cuerpo { padding-left: 14px; padding-right: 14px; }
   .portal-resumen { gap: 6px; }

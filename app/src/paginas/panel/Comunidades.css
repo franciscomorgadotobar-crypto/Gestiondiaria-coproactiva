@@ -43,3 +43,11 @@
 .comunidad-ejecucion { display: grid; gap: 3px; margin-top: 10px; padding: 9px 10px; border-left: 2px solid currentColor; opacity: .8; }
 .comunidades-alertas { margin-bottom: 18px; }
 .comunidad-alerta-link { display: grid; gap: 3px; color: inherit; text-decoration: none; }
+
+/* Escritorio: más de dos comunidades por fila, buscador y formularios a un
+   ancho de lectura en vez de cruzar toda la pantalla. */
+@media (min-width: 900px) {
+  .comunidades-buscador { max-width: 480px; }
+  .comunidades-lista { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .comunidad-form { max-width: 760px; }
+}

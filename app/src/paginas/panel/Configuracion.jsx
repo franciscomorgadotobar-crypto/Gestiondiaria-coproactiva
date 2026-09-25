@@ -28,18 +28,22 @@ export default function Configuracion() {
       </header>
 
       <div className="cuerpo">
-        {esAdministracion && (
-          <Link to="/equipo" className="acceso">
-            <span>Equipo y permisos</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-        )}
-        {esSuperadmin && (
-          <Link to="/clientes" className="acceso">
-            <span>Clientes y accesos</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-        )}
+        <div className="rejilla">
+          {esAdministracion && (
+            <Link to="/equipo" className="tarjeta tarjeta-enlace">
+              <span className="seleccion-area-etiqueta">Equipo</span>
+              <h2 className="h4">Equipo y permisos</h2>
+              <p className="chico apagado">Quién entra, con qué rol y qué comunidades ve.</p>
+            </Link>
+          )}
+          {esSuperadmin && (
+            <Link to="/clientes" className="tarjeta tarjeta-enlace">
+              <span className="seleccion-area-etiqueta">Portal</span>
+              <h2 className="h4">Clientes y accesos</h2>
+              <p className="chico apagado">Cuentas de clientes y lo que puede consultar cada uno.</p>
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

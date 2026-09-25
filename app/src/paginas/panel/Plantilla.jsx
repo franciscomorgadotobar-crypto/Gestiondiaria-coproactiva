@@ -214,7 +214,7 @@ export default function EditorPlantilla() {
   if (!plantilla) return <p className="cargando">Cargando…</p>;
 
   return (
-    <div className="pantalla">
+    <div className="pantalla pantalla-angosta">
       {porConfirmar && (
         <Confirmar
           titulo="Hay cambios sin guardar"

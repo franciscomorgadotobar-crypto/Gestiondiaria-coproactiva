@@ -83,6 +83,7 @@ export default function Inicio() {
 
   const pendientes = controles?.filter(c => c.estado !== 'enviado' && c.estado !== 'anulado') ?? [];
   const cerrados = controles?.filter(c => c.estado === 'enviado') ?? [];
+  const hayMapa = Boolean(controles?.some(c => c.checkin_lat != null));
 
   // La campana es del usuario, no del panel: alguien en terreno ve en esta
   // pantalla el trabajo de toda su comunidad —para poder cubrir a un
@@ -169,13 +170,12 @@ export default function Inicio() {
         </div>
       </header>
 
-      <div className="cuerpo">
+      <div className={'cuerpo inicio-cuerpo' + (hayMapa ? ' con-mapa' : '')}>
         {error && <div className="aviso aviso-critico">{error}</div>}
 
-        {/* El mapa primero: antes de saber cuánto falta, importa dónde está. */}
-        {controles?.some(c => c.checkin_lat != null) && (
-          <MapaPrevio controles={controles} />
-        )}
+        {/* El mapa primero: antes de saber cuánto falta, importa dónde está.
+            En escritorio pasa al costado del trabajo del día. */}
+        {hayMapa && <MapaPrevio controles={controles} />}
 
         {/* Resumen de los últimos 30 días */}
         {resumen && (
@@ -229,6 +229,7 @@ export default function Inicio() {
           </div>
         )}
 
+        <div className="inicio-trabajo">
         <div className="grupo-titulo" id="por-hacer">
           <span className="etiqueta-grupo">Por hacer</span>
         </div>
@@ -269,6 +270,7 @@ export default function Inicio() {
             ))}
           </>
         )}
+        </div>
       </div>
     </div>
   );

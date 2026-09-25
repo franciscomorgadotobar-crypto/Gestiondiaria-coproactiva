@@ -528,7 +528,7 @@ export default function Levantamiento() {
   const cerrado = control.estado === 'enviado' || control.estado === 'anulado';
 
   return (
-    <div className="pantalla">
+    <div className="pantalla pantalla-angosta">
       <AvisoConexion />
 
       <header className="encabezado">

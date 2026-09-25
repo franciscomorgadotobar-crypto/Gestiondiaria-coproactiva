@@ -262,7 +262,7 @@ export default function DiagnosticoComercial({ id }) {
   const indicePaso = pasos.indexOf(paso);
 
   return (
-    <div className="pantalla">
+    <div className="pantalla pantalla-angosta">
       <header className="encabezado">
         <button className="boton boton-texto" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar('/pipeline')}>
           ‹ Pipeline
@@ -337,7 +337,7 @@ function PasoContexto({ prospecto, items, respuestas, onResponder }) {
           <ResumenDato etiqueta="Contacto" valor={prospecto.nombre_contacto ? `${prospecto.nombre_contacto}${prospecto.cargo_contacto ? ' · ' + prospecto.cargo_contacto : ''}` : '—'} />
         </div>
       </div>
-      <div className="diag-lista">
+      <div className="diag-lista diag-lista-doble">
         {items.map(it => <ItemFormulario key={it.id} item={it} valor={respuestas[it.id]} onResponder={onResponder} />)}
       </div>
     </section>
@@ -381,7 +381,7 @@ function PasoInstalaciones({ items, respuestas, onResponder }) {
     <section className="diag-seccion">
       <h2 className="h4" style={{ marginTop: 0 }}>Instalaciones y equipamiento</h2>
       <p className="chico apagado">Marca todo lo que tiene el edificio — determina qué ítems aplican en el diagnóstico.</p>
-      <div className="diag-lista">
+      <div className="diag-lista diag-lista-doble">
         {items.map(it => (
           <label key={it.id} className={'diag-toggle' + (respuestas[it.id] ? ' on' : '')}>
             <input type="checkbox" checked={Boolean(respuestas[it.id])} onChange={e => onResponder(it.id, e.target.checked)} />

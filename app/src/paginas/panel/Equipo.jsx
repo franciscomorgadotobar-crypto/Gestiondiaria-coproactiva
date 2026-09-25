@@ -266,6 +266,7 @@ export default function Equipo() {
           </label>
         )}
 
+        <div className="rejilla rejilla-personas">
         {gente?.filter(p => mostrarInactivos || p.activo).map(persona => {
           const desplegada = abierto === persona.id;
           const mias = asignaciones[persona.id] ?? [];
@@ -277,7 +278,7 @@ export default function Equipo() {
 
           return (
             <article key={persona.id}
-                     className={'tarjeta persona' + (persona.activo ? '' : ' inactiva')}>
+                     className={'tarjeta persona' + (persona.activo ? '' : ' inactiva') + (desplegada ? ' abierta' : '')}>
               <button type="button" className="cabecera" aria-expanded={desplegada}
                       onClick={() => setAbierto(desplegada ? null : persona.id)}>
                 <span className="crece">
@@ -358,6 +359,7 @@ export default function Equipo() {
             </article>
           );
         })}
+        </div>
       </div>
     </div>
   );
@@ -372,7 +374,7 @@ function Alta({ comunidades, esSuperadmin, correoListo, onCrear, onCancelar }) {
   const necesitaComunidades = datos.rol !== 'superadmin';
 
   return (
-    <div className="tarjeta" style={{ padding: 16, marginBottom: 16 }}>
+    <div className="tarjeta formulario-acotado" style={{ padding: 16, marginBottom: 16 }}>
       <h2 className="h4" style={{ margin: '0 0 14px' }}>Agregar persona</h2>
 
       <div className="campo">

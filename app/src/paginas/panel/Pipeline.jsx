@@ -202,10 +202,8 @@ export default function Pipeline() {
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
   }
 
-  const lista = porEtapa.get(etapa) ?? [];
-
   return (
-    <div className="pantalla">
+    <div className="pantalla pantalla-ancha">
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
@@ -254,14 +252,28 @@ export default function Pipeline() {
 
         {prospectos === null && !error && <p className="cargando">Cargando…</p>}
 
+        {/* En el teléfono se ve una etapa a la vez, elegida con las pestañas.
+            En escritorio se ven todas lado a lado, como un tablero. */}
         {prospectos !== null && (
-          <div className="pipeline-lista">
-            {lista.length === 0 && <p className="vacio">No hay prospectos en esta etapa.</p>}
-            {lista.map(p => (
-              <TarjetaProspecto key={p.id} p={p} equipo={equipo} guardando={guardando}
-                                 onEditar={() => abrirEdicion(p)}
-                                 onCambiarEtapa={nuevaEtapa => cambiarEtapa(p, nuevaEtapa)} />
-            ))}
+          <div className="pipeline-tablero">
+            {ETAPAS.map(([clave, texto]) => {
+              const deEtapa = porEtapa.get(clave) ?? [];
+              return (
+                <section key={clave} aria-label={texto}
+                         className={'pipeline-columna' + (etapa === clave ? ' activa' : '')}>
+                  <header className="pipeline-columna-cabecera">
+                    <span>{texto}</span>
+                    <span className="pipeline-tab-contador">{deEtapa.length}</span>
+                  </header>
+                  {deEtapa.length === 0 && <p className="vacio">No hay prospectos en esta etapa.</p>}
+                  {deEtapa.map(p => (
+                    <TarjetaProspecto key={p.id} p={p} equipo={equipo} guardando={guardando}
+                                      onEditar={() => abrirEdicion(p)}
+                                      onCambiarEtapa={nuevaEtapa => cambiarEtapa(p, nuevaEtapa)} />
+                  ))}
+                </section>
+              );
+            })}
           </div>
         )}
       </div>

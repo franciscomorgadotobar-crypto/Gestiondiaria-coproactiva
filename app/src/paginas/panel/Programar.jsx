@@ -212,7 +212,7 @@ export default function Programar() {
 
   const enviado = control?.estado === 'enviado';
   return (
-    <div className="pantalla">
+    <div className="pantalla pantalla-angosta">
       <header className="encabezado">
         <div className="fila" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
@@ -238,7 +238,8 @@ export default function Programar() {
           </div>
         )}
 
-        <div className="campo">
+        <div className="formulario-grid">
+        <div className="campo ancho-total">
           <label className="etiqueta-campo" htmlFor="destino">A quién corresponde</label>
           <select id="destino" value={datos.destino}
                   onChange={e => setDatos({ ...datos, destino: e.target.value })}>
@@ -315,6 +316,7 @@ export default function Programar() {
           <label className="etiqueta-campo" htmlFor="periodo">Periodo</label>
           <input id="periodo" type="text" value={datos.periodo} placeholder="Septiembre 2026"
                  onChange={e => setDatos({ ...datos, periodo: e.target.value })} />
+        </div>
         </div>
 
         <button className="boton boton-movil boton-ancho" style={{ marginTop: 8 }}

@@ -9,3 +9,20 @@
 .cliente-admin-bloque { display: block; margin-top: 3px; }
 .cliente-admin-plantillas { display: grid; gap: 8px; margin: 13px 0 0 26px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,.1); }
 .cliente-admin-check-secundario { font-size: .88rem; }
+
+/* Escritorio: el cliente y sus acciones a la izquierda, lo que ve a la
+   derecha, en vez de una sola columna de comunidades de lado a lado. */
+@media (min-width: 900px) {
+  .clientes-layout {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+  .clientes-lado { position: sticky; top: 24px; }
+  .clientes-lado .boton-ancho { width: 100%; }
+  .cliente-admin-cabecera { flex-wrap: wrap; }
+  .clientes-detalle .cliente-admin-seccion { margin-top: 0; }
+  .clientes-detalle .cliente-admin-seccion > .h4 { margin-top: 0; }
+  .cliente-admin-lista { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); align-items: start; }
+}

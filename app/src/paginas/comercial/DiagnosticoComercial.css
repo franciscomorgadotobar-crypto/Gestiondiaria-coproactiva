@@ -75,3 +75,12 @@
   .diag-datos-prospecto { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .diag-lineas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* Escritorio: los datos y las instalaciones son campos cortos; en dos
+   columnas no se estiran de lado a lado. Las áreas quedan en una columna:
+   cada ítem es una frase larga con su escala. */
+@media (min-width: 900px) {
+  .diag-lista-doble { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; align-items: start; }
+  .diag-lista-doble .campo { margin-bottom: 0; }
+  .diag-pasos { flex-wrap: wrap; overflow: visible; }
+}

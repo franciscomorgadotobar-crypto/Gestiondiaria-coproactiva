@@ -111,8 +111,9 @@ export default function Plantillas() {
           <p className="vacio">Todavía no hay plantillas.</p>
         )}
 
+        <div className="rejilla">
         {plantillas?.map(p => (
-          <article key={p.id} className="tarjeta" style={{ padding: 16, marginBottom: 12 }}>
+          <article key={p.id} className="tarjeta" style={{ padding: 16 }}>
             <div className="fila" style={{ marginBottom: 6 }}>
               <span className="etiqueta-campo crece" style={{ margin: 0 }}>
                 {p.comunidades?.nombre ?? 'Catálogo estándar'}
@@ -149,9 +150,10 @@ export default function Plantillas() {
             )}
           </article>
         ))}
+        </div>
 
         {puedeEditar && (
-          <button className="boton boton-movil boton-ancho" style={{ marginTop: 8 }}
+          <button className="boton boton-movil boton-ancho" style={{ marginTop: 20 }}
                   onClick={crear}>
             Nueva plantilla
           </button>

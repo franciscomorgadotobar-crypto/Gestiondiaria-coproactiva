@@ -238,6 +238,8 @@ export default function Clientes() {
           </div>
         )}
 
+        <div className="clientes-layout">
+        <div className="clientes-lado">
         {agregando ? (
           <AltaCliente
             correoListo={correoListo}
@@ -278,7 +280,6 @@ export default function Clientes() {
         </div>
 
         {usuario && (
-          <>
             <section className="cliente-admin-cabecera tarjeta">
               <div>
                 <strong>{usuario.nombre}</strong>
@@ -296,7 +297,11 @@ export default function Clientes() {
                 </button>
               </div>
             </section>
+        )}
+        </div>
 
+        <div className="clientes-detalle">
+        {usuario && (
             <section className="cliente-admin-seccion">
               <h2 className="h4">Comunidades autorizadas</h2>
               <p className="chico apagado">
@@ -338,8 +343,9 @@ export default function Clientes() {
                 })}
               </div>
             </section>
-          </>
         )}
+        </div>
+        </div>
       </div>
     </div>
   );
