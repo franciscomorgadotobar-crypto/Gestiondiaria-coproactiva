@@ -355,7 +355,19 @@ const RPC = {
     { id: 'doc3', referencia_id: null, titulo: 'Respaldo fotográfico mantención ascensor', nombre_archivo: 'respaldo-ascensor.jpg',
       tipo_mime: 'image/jpeg', url: null, fecha: hace(8), origen: 'Mantención' }
   ],
-  asignar_rol_cliente: (p) => { registrar('rpc', 'asignar_rol_cliente', p); return null; }
+  asignar_rol_cliente: (p) => { registrar('rpc', 'asignar_rol_cliente', p); return null; },
+  // Lo mínimo de la función del servidor: liga una comunidad nueva y pasa a Ganado.
+  ganar_prospecto: ({ p_prospecto_id }) => {
+    const p = TABLAS.prospectos.find(x => x.id === p_prospecto_id);
+    if (!p) return null;
+    if (!p.comunidad_id) {
+      const id = crypto.randomUUID();
+      TABLAS.comunidades.push({ id, nombre: p.nombre_condominio, direccion: p.direccion, comuna: p.comuna });
+      p.comunidad_id = id;
+    }
+    p.etapa = 'ganado';
+    return p.comunidad_id;
+  }
 };
 
 export const supabase = {

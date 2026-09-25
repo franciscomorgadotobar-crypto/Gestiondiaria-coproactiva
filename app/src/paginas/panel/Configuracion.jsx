@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 
@@ -11,6 +11,9 @@ export default function Configuracion() {
 
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
+
+  // Sin nada que configurar (jefatura, terreno), la página quedaba vacía.
+  if (perfil && !esAdministracion) return <Navigate to={inicioSegunArea()} replace />;
 
   return (
     <div className="pantalla">

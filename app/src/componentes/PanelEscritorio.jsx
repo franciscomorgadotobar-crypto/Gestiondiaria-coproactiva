@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
-import { limpiarArea, inicioSegunArea } from '../lib/area';
+import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
 
 function activa(pathname, ruta) {
   return pathname === ruta || pathname.startsWith(ruta + '/');
@@ -39,6 +39,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
 
+  // La barra muestra solo el área en la que se está, igual que en el
+  // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
+  // comunidades y mapa. Para ir a la otra área está "Cambiar de área".
+  const enCRM = !esCliente && puedeConfigurar && areaGuardada() === 'crm';
+  const nombreArea = esCliente ? null : enCRM ? 'CRM' : puedeConfigurar ? 'Operación' : null;
+
   const accesos = esCliente
     ? [
         {
@@ -47,11 +53,13 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           mostrar: true
         }
       ]
-    // El Pipeline no va acá: es exclusivo del CRM, y ya se llega a él
-    // como "Inicio" al elegir esa área. Listarlo también del lado de
-    // Operación mezclaría las dos áreas que la capa de selección separa.
+    : enCRM
+    ? [
+        // "Inicio" es el home del área: en CRM, el Pipeline.
+        { ruta: '/pipeline', etiqueta: 'Inicio', mostrar: true }
+      ]
     : [
-        { ruta: inicioSegunArea(), etiqueta: 'Inicio', mostrar: true },
+        { ruta: '/inicio', etiqueta: 'Inicio', mostrar: true },
         { ruta: '/nuevo', etiqueta: 'Nuevo levantamiento', mostrar: puedeConfigurar },
         { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
         { ruta: '/comunidades', etiqueta: alertasMantencion > 0 ? `Comunidades (${alertasMantencion})` : 'Comunidades', mostrar: true },
@@ -76,6 +84,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           <span>CoproActiva</span>
         </Link>
         <div className="enlaces-lateral">
+          {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
           {accesos.filter(a => a.mostrar).map(a => (
             <Link key={a.ruta} to={a.ruta}
                   className={'enlace-lateral' + (activa(pathname, a.ruta) ? ' activo' : '')}>

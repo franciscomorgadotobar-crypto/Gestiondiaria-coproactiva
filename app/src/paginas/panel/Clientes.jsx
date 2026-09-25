@@ -54,13 +54,15 @@ export default function Clientes() {
     const [rp, rc, rt] = await Promise.all([
       supabase.from('perfiles').select('id, nombre, email, rol, activo').eq('rol', 'cliente').order('nombre'),
       supabase.from('comunidades').select('id, nombre, comuna').order('nombre'),
-      supabase.from('plantillas_control').select('id, nombre, activa').eq('activa', true).order('nombre')
+      supabase.from('plantillas_control').select('id, nombre, activa, codigo').eq('activa', true).order('nombre')
     ]);
     const fallo = [rp, rc, rt].find(r => r.error)?.error;
     if (fallo) return setError(fallo.message);
     setPerfiles(rp.data ?? []);
     setComunidades(rc.data ?? []);
-    setPlantillas(rt.data ?? []);
+    // El diagnóstico comercial es previo a ganar la comunidad y de uso
+    // interno: un cliente nunca lo ve, así que no se ofrece como permiso.
+    setPlantillas((rt.data ?? []).filter(p => p.codigo !== 'diagnostico_comercial'));
     if (!seleccionado && rp.data?.length) setSeleccionado(rp.data[0].id);
   }
 

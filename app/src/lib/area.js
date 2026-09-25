@@ -1,11 +1,23 @@
 /* Qué área eligió el usuario al entrar: 'crm' o 'operacion'. Se guarda en
  * este navegador para no preguntar cada vez que inicia sesión; "Cambiar de
- * área" en el panel la borra y vuelve a mostrar la capa de selección. */
-const CLAVE = 'coproactiva_area';
+ * área" en el panel la borra y vuelve a mostrar la capa de selección.
+ *
+ * Se guarda por usuario: si otra persona inicia sesión en el mismo equipo,
+ * no hereda el área de la anterior. La sesión avisa quién está conectado
+ * (fijarUsuarioArea) antes de dibujar cualquier pantalla que la consulte. */
+const PREFIJO = 'coproactiva_area:';
+let usuario = null;
+
+try { localStorage.removeItem('coproactiva_area'); } catch { /* clave antigua, sin dueño */ }
+
+export function fijarUsuarioArea(id) {
+  usuario = id ?? null;
+}
 
 export function areaGuardada() {
+  if (!usuario) return null;
   try {
-    const v = localStorage.getItem(CLAVE);
+    const v = localStorage.getItem(PREFIJO + usuario);
     return v === 'crm' || v === 'operacion' ? v : null;
   } catch {
     return null;
@@ -13,11 +25,13 @@ export function areaGuardada() {
 }
 
 export function guardarArea(area) {
-  try { localStorage.setItem(CLAVE, area); } catch { /* modo privado, etc. */ }
+  if (!usuario) return;
+  try { localStorage.setItem(PREFIJO + usuario, area); } catch { /* modo privado, etc. */ }
 }
 
 export function limpiarArea() {
-  try { localStorage.removeItem(CLAVE); } catch { /* modo privado, etc. */ }
+  if (!usuario) return;
+  try { localStorage.removeItem(PREFIJO + usuario); } catch { /* modo privado, etc. */ }
 }
 
 /* A dónde vuelve "Inicio" según el área elegida: el Pipeline si se está en

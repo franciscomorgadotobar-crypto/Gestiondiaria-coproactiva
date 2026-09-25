@@ -16,6 +16,9 @@ import { guardarArea } from '../lib/area';
 export default function SeleccionArea() {
   const { perfil, salir } = useSesion();
   const navegar = useNavigate();
+  // Equipo y Clientes son de administración: jefatura trabaja CRM y
+  // Operación, pero no tiene nada que configurar ahí.
+  const puedeConfigurar = ['superadmin', 'admin'].includes(perfil?.rol);
 
   function elegir(area) {
     guardarArea(area);
@@ -37,7 +40,7 @@ export default function SeleccionArea() {
           ¿En qué área vas a trabajar?
         </p>
 
-        <div className="seleccion-area-grid">
+        <div className={'seleccion-area-grid' + (puedeConfigurar ? '' : ' dos')}>
           <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => elegir('crm')}>
             <span className="seleccion-area-etiqueta">CRM</span>
             <h2 className="h4" style={{ margin: '6px 0 4px' }}>Gestión comercial</h2>
@@ -54,13 +57,15 @@ export default function SeleccionArea() {
             </p>
           </button>
 
-          <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => navegar('/configuracion')}>
-            <span className="seleccion-area-etiqueta">Ajustes</span>
-            <h2 className="h4" style={{ margin: '6px 0 4px' }}>Configuración</h2>
-            <p className="chico apagado" style={{ margin: 0 }}>
-              Equipo y clientes.
-            </p>
-          </button>
+          {puedeConfigurar && (
+            <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => navegar('/configuracion')}>
+              <span className="seleccion-area-etiqueta">Ajustes</span>
+              <h2 className="h4" style={{ margin: '6px 0 4px' }}>Configuración</h2>
+              <p className="chico apagado" style={{ margin: 0 }}>
+                Equipo y clientes.
+              </p>
+            </button>
+          )}
         </div>
 
         <p className="micro" style={{ marginTop: 22 }}>

@@ -69,6 +69,7 @@ export default function DiagnosticoComercial({ id }) {
     const { data: c, error: e1 } = await supabase.from('controles').select('*').eq('id', id).maybeSingle();
     if (e1) return setError(e1.message);
     if (!c) return setError('Este diagnóstico no existe o no tienes acceso.');
+    if (!c.prospecto_id) return setError('Este diagnóstico no está ligado a un prospecto del Pipeline.');
     setControl(c);
 
     const [rp, ri, rr] = await Promise.all([
@@ -79,7 +80,11 @@ export default function DiagnosticoComercial({ id }) {
       supabase.from('diagnosticos_resultado').select('*').eq('control_id', id).maybeSingle()
     ]);
     if (ri.error) return setError(ri.error.message);
-    setProspecto(rp.data ?? null);
+    // Sin el prospecto no hay nada que mostrar; antes la pantalla quedaba en
+    // "Cargando…" para siempre (por ejemplo, alguien de terreno sin acceso a
+    // los datos comerciales).
+    if (rp.error || !rp.data) return setError('No tienes acceso al prospecto de este diagnóstico.');
+    setProspecto(rp.data);
     setItems(ri.data ?? []);
     setResultado(rr.data ?? null);
 

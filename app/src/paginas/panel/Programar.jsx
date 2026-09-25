@@ -74,12 +74,15 @@ export default function Programar() {
         const plantillaDiagnostico = prospectoValido
           ? (pla.data ?? []).find(p => p.codigo === 'diagnostico_comercial')
           : null;
+        // El diagnóstico lo hace un superadministrador: si quien lo programa
+        // no lo es, queda sin asignar hasta elegir uno.
+        const puedeHacerlo = !plantillaDiagnostico || perfil?.rol === 'superadmin';
         setDatos(d => ({
           ...d,
           destino: comunidadValida ? `comunidad:${comunidadInicial}`
             : prospectoValido ? `prospecto:${prospectoInicial}` : d.destino,
           plantilla_id: plantillaDiagnostico?.id ?? d.plantilla_id,
-          responsable_id: perfil?.id ?? '',
+          responsable_id: puedeHacerlo ? (perfil?.id ?? '') : '',
           periodo: mesEnCurso()
         }));
         return;
@@ -107,6 +110,37 @@ export default function Programar() {
     })();
   }, [id, comunidadInicial, prospectoInicial, perfil?.id]);
 
+  const tipoDestino = datos.destino.split(':')[0];
+  const esDiagnostico = plantillas.find(p => p.id === datos.plantilla_id)?.codigo === 'diagnostico_comercial';
+
+  // El diagnóstico comercial es la visita a un prospecto antes de ganarlo: no
+  // se ofrece para una comunidad ya administrada.
+  const plantillasDisponibles = tipoDestino === 'comunidad'
+    ? plantillas.filter(p => p.codigo !== 'diagnostico_comercial' || p.id === datos.plantilla_id)
+    : plantillas;
+
+  // Y lo hace un superadministrador: terreno no ve los datos comerciales del
+  // prospecto, y admin y jefatura lo programan pero no lo ejecutan.
+  const responsablesDisponibles = equipo
+    // Los dados de baja no se ofrecen, pero si uno es el responsable
+    // actual sigue en la lista: sacarlo dejaría el campo vacío y al
+    // guardar se perdería la asignación sin que nadie lo pidiera.
+    .filter(p => p.activo || p.id === datos.responsable_id)
+    .filter(p => !esDiagnostico || p.rol === 'superadmin' || p.id === datos.responsable_id);
+
+  function cambiarDestino(destino) {
+    const plantilla = plantillas.find(p => p.id === datos.plantilla_id);
+    const quitarPlantilla = destino.startsWith('comunidad:') && plantilla?.codigo === 'diagnostico_comercial';
+    setDatos({ ...datos, destino, plantilla_id: quitarPlantilla ? '' : datos.plantilla_id });
+  }
+
+  function cambiarPlantilla(plantilla_id) {
+    const diag = plantillas.find(p => p.id === plantilla_id)?.codigo === 'diagnostico_comercial';
+    const responsable = equipo.find(p => p.id === datos.responsable_id);
+    const quitarResponsable = diag && responsable && responsable.rol !== 'superadmin';
+    setDatos({ ...datos, plantilla_id, responsable_id: quitarResponsable ? '' : datos.responsable_id });
+  }
+
   function mesEnCurso() {
     const d = new Date();
     const mes = d.toLocaleDateString('es-CL', { month: 'long' });
@@ -122,6 +156,13 @@ export default function Programar() {
   async function guardar() {
     if (!datos.destino) return setError('Elige a qué comunidad o prospecto corresponde.');
     if (!editando && !datos.plantilla_id) return setError('Elige una plantilla.');
+    if (esDiagnostico && tipoDestino !== 'prospecto') {
+      return setError('El diagnóstico comercial se hace sobre un prospecto del Pipeline, no sobre una comunidad.');
+    }
+    if (esDiagnostico && datos.responsable_id
+        && equipo.find(p => p.id === datos.responsable_id)?.rol !== 'superadmin') {
+      return setError('El diagnóstico comercial solo lo puede hacer un superadministrador.');
+    }
 
     setGuardando(true);
     setError(null);
@@ -242,7 +283,7 @@ export default function Programar() {
         <div className="campo ancho-total">
           <label className="etiqueta-campo" htmlFor="destino">A quién corresponde</label>
           <select id="destino" value={datos.destino}
-                  onChange={e => setDatos({ ...datos, destino: e.target.value })}>
+                  onChange={e => cambiarDestino(e.target.value)}>
             <option value="">Elegir…</option>
             {comunidades.length > 0 && (
               <optgroup label="Comunidades administradas">
@@ -272,9 +313,9 @@ export default function Programar() {
         <div className="campo">
           <label className="etiqueta-campo" htmlFor="plantilla">Plantilla</label>
           <select id="plantilla" value={datos.plantilla_id} disabled={editando}
-                  onChange={e => setDatos({ ...datos, plantilla_id: e.target.value })}>
+                  onChange={e => cambiarPlantilla(e.target.value)}>
             <option value="">Elegir…</option>
-            {plantillas.map(p => (
+            {plantillasDisponibles.map(p => (
               <option key={p.id} value={p.id}>
                 {p.nombre} ({p.plantilla_items?.[0]?.count ?? 0} puntos)
               </option>
@@ -293,17 +334,17 @@ export default function Programar() {
           <select id="responsable" value={datos.responsable_id}
                   onChange={e => setDatos({ ...datos, responsable_id: e.target.value })}>
             <option value="">Sin asignar</option>
-            {equipo
-              // Los dados de baja no se ofrecen, pero si uno es el responsable
-              // actual sigue en la lista: sacarlo dejaría el campo vacío y al
-              // guardar se perdería la asignación sin que nadie lo pidiera.
-              .filter(p => p.activo || p.id === datos.responsable_id)
-              .map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre} — {p.rol}{p.activo ? '' : ' (inactivo)'}
-                </option>
-              ))}
+            {responsablesDisponibles.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.nombre} — {p.rol}{p.activo ? '' : ' (inactivo)'}
+              </option>
+            ))}
           </select>
+          {esDiagnostico && (
+            <p className="micro apagado" style={{ margin: '5px 0 0' }}>
+              El diagnóstico comercial solo lo hace un superadministrador.
+            </p>
+          )}
         </div>
 
         <div className="campo">

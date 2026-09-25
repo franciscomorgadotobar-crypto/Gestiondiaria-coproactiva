@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
+import { fijarUsuarioArea } from './area';
 
 const Contexto = createContext(null);
 
@@ -24,6 +25,9 @@ export function ProveedorSesion({ children }) {
 
     async function aplicar(s) {
       setSesion(s);
+      // Antes que el perfil: al dibujarse, las pantallas consultan el área
+      // guardada de este usuario, no la de quien usó el equipo antes.
+      fijarUsuarioArea(s?.user?.id);
       if (!s) {
         setPerfil(null);
         setCargando(false);

@@ -367,6 +367,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+  .enlaces-lateral > .etiqueta-lateral:first-child { margin-top: 0; }
 
   .usuario-lateral { padding-top: 14px; border-top: 1px solid var(--borde-suave); }
 
@@ -1083,6 +1084,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 }
 @media (min-width: 720px) {
   .seleccion-area-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .seleccion-area-grid.dos { grid-template-columns: 1fr 1fr; }
 }
 .seleccion-area-opcion {
   /* Un <button> centra su contenido en vertical; en la fila de tres, la

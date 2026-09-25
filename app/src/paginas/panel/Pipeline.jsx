@@ -186,17 +186,18 @@ export default function Pipeline() {
 
     setGuardando(true);
     setError(null);
-    const { data: comunidad, error: errorComunidad } = await supabase.from('comunidades')
-      .insert({ nombre: p.nombre_condominio, direccion: p.direccion, comuna: p.comuna })
-      .select().single();
-    if (errorComunidad) {
+    // Un solo paso en el servidor (ganar_prospecto): crea la comunidad, la
+    // liga, pasa el prospecto a Ganado y asigna la comunidad a quien lo ganó y
+    // al responsable. Hecho desde el navegador solo funcionaba para el
+    // superadmin: jefatura no puede crear comunidades y un admin no veía la
+    // que acababa de crear.
+    const { error: errorGanar } = await supabase.rpc('ganar_prospecto', { p_prospecto_id: p.id });
+    if (errorGanar) {
       setGuardando(false);
-      return setError(errorComunidad.message);
+      return setError(errorGanar.message);
     }
 
-    const { data, error } = await supabase.from('prospectos')
-      .update({ etapa: 'ganado', comunidad_id: comunidad.id, fecha_ultima_interaccion: new Date().toISOString() })
-      .eq('id', p.id).select().single();
+    const { data, error } = await supabase.from('prospectos').select('*').eq('id', p.id).single();
     setGuardando(false);
     if (error || !data) return setError(error?.message || 'No se pudo actualizar el prospecto.');
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
