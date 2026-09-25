@@ -255,9 +255,14 @@ function consulta(tabla) {
       if (opciones?.count) pedirConteo = true;
       return api;
     },
+    // Una fila sin la columna vale para cualquier valor: los puntos del
+    // levantamiento de ejemplo (ITEMS) no traen control_id y sirven a todas
+    // las visitas; los del diagnóstico sí lo traen y quedan solo en el suyo.
+    // Antes se miraba solo la primera fila, y según el orden de la tabla el
+    // levantamiento normal recibía también las preguntas del diagnóstico.
     eq: (columna, valor) => {
-      if (filas.length && columna in (filas[0] ?? {})) {
-        filas = filas.filter(f => f[columna] === valor);
+      if (filas.some(f => columna in f)) {
+        filas = filas.filter(f => !(columna in f) || f[columna] === valor);
       }
       return api;
     },
