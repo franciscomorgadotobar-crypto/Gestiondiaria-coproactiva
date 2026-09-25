@@ -209,10 +209,8 @@ export default function Inicio() {
               <span aria-hidden="true">+</span>
             </Link>
 
-            {/* Plantillas, equipo y clientes viven en su propia pantalla:
-                un enlace directo, no un acordeón a expandir. */}
-            <Link to="/configuracion" className="acceso">
-              <span>Configuración</span>
+            <Link to="/plantillas" className="acceso">
+              <span>Plantillas</span>
               <span aria-hidden="true">›</span>
             </Link>
 
@@ -221,6 +219,13 @@ export default function Inicio() {
                 resuelve el resto del inicio. */}
             <Link to="/comunidades" className="acceso">
               <span>Comunidades</span>
+              <span aria-hidden="true">›</span>
+            </Link>
+
+            {/* Equipo y clientes viven en su propia pantalla, alcanzable
+                también desde la capa de entrada junto a CRM y Operación. */}
+            <Link to="/configuracion" className="acceso">
+              <span>Configuración</span>
               <span aria-hidden="true">›</span>
             </Link>
           </div>

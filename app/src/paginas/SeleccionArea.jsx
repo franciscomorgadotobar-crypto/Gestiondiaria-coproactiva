@@ -58,7 +58,7 @@ export default function SeleccionArea() {
             <span className="seleccion-area-etiqueta">Ajustes</span>
             <h2 className="h4" style={{ margin: '6px 0 4px' }}>Configuración</h2>
             <p className="chico apagado" style={{ margin: 0 }}>
-              Plantillas, equipo y clientes.
+              Equipo y clientes.
             </p>
           </button>
         </div>

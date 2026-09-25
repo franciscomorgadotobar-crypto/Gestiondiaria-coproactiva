@@ -53,14 +53,15 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     : [
         { ruta: inicioSegunArea(), etiqueta: 'Inicio', mostrar: true },
         { ruta: '/nuevo', etiqueta: 'Nuevo levantamiento', mostrar: puedeConfigurar },
+        { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
         { ruta: '/comunidades', etiqueta: alertasMantencion > 0 ? `Comunidades (${alertasMantencion})` : 'Comunidades', mostrar: true },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true }
       ];
 
-  // Se tocan poco y no son trabajo del día: agrupados bajo "Configuración",
-  // igual que en el acordeón del celular.
+  // Equipo y clientes se tocan poco y no son trabajo del día: agrupados
+  // bajo "Configuración", igual que la tercera tarjeta de la capa de
+  // entrada. Plantillas no va acá: es del día a día de Operación.
   const configuracion = esCliente ? [] : [
-    { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
     { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: esAdministracion },
     { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
   ];
