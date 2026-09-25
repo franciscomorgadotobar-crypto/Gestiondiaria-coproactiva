@@ -117,6 +117,27 @@ export default function Clientes() {
     setPerfiles(xs => xs.map(x => x.id === usuario.id ? { ...x, rol: 'cliente', activo: true } : x));
   }
 
+  /* No se borra a nadie, ni siquiera a un cliente: se da de baja, igual que
+   * en Equipo. Borrar la cuenta perdería qué comunidades y levantamientos
+   * podía ver, y esa historia importa aunque ya no tenga acceso. */
+  async function cambiarEstado() {
+    if (!usuario) return;
+    if (usuario.activo && !confirm(
+      `"${usuario.nombre}" quedará sin acceso al portal. Sus comunidades y accesos asignados no se pierden: se puede reactivar después.`
+    )) return;
+
+    setGuardando(true);
+    setError(null);
+    try {
+      await servidor({ accion: usuario.activo ? 'baja' : 'alta', id: usuario.id });
+      setPerfiles(xs => xs.map(x => x.id === usuario.id ? { ...x, activo: !x.activo } : x));
+      setAviso(usuario.activo
+        ? `${usuario.nombre} quedó fuera. Su sesión se cerró en todos sus dispositivos.`
+        : `${usuario.nombre} puede volver a entrar.`);
+    } catch (e) { setError(e.message); }
+    setGuardando(false);
+  }
+
   async function reenviarAcceso() {
     if (!usuario) return;
     if (!confirm(
@@ -287,11 +308,15 @@ export default function Clientes() {
                 </button>
               )}
               {usuario.rol === 'cliente' && (
-                <div className="fila" style={{ gap: 8 }}>
-                  <span className="cliente-admin-chip">Cliente</span>
+                <div className="fila" style={{ gap: 8, flexWrap: 'wrap' }}>
+                  <span className="cliente-admin-chip">{usuario.activo ? 'Cliente' : 'Inactivo'}</span>
                   <button type="button" className="boton boton-secundario" disabled={guardando || !usuario.activo}
                           onClick={reenviarAcceso}>
                     Reenviar acceso
+                  </button>
+                  <button type="button" className="boton boton-secundario" disabled={guardando}
+                          onClick={cambiarEstado}>
+                    {usuario.activo ? 'Dar de baja' : 'Reactivar'}
                   </button>
                 </div>
               )}
