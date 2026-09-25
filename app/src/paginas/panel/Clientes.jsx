@@ -150,9 +150,14 @@ export default function Clientes() {
           <label className="etiqueta-campo" htmlFor="usuario-cliente">Usuario</label>
           <select id="usuario-cliente" value={seleccionado} onChange={e => setSeleccionado(e.target.value)}>
             <option value="">Elegir…</option>
-            {perfiles.filter(p => p.id !== perfil?.id).map(p => (
-              <option key={p.id} value={p.id}>{p.nombre} — {p.rol}{p.activo ? '' : ' (inactivo)'}</option>
-            ))}
+            {perfiles
+              // Un dado de baja no se ofrece para convertir en Cliente. Pero
+              // si ya es Cliente sigue en la lista aunque esté inactivo: acá
+              // es donde se gestiona y reactiva su acceso al portal.
+              .filter(p => p.id !== perfil?.id && (p.activo || p.rol === 'cliente' || p.id === seleccionado))
+              .map(p => (
+                <option key={p.id} value={p.id}>{p.nombre} — {p.rol}{p.activo ? '' : ' (inactivo)'}</option>
+              ))}
           </select>
         </div>
 
