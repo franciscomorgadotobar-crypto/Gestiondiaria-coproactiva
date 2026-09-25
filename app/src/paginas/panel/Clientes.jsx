@@ -286,7 +286,7 @@ export default function Clientes() {
                 <div className="micro apagado">{usuario.email}</div>
               </div>
               <div className="fila" style={{ gap: 8, flexWrap: 'wrap' }}>
-                <span className="cliente-admin-chip">{usuario.activo ? 'Cliente' : 'Inactivo'}</span>
+                <span className={'chip' + (usuario.activo ? ' chip-pendiente' : ' chip-pausado')}>{usuario.activo ? 'Cliente' : 'Inactivo'}</span>
                 <button type="button" className="boton boton-secundario" disabled={guardando || !usuario.activo}
                         onClick={reenviarAcceso}>
                   Reenviar acceso

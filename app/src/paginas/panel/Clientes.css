@@ -1,13 +1,12 @@
 .cliente-admin-cabecera { display: flex; gap: 12px; align-items: center; padding: 14px; margin-bottom: 20px; }
 .cliente-admin-cabecera > div:first-child { flex: 1; }
-.cliente-admin-chip { border: 1px solid currentColor; padding: 5px 8px; border-radius: 2px; font-size: .78rem; }
 .cliente-admin-seccion { margin-top: 18px; }
 .cliente-admin-lista { display: grid; gap: 10px; margin-top: 12px; }
 .cliente-admin-comunidad { padding: 14px; }
 .cliente-admin-check { display: flex; gap: 9px; align-items: flex-start; cursor: pointer; }
-.cliente-admin-check input { width: auto; margin-top: 3px; }
+.cliente-admin-check input { width: 18px; height: 18px; flex: none; margin-top: 1px; }
 .cliente-admin-bloque { display: block; margin-top: 3px; }
-.cliente-admin-plantillas { display: grid; gap: 8px; margin: 13px 0 0 26px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,.1); }
+.cliente-admin-plantillas { display: grid; gap: 8px; margin: 13px 0 0 26px; padding-top: 12px; border-top: 1px solid var(--borde-suave); }
 .cliente-admin-check-secundario { font-size: .88rem; }
 
 /* Escritorio: el cliente y sus acciones a la izquierda, lo que ve a la

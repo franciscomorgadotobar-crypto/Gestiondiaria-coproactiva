@@ -1,32 +1,33 @@
 .comunidades-buscador { margin: 0 0 14px; }
 .comunidades-lista { display: grid; gap: 12px; }
 .comunidad-card { display: block; color: inherit; text-decoration: none; }
-.comunidad-card:hover { transform: translateY(-1px); }
+.comunidad-card { transition: border-color .15s ease; }
+.comunidad-card:hover { border-color: var(--naranja); }
 .comunidad-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 7px; }
-.comunidad-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 16px; scrollbar-width: thin; }
-.comunidad-tab { flex: none; border: 1px solid currentColor; background: transparent; opacity: .62; padding: 8px 10px; border-radius: 2px; cursor: pointer; font: inherit; color: inherit; }
-.comunidad-tab.activa { opacity: 1; font-weight: 700; }
 .comunidad-grid { display: grid; gap: 12px; }
 .comunidad-grid-2 { display: grid; gap: 12px; }
-.comunidad-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; }
-.comunidad-kpi { border: 1px solid rgba(0,0,0,.12); padding: 12px 8px; text-align: center; border-radius: 2px; }
-.comunidad-kpi strong { display: block; font-size: 1.45rem; line-height: 1; margin-bottom: 4px; }
 .comunidad-seccion-titulo { display: flex; gap: 10px; align-items: center; margin: 18px 0 10px; }
 .comunidad-seccion-titulo > :first-child { flex: 1; }
-.comunidad-form { border: 1px solid rgba(0,0,0,.12); padding: 14px; margin: 12px 0 16px; border-radius: 2px; }
-.comunidad-form .campo:last-of-type { margin-bottom: 0; }
+.comunidad-form { background: var(--tarjeta); border: 1px solid var(--borde); padding: 14px; margin: 12px 0 16px; border-radius: var(--radio-tarjeta); }
 .comunidad-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .comunidad-sugerencias { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
-.comunidad-sugerencia { font-size: .78rem; padding: 5px 7px; border: 1px solid rgba(0,0,0,.18); background: transparent; color: inherit; cursor: pointer; border-radius: 2px; }
-.comunidad-linea { display: grid; gap: 4px; padding: 11px 0; border-bottom: 1px solid rgba(0,0,0,.09); }
+.comunidad-sugerencia {
+  min-height: 30px; padding: 0 10px;
+  border: 1px solid var(--borde); border-radius: 15px; background: var(--tarjeta);
+  font: 600 10px/1 var(--fuente-display); letter-spacing: 0.06em; color: var(--texto-apagado);
+  cursor: pointer;
+}
+.comunidad-sugerencia:hover { border-color: var(--naranja); color: var(--texto-titulo); }
+.comunidad-linea { display: grid; gap: 4px; padding: 11px 0; border-bottom: 1px solid var(--borde-suave); }
+.comunidad-linea > strong { font: 600 15px/1.3 var(--fuente-display); color: var(--texto-titulo); }
 .comunidad-linea:last-child { border-bottom: 0; }
 .comunidad-linea-cabecera { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
 .comunidad-linea-cabecera > :first-child { flex: 1; min-width: 170px; }
 .comunidad-checks { display: grid; gap: 8px; margin: 8px 0 14px; }
 .comunidad-check { display: flex; gap: 8px; align-items: flex-start; }
-.comunidad-check input { width: auto; margin-top: 3px; }
-.comunidad-alerta { border-left: 3px solid currentColor; padding: 9px 10px; margin-bottom: 8px; }
-.comunidad-alerta.leida { opacity: .55; }
+.comunidad-check input { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.comunidad-alerta { display: block; background: var(--tarjeta); border: 1px solid var(--borde); border-left: 3px solid var(--naranja); border-radius: var(--radio-control); padding: 10px 12px; margin-bottom: 8px; color: var(--texto-cuerpo); }
+.comunidad-alerta.leida { border-left-color: var(--borde); color: var(--texto-tenue); }
 .comunidad-subgrid { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 @media (min-width: 760px) {
@@ -35,12 +36,11 @@
 }
 
 @media (max-width: 520px) {
-  .comunidad-kpis { grid-template-columns: 1fr; }
   .comunidad-subgrid { grid-template-columns: 1fr; }
 }
 .comunidad-documentos { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; }
 .comunidad-documentos a { color: inherit; text-decoration: underline; }
-.comunidad-ejecucion { display: grid; gap: 3px; margin-top: 10px; padding: 9px 10px; border-left: 2px solid currentColor; opacity: .8; }
+.comunidad-ejecucion { display: grid; gap: 3px; margin-top: 10px; padding: 9px 10px; border-left: 2px solid var(--borde); background: var(--papel); color: var(--texto-apagado); }
 .comunidades-alertas { margin-bottom: 18px; }
 .comunidad-alerta-link { display: grid; gap: 3px; color: inherit; text-decoration: none; }
 

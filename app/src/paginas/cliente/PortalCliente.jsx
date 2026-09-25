@@ -97,6 +97,17 @@ function etiquetaEstado(valor) {
   return mapa[normalizarTexto(valor)] ?? valor ?? 'Sin estado';
 }
 
+/* Color del estado: los mismos chips que el panel usa para un levantamiento
+ * (pendiente, en curso, realizado, vencido). */
+function claseEstado(texto) {
+  const t = normalizarTexto(texto);
+  if (['realizado', 'realizada', 'resuelta', 'cerrada'].includes(t)) return ' chip-cumple';
+  if (t === 'en curso') return ' chip-alerta';
+  if (['vencida', 'fecha vencida'].includes(t)) return ' chip-critico';
+  if (['pendiente', 'sin programar'].includes(t)) return ' chip-pendiente';
+  return '';
+}
+
 function urlDocumento(documento) {
   const valor = String(documento?.url ?? '').trim();
   if (/^https?:\/\//i.test(valor) || valor.startsWith('/')) return valor;
@@ -516,7 +527,7 @@ function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = fal
       <div className="portal-actividad-contenido">
         <div className="portal-etiquetas">
           <span className="portal-tipo">{item.tipo}</span>
-          {item.estado && <span className="portal-estado">{item.estado}</span>}
+          {item.estado && <span className={'portal-estado' + claseEstado(item.estado)}>{item.estado}</span>}
         </div>
         <strong className="portal-actividad-titulo">{item.titulo}</strong>
         {mostrarComunidad && <span className="micro portal-comunidad-ref">{item.comunidadNombre}</span>}
@@ -631,9 +642,9 @@ function DetalleCliente({ id }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            <nav className="portal-tabs" aria-label="Secciones de la comunidad">
+            <nav className="pestanas" aria-label="Secciones de la comunidad">
               {TABS.map(([clave, texto]) => (
-                <button key={clave} type="button" className={'portal-tab' + (tab === clave ? ' activa' : '')}
+                <button key={clave} type="button" className={tab === clave ? 'activo' : ''} aria-pressed={tab === clave}
                         onClick={() => cambiarTab(clave)}>
                   {texto}
                 </button>
@@ -723,7 +734,7 @@ function FilaTimeline({ item }) {
           <span className="portal-tipo">{item.tipo}</span>
           <span className="micro apagado">{fechaCL(item.fecha)}</span>
         </div>
-        <strong>{item.titulo}</strong>
+        <strong className="portal-actividad-titulo">{item.titulo}</strong>
         {item.detalle && <p className="micro apagado">{item.detalle}</p>}
         {urlDocumento(item.documento) && (
           <a className="portal-enlace" href={urlDocumento(item.documento)} target="_blank" rel="noreferrer">Abrir PDF</a>
@@ -768,7 +779,7 @@ function TarjetaIncidencia({ incidencia }) {
     <div className={`tarjeta portal-item ${cerrada ? '' : 'portal-item-pendiente'}`}>
       <div className="portal-etiquetas">
         <span className="portal-tipo">Incidencia</span>
-        <span className="portal-estado">{etiquetaEstado(incidencia.estado)}</span>
+        <span className={'portal-estado' + claseEstado(etiquetaEstado(incidencia.estado))}>{etiquetaEstado(incidencia.estado)}</span>
         {incidencia.prioridad && <span className="portal-estado">{incidencia.prioridad}</span>}
       </div>
       <strong className="portal-actividad-titulo">{incidencia.titulo || 'Incidencia'}</strong>
@@ -798,8 +809,8 @@ function LevantamientosComunidad({ vista }) {
             return (
               <div key={l.id} className="tarjeta portal-item">
                 <div className="fila portal-item-cabecera">
-                  <strong className="crece">{l.plantilla_nombre}</strong>
-                  <span className="micro portal-estado">{etiquetaEstado(l.estado)}</span>
+                  <strong className="crece portal-actividad-titulo">{l.plantilla_nombre}</strong>
+                  <span className={'portal-estado' + claseEstado(etiquetaEstado(l.estado))}>{etiquetaEstado(l.estado)}</span>
                 </div>
                 <div className="micro apagado portal-meta">
                   {l.periodo && <span>{l.periodo}</span>}
@@ -824,8 +835,8 @@ function LevantamientosComunidad({ vista }) {
           <div className="portal-lista">
             {vista.requerimientos.filter(r => !r.tiene_agendamiento).map(r => (
               <div key={r.id} className="tarjeta portal-item portal-item-pendiente">
-                <div className="portal-etiquetas"><span className="portal-tipo">Levantamiento</span><span className="portal-estado">Sin programar</span></div>
-                <strong>{r.nombre || r.plantilla_nombre}</strong>
+                <div className="portal-etiquetas"><span className="portal-tipo">Levantamiento</span><span className="portal-estado chip-pendiente">Sin programar</span></div>
+                <strong className="portal-actividad-titulo">{r.nombre || r.plantilla_nombre}</strong>
                 <span className="micro apagado">{r.proxima_exigible ? `Fecha límite: ${fechaCL(r.proxima_exigible)}` : 'Aún sin fecha programada'}</span>
               </div>
             ))}
@@ -850,8 +861,8 @@ function MantencionesComunidad({ vista }) {
             return (
               <div key={m.actividad_id} className={`tarjeta portal-item ${vencida ? 'portal-item-pendiente' : ''}`}>
                 <div className="fila portal-item-cabecera">
-                  <strong className="crece">{m.activo_nombre}</strong>
-                  {m.activo_categoria && <span className="micro portal-estado">{m.activo_categoria}</span>}
+                  <strong className="crece portal-actividad-titulo">{m.activo_nombre}</strong>
+                  {m.activo_categoria && <span className="portal-estado">{m.activo_categoria}</span>}
                 </div>
                 <p className="portal-item-texto">{m.trabajo}</p>
                 <div className="micro apagado portal-meta">

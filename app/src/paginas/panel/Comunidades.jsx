@@ -644,10 +644,10 @@ function DetalleComunidad({ id }) {
       <div className="cuerpo">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
 
-        <div className="comunidad-tabs" role="tablist" aria-label="Secciones de la comunidad">
+        <div className="pestanas" role="tablist" aria-label="Secciones de la comunidad">
           {SECCIONES.map(([clave, nombre]) => (
             <button key={clave} type="button" role="tab" aria-selected={seccion === clave}
-                    className={'comunidad-tab' + (seccion === clave ? ' activa' : '')}
+                    className={seccion === clave ? 'activo' : ''}
                     onClick={() => cambiarSeccion(clave)}>
               {nombre}
             </button>
@@ -1012,10 +1012,10 @@ function Resumen({ controles, activos, actividades, agenda, kpis, notificaciones
 
   return (
     <section>
-      <div className="comunidad-kpis">
-        <div className="comunidad-kpi"><strong>{kpis.porAgendar}</strong><span className="micro">Mantenciones por agendar</span></div>
-        <div className="comunidad-kpi"><strong>{kpis.agendadas}</strong><span className="micro">Mantenciones agendadas</span></div>
-        <div className="comunidad-kpi"><strong>{kpis.pendientes}</strong><span className="micro">Mantenciones pendientes</span></div>
+      <div className="tablero tablero-3">
+        <div><p className="n">{kpis.porAgendar}</p><p className="r">Mantenciones por agendar</p></div>
+        <div><p className="n">{kpis.agendadas}</p><p className="r">Mantenciones agendadas</p></div>
+        <div><p className="n">{kpis.pendientes}</p><p className="r">Mantenciones pendientes</p></div>
       </div>
 
       <div className="comunidad-grid-2">

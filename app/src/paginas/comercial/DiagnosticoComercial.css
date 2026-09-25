@@ -1,75 +1,39 @@
-.diag-pasos {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 0 0 7px;
-  margin-bottom: 18px;
-  scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch;
-}
-.diag-paso {
-  flex: none;
-  min-height: 40px;
-  border: 1px solid rgba(0,0,0,.2);
-  background: transparent;
-  opacity: .6;
-  padding: 7px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font: inherit;
-  font-size: .8rem;
-  color: inherit;
-  white-space: nowrap;
-}
-.diag-paso.hecho { opacity: .85; border-color: rgba(0,0,0,.35); }
-.diag-paso.activo { opacity: 1; font-weight: 750; border-width: 2px; }
+/* El diagnóstico usa los componentes del levantamiento (pestañas, selector,
+   marcas, tablero, pasos). Acá solo va lo que es propio de su disposición. */
 
-.diag-seccion { margin-bottom: 24px; }
+.diag-seccion { margin-bottom: 8px; }
+.diag-bloque { margin-top: 24px; }
 .diag-lista { display: grid; gap: 10px; }
+.diag-lista > .punto { margin-top: 0; }
 
-.diag-datos-prospecto { display: grid; gap: 8px; margin-top: 10px; }
-.diag-resumen-dato { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px; align-items: baseline; }
+.diag-prospecto { padding: 14px; margin-bottom: 16px; }
+.diag-datos-prospecto { display: grid; gap: 12px; margin-top: 12px; }
+.diag-datos-prospecto .etiqueta-campo { margin-bottom: 3px; }
+.diag-dato { color: var(--texto-titulo); font-weight: 600; }
 
-.diag-toggle {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-control);
-  background: var(--tarjeta);
-  cursor: pointer;
-}
-.diag-toggle.on { border-color: var(--naranja); background: var(--hover); }
-.diag-toggle input { flex: none; width: 18px; height: 18px; }
+/* Cuatro respuestas en vez de las tres de un levantamiento: un poco menos de
+   espaciado para que "No cumple" quepa en una línea en el teléfono. */
+.diag-lista .selector button { padding: 0 4px; letter-spacing: 0.06em; white-space: nowrap; }
 
-.diag-item { padding: 14px; }
-.diag-item-texto { line-height: 1.4; }
-.diag-escala { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-.diag-escala-boton {
-  padding: 8px 4px;
-  border-radius: 6px;
-  border: 1.5px solid var(--borde);
-  background: var(--tarjeta);
-  font: inherit;
-  font-size: .72rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.diag-escala-boton.activo { border-color: var(--pizarra); background: var(--pizarra); color: #fff; }
+.diag-marca { margin-bottom: 14px; }
+.diag-marcas { padding: 6px 14px; }
+
+/* "Estable con observaciones" no cabe en la cifra grande del tablero. */
+.diag-tablero .n.texto { font-size: 14px; line-height: 1.2; }
 
 .diag-lineas { display: grid; gap: 10px; }
 .diag-linea {
   display: grid;
-  gap: 4px;
-  text-align: left;
+  gap: 6px;
+  align-content: start;
   padding: 14px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
   cursor: pointer;
-  border-width: 1px;
 }
-.diag-linea.sugerida { border-color: var(--naranja); }
-.diag-linea.seleccionada { border-width: 2px; background: var(--hover); }
-.diag-linea:disabled { cursor: default; opacity: .6; }
+.diag-linea[aria-pressed='true'] { border-color: var(--naranja); box-shadow: inset 0 0 0 1px var(--naranja); }
+.diag-linea:disabled { cursor: default; }
 
 @media (min-width: 560px) {
   .diag-datos-prospecto { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -80,7 +44,8 @@
    columnas no se estiran de lado a lado. Las áreas quedan en una columna:
    cada ítem es una frase larga con su escala. */
 @media (min-width: 900px) {
-  .diag-lista-doble { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; align-items: start; }
+  .diag-lista-doble { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; align-items: start; }
   .diag-lista-doble .campo { margin-bottom: 0; }
-  .diag-pasos { flex-wrap: wrap; overflow: visible; }
+  .diag-lista-doble .diag-marca { margin-bottom: 0; align-self: end; }
+  .lista-marcas.diag-marcas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
 }

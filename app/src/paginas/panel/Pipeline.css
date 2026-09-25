@@ -1,41 +1,4 @@
-.pipeline-tabs {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 0 0 7px;
-  margin-bottom: 16px;
-  scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch;
-}
-.pipeline-tab {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 42px;
-  border: 1px solid rgba(0,0,0,.22);
-  background: transparent;
-  opacity: .68;
-  padding: 8px 11px;
-  border-radius: 4px;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-  white-space: nowrap;
-}
-.pipeline-tab.activa { opacity: 1; font-weight: 750; border-width: 2px; }
-.pipeline-tab-contador {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.08);
-  font-size: .7rem;
-  font-weight: 700;
-}
+/* Las pestañas de etapa son las del sistema (.pestanas, en base.css). */
 
 /* Teléfono: solo la columna de la pestaña elegida, sin su cabecera. */
 .pipeline-tablero { display: grid; gap: 12px; }
@@ -84,6 +47,16 @@
     letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--texto-suave);
+  }
+  .pipeline-columna-cabecera .contador {
+    min-width: 18px;
+    padding: 3px 5px;
+    border-radius: 9px;
+    background: var(--niebla);
+    font: 700 9.5px/1 var(--fuente-display);
+    letter-spacing: 0;
+    color: var(--texto-apagado);
+    text-align: center;
   }
   .pipeline-columna .vacio { margin: 0; padding: 14px 4px; font-size: 12.5px; }
 

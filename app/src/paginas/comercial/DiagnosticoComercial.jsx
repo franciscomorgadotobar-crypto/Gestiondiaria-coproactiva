@@ -31,11 +31,13 @@ const WP = { c: 3, i: 2, b: 1 };
 // muestra junto a cada ítem.
 const ETIQUETA_PESO = { 3: 'Crítico', 2: 'Importante', 1: 'Básico' };
 
+// `clase` es el color del botón marcado en el selector del sistema (el mismo de
+// Conforme / Observa / Crítico en un levantamiento).
 const ESCALA_4 = [
-  { valor: 0, etiqueta: 'No cumple' },
-  { valor: 0.25, etiqueta: 'No sabe' },
-  { valor: 0.5, etiqueta: 'Parcial' },
-  { valor: 1, etiqueta: 'Cumple' }
+  { valor: 0, etiqueta: 'No cumple', clase: 'critico' },
+  { valor: 0.25, etiqueta: 'No sabe', clase: 'neutro' },
+  { valor: 0.5, etiqueta: 'Parcial', clase: 'observacion' },
+  { valor: 1, etiqueta: 'Cumple', clase: 'cumple' }
 ];
 
 const LINEAS = {
@@ -150,7 +152,7 @@ export default function DiagnosticoComercial({ id }) {
       if (peso === 3 && (v === 0 || v === 0.25)) criticosFallidos += 1;
     }
     if (possible === 0) return null;
-    return { pct: Math.round((earned / possible) * 100), criticosFallidos, evaluados: itemsArea.filter(it => respuestas[it.id] !== undefined).length, total: itemsArea.length };
+    return { pct: Math.round((earned / possible) * 100), criticosFallidos, evaluados: itemsArea.filter(it => respuestas[it.id] != null).length, total: itemsArea.length };
   }
 
   const diagnostico = useMemo(() => {
@@ -247,6 +249,13 @@ export default function DiagnosticoComercial({ id }) {
     }
   }
 
+  // Al cambiar de paso, la pestaña activa queda a la vista (en el teléfono la
+  // fila se desplaza) y la página vuelve al inicio del paso, no al pie del
+  // anterior.
+  useEffect(() => {
+    document.querySelector('.pestanas .activo')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [paso]);
+
   if (error) {
     return (
       <div className="pantalla">
@@ -261,16 +270,40 @@ export default function DiagnosticoComercial({ id }) {
   const pasos = ['contexto', 'instalaciones', ...AREAS.map(a => a.id), 'revision'];
   const indicePaso = pasos.indexOf(paso);
 
+  // Avance: puntos de las áreas que aplican a este edificio, respondidos.
+  const evaluables = AREAS.filter(areaAplica).flatMap(a => (porGrupo.get(a.id) ?? []).filter(itemAplica));
+  const evaluados = evaluables.filter(it => respuestas[it.id] != null).length;
+  const pct = evaluables.length ? Math.round((evaluados / evaluables.length) * 100) : 0;
+
+  function areaCompleta(p) {
+    const area = AREAS.find(a => a.id === p);
+    if (!area || !areaAplica(area)) return false;
+    const s = scoreArea(area);
+    return Boolean(s && s.evaluados === s.total);
+  }
+
   return (
     <div className="pantalla pantalla-angosta">
       <header className="encabezado">
-        <button className="boton boton-texto" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar('/pipeline')}>
-          ‹ Pipeline
-        </button>
-        <h1 className="h3">Diagnóstico comercial</h1>
-        <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-          {prospecto.nombre_condominio}{prospecto.comuna ? ` · ${prospecto.comuna}` : ''}
+        <div className="fila" style={{ marginBottom: 8 }}>
+          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
+                  onClick={() => navegar('/pipeline')}>
+            ‹ Pipeline
+          </button>
+          <span className="crece" />
+          {control.estado === 'enviado' && <span className="chip chip-cumple">Enviado</span>}
+        </div>
+        <h1 className="h3">{prospecto.nombre_condominio}</h1>
+        <p className="chico apagado" style={{ margin: '3px 0 12px' }}>
+          Diagnóstico comercial{prospecto.comuna ? ` · ${prospecto.comuna}` : ''}
         </p>
+        <div className="fila" style={{ marginBottom: 5 }}>
+          <span className="etiqueta-campo crece" style={{ margin: 0 }}>Avance</span>
+          <span className="etiqueta-campo" style={{ margin: 0, color: 'var(--texto-titulo)' }}>
+            {evaluados} de {evaluables.length}
+          </span>
+        </div>
+        <div className="barra"><div style={{ width: pct + '%' }} /></div>
       </header>
 
       <div className="cuerpo">
@@ -278,9 +311,11 @@ export default function DiagnosticoComercial({ id }) {
           <div className="aviso" style={{ marginBottom: 14 }}>Este diagnóstico ya fue enviado. Los cambios se siguen guardando si lo editas.</div>
         )}
 
-        <nav className="diag-pasos" aria-label="Pasos del diagnóstico">
-          {pasos.map((p, i) => (
-            <button key={p} type="button" className={'diag-paso' + (p === paso ? ' activo' : '') + (i < indicePaso ? ' hecho' : '')}
+        <nav className="pestanas" aria-label="Pasos del diagnóstico">
+          {pasos.map(p => (
+            <button key={p} type="button"
+                    className={(p === paso ? 'activo' : '') + (areaCompleta(p) ? ' completo' : '')}
+                    aria-current={p === paso ? 'step' : undefined}
                     onClick={() => setPaso(p)}>
               {etiquetaPaso(p)}
             </button>
@@ -307,29 +342,44 @@ export default function DiagnosticoComercial({ id }) {
                         onElegirLinea={cambiarLineaElegida} onGenerarPdf={generarPdf} />
         )}
 
-        <div className="fila-botones" style={{ marginTop: 20 }}>
+        {/* La misma navegación entre puntos de un levantamiento. */}
+        <nav className="pasos" aria-label={`Paso ${indicePaso + 1} de ${pasos.length}`} style={{ marginTop: 20 }}>
           <button type="button" className="boton boton-secundario" disabled={indicePaso === 0}
-                  onClick={() => setPaso(pasos[indicePaso - 1])}>← Anterior</button>
-          {indicePaso < pasos.length - 1 && (
-            <button type="button" className="boton" onClick={() => setPaso(pasos[indicePaso + 1])}>Siguiente →</button>
-          )}
-        </div>
+                  onClick={() => setPaso(pasos[indicePaso - 1])}>
+            ‹ Anterior
+          </button>
+          <div className="conteo"><span>{indicePaso + 1} de {pasos.length}</span></div>
+          <button type="button" className="boton"
+                  style={indicePaso === pasos.length - 1 ? { visibility: 'hidden' } : undefined}
+                  onClick={() => setPaso(pasos[indicePaso + 1])}>
+            Siguiente ›
+          </button>
+        </nav>
       </div>
     </div>
   );
 }
 
 function etiquetaPaso(p) {
-  const mapa = { contexto: 'Datos', instalaciones: 'Instal.', revision: 'Revisión' };
+  const mapa = { contexto: 'Datos', instalaciones: 'Instalaciones', revision: 'Revisión' };
   return mapa[p] ?? AREAS.find(a => a.id === p)?.label ?? p;
+}
+
+function TituloPaso({ children, extra }) {
+  return (
+    <div className="fila" style={{ marginBottom: 10 }}>
+      <h2 className="etiqueta-grupo crece" style={{ margin: 0 }}>{children}</h2>
+      {extra}
+    </div>
+  );
 }
 
 function PasoContexto({ prospecto, items, respuestas, onResponder }) {
   return (
     <section className="diag-seccion">
-      <h2 className="h4" style={{ marginTop: 0 }}>Datos de la comunidad</h2>
-      <div className="tarjeta" style={{ padding: 14, marginBottom: 16 }}>
-        <p className="micro apagado" style={{ margin: 0 }}>Estos datos vienen del prospecto y se editan desde el Pipeline.</p>
+      <TituloPaso>Datos de la comunidad</TituloPaso>
+      <div className="tarjeta diag-prospecto">
+        <p className="micro" style={{ margin: 0 }}>Estos datos vienen del prospecto y se editan desde el Pipeline.</p>
         <div className="diag-datos-prospecto">
           <ResumenDato etiqueta="Condominio" valor={prospecto.nombre_condominio} />
           <ResumenDato etiqueta="Dirección" valor={[prospecto.direccion, prospecto.comuna].filter(Boolean).join(', ') || '—'} />
@@ -349,8 +399,8 @@ function ItemFormulario({ item, valor, onResponder }) {
     const opciones = item.config?.opciones ?? [];
     return (
       <div className="campo">
-        <label className="etiqueta-campo">{item.texto}</label>
-        <select value={valor ?? ''} onChange={e => onResponder(item.id, e.target.value || undefined)}>
+        <label className="etiqueta-campo" htmlFor={'diag-' + item.id}>{item.texto}</label>
+        <select id={'diag-' + item.id} value={valor ?? ''} onChange={e => onResponder(item.id, e.target.value || undefined)}>
           <option value="">Sin definir</option>
           {opciones.map(o => <option key={o.valor} value={o.valor}>{o.etiqueta}</option>)}
         </select>
@@ -360,16 +410,20 @@ function ItemFormulario({ item, valor, onResponder }) {
   if (item.tipo_ingreso === 'numero') {
     return (
       <div className="campo">
-        <label className="etiqueta-campo">{item.texto}</label>
-        <input type="number" min={item.config?.min ?? 0} value={valor ?? ''}
-               onChange={e => onResponder(item.id, e.target.value === '' ? undefined : Number(e.target.value))} />
-        {item.config?.hint && <span className="micro apagado">{item.config.hint}</span>}
+        <label className="etiqueta-campo" htmlFor={'diag-' + item.id}>{item.texto}</label>
+        <div className="campo-medida">
+          <input id={'diag-' + item.id} type="number" inputMode="numeric" min={item.config?.min ?? 0} value={valor ?? ''}
+                 placeholder="0"
+                 onChange={e => onResponder(item.id, e.target.value === '' ? undefined : Number(e.target.value))} />
+          {item.config?.unidad && <span className="unidad">{item.config.unidad}</span>}
+        </div>
+        {item.config?.hint && <span className="micro">{item.config.hint}</span>}
       </div>
     );
   }
   // 'estado' con escala si_no: usado para segPrivada en contexto.
   return (
-    <label className={'diag-toggle' + (valor ? ' on' : '')}>
+    <label className={'marca diag-marca' + (valor ? ' activa' : '')}>
       <input type="checkbox" checked={Boolean(valor)} onChange={e => onResponder(item.id, e.target.checked)} />
       <span>{item.texto}</span>
     </label>
@@ -379,11 +433,13 @@ function ItemFormulario({ item, valor, onResponder }) {
 function PasoInstalaciones({ items, respuestas, onResponder }) {
   return (
     <section className="diag-seccion">
-      <h2 className="h4" style={{ marginTop: 0 }}>Instalaciones y equipamiento</h2>
-      <p className="chico apagado">Marca todo lo que tiene el edificio — determina qué ítems aplican en el diagnóstico.</p>
-      <div className="diag-lista diag-lista-doble">
+      <TituloPaso>Instalaciones y equipamiento</TituloPaso>
+      <p className="micro" style={{ margin: '-4px 0 10px' }}>
+        Marca lo que tiene el edificio: define qué puntos aplican en el diagnóstico.
+      </p>
+      <div className="tarjeta lista-marcas diag-marcas">
         {items.map(it => (
-          <label key={it.id} className={'diag-toggle' + (respuestas[it.id] ? ' on' : '')}>
+          <label key={it.id} className={'marca' + (respuestas[it.id] ? ' activa' : '')}>
             <input type="checkbox" checked={Boolean(respuestas[it.id])} onChange={e => onResponder(it.id, e.target.checked)} />
             <span>{it.texto}</span>
           </label>
@@ -400,7 +456,7 @@ function PasoArea({ area, items, respuestas, notas, setNotas, itemAplica, areaAp
   if (!aplica) {
     return (
       <section className="diag-seccion">
-        <h2 className="h4" style={{ marginTop: 0 }}>{area.label}</h2>
+        <TituloPaso>{area.label}</TituloPaso>
         <div className="vacio">Esta comunidad no tiene personal contratado, por lo que el área {area.label} no se evalúa.</div>
       </section>
     );
@@ -408,32 +464,37 @@ function PasoArea({ area, items, respuestas, notas, setNotas, itemAplica, areaAp
 
   return (
     <section className="diag-seccion">
-      <div className="fila" style={{ marginBottom: 4 }}>
-        <h2 className="h4 crece" style={{ margin: 0 }}>{area.label}</h2>
-        {score && <span className="chip chip-tipo">{score.pct}% · {score.evaluados}/{score.total} evaluados</span>}
-      </div>
+      <TituloPaso extra={score && <span className="chip">{score.pct}% · {score.evaluados} de {score.total}</span>}>
+        {area.label}
+      </TituloPaso>
       <div className="diag-lista">
-        {items.filter(itemAplica).map(it => (
-          <div key={it.id} className="tarjeta diag-item">
-            <div className="fila" style={{ alignItems: 'flex-start', marginBottom: 8 }}>
-              <p className="diag-item-texto crece" style={{ margin: 0 }}>{it.texto}</p>
-              <span className="micro apagado">{ETIQUETA_PESO[it.config?.peso] ?? ''}</span>
-            </div>
-            <div className="diag-escala">
-              {ESCALA_4.map(o => (
-                <button key={o.valor} type="button"
-                        className={'diag-escala-boton' + (respuestas[it.id] === o.valor ? ' activo' : '')}
-                        onClick={() => onResponder(it.id, o.valor)}>
-                  {o.etiqueta}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+        {items.filter(itemAplica).map(it => {
+          const peso = it.config?.peso;
+          return (
+            <article key={it.id} className="tarjeta punto">
+              <div className="fila" style={{ alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+                <p className="crece" style={{ margin: 0 }}>{it.texto}</p>
+                {ETIQUETA_PESO[peso] && (
+                  <span className={'chip' + (peso === 3 ? ' chip-critico' : '')}>{ETIQUETA_PESO[peso]}</span>
+                )}
+              </div>
+              <div className="selector">
+                {ESCALA_4.map(o => (
+                  <button key={o.valor} type="button" className={o.clase}
+                          aria-pressed={respuestas[it.id] === o.valor}
+                          onClick={() => onResponder(it.id, o.valor)}>
+                    {o.etiqueta}
+                  </button>
+                ))}
+              </div>
+            </article>
+          );
+        })}
       </div>
       <div className="campo" style={{ marginTop: 14 }}>
-        <label className="etiqueta-campo">Observaciones del área</label>
-        <textarea value={notas[area.id] ?? ''} onChange={e => setNotas(n => ({ ...n, [area.id]: e.target.value }))} />
+        <label className="etiqueta-campo" htmlFor={'notas-' + area.id}>Observaciones del área</label>
+        <textarea id={'notas-' + area.id} value={notas[area.id] ?? ''}
+                  onChange={e => setNotas(n => ({ ...n, [area.id]: e.target.value }))} />
       </div>
     </section>
   );
@@ -441,9 +502,9 @@ function PasoArea({ area, items, respuestas, notas, setNotas, itemAplica, areaAp
 
 function ResumenDato({ etiqueta, valor }) {
   return (
-    <div className="diag-resumen-dato">
-      <span className="micro apagado">{etiqueta}</span>
-      <strong className="micro">{valor}</strong>
+    <div>
+      <span className="etiqueta-campo">{etiqueta}</span>
+      <span className="chico diag-dato">{valor}</span>
     </div>
   );
 }
@@ -452,13 +513,13 @@ function PasoRevision({ diagnostico, resultado, guardando, onGuardar, onEnviar, 
   const linea = resultado?.linea_elegida ?? diagnostico.linea;
   return (
     <section className="diag-seccion">
-      <h2 className="h4" style={{ marginTop: 0 }}>Revisión</h2>
+      <TituloPaso>Resultado</TituloPaso>
 
-      <div className="tablero">
+      <div className="tablero diag-tablero">
         <div className={diagnostico.globalScore >= 80 ? 'ok' : diagnostico.globalScore >= 50 ? 'alerta' : 'critico'}>
           <p className="n">{diagnostico.globalScore}%</p><p className="r">Puntaje global</p>
         </div>
-        <div><p className="n">{diagnostico.nivel}</p><p className="r">Nivel</p></div>
+        <div><p className="n texto">{diagnostico.nivel}</p><p className="r">Nivel</p></div>
         <div className={diagnostico.hasCritFail ? 'critico' : ''}>
           <p className="n">{diagnostico.hallazgosCriticos.length}</p><p className="r">Hallazgos críticos</p>
         </div>
@@ -466,41 +527,54 @@ function PasoRevision({ diagnostico, resultado, guardando, onGuardar, onEnviar, 
       </div>
 
       {diagnostico.hallazgosCriticos.length > 0 && (
-        <div className="diag-seccion" style={{ marginTop: 0 }}>
-          <h3 className="h4">Hallazgos críticos</h3>
+        <div className="diag-bloque">
+          <TituloPaso>Hallazgos críticos</TituloPaso>
           <div className="diag-lista">
             {diagnostico.hallazgosCriticos.map((h, i) => (
-              <div key={i} className="tarjeta diag-item" style={{ padding: 12 }}>
-                <span className="micro apagado">{h.area}</span>
-                <p className="micro" style={{ margin: '2px 0 0' }}>{h.texto}</p>
+              <div key={i} className="tarjeta punto">
+                <div className="fila" style={{ marginBottom: 6 }}>
+                  <span className="etiqueta-campo crece" style={{ margin: 0 }}>{h.area}</span>
+                  <span className={'chip' + (h.tipo === 'no_cumple' ? ' chip-critico' : '')}>
+                    {h.tipo === 'no_cumple' ? 'No cumple' : 'No sabe'}
+                  </span>
+                </div>
+                <p className="chico" style={{ margin: 0 }}>{h.texto}</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="diag-seccion" style={{ marginTop: 0 }}>
-        <h3 className="h4">Línea sugerida</h3>
+      <div className="diag-bloque">
+        <TituloPaso>Línea de servicio</TituloPaso>
         <div className="diag-lineas">
           {Object.entries(LINEAS).map(([clave, l]) => (
-            <button key={clave} type="button"
-                    className={'tarjeta diag-linea' + (linea === clave ? ' seleccionada' : '') + (diagnostico.linea === clave ? ' sugerida' : '')}
+            <button key={clave} type="button" className="tarjeta diag-linea"
+                    aria-pressed={linea === clave}
                     onClick={() => onElegirLinea(clave)} disabled={!resultado}>
-              <strong className="micro">{l.label}{diagnostico.linea === clave ? ' — sugerida' : ''}</strong>
-              <span className="micro apagado">{l.desc}</span>
+              <span className="fila" style={{ gap: 8 }}>
+                <span className="dato-chico crece">{l.label}</span>
+                {diagnostico.linea === clave && <span className="chip chip-pendiente">Sugerida</span>}
+              </span>
+              <span className="micro">{l.desc}</span>
             </button>
           ))}
         </div>
-        {!resultado && <p className="micro apagado" style={{ marginTop: 8 }}>Guarda el diagnóstico para poder elegir la línea.</p>}
+        {!resultado && <p className="micro" style={{ margin: '8px 0 0' }}>Guarda el diagnóstico para poder elegir la línea.</p>}
       </div>
 
-      <div className="fila-botones">
-        <button type="button" className="boton boton-secundario" onClick={onGuardar} disabled={guardando}>Guardar avance</button>
-        <button type="button" className="boton" onClick={onEnviar} disabled={guardando}>Guardar y enviar</button>
+      <div className="fila-botones" style={{ marginTop: 20 }}>
+        <button type="button" className="boton boton-secundario boton-movil crece" onClick={onGuardar} disabled={guardando}>
+          Guardar avance
+        </button>
+        <button type="button" className="boton boton-movil crece" onClick={onEnviar} disabled={guardando}>
+          Guardar y enviar
+        </button>
       </div>
       {resultado && (
-        <button type="button" className="boton boton-texto" style={{ marginTop: 10 }} onClick={onGenerarPdf}>
-          Generar PDF del informe
+        <button type="button" className="boton boton-secundario boton-movil boton-ancho"
+                style={{ marginTop: 8 }} onClick={onGenerarPdf}>
+          Ver informe / Guardar PDF
         </button>
       )}
     </section>

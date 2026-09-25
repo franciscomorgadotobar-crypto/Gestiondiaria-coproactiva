@@ -231,13 +231,14 @@ export default function Pipeline() {
           <div className={perdidos ? 'alerta' : ''}><p className="n">{perdidos}</p><p className="r">Perdidos</p></div>
         </div>
 
-        <nav className="pipeline-tabs" aria-label="Etapas del pipeline">
+        <nav className="pestanas pipeline-tabs" aria-label="Etapas del pipeline">
           {ETAPAS.map(([clave, texto]) => (
             <button key={clave} type="button"
-                    className={'pipeline-tab' + (etapa === clave ? ' activa' : '')}
+                    className={etapa === clave ? 'activo' : ''}
+                    aria-pressed={etapa === clave}
                     onClick={() => setEtapa(clave)}>
               {texto}
-              <span className="pipeline-tab-contador">{porEtapa.get(clave)?.length ?? 0}</span>
+              <span className="contador">{porEtapa.get(clave)?.length ?? 0}</span>
             </button>
           ))}
         </nav>
@@ -263,7 +264,7 @@ export default function Pipeline() {
                          className={'pipeline-columna' + (etapa === clave ? ' activa' : '')}>
                   <header className="pipeline-columna-cabecera">
                     <span>{texto}</span>
-                    <span className="pipeline-tab-contador">{deEtapa.length}</span>
+                    <span className="contador">{deEtapa.length}</span>
                   </header>
                   {deEtapa.length === 0 && <p className="vacio">No hay prospectos en esta etapa.</p>}
                   {deEtapa.map(p => (

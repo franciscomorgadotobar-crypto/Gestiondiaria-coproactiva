@@ -21,6 +21,14 @@ body {
 
 a { color: var(--naranja); text-decoration: none; }
 a:hover { color: var(--pizarra); }
+/* Una tarjeta entera que lleva a otra pantalla no se pinta como enlace: el
+   texto queda como en cualquier tarjeta y el borde marca que se puede tocar. */
+a.tarjeta, a.tarjeta:hover { color: inherit; }
+a.tarjeta { transition: border-color .15s ease; }
+a.tarjeta:hover { border-color: var(--naranja); }
+
+/* Todas las casillas con el naranja de marca, como las del levantamiento. */
+input[type='checkbox'] { accent-color: var(--naranja); }
 
 /* ------------------------------------------------------------ Tipografía */
 
@@ -41,6 +49,15 @@ a:hover { color: var(--pizarra); }
   font: 600 17px/1.35 var(--fuente-display);
   color: var(--texto-titulo);
 }
+/* Título de sección dentro de una pantalla ("Comunidades autorizadas",
+   "Activos", "Requiere atención"). Estaba en uso sin definir: el navegador lo
+   dibujaba como un h2 genérico, en otra tipografía y otro tamaño que el resto. */
+.h4 {
+  margin: 18px 0 10px;
+  font: 600 15px/1.3 var(--fuente-display);
+  color: var(--texto-titulo);
+}
+.h4:first-child { margin-top: 0; }
 .dato {
   font: 300 32px/1.1 var(--fuente-display);
   letter-spacing: -0.02em;
@@ -402,6 +419,7 @@ a:hover { color: var(--pizarra); }
 .selector button.cumple[aria-pressed='true']  { background: var(--ok-fondo);      border-color: var(--ok-borde);      color: var(--ok-texto); }
 .selector button.observacion[aria-pressed='true'] { background: var(--alerta-fondo); border-color: var(--alerta-borde); color: var(--alerta-texto); }
 .selector button.critico[aria-pressed='true'] { background: var(--critico-fondo); border-color: var(--critico-borde); color: var(--critico-texto); }
+.selector button.neutro[aria-pressed='true'] { background: var(--niebla); border-color: var(--texto-tenue); color: var(--texto-titulo); }
 
 /* ------------------------------------------------------------------ Estados */
 
@@ -572,6 +590,7 @@ a:hover { color: var(--pizarra); }
   text-transform: uppercase;
   color: var(--texto-tenue);
 }
+.tablero-3 { grid-template-columns: repeat(3, 1fr); }
 .tablero .ok      { border-top-color: var(--ok-borde); }
 .tablero .alerta  { border-top-color: var(--alerta-borde); }
 .tablero .critico { border-top-color: var(--critico-borde); }
@@ -853,7 +872,22 @@ a:hover { color: var(--pizarra); }
 .pantalla-mapa { display: flex; flex-direction: column; }
 
 .filtros-rango { display: flex; gap: 6px; flex-wrap: wrap; }
-.filtros-rango button {
+
+/* Pestañas: secciones de una misma pantalla (etapas del pipeline, pasos del
+   diagnóstico, secciones de una comunidad o del portal). Tienen el aspecto de
+   los filtros del mapa: un solo tipo de selector en toda la app. En el
+   teléfono la fila se desplaza de lado; en escritorio cabe entera. */
+.pestanas {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.filtros-rango button,
+.pestanas button {
   min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--borde);
@@ -865,10 +899,38 @@ a:hover { color: var(--pizarra); }
   color: var(--texto-apagado);
   cursor: pointer;
 }
-.filtros-rango button.activo {
+.pestanas button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.filtros-rango button.activo,
+.pestanas button.activo {
   background: var(--tinta);
   border-color: var(--tinta);
   color: var(--texto-inverso);
+}
+/* Cantidad dentro de la pestaña (prospectos por etapa, elementos por sección). */
+.pestanas .contador {
+  min-width: 18px;
+  padding: 3px 5px;
+  border-radius: 9px;
+  background: var(--niebla);
+  font: 700 9.5px/1 var(--fuente-display);
+  letter-spacing: 0;
+  color: var(--texto-apagado);
+  text-align: center;
+}
+.pestanas .activo .contador { background: rgba(255, 255, 255, 0.18); color: var(--texto-inverso); }
+/* Sección terminada: el mismo verde de los marcadores del levantamiento. */
+.pestanas button.completo::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok-texto);
 }
 
 /* El mapa ocupa una franja fija y la lista se desplaza debajo. A pantalla
@@ -1156,4 +1218,6 @@ a:hover { color: var(--pizarra); }
     border-left: 1px solid var(--borde);
   }
   .panel-mapa .tablero { grid-template-columns: repeat(2, 1fr); }
+
+  .pestanas { flex-wrap: wrap; overflow: visible; }
 }
