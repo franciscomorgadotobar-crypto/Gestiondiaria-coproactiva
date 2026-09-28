@@ -206,7 +206,16 @@ const TABLAS = {
   // El propio CONTROL entra acá también: es el que abre la pantalla de
   // levantamiento en /control/:id, y esa pantalla consulta esta tabla, no
   // 'controles'.
-  controles_con_avance: [CONTROL, ...VISITAS],
+  // El diagnóstico en curso de Las Palmeras también está en la vista, como en
+  // la base: así aparece en "Por hacer" de Operación además del Pipeline.
+  controles_con_avance: [CONTROL, ...VISITAS, {
+    ...CONTROL, id: CONTROL_DIAGNOSTICO_ID, comunidad_id: null, prospecto_id: PROSPECTO_ID,
+    destino_tipo: 'prospecto', destino_nombre: 'Las Palmeras', destino_direccion: 'Av. Providencia 1234',
+    destino_comuna: 'Providencia', plantilla_nombre: 'Diagnóstico comercial', periodo: null,
+    responsable_id: PERFIL.id, responsable_nombre: PERFIL.nombre, estado: 'en_curso',
+    checkin_en: null, checkin_lat: null, checkin_lng: null, programado_para: null,
+    creado_en: CONTROL_DIAGNOSTICO.creado_en, items_evaluados: 0, items_totales: 63, items_criticos: 0, fotos: 0
+  }],
   control_items: [...ITEMS, ...CONTROL_ITEMS_DIAGNOSTICO],
   control_pausas: [],
   plantillas_control: [
@@ -362,6 +371,11 @@ const RPC = {
       tipo_mime: 'image/jpeg', url: null, fecha: hace(8), origen: 'Mantención' }
   ],
   asignar_rol_cliente: (p) => { registrar('rpc', 'asignar_rol_cliente', p); return null; },
+  crear_comunidad: ({ p_nombre, p_direccion, p_comuna }) => {
+    const id = crypto.randomUUID();
+    TABLAS.comunidades.push({ id, nombre: p_nombre.trim(), direccion: p_direccion || null, comuna: p_comuna || null });
+    return id;
+  },
   // Lo mínimo de la función del servidor: liga una comunidad nueva y pasa a Ganado.
   ganar_prospecto: ({ p_prospecto_id }) => {
     const p = TABLAS.prospectos.find(x => x.id === p_prospecto_id);

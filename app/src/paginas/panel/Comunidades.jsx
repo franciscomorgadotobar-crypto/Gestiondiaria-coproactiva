@@ -168,9 +168,18 @@ export default function Comunidades() {
   return id ? <DetalleComunidad id={id} /> : <ListadoComunidades />;
 }
 
+const COMUNIDAD_VACIA = {
+  nombre: '', direccion: '', comuna: '', unidades: '',
+  contacto_nombre: '', contacto_telefono: '', contacto_email: ''
+};
+
 function ListadoComunidades() {
   const navegar = useNavigate();
   const { perfil } = useSesion();
+  // Igual que ganar un prospecto: lo hacen quienes trabajan el CRM.
+  const puedeCrear = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
+  const [nueva, setNueva] = useState(null);          // null = formulario cerrado
+  const [creando, setCreando] = useState(false);
   const [comunidades, setComunidades] = useState(null);
   const [buscar, setBuscar] = useState('');
   const [error, setError] = useState(null);
@@ -198,6 +207,28 @@ function ListadoComunidades() {
     return () => { vigente = false; };
   }, [perfil?.id]);
 
+  /* Una comunidad que no pasa por el Pipeline (un cliente recomendado, por
+   * ejemplo). La crea la base en un solo paso —crear_comunidad— y deja
+   * asignado a quien la crea: sin eso, un admin no vería la comunidad que
+   * acaba de crear. */
+  async function crearComunidad() {
+    if (!nueva.nombre.trim()) return setError('La comunidad necesita un nombre.');
+    setCreando(true);
+    setError(null);
+    const { data: id, error: e } = await supabase.rpc('crear_comunidad', {
+      p_nombre: nueva.nombre,
+      p_direccion: nueva.direccion,
+      p_comuna: nueva.comuna,
+      p_unidades: nueva.unidades === '' ? null : Number(nueva.unidades),
+      p_contacto_nombre: nueva.contacto_nombre,
+      p_contacto_telefono: nueva.contacto_telefono,
+      p_contacto_email: nueva.contacto_email
+    });
+    setCreando(false);
+    if (e || !id) return setError(e?.message || 'No se pudo crear la comunidad.');
+    navegar(`/comunidades/${id}`);
+  }
+
   const visibles = useMemo(() => {
     const q = normalizar(buscar);
     if (!q) return comunidades ?? [];
@@ -214,14 +245,80 @@ function ListadoComunidades() {
             ‹ Inicio
           </button>
         </div>
-        <h1 className="h3">Comunidades</h1>
-        <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-          Histórico, activos, levantamientos y mantenciones de cada edificio.
-        </p>
+        <div className="fila">
+          <div className="crece">
+            <h1 className="h3">Comunidades</h1>
+            <p className="chico apagado" style={{ margin: '4px 0 0' }}>
+              Histórico, activos, levantamientos y mantenciones de cada edificio.
+            </p>
+          </div>
+          {puedeCrear && !nueva && (
+            <button type="button" className="boton" onClick={() => setNueva(COMUNIDAD_VACIA)}>
+              Nueva comunidad
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="cuerpo">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
+
+        {nueva && (
+          <div className="comunidad-form">
+            <h2 className="h4">Nueva comunidad</h2>
+            <p className="micro" style={{ margin: '-4px 0 12px' }}>
+              Para un cliente que no pasa por el Pipeline. Si viene de un prospecto,
+              márcalo como Ganado ahí: la comunidad se crea sola con sus datos.
+            </p>
+            <div className="formulario-grid">
+              <div className="campo ancho-total">
+                <label className="etiqueta-campo" htmlFor="nueva-nombre">Nombre</label>
+                <input id="nueva-nombre" value={nueva.nombre} autoFocus
+                       onChange={e => setNueva({ ...nueva, nombre: e.target.value })} />
+              </div>
+              <div className="campo">
+                <label className="etiqueta-campo" htmlFor="nueva-direccion">Dirección</label>
+                <input id="nueva-direccion" value={nueva.direccion}
+                       onChange={e => setNueva({ ...nueva, direccion: e.target.value })} />
+              </div>
+              <div className="campo">
+                <label className="etiqueta-campo" htmlFor="nueva-comuna">Comuna</label>
+                <input id="nueva-comuna" value={nueva.comuna}
+                       onChange={e => setNueva({ ...nueva, comuna: e.target.value })} />
+              </div>
+              <div className="campo">
+                <label className="etiqueta-campo" htmlFor="nueva-unidades">Unidades</label>
+                <input id="nueva-unidades" type="number" inputMode="numeric" min="0" value={nueva.unidades}
+                       onChange={e => setNueva({ ...nueva, unidades: e.target.value })} />
+              </div>
+              <div className="campo">
+                <label className="etiqueta-campo" htmlFor="nueva-contacto">Contacto</label>
+                <input id="nueva-contacto" value={nueva.contacto_nombre} placeholder="Nombre"
+                       onChange={e => setNueva({ ...nueva, contacto_nombre: e.target.value })} />
+              </div>
+              <div className="campo">
+                <label className="etiqueta-campo" htmlFor="nueva-telefono">Teléfono</label>
+                <input id="nueva-telefono" type="tel" value={nueva.contacto_telefono}
+                       onChange={e => setNueva({ ...nueva, contacto_telefono: e.target.value })} />
+              </div>
+              <div className="campo">
+                <label className="etiqueta-campo" htmlFor="nueva-correo">Correo</label>
+                <input id="nueva-correo" type="email" value={nueva.contacto_email}
+                       onChange={e => setNueva({ ...nueva, contacto_email: e.target.value })} />
+              </div>
+            </div>
+            <div className="fila-botones">
+              <button type="button" className="boton boton-secundario boton-movil crece"
+                      onClick={() => { setNueva(null); setError(null); }} disabled={creando}>
+                Cancelar
+              </button>
+              <button type="button" className="boton boton-movil crece" onClick={crearComunidad}
+                      disabled={creando || !nueva.nombre.trim()}>
+                {creando ? 'Creando…' : 'Crear comunidad'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {alertas.length > 0 && (
           <section className="comunidades-alertas">

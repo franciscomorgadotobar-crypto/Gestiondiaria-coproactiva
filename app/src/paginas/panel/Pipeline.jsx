@@ -109,6 +109,18 @@ export default function Pipeline() {
   }, [prospectos]);
 
   const activos = (prospectos ?? []).filter(p => p.etapa !== 'ganado' && p.etapa !== 'perdido').length;
+
+  // Diagnósticos por hacer (no enviados) de prospectos vivos, los más
+  // próximos primero. También aparecen en "Por hacer" de Operación: se ven
+  // desde las dos áreas.
+  const diagnosticosPendientes = useMemo(() => {
+    const porId = new Map((prospectos ?? []).map(p => [p.id, p]));
+    return [...diagnosticos.values()]
+      .filter(d => d.control.estado !== 'enviado')
+      .map(d => ({ ...d, prospecto: porId.get(d.control.prospecto_id) }))
+      .filter(d => d.prospecto && d.prospecto.etapa !== 'perdido')
+      .sort((a, b) => (a.control.programado_para ?? '9999').localeCompare(b.control.programado_para ?? '9999'));
+  }, [diagnosticos, prospectos]);
   const ganadosMes = (prospectos ?? []).filter(p => {
     if (p.etapa !== 'ganado' || !p.editado_en) return false;
     const d = new Date(p.editado_en), h = new Date();
@@ -252,6 +264,32 @@ export default function Pipeline() {
           <div className="ok"><p className="n">{ganadosMes}</p><p className="r">Ganados este mes</p></div>
           <div className={perdidos ? 'alerta' : ''}><p className="n">{perdidos}</p><p className="r">Perdidos</p></div>
         </div>
+
+        {diagnosticosPendientes.length > 0 && (
+          <section className="pipeline-pendientes" aria-label="Diagnósticos pendientes">
+            <h2 className="etiqueta-grupo" style={{ margin: '0 0 10px' }}>
+              Diagnósticos pendientes ({diagnosticosPendientes.length})
+            </h2>
+            <div className="rejilla">
+              {diagnosticosPendientes.map(({ control, prospecto }) => {
+                const [clase, texto] = ESTADO_DIAGNOSTICO[control.estado] ?? ESTADO_DIAGNOSTICO.pendiente;
+                const responsable = equipo.find(e => e.id === control.responsable_id);
+                return (
+                  <Link key={control.id} to={`/control/${control.id}`} className="tarjeta pipeline-pendiente">
+                    <div className="fila" style={{ gap: 8 }}>
+                      <strong className="dato-chico crece">{prospecto.nombre_condominio}</strong>
+                      <span className={'chip ' + clase}>{texto}</span>
+                    </div>
+                    <p className="micro" style={{ margin: '4px 0 0' }}>
+                      {responsable ? responsable.nombre : 'Sin asignar'}
+                      {control.programado_para && ` · ${fechaCL(control.programado_para, true)}`}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <nav className="pestanas pipeline-tabs" aria-label="Etapas del pipeline">
           {ETAPAS.map(([clave, texto]) => (
