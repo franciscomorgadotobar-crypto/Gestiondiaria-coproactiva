@@ -73,7 +73,7 @@ export default function Levantamiento() {
       const [rc, ri, rp, ra] = await Promise.all([
         supabase
           .from('controles_con_avance')
-          .select('id, comunidad_id, prospecto_id, estado, periodo, programado_para, checkin_en, checkin_precision, creado_en, reabierto_en, motivo_reapertura, destino_nombre, destino_direccion, destino_comuna, destino_tipo, secuencial, plantilla_nombre')
+          .select('id, comunidad_id, prospecto_id, estado, periodo, programado_para, checkin_en, checkin_precision, creado_en, reabierto_en, motivo_reapertura, destino_nombre, destino_direccion, destino_comuna, destino_tipo, secuencial, plantilla_nombre, responsable_nombre')
           .eq('id', id)
           .maybeSingle(),
         supabase
@@ -464,7 +464,9 @@ export default function Levantamiento() {
         direccion: control.destino_direccion,
         comuna: control.destino_comuna
       },
-      control: { ...control, responsable: perfil?.nombre },
+      // Quien hizo el levantamiento, no quien genera el informe (puede ser
+      // administración revisando el de otra persona).
+      control: { ...control, responsable: control.responsable_nombre ?? perfil?.nombre },
       logo: import.meta.env.BASE_URL + 'logo-coproactiva.svg',
       categorias: categorias.map(c => ({
         nombre: c.nombre,
