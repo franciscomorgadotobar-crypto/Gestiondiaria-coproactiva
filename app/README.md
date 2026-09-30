@@ -63,6 +63,11 @@ notas internas no salen de la app. Las fotos se comprimen en el navegador
 (1600 px y una miniatura de 640 px) y van al bucket público `propiedades`. La
 usan superadmin, admin y jefatura; eliminar es solo de administración.
 
+La sección completa se enciende y apaga desde el listado ("Mostrar en el
+sitio" / "Ocultar del sitio", solo administración; tabla `secciones_sitio`).
+Parte apagada: el sitio no muestra Propiedades en el menú y la base no entrega
+propiedades a la clave pública, aunque estén publicadas.
+
 El diseño sale de `figma/` y usa los mismos valores del generador de propuestas:
 padding 9/10 en campos, 11/12 en botones, tracking .16em en etiquetas, radio 2px.
 No son aproximaciones.

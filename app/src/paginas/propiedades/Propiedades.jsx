@@ -101,6 +101,71 @@ export default function Propiedades() {
   return id ? <FichaPropiedad key={id} id={id} /> : <ListadoPropiedades />;
 }
 
+/* ------------------------------------------------ Sección encendida en el sitio */
+
+/* Si la sección Propiedades se muestra en el sitio (tabla secciones_sitio).
+ * Apagada, el sitio no la muestra en el menú y la base no entrega propiedades
+ * a la clave pública, aunque estén publicadas. null mientras carga, o si la
+ * lectura falla: en ese caso no se muestra nada en vez de un estado inventado. */
+function useSeccionSitio() {
+  const [seccion, setSeccion] = useState(null);
+  useEffect(() => {
+    let vigente = true;
+    supabase.from('secciones_sitio').select('visible, editado_en').eq('seccion', 'propiedades').maybeSingle()
+      .then(({ data, error }) => {
+        if (!vigente) return;
+        if (error) console.error('No se pudo leer si la sección está visible en el sitio:', error.message);
+        setSeccion(data ?? null);
+      });
+    return () => { vigente = false; };
+  }, []);
+  return [seccion, setSeccion];
+}
+
+function SeccionEnSitio({ seccion, setSeccion, puedeCambiar }) {
+  const [cambiando, setCambiando] = useState(false);
+  const [error, setError] = useState(null);
+  if (!seccion) return null;
+  const visible = seccion.visible;
+
+  async function alternar() {
+    if (!window.confirm(visible
+      ? 'Se ocultará Propiedades en coproactiva.cl: sale del menú y nadie verá las propiedades, aunque estén publicadas. ¿Continuar?'
+      : 'Se mostrará Propiedades en coproactiva.cl: aparece en el menú de todo el sitio y se ven las propiedades publicadas. ¿Continuar?'
+    )) return;
+    setCambiando(true);
+    setError(null);
+    const { data, error: e } = await supabase.from('secciones_sitio')
+      .update({ visible: !visible }).eq('seccion', 'propiedades')
+      .select('visible, editado_en').maybeSingle();
+    setCambiando(false);
+    if (e || !data) return setError(e?.message || 'No se pudo cambiar: solo administración puede hacerlo.');
+    setSeccion(data);
+  }
+
+  return (
+    <section className={'tarjeta propiedades-sitio' + (visible ? ' visible' : '')} aria-live="polite">
+      <div className="crece">
+        <strong className="dato-chico">{visible ? 'Visible en el sitio' : 'Oculta en el sitio'}</strong>
+        <p className="micro" style={{ margin: '3px 0 0' }}>
+          {visible
+            ? 'Propiedades aparece en el menú de coproactiva.cl y se ven las publicadas.'
+            : 'coproactiva.cl no muestra Propiedades en el menú ni las propiedades, aunque estén publicadas.'}
+        </p>
+        {error && <p className="mensaje-error" role="alert">{error}</p>}
+      </div>
+      {puedeCambiar
+        ? (
+          <button type="button" className={'boton' + (visible ? ' boton-secundario' : '')}
+                  onClick={alternar} disabled={cambiando}>
+            {cambiando ? 'Guardando…' : visible ? 'Ocultar del sitio' : 'Mostrar en el sitio'}
+          </button>
+        )
+        : <span className="micro">Solo administración puede cambiarlo.</span>}
+    </section>
+  );
+}
+
 /* ------------------------------------------------------------------ Listado */
 
 const FILTROS = [['todas', 'Todas'], ['publicadas', 'Publicadas'], ['sin_publicar', 'Sin publicar']];
@@ -108,6 +173,8 @@ const FILTROS = [['todas', 'Todas'], ['publicadas', 'Publicadas'], ['sin_publica
 function ListadoPropiedades() {
   const [parametros, setParametros] = useSearchParams();
   const operacion = parametros.get('operacion') === 'venta' ? 'venta' : 'arriendo';
+  const { perfil } = useSesion();
+  const [seccion, setSeccion] = useSeccionSitio();
   const [propiedades, setPropiedades] = useState(null);
   const [buscar, setBuscar] = useState('');
   const [filtro, setFiltro] = useState('todas');
@@ -152,9 +219,9 @@ function ListadoPropiedades() {
           <div className="crece">
             <h1 className="h3">Propiedades</h1>
             <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-              Arriendos y ventas del sitio. Lo publicado aparece en{' '}
-              <a href={SITIO} target="_blank" rel="noopener noreferrer">coproactiva.cl/propiedades</a>{' '}
-              apenas se guarda.
+              Arriendos y ventas de{' '}
+              <a href={SITIO} target="_blank" rel="noopener noreferrer">coproactiva.cl/propiedades</a>.
+              Lo publicado se ve apenas se guarda, con la sección visible.
             </p>
           </div>
           <Link to={`/propiedades/nueva${operacion === 'venta' ? '?operacion=venta' : ''}`} className="boton">
@@ -165,6 +232,9 @@ function ListadoPropiedades() {
 
       <div className="cuerpo">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
+
+        <SeccionEnSitio seccion={seccion} setSeccion={setSeccion}
+                        puedeCambiar={['superadmin', 'admin'].includes(perfil?.rol)} />
 
         <div className="pestanas" role="tablist" aria-label="Operación">
           {OPERACIONES.map(([valor, texto]) => (
@@ -314,6 +384,8 @@ function FichaPropiedad({ id = null }) {
   const [parametros] = useSearchParams();
   const { perfil } = useSesion();
   const esAdministracion = ['superadmin', 'admin'].includes(perfil?.rol);
+  const [seccion] = useSeccionSitio();
+  const seccionOculta = seccion?.visible === false;
 
   // Una propiedad nueva parte en la operación de la pestaña desde la que se
   // llegó; una existente espera a cargarse (null).
@@ -532,7 +604,7 @@ function FichaPropiedad({ id = null }) {
               </div>
             )}
           </div>
-          {registro?.publicada && (
+          {registro?.publicada && !seccionOculta && (
             <a className="boton boton-secundario" href={urlSitio(registro.codigo)} target="_blank" rel="noopener noreferrer">
               Ver en el sitio
             </a>
@@ -543,6 +615,12 @@ function FichaPropiedad({ id = null }) {
       <form className="cuerpo" onSubmit={guardar} noValidate>
         {aviso && <div className="propiedad-ok" role="status">{aviso}</div>}
         {error && <div className="aviso aviso-critico" role="alert" style={{ marginBottom: 12 }}>{error}</div>}
+        {seccionOculta && f.publicada && (
+          <div className="aviso" style={{ marginBottom: 12 }}>
+            La sección Propiedades está oculta en el sitio: esta propiedad no se ve hasta que
+            administración la muestre desde el listado de Propiedades.
+          </div>
+        )}
 
         <section className="tarjeta propiedad-seccion">
           <h2 className="h4">Publicación</h2>

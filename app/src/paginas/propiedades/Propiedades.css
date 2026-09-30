@@ -1,3 +1,17 @@
+/* Interruptor de la sección en el sitio: ámbar oculta, verde visible. */
+.propiedades-sitio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--alerta-borde);
+  background: var(--alerta-fondo);
+}
+.propiedades-sitio.visible { border-left-color: var(--ok-texto); background: var(--ok-fondo); }
+.propiedades-sitio .crece { min-width: 220px; }
+
 /* Listado */
 .propiedades-filtros { display: flex; flex-wrap: wrap; gap: 0 12px; align-items: flex-end; }
 .propiedades-filtros .campo { min-width: 170px; }
