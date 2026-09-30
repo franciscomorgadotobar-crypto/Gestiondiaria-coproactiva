@@ -21,6 +21,9 @@ const Mapa = lazy(() => import('./paginas/panel/Mapa'));
 // cargarlo aparte, quien va a terreno con el teléfono también lo bajaría,
 // sin usarlo nunca.
 const PortalCliente = lazy(() => import('./paginas/cliente/PortalCliente'));
+// Propiedades es de administración: quien va a terreno con el teléfono no
+// tiene por qué descargarla.
+const Propiedades = lazy(() => import('./paginas/propiedades/Propiedades'));
 import Despacho from './paginas/terreno/Despacho';
 
 function Privada({ children }) {
@@ -68,6 +71,7 @@ function Entrada() {
 
   const area = areaGuardada();
   if (area === 'crm') return <Navigate to="/pipeline" replace />;
+  if (area === 'propiedades') return <Navigate to="/propiedades" replace />;
   if (area === 'operacion') return <PanelEscritorio><Inicio /></PanelEscritorio>;
   return <SeleccionArea />;
 }
@@ -132,6 +136,16 @@ export default function App() {
           <Suspense fallback={<p className="cargando">Cargando el mapa…</p>}>
             <Mapa />
           </Suspense>
+        </Interna>
+      } />
+      <Route path="/propiedades" element={
+        <Interna>
+          <Suspense fallback={<p className="cargando">Cargando…</p>}><Propiedades /></Suspense>
+        </Interna>
+      } />
+      <Route path="/propiedades/:id" element={
+        <Interna>
+          <Suspense fallback={<p className="cargando">Cargando…</p>}><Propiedades /></Suspense>
         </Interna>
       } />
       <Route path="/nuevo" element={<Interna><Programar /></Interna>} />

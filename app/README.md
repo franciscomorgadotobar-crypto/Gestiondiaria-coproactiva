@@ -52,6 +52,16 @@ es que el build es anterior a las variables.
 | `/ingreso` | Autenticación con correo y contraseña |
 | `/` | Inicio de terreno: controles asignados con su avance |
 | `/control/:id` | Formulario de control con check-in geolocalizado |
+| `/propiedades` | Arriendos y ventas del sitio (área Propiedades) |
+| `/propiedades/nueva`, `/propiedades/:id` | Ficha de una propiedad: datos, fotos y publicación |
+
+**Propiedades alimenta www.coproactiva.cl/propiedades.** El sitio lee la tabla
+`propiedades` directo con la clave pública, así que guardar en la app ya es
+publicar: no hay que volver a subir el sitio. RLS solo le entrega las
+publicadas y sus columnas públicas; propietario, contacto, dirección exacta y
+notas internas no salen de la app. Las fotos se comprimen en el navegador
+(1600 px y una miniatura de 640 px) y van al bucket público `propiedades`. La
+usan superadmin, admin y jefatura; eliminar es solo de administración.
 
 El diseño sale de `figma/` y usa los mismos valores del generador de propuestas:
 padding 9/10 en campos, 11/12 en botones, tracking .16em en etiquetas, radio 2px.

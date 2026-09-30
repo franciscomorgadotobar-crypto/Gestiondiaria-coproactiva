@@ -8,6 +8,12 @@ function activa(pathname, ruta) {
   return pathname === ruta || pathname.startsWith(ruta + '/');
 }
 
+/* El listado de propiedades y la ficha de una cuelgan de /propiedades, igual
+ * que "Nueva propiedad": sin esto las dos entradas se marcaban a la vez. */
+function activaPropiedades(pathname) {
+  return activa(pathname, '/propiedades') && !activa(pathname, '/propiedades/nueva');
+}
+
 /* Recarga completa en vez de navegar: "Cambiar de área" puede apretarse
  * estando ya en "/" (cuando el área es 'operacion', Entrada muestra Inicio
  * ahí mismo), y navegar a la misma ruta en la que ya se está no vuelve a
@@ -41,12 +47,20 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   // La barra muestra solo el área en la que se está, igual que en el
   // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
-  // comunidades y mapa. Para ir a la otra área está "Cambiar de área".
+  // comunidades y mapa; en Propiedades, el listado y el alta. Para ir a otra
+  // área está "Cambiar de área".
   // El Pipeline es del CRM aunque se llegue a él sin haber elegido área
-  // (un enlace directo, por ejemplo).
-  const enCRM = !esCliente && puedeConfigurar
+  // (un enlace directo, por ejemplo). Lo mismo con Propiedades: la ruta
+  // manda sobre el área guardada.
+  const enPropiedades = !esCliente && puedeConfigurar
+    && (activa(pathname, '/propiedades')
+      || (areaGuardada() === 'propiedades' && !activa(pathname, '/pipeline')));
+  const enCRM = !esCliente && puedeConfigurar && !enPropiedades
     && (areaGuardada() === 'crm' || activa(pathname, '/pipeline'));
-  const nombreArea = esCliente ? null : enCRM ? 'CRM' : puedeConfigurar ? 'Operación' : null;
+  const nombreArea = esCliente ? null
+    : enPropiedades ? 'Propiedades'
+    : enCRM ? 'CRM'
+    : puedeConfigurar ? 'Operación' : null;
 
   const accesos = esCliente
     ? [
@@ -55,6 +69,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           etiqueta: alertasMantencion > 0 ? `Mi portal (${alertasMantencion})` : 'Mi portal',
           mostrar: true
         }
+      ]
+    : enPropiedades
+    ? [
+        { ruta: '/propiedades', etiqueta: 'Inicio', mostrar: true, activo: activaPropiedades },
+        { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true }
       ]
     : enCRM
     ? [
@@ -90,7 +109,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
           {accesos.filter(a => a.mostrar).map(a => (
             <Link key={a.ruta} to={a.ruta}
-                  className={'enlace-lateral' + (activa(pathname, a.ruta) ? ' activo' : '')}>
+                  className={'enlace-lateral' + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
               {a.etiqueta}
             </Link>
           ))}

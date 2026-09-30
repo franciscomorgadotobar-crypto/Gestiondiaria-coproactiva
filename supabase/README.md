@@ -12,6 +12,7 @@ Esquema de Supabase (PostgreSQL) para la app de administración de comunidades.
 | `migrations/0004_rls.sql` | Políticas de acceso por rol y por comunidad |
 | `migrations/0005_vistas_security_invoker.sql` | Hace que las vistas respeten RLS |
 | `migrations/0006_endurecer_funciones.sql` | search_path fijo y cierre del acceso anónimo a las funciones |
+| `migrations/0040_propiedades.sql` | Propiedades en arriendo y venta que publica el sitio: anon lee solo las publicadas y sus columnas públicas; bucket público `propiedades` |
 | `seed/0001_prospectos.sql` | Los 9 prospectos reales migrados desde la planilla |
 | `seed/0002_plantilla_estandar.sql` | Checklist mensual estándar y comunidad de prueba |
 

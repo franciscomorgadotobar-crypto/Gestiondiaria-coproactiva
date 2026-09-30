@@ -8,8 +8,10 @@ import { guardarArea } from '../lib/area';
  * vivía "el CRM". Terreno y demás roles sin acceso al CRM nunca ven esta
  * pantalla: van directo a Inicio.
  *
- * La elección de CRM u Operación se guarda en el navegador; "Cambiar de
- * área" en el panel la borra y vuelve a mostrar esta pantalla. Configuración
+ * La elección de CRM, Operación o Propiedades se guarda en el navegador;
+ * "Cambiar de área" en el panel la borra y vuelve a mostrar esta pantalla.
+ * Propiedades es de los mismos roles: las publicaciones de arriendo y venta
+ * del sitio no son trabajo de terreno. Configuración
  * no se guarda como área: no es un modo de trabajo del día a día, es una
  * visita ocasional, así que entrar ahí no cambia a qué área se vuelve
  * después. */
@@ -24,7 +26,8 @@ export default function SeleccionArea() {
     guardarArea(area);
     // Nunca "/": esta pantalla ya está montada ahí, y navegar a la misma
     // ruta en la que se está no vuelve a renderizar nada en React Router.
-    navegar(area === 'crm' ? '/pipeline' : '/inicio', { replace: true });
+    const destino = { crm: '/pipeline', propiedades: '/propiedades' }[area] ?? '/inicio';
+    navegar(destino, { replace: true });
   }
 
   return (
@@ -40,7 +43,9 @@ export default function SeleccionArea() {
           ¿En qué área vas a trabajar?
         </p>
 
-        <div className={'seleccion-area-grid' + (puedeConfigurar ? '' : ' dos')}>
+        {/* Con cuatro tarjetas (administración) la fila de tres dejaba una
+            sola descolgada abajo: van de a dos. Jefatura ve tres. */}
+        <div className={'seleccion-area-grid' + (puedeConfigurar ? ' dos' : '')}>
           <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => elegir('crm')}>
             <span className="seleccion-area-etiqueta">CRM</span>
             <h2 className="h4" style={{ margin: '6px 0 4px' }}>Gestión comercial</h2>
@@ -54,6 +59,14 @@ export default function SeleccionArea() {
             <h2 className="h4" style={{ margin: '6px 0 4px' }}>Operación</h2>
             <p className="chico apagado" style={{ margin: 0 }}>
               Comunidades administradas, levantamientos y mantención.
+            </p>
+          </button>
+
+          <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => elegir('propiedades')}>
+            <span className="seleccion-area-etiqueta">Propiedades</span>
+            <h2 className="h4" style={{ margin: '6px 0 4px' }}>Arriendos y ventas</h2>
+            <p className="chico apagado" style={{ margin: 0 }}>
+              Lo que se publica en coproactiva.cl/propiedades.
             </p>
           </button>
 
