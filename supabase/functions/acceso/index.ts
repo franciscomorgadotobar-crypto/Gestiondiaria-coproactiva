@@ -25,7 +25,7 @@ import { renovacion, enviar, hayCorreo } from '../_compartido/correo.ts';
 const URL_PROYECTO   = Deno.env.get('SUPABASE_URL')!;
 const CLAVE_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const URL_APP = Deno.env.get('URL_APP')
-  ?? 'https://franciscomorgadotobar-crypto.github.io/cotizador-coproactiva/';
+  ?? 'https://app.coproactiva.cl/';
 
 const HORAS_VIGENCIA = Number(Deno.env.get('HORAS_INVITACION') ?? '12');
 

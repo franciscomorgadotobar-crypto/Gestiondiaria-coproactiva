@@ -12,6 +12,13 @@ función, porque el despliegue sube archivos planos y no resuelve `../`:
 Después se sube el contenido de cada carpeta. `.armado/` no se versiona: es
 producto de la copia, y editarlo ahí perdería el cambio en la próxima corrida.
 
+## La dirección de la app en los enlaces
+
+Los enlaces de los correos apuntan al secreto `URL_APP` de las funciones o, si
+no está definido, a `https://app.coproactiva.cl/`. Si la app cambia de
+dirección hay que cambiar ambos y volver a desplegar las dos funciones: un
+enlace a una dirección vieja llega bien al correo y falla recién al abrirlo.
+
 ## El logotipo del correo
 
 `_compartido/logo.ts` lleva el logotipo en PNG ya codificado, y `enviar` lo

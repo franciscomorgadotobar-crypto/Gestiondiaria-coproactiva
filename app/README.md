@@ -24,26 +24,32 @@ en el panel de Supabase, en *Project Settings → API*.
 Sin credenciales la app arranca igual y muestra el aviso en la pantalla de
 ingreso, en vez de quedar en blanco.
 
-## Desplegar en Netlify
+## Publicar
 
-El sitio es **coproactiva-app**
-(`https://app.netlify.com/projects/coproactiva-app`), distinto del sitio del
-generador de propuestas. Está enlazado a este repositorio con **base directory
-`app`**; el build y el publish los toma de `app/netlify.toml`
-(`npm run build` → `dist`).
+La app está en **https://app.coproactiva.cl/**, servida por GitHub Pages desde
+la rama `gh-pages` de este repositorio. El dominio lo fija `public/CNAME`, que
+Vite copia a la raíz del build. El registro DNS (`app`, CNAME a
+`franciscomorgadotobar-crypto.github.io`) está en Netlify DNS, donde vive la
+zona `coproactiva.cl`.
 
-El redirect `/*` → `/index.html` ya está configurado: sin él, entrar directo a
-`/control/<id>` daría 404.
+```bash
+cd app
+npm run build                        # con el .env completo
+cp dist/index.html dist/404.html     # rutas directas: Pages responde con 404.html
+touch dist/.nojekyll
+```
 
-### Dos cosas que cuestan un deploy si no se saben
+El contenido de `dist/` reemplaza el de la rama `gh-pages`.
 
-**Enlazar el repositorio borra las variables de entorno.** Si las cargas antes de
-enlazar, desaparecen. Hay que cargarlas después y volver a desplegar.
+### Dos cosas que cuestan una publicación si no se saben
 
-**Vite incrusta las variables al compilar, no al cargar la página.** Cambiar una
-variable en Netlify no cambia el sitio publicado: hay que reconstruir. Si la app
-muestra "Falta configurar la conexión con Supabase" después de haberlas cargado,
-es que el build es anterior a las variables.
+**Vite incrusta las variables al compilar, no al cargar la página.** Un build
+sin ellas queda publicado con el aviso "Falta configurar la conexión con
+Supabase" y hay que reconstruir.
+
+**Sin `CNAME` en la rama, GitHub quita el dominio.** Pages lee el dominio de ese
+archivo en cada publicación: si un build llega sin él, app.coproactiva.cl deja
+de responder.
 
 ## Qué hay construido
 

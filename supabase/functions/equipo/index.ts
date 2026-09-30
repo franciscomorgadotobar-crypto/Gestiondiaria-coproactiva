@@ -22,7 +22,7 @@ const URL_PROYECTO = Deno.env.get('SUPABASE_URL')!;
 const CLAVE_ANON    = Deno.env.get('SUPABASE_ANON_KEY')!;
 const CLAVE_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const URL_APP = Deno.env.get('URL_APP')
-  ?? 'https://franciscomorgadotobar-crypto.github.io/cotizador-coproactiva/';
+  ?? 'https://app.coproactiva.cl/';
 
 /* Tiene que coincidir con la expiración configurada en Supabase
  * (Authentication → Emails → Email OTP Expiration). Este número solo se

@@ -2,10 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-/* `base`: GitHub Pages sirve el sitio bajo /<repositorio>/, no en la raíz del
- * dominio. Sin esto la página carga en blanco porque busca /assets/... en la
- * raíz. Se pasa por variable para que `npm run dev` y cualquier otro hosting
- * sigan funcionando en la raíz. */
+/* `base`: la app se publica en la raíz de https://app.coproactiva.cl/ (GitHub
+ * Pages con dominio propio, ver public/CNAME), así que por defecto es '/'. Se
+ * pasa por variable para publicarla bajo una subcarpeta, como
+ * github.io/<repositorio>/: ahí, sin ella, la página carga en blanco porque
+ * busca /assets/... en la raíz del dominio. */
 const base = process.env.VITE_BASE ?? '/';
 
 export default defineConfig({

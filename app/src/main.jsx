@@ -7,9 +7,10 @@ import App from './App';
 import './estilos/tokens.css';
 import './estilos/base.css';
 
-/* Bajo GitHub Pages la app vive en /cotizador-coproactiva/, así que el router
- * tiene que descontar ese prefijo o ninguna ruta calza. BASE_URL lo entrega
- * Vite a partir de `base`; en la raíz vale '/' y el basename queda vacío. */
+/* Si la app se publica bajo una subcarpeta (github.io/<repositorio>/), el
+ * router tiene que descontar ese prefijo o ninguna ruta calza. BASE_URL lo
+ * entrega Vite a partir de `base`; en la raíz (app.coproactiva.cl) vale '/' y
+ * el basename queda vacío. */
 const raiz = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 /* La cola de subida arranca con la app: si el teléfono quedó con trabajo sin
