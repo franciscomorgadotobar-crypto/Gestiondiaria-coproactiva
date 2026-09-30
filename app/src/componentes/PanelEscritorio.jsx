@@ -47,17 +47,24 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   // La barra muestra solo el área en la que se está, igual que en el
   // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
-  // comunidades y mapa; en Propiedades, el listado y el alta. Para ir a otra
-  // área está "Cambiar de área".
+  // comunidades y mapa; en Propiedades, el listado y el alta; en
+  // Configuración, Equipo y Clientes. Para ir a otra área está "Cambiar de
+  // área".
   // El Pipeline es del CRM aunque se llegue a él sin haber elegido área
   // (un enlace directo, por ejemplo). Lo mismo con Propiedades: la ruta
   // manda sobre el área guardada.
-  const enPropiedades = !esCliente && puedeConfigurar
+  // Configuración no se guarda como área (se entra desde su tarjeta en la
+  // capa de entrada, de visita), así que se reconoce solo por la ruta. Sus
+  // enlaces no se repiten en las otras áreas: no son trabajo del día.
+  const enConfiguracion = !esCliente && esAdministracion
+    && ['/configuracion', '/equipo', '/clientes'].some(r => activa(pathname, r));
+  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion
     && (activa(pathname, '/propiedades')
       || (areaGuardada() === 'propiedades' && !activa(pathname, '/pipeline')));
-  const enCRM = !esCliente && puedeConfigurar && !enPropiedades
+  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enPropiedades
     && (areaGuardada() === 'crm' || activa(pathname, '/pipeline'));
   const nombreArea = esCliente ? null
+    : enConfiguracion ? 'Configuración'
     : enPropiedades ? 'Propiedades'
     : enCRM ? 'CRM'
     : puedeConfigurar ? 'Operación' : null;
@@ -69,6 +76,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           etiqueta: alertasMantencion > 0 ? `Mi portal (${alertasMantencion})` : 'Mi portal',
           mostrar: true
         }
+      ]
+    : enConfiguracion
+    ? [
+        { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: true },
+        { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
       ]
     : enPropiedades
     ? [
@@ -88,14 +100,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true }
       ];
 
-  // Equipo y clientes se tocan poco y no son trabajo del día: agrupados
-  // bajo "Configuración", igual que la tercera tarjeta de la capa de
-  // entrada. Plantillas no va acá: es del día a día de Operación.
-  const configuracion = esCliente ? [] : [
-    { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: esAdministracion },
-    { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
-  ];
-
   const inicio = esCliente ? '/portal' : inicioSegunArea();
 
   return (
@@ -113,17 +117,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               {a.etiqueta}
             </Link>
           ))}
-          {configuracion.some(a => a.mostrar) && (
-            <>
-              <span className="micro apagado etiqueta-lateral">Configuración</span>
-              {configuracion.filter(a => a.mostrar).map(a => (
-                <Link key={a.ruta} to={a.ruta}
-                      className={'enlace-lateral' + (activa(pathname, a.ruta) ? ' activo' : '')}>
-                  {a.etiqueta}
-                </Link>
-              ))}
-            </>
-          )}
         </div>
 
         <div className="crece" />
