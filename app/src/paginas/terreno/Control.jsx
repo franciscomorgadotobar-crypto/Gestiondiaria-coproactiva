@@ -773,9 +773,33 @@ export default function Levantamiento() {
   );
 }
 
+/* Agrega fotos a un punto. `camara` abre la cámara directo (`capture`); sin
+ * eso se abre la galería. El input va escondido y lo dispara el botón. */
+function BotonFoto({ camara = false, etiqueta, onArchivos }) {
+  const entrada = useRef(null);
+
+  return (
+    <>
+      <input ref={entrada} type="file" accept="image/*" hidden
+             {...(camara ? { capture: 'environment' } : { multiple: true })}
+             onChange={e => {
+               // Se copia antes de limpiar el input: la FileList es una
+               // vista viva y al vaciar el campo se pierde el contenido.
+               const archivos = Array.from(e.target.files);
+               e.target.value = '';
+               onArchivos(archivos);
+             }} />
+      <button type="button" className="agregar-foto" onClick={() => entrada.current?.click()}>
+        <span aria-hidden="true">＋</span>
+        {etiqueta}
+      </button>
+    </>
+  );
+}
+
 /* Un punto del levantamiento: estado, nota y fotos. */
 function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, onDescribir, onQuitar }) {
-  const entrada = useRef(null);
+  const origen = item.config?.origen ?? 'ambas';
   const necesitaNota = item.estado === 'observacion' || item.estado === 'critico';
 
   return (
@@ -807,7 +831,7 @@ function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, o
       {/* La plantilla puede decidir que este punto no lleva fotografía. Sin
           esto, el botón de agregar aparecía igual en todos los puntos, sin
           forma de quitarlo donde no correspondía. */}
-      {item.config?.origen !== 'ninguna' && (
+      {origen !== 'ninguna' && (
         <div className="fotos-punto">
           {fotos.map(f => (
             <figure key={f.id}>
@@ -824,28 +848,17 @@ function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, o
             </figure>
           ))}
 
-          {!cerrado && (
-            <>
-              {/* `capture` abre la cámara directo y salta el selector de
-                  archivos: corresponde solo cuando la plantilla pide
-                  específicamente cámara. En cualquier otro caso —incluido el
-                  valor por defecto— se deja que el teléfono ofrezca su
-                  selector nativo, que ya trae cámara y galería juntas. */}
-              <input ref={entrada} type="file" accept="image/*"
-                     {...(item.config?.origen === 'camara' ? { capture: 'environment' } : {})}
-                     multiple hidden
-                     onChange={e => {
-                       // Se copia antes de limpiar el input: la FileList es una
-                       // vista viva y al vaciar el campo se pierde el contenido.
-                       const archivos = Array.from(e.target.files);
-                       e.target.value = '';
-                       onFotos(item, archivos);
-                     }} />
-              <button type="button" className="agregar-foto" onClick={() => entrada.current?.click()}>
-                <span aria-hidden="true">＋</span>
-                Foto
-              </button>
-            </>
+          {/* Sin `capture` no se puede contar con que el teléfono ofrezca la
+              cámara: iPhone muestra cámara y fototeca, pero Android abre
+              directo la galería. Por eso "Cámara o galería" lleva un botón
+              para cada origen en vez de dejarlo al selector del teléfono. */}
+          {!cerrado && origen !== 'galeria' && (
+            <BotonFoto camara etiqueta={origen === 'camara' ? 'Foto' : 'Cámara'}
+                       onArchivos={archivos => onFotos(item, archivos)} />
+          )}
+          {!cerrado && origen !== 'camara' && (
+            <BotonFoto etiqueta={origen === 'galeria' ? 'Foto' : 'Galería'}
+                       onArchivos={archivos => onFotos(item, archivos)} />
           )}
         </div>
       )}
