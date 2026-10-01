@@ -498,12 +498,14 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
 /* Tres columnas en el teléfono, igual que en el informe: lo que se ve al
    fotografiar es lo que va a salir impreso. */
-/* minmax(0, 1fr) y no 1fr: el botón de agregar es 4:3 y, estirado al alto de
-   una foto con su pie, pedía más ancho que su columna y dejaba la miniatura
-   de al lado reducida a una franja. */
+/* Cuadros de unos 100 px en cualquier pantalla: tres por fila en el teléfono
+   y más en el computador, en vez de tres cuadros enormes a todo el ancho.
+   El mínimo es fijo (no `auto`): el botón de agregar es 4:3 y, estirado al
+   alto de una foto con su pie, pedía más ancho que su columna y dejaba la
+   miniatura de al lado reducida a una franja. */
 .fotos-punto {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
