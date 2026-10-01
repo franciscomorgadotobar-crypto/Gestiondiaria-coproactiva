@@ -76,7 +76,8 @@ function respondido(item) {
     case 'texto':     return Boolean(r?.texto?.trim());
     case 'numero':    return r?.numero != null;
     case 'escala':    return r?.valor != null;
-    case 'seleccion': return Boolean(r?.opcion);
+    case 'seleccion':
+    case 'opciones':  return Boolean(r?.opcion);
     case 'checklist': return r != null;
     case 'firma':     return Boolean(r?.firmada);
     default:          return Boolean(item.estado) && item.estado !== 'sin_evaluar';
@@ -140,6 +141,7 @@ function valorRespondido(item) {
     }
 
     case 'seleccion':
+    case 'opciones':
       return r?.opcion
         ? `<p class="opcion">${escapar(r.opcion)}</p>`
         : sinRespuesta('Sin respuesta');
@@ -192,7 +194,8 @@ function bloqueItem(item, numero) {
         </header>
         ${valorRespondido(item)}
         ${item.nota ? `<p class="nota"><strong>${
-          !esEstado(item) ? 'Nota' : item.estado === 'critico' ? 'Hallazgo' : 'Observación'}:</strong> ${escapar(item.nota)}</p>` : ''}
+          item.tipo_ingreso === 'opciones' ? 'Comentario'
+          : !esEstado(item) ? 'Nota' : item.estado === 'critico' ? 'Hallazgo' : 'Observación'}:</strong> ${escapar(item.nota)}</p>` : ''}
       </div>
       ${grillaFotos(item.fotos)}
     </article>`;

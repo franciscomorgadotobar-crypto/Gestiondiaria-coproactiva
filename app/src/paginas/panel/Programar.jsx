@@ -218,12 +218,12 @@ export default function Programar() {
         : e1.message);
     }
 
-    /* Los puntos se copian con su texto, su categoría y su tipo de ingreso. Se
-     * copian y no se referencian: si la plantilla cambia el mes que viene, este
-     * levantamiento debe seguir diciendo lo que preguntaba hoy. */
+    /* Los puntos se copian con su texto, su descripción, su categoría y su tipo
+     * de ingreso. Se copian y no se referencian: si la plantilla cambia el mes
+     * que viene, este levantamiento debe seguir diciendo lo que preguntaba hoy. */
     const { data: items, error: e2 } = await supabase
       .from('plantilla_items')
-      .select('id, grupo, texto, orden, orden_grupo, tipo_ingreso, config, requiere_foto, es_critico, obligatorio')
+      .select('id, grupo, texto, ayuda, orden, orden_grupo, tipo_ingreso, config, requiere_foto, es_critico, obligatorio')
       .eq('plantilla_id', datos.plantilla_id)
       .eq('activo', true)
       .order('orden_grupo').order('orden');
@@ -236,6 +236,7 @@ export default function Programar() {
           plantilla_item_id: it.id,
           grupo: it.grupo,
           texto: it.texto,
+          ayuda: it.ayuda,
           orden: n,
           tipo_ingreso: it.tipo_ingreso,
           config: it.config,

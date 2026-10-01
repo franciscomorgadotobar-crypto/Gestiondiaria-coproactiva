@@ -23,6 +23,7 @@ import Confirmar from '../../componentes/Confirmar';
 
 const TIPOS = [
   ['estado',    'Conforme / Observa / Crítico'],
+  ['opciones',  'Opciones con evidencia'],
   ['texto',     'Texto libre'],
   ['numero',    'Número o lectura'],
   ['escala',    'Escala del 1 al 10'],
@@ -37,6 +38,7 @@ const TIPOS = [
 function campoBase(item) {
   return {
     texto: item.texto,
+    ayuda: item.ayuda ?? '',
     tipo_ingreso: item.tipo_ingreso,
     config: item.config ?? {},
     requiere_foto: item.requiere_foto,
@@ -58,6 +60,7 @@ export default function EditorPlantilla() {
   const [borrador, setBorrador] = useState(null);          // sus campos, en edición
   const [guardadoComo, setGuardadoComo] = useState(null);  // la última versión ya guardada
   const [porConfirmar, setPorConfirmar] = useState(null);  // qué hacer si se confirma perder el borrador
+  const [avisoPunto, setAvisoPunto] = useState(null);      // por qué no se pudo guardar el punto abierto
 
   useEffect(() => {
     (async () => {
@@ -95,6 +98,7 @@ export default function EditorPlantilla() {
   }
 
   function abrirDirecto(itemId) {
+    setAvisoPunto(null);
     if (itemId === editando) {
       setEditando(null); setBorrador(null); setGuardadoComo(null);
       return;
@@ -174,12 +178,37 @@ export default function EditorPlantilla() {
    * "Guardar" tenga sentido como botón y no como algo que ya pasó solo. */
   async function guardarBorrador() {
     const item = items.find(x => x.id === editando);
+    const cambios = { ...borrador, ayuda: (borrador.ayuda ?? '').trim() || null };
+
+    /* Las opciones se guardan limpias, sin espacios sobrantes ni filas vacías.
+     * El levantamiento guarda el texto de la opción elegida, así que dos
+     * opciones con el mismo texto no se podrían distinguir después. */
+    if (cambios.tipo_ingreso === 'opciones') {
+      const opciones = (cambios.config.opciones ?? [])
+        .map(o => ({ texto: (o.texto ?? '').trim(), evidencia: Boolean(o.evidencia) }))
+        .filter(o => o.texto);
+      if (!opciones.length) return setAvisoPunto('Agrega al menos una opción.');
+      const vistas = new Set();
+      const repetida = opciones.find(o => {
+        const clave = o.texto.toLowerCase();
+        if (vistas.has(clave)) return true;
+        vistas.add(clave);
+        return false;
+      });
+      if (repetida) return setAvisoPunto(`La opción "${repetida.texto}" está repetida.`);
+      cambios.config = { ...cambios.config, opciones };
+    }
+
+    setAvisoPunto(null);
     setGuardando(true);
-    const { error } = await supabase.from('plantilla_items').update(borrador).eq('id', item.id);
+    const { error } = await supabase.from('plantilla_items').update(cambios).eq('id', item.id);
     setGuardando(false);
     if (error) return setError(error.message);
-    setItems(xs => xs.map(x => (x.id === item.id ? { ...x, ...borrador } : x)));
-    setGuardadoComo(borrador);
+    const guardado = { ...item, ...cambios };
+    setItems(xs => xs.map(x => (x.id === item.id ? guardado : x)));
+    const base = campoBase(guardado);
+    setBorrador(base);
+    setGuardadoComo(base);
   }
 
   /* El orden obligatorio es de la plantilla entera, no de un punto: si un
@@ -273,9 +302,15 @@ export default function EditorPlantilla() {
                 borrador={editando === item.id ? borrador : null}
                 sucio={editando === item.id && sucio}
                 guardando={guardando}
-                onCambiar={(campo, valor) => setBorrador(b => ({ ...b, [campo]: valor }))}
-                onCambiarConfig={(clave, valor) =>
-                  setBorrador(b => ({ ...b, config: { ...b.config, [clave]: valor } }))}
+                aviso={editando === item.id ? avisoPunto : null}
+                onCambiar={(campo, valor) => {
+                  setAvisoPunto(null);
+                  setBorrador(b => ({ ...b, [campo]: valor }));
+                }}
+                onCambiarConfig={(clave, valor) => {
+                  setAvisoPunto(null);
+                  setBorrador(b => ({ ...b, config: { ...b.config, [clave]: valor } }));
+                }}
                 onAbrir={() => abrir(item.id)}
                 onGuardar={guardarBorrador}
                 onBorrar={() => borrarItem(item)}
@@ -310,7 +345,7 @@ export default function EditorPlantilla() {
  * `item` es lo último guardado, `borrador` es lo que se está por guardar. El
  * botón Guardar es lo único que los hace coincidir. */
 function ItemPlantilla({
-  item, abierto, borrador, sucio, guardando,
+  item, abierto, borrador, sucio, guardando, aviso,
   onCambiar, onCambiarConfig, onAbrir, onGuardar, onBorrar
 }) {
   const etiquetaTipo = TIPOS.find(([v]) => v === item.tipo_ingreso)?.[1] ?? item.tipo_ingreso;
@@ -365,7 +400,21 @@ function ItemPlantilla({
           </select>
         </div>
 
+        {/* Lo que verá quien hace el levantamiento bajo la pregunta: qué
+            revisar, dónde, por qué importa. */}
+        <div className="campo">
+          <label className="etiqueta-campo" htmlFor={'ayuda-' + item.id}>Descripción</label>
+          <textarea id={'ayuda-' + item.id} rows={2} value={borrador.ayuda}
+                    placeholder="Qué revisar o cómo responder. Aparece bajo la pregunta en el levantamiento."
+                    onChange={e => onCambiar('ayuda', e.target.value)} />
+        </div>
+
         {/* Parámetros propios del tipo elegido */}
+        {borrador.tipo_ingreso === 'opciones' && (
+          <EditorOpciones opciones={cfg.opciones ?? []} conFoto={cfg.origen !== 'ninguna'}
+                          onCambiar={opciones => onCambiarConfig('opciones', opciones)} />
+        )}
+
         {(borrador.tipo_ingreso === 'seleccion' || borrador.tipo_ingreso === 'checklist') && (
           <div className="campo">
             <label className="etiqueta-campo">Opciones, una por línea</label>
@@ -446,6 +495,8 @@ function ItemPlantilla({
           <span>Es un punto crítico</span>
         </label>
 
+        {aviso && <div className="aviso aviso-critico" style={{ marginTop: 14 }}>{aviso}</div>}
+
         <div className="fila-botones" style={{ marginTop: 14 }}>
           <button type="button" className="boton boton-movil crece"
                   disabled={!sucio || guardando} onClick={onGuardar}>
@@ -459,5 +510,72 @@ function ItemPlantilla({
         </button>
       </div>
     </article>
+  );
+}
+
+/* Juegos de opciones de uso frecuente, para no escribirlos cada vez. Cada
+ * opción trae una sugerencia de si exige evidencia; se cambia opción por
+ * opción después de cargarlas. */
+const OPCIONES_TIPICAS = [
+  ['Cumple / No cumple', [
+    { texto: 'Cumple', evidencia: false },
+    { texto: 'No cumple', evidencia: true },
+    { texto: 'Cumple con observaciones', evidencia: true },
+    { texto: 'No aplica', evidencia: false }
+  ]],
+  ['Sí / No', [
+    { texto: 'Sí', evidencia: false },
+    { texto: 'No', evidencia: false },
+    { texto: 'No aplica', evidencia: false }
+  ]]
+];
+
+/* Las opciones de un punto de tipo "Opciones con evidencia". La evidencia es
+ * un comentario obligatorio y, si el punto admite fotos, al menos una foto:
+ * se pide solo cuando en el levantamiento se elige una opción marcada. */
+function EditorOpciones({ opciones, conFoto, onCambiar }) {
+  const cambiar = (n, campo, valor) =>
+    onCambiar(opciones.map((o, i) => (i === n ? { ...o, [campo]: valor } : o)));
+
+  return (
+    <div className="campo">
+      <label className="etiqueta-campo">Opciones</label>
+
+      {opciones.length === 0 && (
+        <div className="opciones-tipicas">
+          <span className="micro apagado">Cargar:</span>
+          {OPCIONES_TIPICAS.map(([nombre, lista]) => (
+            <button key={nombre} type="button" className="boton boton-secundario"
+                    onClick={() => onCambiar(lista.map(o => ({ ...o })))}>
+              {nombre}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {opciones.map((op, n) => (
+        <div key={n} className="opcion-plantilla">
+          <input type="text" value={op.texto} placeholder="Ej: No cumple"
+                 aria-label={`Opción ${n + 1}`}
+                 onChange={e => cambiar(n, 'texto', e.target.value)} />
+          <label className="marca">
+            <input type="checkbox" checked={!!op.evidencia}
+                   onChange={e => cambiar(n, 'evidencia', e.target.checked)} />
+            <span>Exige evidencia</span>
+          </label>
+          <button type="button" className="quitar-opcion"
+                  aria-label={`Quitar ${op.texto || 'opción'}`}
+                  onClick={() => onCambiar(opciones.filter((_, i) => i !== n))}>×</button>
+        </div>
+      ))}
+
+      <button type="button" className="boton boton-texto agregar-punto"
+              onClick={() => onCambiar([...opciones, { texto: '', evidencia: false }])}>
+        + Agregar opción
+      </button>
+      <p className="micro apagado" style={{ margin: '2px 0 0' }}>
+        Con evidencia, quien responde debe dejar un comentario{conFoto ? ' y al menos una foto' : ''}.
+      </p>
+    </div>
   );
 }

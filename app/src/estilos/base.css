@@ -498,9 +498,12 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
 /* Tres columnas en el teléfono, igual que en el informe: lo que se ve al
    fotografiar es lo que va a salir impreso. */
+/* minmax(0, 1fr) y no 1fr: el botón de agregar es 4:3 y, estirado al alto de
+   una foto con su pie, pedía más ancho que su columna y dejaba la miniatura
+   de al lado reducida a una franja. */
 .fotos-punto {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
@@ -544,6 +547,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 }
 
 .agregar-foto {
+  align-self: start;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -742,6 +746,20 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .item-plantilla.abierto { border-color: var(--naranja); }
 
 .agregar-punto { padding: 10px 2px; font-size: 11px; }
+
+/* Opciones de un punto "con evidencia": texto, si exige evidencia y quitar. */
+.opciones-tipicas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.opcion-plantilla {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center;
+  gap: 8px; margin-bottom: 6px;
+}
+.opcion-plantilla .marca { min-height: 0; padding: 0; font-size: 12.5px; white-space: nowrap; }
+.quitar-opcion {
+  width: 32px; height: 32px;
+  border: 1px solid var(--borde); border-radius: var(--radio-control);
+  background: transparent; color: var(--texto-tenue);
+  font-size: 17px; line-height: 1; cursor: pointer;
+}
 .boton-texto.peligro { color: var(--critico-texto); }
 
 .chip-pausado {
@@ -796,6 +814,9 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   color: var(--alerta-texto);
   font-weight: 600;
 }
+
+/* Descripción del punto, copiada de la plantilla: va bajo la pregunta. */
+.ayuda-punto { margin: 0 0 12px; white-space: pre-line; }
 
 /* ------------------------------------------------------------------ Equipo */
 

@@ -19,7 +19,8 @@ const ESTADOS = [
 ];
 
 /* Un punto está respondido según su tipo: los de estado por su estado, los de
- * foto por tener una fotografía adjunta, los demás por tener respuesta.
+ * foto por tener una fotografía adjunta, los de opciones por la opción elegida
+ * y su evidencia si la exige, los demás por tener respuesta.
  *
  * El de foto es aparte porque no escribe en `respuesta` —la fotografía misma
  * es la respuesta—, y antes eso se leía como "siempre respondido" apenas
@@ -32,7 +33,30 @@ const ESTADOS = [
 function respondido(i, tieneFoto) {
   if (i.tipo_ingreso === 'foto') return tieneFoto(i.id);
   if (!i.tipo_ingreso || i.tipo_ingreso === 'estado') return i.estado !== 'sin_evaluar';
+  if (i.tipo_ingreso === 'opciones') {
+    return Boolean(i.respuesta?.opcion) && !evidenciaPendiente(i, tieneFoto);
+  }
   return i.respuesta != null;
+}
+
+/* La opción elegida en un punto de tipo opciones, con lo que la plantilla dijo
+ * de ella: si exige evidencia. */
+function opcionElegida(i) {
+  const elegida = i.respuesta?.opcion;
+  if (!elegida) return null;
+  const op = (i.config?.opciones ?? []).find(o => (typeof o === 'string' ? o : o?.texto) === elegida);
+  return { texto: elegida, evidencia: Boolean(op && typeof op === 'object' && op.evidencia) };
+}
+
+/* Si la opción elegida exige evidencia y todavía falta: un comentario y, si el
+ * punto admite fotos, al menos una. Mientras falte, el punto no cuenta como
+ * respondido y el levantamiento no se envía, aunque el punto sea opcional: la
+ * respuesta ya se dio y sin su respaldo no vale. */
+function evidenciaPendiente(i, tieneFoto) {
+  if (i.tipo_ingreso !== 'opciones' || !opcionElegida(i)?.evidencia) return false;
+  const sinComentario = !(i.nota ?? '').trim();
+  const sinFoto = (i.config?.origen ?? 'ambas') !== 'ninguna' && !tieneFoto(i.id);
+  return sinComentario || sinFoto;
 }
 
 export default function Levantamiento() {
@@ -78,7 +102,7 @@ export default function Levantamiento() {
           .maybeSingle(),
         supabase
           .from('control_items')
-          .select('id, grupo, texto, orden, estado, nota, respuesta, tipo_ingreso, config, requiere_foto, es_critico, obligatorio, plantilla_item_id')
+          .select('id, grupo, texto, ayuda, orden, estado, nota, respuesta, tipo_ingreso, config, requiere_foto, es_critico, obligatorio, plantilla_item_id')
           .eq('control_id', id)
           .order('orden'),
         supabase
@@ -213,8 +237,11 @@ export default function Levantamiento() {
    * trabar el botón; un punto marcado como opcional en la plantilla se puede
    * dejar en blanco y el levantamiento igual se manda. */
   const pendientesObligatorios = items.filter(
-    i => i.obligatorio !== false && !respondido(i, tieneFoto)
+    i => i.obligatorio !== false && !respondido(i, tieneFoto) && !evidenciaPendiente(i, tieneFoto)
   );
+
+  // Respondidos con una opción que exige evidencia, pero sin ella todavía.
+  const sinEvidencia = items.filter(i => evidenciaPendiente(i, tieneFoto));
 
   /* La plantilla puede exigir fotografía en un punto. Esa exigencia se copió al
    * levantamiento, así que acá se puede hacer cumplir: sin la foto no se envía.
@@ -750,7 +777,8 @@ export default function Levantamiento() {
           </button>
           <button className="boton boton-movil crece"
                   onClick={enviar}
-                  disabled={enviando || pendientesObligatorios.length > 0 || sinFoto.length > 0 || !control.checkin_en}
+                  disabled={enviando || pendientesObligatorios.length > 0 || sinFoto.length > 0
+                            || sinEvidencia.length > 0 || !control.checkin_en}
                   title={
                     !control.checkin_en ? 'Falta el check-in'
                     : pendientesObligatorios.length > 0
@@ -759,12 +787,16 @@ export default function Levantamiento() {
                           : `Faltan ${pendientesObligatorios.length} puntos obligatorios por responder`)
                     : sinFoto.length > 0
                       ? `Faltan fotos en: ${sinFoto.map(i => i.texto).join(', ')}`
+                    : sinEvidencia.length > 0
+                      ? `Falta evidencia en: ${sinEvidencia.map(i => i.texto).join(', ')}`
                       : undefined
                   }>
             {enviando ? 'Enviando…'
              : pendientesObligatorios.length > 0 ? `Faltan ${pendientesObligatorios.length}`
              : sinFoto.length > 0
                ? (sinFoto.length === 1 ? 'Falta 1 foto' : `Faltan ${sinFoto.length} fotos`)
+             : sinEvidencia.length > 0
+               ? (sinEvidencia.length === 1 ? 'Falta evidencia' : `Falta evidencia en ${sinEvidencia.length}`)
              : 'Enviar levantamiento'}
           </button>
         </footer>
@@ -801,10 +833,14 @@ function BotonFoto({ camara = false, etiqueta, onArchivos }) {
 function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, onDescribir, onQuitar }) {
   const origen = item.config?.origen ?? 'ambas';
   const necesitaNota = item.estado === 'observacion' || item.estado === 'critico';
+  const exigeEvidencia = item.tipo_ingreso === 'opciones' && Boolean(opcionElegida(item)?.evidencia);
+  const faltaComentario = exigeEvidencia && !(item.nota ?? '').trim();
+  const faltaFotoEvidencia = exigeEvidencia && origen !== 'ninguna' && fotos.length === 0;
 
   return (
     <article className="tarjeta punto">
-      <p style={{ margin: '0 0 12px' }}>{item.texto}</p>
+      <p style={{ margin: item.ayuda ? '0 0 4px' : '0 0 12px' }}>{item.texto}</p>
+      {item.ayuda && <p className="chico apagado ayuda-punto">{item.ayuda}</p>}
 
       <CampoPunto
         item={item}
@@ -824,7 +860,26 @@ function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, o
         </div>
       )}
 
-      {item.requiere_foto && fotos.length === 0 && !cerrado && (
+      {/* La opción elegida pide respaldo: el comentario siempre y, si el punto
+          admite fotos, al menos una (la grilla de abajo). */}
+      {exigeEvidencia && (
+        <div className="campo" style={{ marginTop: 12, marginBottom: 0 }}>
+          <label className="etiqueta-campo" htmlFor={'nota-' + item.id}>Comentario</label>
+          <textarea id={'nota-' + item.id} defaultValue={item.nota ?? ''}
+                    placeholder="Qué respalda esta respuesta" disabled={cerrado}
+                    onBlur={e => onNota(item, e.target.value)} />
+        </div>
+      )}
+      {(faltaComentario || faltaFotoEvidencia) && !cerrado && (
+        <p className="micro exige-foto">
+          {faltaComentario && faltaFotoEvidencia
+            ? 'Esta respuesta exige un comentario y al menos una fotografía'
+            : faltaComentario ? 'Esta respuesta exige un comentario'
+            : 'Esta respuesta exige al menos una fotografía'}
+        </p>
+      )}
+
+      {item.requiere_foto && fotos.length === 0 && !cerrado && !faltaFotoEvidencia && (
         <p className="micro exige-foto">Este punto exige al menos una fotografía</p>
       )}
 

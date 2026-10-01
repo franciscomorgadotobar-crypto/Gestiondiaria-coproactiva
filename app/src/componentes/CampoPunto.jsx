@@ -78,6 +78,27 @@ export default function CampoPunto({ item, cerrado, onEstado, onRespuesta }) {
         </div>
       );
 
+    /* Opciones de la plantilla (Cumple, No cumple, No aplica…). Si la elegida
+     * exige evidencia, el punto pide aparte comentario y foto. */
+    case 'opciones':
+      return (
+        <div className="opciones">
+          {(cfg.opciones ?? []).map(o => {
+            const op = typeof o === 'string' ? o : o?.texto;
+            if (!op) return null;
+            return (
+              <button
+                key={op} type="button" disabled={cerrado}
+                aria-pressed={r.opcion === op}
+                onClick={() => onRespuesta(r.opcion === op ? null : { opcion: op })}
+              >
+                {op}
+              </button>
+            );
+          })}
+        </div>
+      );
+
     case 'checklist': {
       const marcadas = r.opciones ?? [];
       return (
