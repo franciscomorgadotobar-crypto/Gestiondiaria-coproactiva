@@ -744,6 +744,11 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   border-top: 1px solid var(--borde-suave);
 }
 .item-plantilla.abierto { border-color: var(--naranja); }
+.item-plantilla .sin-guardar { color: var(--naranja); }
+
+/* Guardar de la plantilla: uno solo, siempre a la vista al pie. */
+.pie-plantilla { z-index: 2; flex-wrap: wrap; align-items: center; }
+.pie-plantilla .pie-error { flex-basis: 100%; margin: 0; }
 
 .agregar-punto { padding: 10px 2px; font-size: 11px; }
 
@@ -1188,6 +1193,13 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
   /* Formularios y recorridos de a una pregunta: más angostos se leen mejor. */
   .pantalla-angosta { --ancho-contenido: 880px; }
+  /* El pie de la plantilla alineado con el contenido, no de borde a borde. */
+  .pantalla > .pie-plantilla {
+    --lado: max(var(--margen-escritorio), calc((100% - var(--ancho-contenido)) / 2));
+    padding-left: var(--lado);
+    padding-right: var(--lado);
+  }
+  .pie-plantilla .boton { min-width: 190px; }
   /* Tableros que viven del espacio (el embudo del Pipeline). */
   .pantalla-ancha { --ancho-contenido: 100%; }
 

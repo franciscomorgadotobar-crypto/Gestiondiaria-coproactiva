@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Confirmar from '../../componentes/Confirmar';
 import { NIVELES_EVIDENCIA, normalizarOpcion, nivelPosible } from '../../lib/opciones';
+import { nuevoId } from '../../lib/local';
 
 /* Editor de una plantilla de levantamiento.
  *
@@ -15,11 +16,11 @@ import { NIVELES_EVIDENCIA, normalizarOpcion, nivelPosible } from '../../lib/opc
  * secuencia —se entra por el acceso y se termina en la azotea— y el informe
  * sale en ese mismo orden.
  *
- * Estructura (categorías, puntos nuevos, borrar, mover) se guarda al toque:
- * son acciones de una sola vez, ya visibles apenas se hacen, y no hay nada que
- * "perder" si se sale después. Lo que sí queda en un borrador es el contenido
- * de un punto abierto —texto, tipo, configuración—: varios campos a la vez,
- * y de ahí sale el pedido de un botón Guardar con aviso si se sale sin usarlo.
+ * Todo se edita sobre un borrador de la plantilla completa —puntos, categorías,
+ * orden, lo que se quita y el orden obligatorio— y un solo botón "Guardar
+ * plantilla" lo lleva a la base. Se pidió así: se arma o corrige la plantilla
+ * entera y se guarda una vez, no punto por punto. Salir con cambios sin
+ * guardar pregunta antes.
  */
 
 const TIPOS = [
@@ -34,34 +35,83 @@ const TIPOS = [
   ['firma',     'Firma de quien recibe']
 ];
 
-/* Los campos que vive el borrador. El resto del ítem (orden, grupo, id) no se
- * edita desde este panel. */
-function campoBase(item) {
+/* Un punto tal como se guarda. Todas las filas llevan los mismos campos: el
+ * guardado va en un solo upsert, y PostgREST arma las columnas con todas las
+ * filas. Texto y descripción van sin espacios sobrantes, y las opciones,
+ * normalizadas y sin filas vacías. */
+function filaGuardable(item) {
+  const config = { ...(item.config ?? {}) };
+  if (item.tipo_ingreso === 'opciones') config.opciones = opcionesLimpias(item);
   return {
-    texto: item.texto,
-    ayuda: item.ayuda ?? '',
-    tipo_ingreso: item.tipo_ingreso,
-    config: item.config ?? {},
-    requiere_foto: item.requiere_foto,
+    id: item.id,
+    plantilla_id: item.plantilla_id,
+    grupo: item.grupo,
+    orden_grupo: item.orden_grupo ?? 0,
+    orden: item.orden ?? 0,
+    texto: (item.texto ?? '').trim(),
+    ayuda: (item.ayuda ?? '').trim() || null,
+    tipo_ingreso: item.tipo_ingreso ?? 'estado',
+    config,
+    requiere_foto: Boolean(item.requiere_foto),
     obligatorio: item.obligatorio !== false,
-    es_critico: item.es_critico
+    es_critico: Boolean(item.es_critico),
+    activo: item.activo !== false
   };
 }
+
+function opcionesLimpias(item) {
+  const admiteFotos = item.config?.origen !== 'ninguna';
+  return (item.config?.opciones ?? [])
+    .map(normalizarOpcion)
+    .map(o => ({ texto: o.texto.trim(), evidencia: nivelPosible(o.evidencia, admiteFotos) }))
+    .filter(o => o.texto);
+}
+
+/* Por qué un punto no se puede guardar, o null si se puede. */
+function problemaDe(item) {
+  if (!(item.texto ?? '').trim()) return 'Escribe qué se pregunta.';
+  if (item.tipo_ingreso === 'opciones') {
+    const opciones = opcionesLimpias(item);
+    if (!opciones.length) return 'Agrega al menos una opción.';
+    // El levantamiento guarda el texto de la opción elegida: dos opciones con
+    // el mismo texto no se podrían distinguir después.
+    const vistas = new Set();
+    for (const o of opciones) {
+      const clave = o.texto.toLowerCase();
+      if (vistas.has(clave)) return `La opción "${o.texto}" está repetida.`;
+      vistas.add(clave);
+    }
+  }
+  return null;
+}
+
+/* Una versión comparable de un valor: con las claves ordenadas, dos versiones
+ * iguales dan lo mismo aunque sus campos se hayan escrito en otro orden. */
+function huella(valor) {
+  if (Array.isArray(valor)) return '[' + valor.map(huella).join(',') + ']';
+  if (valor && typeof valor === 'object') {
+    return '{' + Object.keys(valor).sort()
+      .map(k => JSON.stringify(k) + ':' + huella(valor[k])).join(',') + '}';
+  }
+  return JSON.stringify(valor ?? null);
+}
+const huellaPunto = item => huella(filaGuardable(item));
 
 export default function EditorPlantilla() {
   const { id } = useParams();
   const navegar = useNavigate();
 
+  // Lo último guardado, tal como está en la base: contra esto se compara.
+  const [guardada, setGuardada] = useState(null);          // { plantilla, items }
+  // El borrador: lo que se ve y se edita. Nada llega a la base hasta Guardar.
   const [plantilla, setPlantilla] = useState(null);
   const [items, setItems] = useState([]);
+
+  const [abierto, setAbierto] = useState(null);            // id del punto desplegado
+  const [aviso, setAviso] = useState(null);                // { id, mensaje }: por qué un punto no se puede guardar
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
-
-  const [editando, setEditando] = useState(null);         // id del punto abierto
-  const [borrador, setBorrador] = useState(null);          // sus campos, en edición
-  const [guardadoComo, setGuardadoComo] = useState(null);  // la última versión ya guardada
-  const [porConfirmar, setPorConfirmar] = useState(null);  // qué hacer si se confirma perder el borrador
-  const [avisoPunto, setAvisoPunto] = useState(null);      // por qué no se pudo guardar el punto abierto
+  const [porConfirmar, setPorConfirmar] = useState(null);  // qué hacer si se confirma salir sin guardar
 
   useEffect(() => {
     (async () => {
@@ -71,9 +121,12 @@ export default function EditorPlantilla() {
           .order('orden_grupo').order('orden')
       ]);
       if (p.error) return setError(p.error.message);
+      if (i.error) return setError(i.error.message);
       if (!p.data) return setError('Esta plantilla no existe o no tienes acceso.');
+      const lista = i.data ?? [];
+      setGuardada({ plantilla: p.data, items: lista });
       setPlantilla(p.data);
-      setItems(i.data ?? []);
+      setItems(lista);
     })();
   }, [id]);
 
@@ -85,151 +138,188 @@ export default function EditorPlantilla() {
       if (!m.has(it.grupo)) m.set(it.grupo, { nombre: it.grupo, orden: it.orden_grupo, items: [] });
       m.get(it.grupo).items.push(it);
     }
+    for (const cat of m.values()) cat.items.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     return [...m.values()].sort((a, b) => a.orden - b.orden);
   }, [items]);
 
-  const sucio = editando !== null && JSON.stringify(borrador) !== JSON.stringify(guardadoComo);
+  /* Qué cambió respecto de lo guardado: puntos nuevos, modificados y quitados,
+   * y el orden obligatorio de la plantilla. */
+  const cambios = useMemo(() => {
+    if (!guardada) return { nuevos: [], modificados: [], borrados: [], plantilla: false, total: 0 };
+    const antes = new Map(guardada.items.map(x => [x.id, huellaPunto(x)]));
+    const ahora = new Set(items.map(x => x.id));
+    const nuevos = items.filter(x => !antes.has(x.id));
+    const modificados = items.filter(x => antes.has(x.id) && antes.get(x.id) !== huellaPunto(x));
+    const borrados = guardada.items.filter(x => !ahora.has(x.id)).map(x => x.id);
+    const cambioPlantilla = Boolean(guardada.plantilla.secuencial) !== Boolean(plantilla?.secuencial);
+    return {
+      nuevos, modificados, borrados, plantilla: cambioPlantilla,
+      total: nuevos.length + modificados.length + borrados.length + (cambioPlantilla ? 1 : 0)
+    };
+  }, [guardada, items, plantilla]);
+  const sucio = cambios.total > 0;
+  const sinGuardar = useMemo(
+    () => new Set([...cambios.nuevos, ...cambios.modificados].map(x => x.id)),
+    [cambios]
+  );
 
-  /* Toda acción que pueda hacer perder el borrador pasa por acá: abrir otro
-   * punto, cerrar el actual, salir de la pantalla. Si no hay nada sin
-   * guardar, sigue directo; si lo hay, primero pregunta. */
+  /* Salir con cambios sin guardar pregunta antes: el botón de volver, los
+   * enlaces del menú lateral y cerrar o recargar la pestaña. */
   function conAviso(luego) {
     if (sucio) setPorConfirmar(() => luego);
     else luego();
   }
-
-  function abrirDirecto(itemId) {
-    setAvisoPunto(null);
-    if (itemId === editando) {
-      setEditando(null); setBorrador(null); setGuardadoComo(null);
-      return;
-    }
-    const base = campoBase(items.find(x => x.id === itemId));
-    setEditando(itemId);
-    setBorrador(base);
-    setGuardadoComo(base);
-  }
-
-  const abrir = itemId => conAviso(() => abrirDirecto(itemId));
   const volver = () => conAviso(() => navegar('/plantillas'));
 
-  function confirmarPerdida() {
+  useEffect(() => {
+    if (!sucio) return;
+    const alCerrar = e => { e.preventDefault(); e.returnValue = ''; };
+    /* Los enlaces (menú lateral, logotipo) navegan sin pasar por este
+     * componente: se detienen antes de que React Router los vea. */
+    const alClic = e => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const enlace = e.target.closest?.('a[href]');
+      if (!enlace || enlace.target === '_blank' || enlace.hasAttribute('download')) return;
+      const url = new URL(enlace.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname + url.search === window.location.pathname + window.location.search) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const raiz = import.meta.env.BASE_URL.replace(/\/$/, '');
+      const ruta = (url.pathname.slice(raiz.length) || '/') + url.search + url.hash;
+      setPorConfirmar(() => () => navegar(ruta));
+    };
+    window.addEventListener('beforeunload', alCerrar);
+    document.addEventListener('click', alClic, true);
+    return () => {
+      window.removeEventListener('beforeunload', alCerrar);
+      document.removeEventListener('click', alClic, true);
+    };
+  }, [sucio, navegar]);
+
+  function confirmarSalida() {
     const luego = porConfirmar;
     setPorConfirmar(null);
-    setEditando(null); setBorrador(null); setGuardadoComo(null);
     luego?.();
   }
 
-  async function agregarCategoria() {
-    const nombre = prompt('Nombre de la categoría');
-    if (!nombre?.trim()) return;
+  const abrir = itemId => setAbierto(a => (a === itemId ? null : itemId));
+
+  // Despliega un punto y lo trae a la vista, después del render.
+  function mostrar(itemId) {
+    setAbierto(itemId);
+    setTimeout(() => document.getElementById('punto-' + itemId)
+      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0);
+  }
+
+  function cambiarPunto(itemId, cambio) {
+    if (aviso?.id === itemId) setAviso(null);
+    setItems(xs => xs.map(x => (x.id === itemId ? cambio(x) : x)));
+  }
+
+  function puntoNuevo(datos) {
+    return {
+      id: nuevoId(), plantilla_id: id, texto: 'Punto nuevo', ayuda: null,
+      tipo_ingreso: 'estado', config: {}, requiere_foto: false, obligatorio: true,
+      es_critico: false, activo: true, ...datos
+    };
+  }
+
+  function agregarPunto(cat) {
+    const orden = Math.max(-1, ...cat.items.map(x => x.orden ?? 0)) + 1;
+    const nuevo = puntoNuevo({ grupo: cat.nombre, orden_grupo: cat.orden, orden });
+    setItems(xs => [...xs, nuevo]);
+    mostrar(nuevo.id);
+  }
+
+  function agregarCategoria() {
+    const nombre = prompt('Nombre de la categoría')?.trim();
+    if (!nombre) return;
+    if (categorias.some(c => c.nombre === nombre)) return alert('Ya hay una categoría con ese nombre.');
     const orden = categorias.length ? Math.max(...categorias.map(c => c.orden)) + 1 : 0;
-    await crearItem({ grupo: nombre.trim(), orden_grupo: orden, texto: 'Punto nuevo', orden: 0 });
+    const nuevo = puntoNuevo({ grupo: nombre, orden_grupo: orden, orden: 0 });
+    setItems(xs => [...xs, nuevo]);
+    mostrar(nuevo.id);
   }
 
-  async function renombrarCategoria(cat) {
-    const nombre = prompt('Nuevo nombre de la categoría', cat.nombre);
-    if (!nombre?.trim() || nombre === cat.nombre) return;
-    setGuardando(true);
-    const { error } = await supabase
-      .from('plantilla_items')
-      .update({ grupo: nombre.trim() })
-      .eq('plantilla_id', id).eq('grupo', cat.nombre);
-    setGuardando(false);
-    if (error) return setError(error.message);
-    setItems(xs => xs.map(x => (x.grupo === cat.nombre ? { ...x, grupo: nombre.trim() } : x)));
+  function renombrarCategoria(cat) {
+    const nombre = prompt('Nuevo nombre de la categoría', cat.nombre)?.trim();
+    if (!nombre || nombre === cat.nombre) return;
+    if (categorias.some(c => c.nombre === nombre)) return alert('Ya hay una categoría con ese nombre.');
+    setItems(xs => xs.map(x => (x.grupo === cat.nombre ? { ...x, grupo: nombre } : x)));
   }
 
-  /* Mover una categoría intercambia su orden con la vecina y actualiza todos
-   * sus ítems: el orden vive en cada fila porque es la plantilla la que se
+  /* Mover una categoría intercambia su orden con la vecina en todos sus
+   * puntos: el orden vive en cada fila porque es la plantilla la que se
    * consulta al armar el levantamiento. */
-  async function moverCategoria(cat, direccion) {
+  function moverCategoria(cat, direccion) {
     const i = categorias.findIndex(c => c.nombre === cat.nombre);
     const vecina = categorias[i + direccion];
     if (!vecina) return;
-
-    setGuardando(true);
     const [a, b] = [cat.orden, vecina.orden];
-    await Promise.all([
-      supabase.from('plantilla_items').update({ orden_grupo: b })
-        .eq('plantilla_id', id).eq('grupo', cat.nombre),
-      supabase.from('plantilla_items').update({ orden_grupo: a })
-        .eq('plantilla_id', id).eq('grupo', vecina.nombre)
-    ]);
-    setGuardando(false);
     setItems(xs => xs.map(x =>
       x.grupo === cat.nombre ? { ...x, orden_grupo: b }
       : x.grupo === vecina.nombre ? { ...x, orden_grupo: a }
       : x));
   }
 
-  async function crearItem(datos) {
-    setGuardando(true);
-    const { data, error } = await supabase
-      .from('plantilla_items')
-      .insert({ plantilla_id: id, tipo_ingreso: 'estado', config: {}, ...datos })
-      .select().single();
-    setGuardando(false);
-    if (error) return setError(error.message);
-    setItems(xs => [...xs, data]);
-    abrirDirecto(data.id);
+  function quitarPunto(item) {
+    if (!confirm(`¿Quitar "${item.texto}"? Se elimina al guardar la plantilla.`)) return;
+    if (abierto === item.id) setAbierto(null);
+    if (aviso?.id === item.id) setAviso(null);
+    setItems(xs => xs.filter(x => x.id !== item.id));
   }
 
-  /* Guarda el punto abierto entero, no campo por campo: es lo que hace que
-   * "Guardar" tenga sentido como botón y no como algo que ya pasó solo. */
-  async function guardarBorrador() {
-    const item = items.find(x => x.id === editando);
-    const cambios = { ...borrador, ayuda: (borrador.ayuda ?? '').trim() || null };
-
-    /* Las opciones se guardan limpias, sin espacios sobrantes ni filas vacías.
-     * El levantamiento guarda el texto de la opción elegida, así que dos
-     * opciones con el mismo texto no se podrían distinguir después. */
-    if (cambios.tipo_ingreso === 'opciones') {
-      const admiteFotos = cambios.config.origen !== 'ninguna';
-      const opciones = (cambios.config.opciones ?? [])
-        .map(normalizarOpcion)
-        .map(o => ({ texto: o.texto.trim(), evidencia: nivelPosible(o.evidencia, admiteFotos) }))
-        .filter(o => o.texto);
-      if (!opciones.length) return setAvisoPunto('Agrega al menos una opción.');
-      const vistas = new Set();
-      const repetida = opciones.find(o => {
-        const clave = o.texto.toLowerCase();
-        if (vistas.has(clave)) return true;
-        vistas.add(clave);
-        return false;
-      });
-      if (repetida) return setAvisoPunto(`La opción "${repetida.texto}" está repetida.`);
-      cambios.config = { ...cambios.config, opciones };
+  /* Guarda la plantilla entera: los puntos nuevos y modificados en un solo
+   * upsert, los quitados en un solo delete y, si cambió, la plantilla. Antes
+   * se revisa todo: si un punto tiene un problema no se guarda nada y se abre
+   * ese punto con el aviso. Cada paso que sale bien pasa a lo guardado, así
+   * que si algo falla, el reintento manda solo lo que faltó. */
+  async function guardar() {
+    const porGuardar = [...cambios.nuevos, ...cambios.modificados];
+    for (const item of porGuardar) {
+      const problema = problemaDe(item);
+      if (problema) {
+        setAviso({ id: item.id, mensaje: problema });
+        mostrar(item.id);
+        return;
+      }
     }
 
-    setAvisoPunto(null);
+    setAviso(null);
+    setError(null);
     setGuardando(true);
-    const { error } = await supabase.from('plantilla_items').update(cambios).eq('id', item.id);
-    setGuardando(false);
-    if (error) return setError(error.message);
-    const guardado = { ...item, ...cambios };
-    setItems(xs => xs.map(x => (x.id === item.id ? guardado : x)));
-    const base = campoBase(guardado);
-    setBorrador(base);
-    setGuardadoComo(base);
-  }
-
-  /* El orden obligatorio es de la plantilla entera, no de un punto: si un
-   * levantamiento tiene que hacerse en el orden en que se recorre el edificio,
-   * eso no depende de qué pregunta sea, depende de qué plantilla es. Esto se
-   * guarda al toque —es un solo interruptor, no un formulario—. */
-  async function guardarPlantilla(cambios) {
-    setPlantilla(p => ({ ...p, ...cambios }));
-    const { error } = await supabase.from('plantillas_control').update(cambios).eq('id', id);
-    if (error) setError(error.message);
-  }
-
-  async function borrarItem(item) {
-    if (!confirm(`¿Eliminar "${item.texto}"?`)) return;
-    if (editando === item.id) { setEditando(null); setBorrador(null); setGuardadoComo(null); }
-    setItems(xs => xs.filter(x => x.id !== item.id));
-    const { error } = await supabase.from('plantilla_items').delete().eq('id', item.id);
-    if (error) setError(error.message);
+    try {
+      if (porGuardar.length) {
+        const filas = porGuardar.map(filaGuardable);
+        const { error: e } = await supabase.from('plantilla_items').upsert(filas);
+        if (e) throw e;
+        const porId = new Map(filas.map(f => [f.id, f]));
+        setGuardada(g => ({ ...g, items: [...g.items.filter(x => !porId.has(x.id)), ...filas] }));
+        // Lo que se ve queda igual a lo guardado (sin espacios de más ni
+        // opciones vacías), salvo que se haya seguido editando mientras tanto.
+        setItems(xs => xs.map(x => {
+          const f = porId.get(x.id);
+          return f && huellaPunto(x) === huella(f) ? { ...x, ...f } : x;
+        }));
+      }
+      if (cambios.borrados.length) {
+        const { error: e } = await supabase.from('plantilla_items').delete().in('id', cambios.borrados);
+        if (e) throw e;
+        const quitados = new Set(cambios.borrados);
+        setGuardada(g => ({ ...g, items: g.items.filter(x => !quitados.has(x.id)) }));
+      }
+      if (cambios.plantilla) {
+        const secuencial = Boolean(plantilla.secuencial);
+        const { error: e } = await supabase.from('plantillas_control').update({ secuencial }).eq('id', id);
+        if (e) throw e;
+        setGuardada(g => ({ ...g, plantilla: { ...g.plantilla, secuencial } }));
+      }
+    } catch (e) {
+      setError(`No se pudo guardar: ${e?.message ?? e}`);
+    } finally {
+      setGuardando(false);
+    }
   }
 
   if (error && !plantilla) {
@@ -250,10 +340,10 @@ export default function EditorPlantilla() {
       {porConfirmar && (
         <Confirmar
           titulo="Hay cambios sin guardar"
-          mensaje="Lo que escribiste en este punto se va a perder si sales ahora."
+          mensaje="Los cambios de esta plantilla se van a perder si sales ahora."
           textoConfirmar="Salir sin guardar"
           textoCancelar="Volver a editar"
-          onConfirmar={confirmarPerdida}
+          onConfirmar={confirmarSalida}
           onCancelar={() => setPorConfirmar(null)}
         />
       )}
@@ -264,8 +354,6 @@ export default function EditorPlantilla() {
                   onClick={volver}>
             ‹ Plantillas
           </button>
-          <span className="crece" />
-          {guardando && <span className="micro apagado">Guardando…</span>}
         </div>
         <h1 className="h3">{plantilla.nombre}</h1>
         <p className="chico apagado" style={{ margin: '3px 0 0 0' }}>
@@ -276,15 +364,13 @@ export default function EditorPlantilla() {
             respuesta sin exigir orden ya lo hace cada punto por su cuenta con
             "Responder es obligatorio". Esto es lo que impide adelantarse. */}
         <label className="marca" style={{ marginTop: 10 }}>
-          <input type="checkbox" defaultChecked={plantilla.secuencial}
-                 onChange={e => guardarPlantilla({ secuencial: e.target.checked })} />
+          <input type="checkbox" checked={Boolean(plantilla.secuencial)}
+                 onChange={e => setPlantilla(p => ({ ...p, secuencial: e.target.checked }))} />
           <span>Obliga a responder en orden, sin saltarse preguntas</span>
         </label>
       </header>
 
       <div className="cuerpo">
-        {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
-
         {categorias.map((cat, i) => (
           <section key={cat.nombre} className="categoria">
             <div className="categoria-editable">
@@ -301,32 +387,19 @@ export default function EditorPlantilla() {
               <ItemPlantilla
                 key={item.id}
                 item={item}
-                abierto={editando === item.id}
-                borrador={editando === item.id ? borrador : null}
-                sucio={editando === item.id && sucio}
-                guardando={guardando}
-                aviso={editando === item.id ? avisoPunto : null}
-                onCambiar={(campo, valor) => {
-                  setAvisoPunto(null);
-                  setBorrador(b => ({ ...b, [campo]: valor }));
-                }}
-                onCambiarConfig={(clave, valor) => {
-                  setAvisoPunto(null);
-                  setBorrador(b => ({ ...b, config: { ...b.config, [clave]: valor } }));
-                }}
+                abierto={abierto === item.id}
+                sinGuardar={sinGuardar.has(item.id)}
+                aviso={aviso?.id === item.id ? aviso.mensaje : null}
+                onCambiar={(campo, valor) => cambiarPunto(item.id, x => ({ ...x, [campo]: valor }))}
+                onCambiarConfig={(clave, valor) =>
+                  cambiarPunto(item.id, x => ({ ...x, config: { ...x.config, [clave]: valor } }))}
                 onAbrir={() => abrir(item.id)}
-                onGuardar={guardarBorrador}
-                onBorrar={() => borrarItem(item)}
+                onBorrar={() => quitarPunto(item)}
               />
             ))}
 
             <button type="button" className="boton boton-texto agregar-punto"
-                    onClick={() => crearItem({
-                      grupo: cat.nombre,
-                      orden_grupo: cat.orden,
-                      texto: 'Punto nuevo',
-                      orden: cat.items.length
-                    })}>
+                    onClick={() => agregarPunto(cat)}>
               + Agregar punto a {cat.nombre}
             </button>
           </section>
@@ -337,29 +410,43 @@ export default function EditorPlantilla() {
           Nueva categoría
         </button>
       </div>
+
+      {/* El guardado es de la plantilla entera y queda siempre a la vista. */}
+      <footer className="pie-fijo pie-plantilla">
+        {error && <p className="aviso aviso-critico pie-error">{error}</p>}
+        <span className="chico apagado crece" aria-live="polite">
+          {!sucio ? 'Todo guardado'
+           : cambios.total === 1 ? '1 cambio sin guardar'
+           : `${cambios.total} cambios sin guardar`}
+        </span>
+        <button type="button" className="boton boton-movil" disabled={!sucio || guardando} onClick={guardar}>
+          {guardando ? 'Guardando…' : 'Guardar plantilla'}
+        </button>
+      </footer>
     </div>
   );
 }
 
 /* Un punto de la plantilla: qué se pregunta y cómo se responde.
  *
- * Mientras está abierto, sus campos se leen y se escriben en `borrador` —que
- * vive en el componente de arriba, no acá—, y no en `item` directamente:
- * `item` es lo último guardado, `borrador` es lo que se está por guardar. El
- * botón Guardar es lo único que los hace coincidir. */
+ * `item` es la versión del borrador: lo que se escribe acá queda en la
+ * plantilla en edición y se guarda con todo lo demás en "Guardar plantilla". */
 function ItemPlantilla({
-  item, abierto, borrador, sucio, guardando, aviso,
-  onCambiar, onCambiarConfig, onAbrir, onGuardar, onBorrar
+  item, abierto, sinGuardar, aviso,
+  onCambiar, onCambiarConfig, onAbrir, onBorrar
 }) {
   const etiquetaTipo = TIPOS.find(([v]) => v === item.tipo_ingreso)?.[1] ?? item.tipo_ingreso;
 
   if (!abierto) {
     return (
-      <article className="tarjeta item-plantilla">
+      <article id={'punto-' + item.id} className="tarjeta item-plantilla">
         <button type="button" className="cabecera" onClick={onAbrir} aria-expanded={false}>
           <span className="crece">
-            {item.texto}
-            <span className="tipo">{etiquetaTipo}</span>
+            {item.texto || 'Sin pregunta'}
+            <span className="tipo">
+              {etiquetaTipo}
+              {sinGuardar && <span className="sin-guardar"> · Sin guardar</span>}
+            </span>
           </span>
           <span className="flecha" aria-hidden="true">+</span>
         </button>
@@ -367,18 +454,21 @@ function ItemPlantilla({
     );
   }
 
-  const cfg = borrador.config ?? {};
+  const cfg = item.config ?? {};
 
   function cambiarOpciones(texto) {
     onCambiarConfig('opciones', texto.split('\n').map(s => s.trim()).filter(Boolean));
   }
 
   return (
-    <article className="tarjeta item-plantilla abierto">
+    <article id={'punto-' + item.id} className="tarjeta item-plantilla abierto">
       <button type="button" className="cabecera" onClick={onAbrir} aria-expanded={true}>
         <span className="crece">
-          {item.texto}
-          <span className="tipo">{etiquetaTipo}</span>
+          {item.texto || 'Sin pregunta'}
+          <span className="tipo">
+            {etiquetaTipo}
+            {sinGuardar && <span className="sin-guardar"> · Sin guardar</span>}
+          </span>
         </span>
         <span className="flecha" aria-hidden="true">−</span>
       </button>
@@ -386,7 +476,7 @@ function ItemPlantilla({
       <div className="detalle">
         <div className="campo">
           <label className="etiqueta-campo">Qué se pregunta</label>
-          <input type="text" value={borrador.texto}
+          <input type="text" value={item.texto}
                  onChange={e => onCambiar('texto', e.target.value)} />
         </div>
 
@@ -395,14 +485,14 @@ function ItemPlantilla({
             en el mismo orden en que se lee en terreno. */}
         <div className="campo">
           <label className="etiqueta-campo" htmlFor={'ayuda-' + item.id}>Descripción</label>
-          <textarea id={'ayuda-' + item.id} rows={2} value={borrador.ayuda}
+          <textarea id={'ayuda-' + item.id} rows={2} value={item.ayuda ?? ''}
                     placeholder="Qué revisar o cómo responder. Aparece bajo la pregunta en el levantamiento."
                     onChange={e => onCambiar('ayuda', e.target.value)} />
         </div>
 
         <div className="campo">
           <label className="etiqueta-campo">Cómo se responde</label>
-          <select value={borrador.tipo_ingreso}
+          <select value={item.tipo_ingreso}
                   onChange={e => {
                     onCambiar('tipo_ingreso', e.target.value);
                     onCambiar('config', {});
@@ -414,12 +504,12 @@ function ItemPlantilla({
         </div>
 
         {/* Parámetros propios del tipo elegido */}
-        {borrador.tipo_ingreso === 'opciones' && (
+        {item.tipo_ingreso === 'opciones' && (
           <EditorOpciones opciones={cfg.opciones ?? []} conFoto={cfg.origen !== 'ninguna'}
                           onCambiar={opciones => onCambiarConfig('opciones', opciones)} />
         )}
 
-        {(borrador.tipo_ingreso === 'seleccion' || borrador.tipo_ingreso === 'checklist') && (
+        {(item.tipo_ingreso === 'seleccion' || item.tipo_ingreso === 'checklist') && (
           <div className="campo">
             <label className="etiqueta-campo">Opciones, una por línea</label>
             <textarea rows={4} value={(cfg.opciones ?? []).join('\n')}
@@ -428,7 +518,7 @@ function ItemPlantilla({
           </div>
         )}
 
-        {borrador.tipo_ingreso === 'escala' && (
+        {item.tipo_ingreso === 'escala' && (
           <div className="fila" style={{ gap: 8 }}>
             <div className="campo crece">
               <label className="etiqueta-campo">Desde</label>
@@ -443,7 +533,7 @@ function ItemPlantilla({
           </div>
         )}
 
-        {borrador.tipo_ingreso === 'numero' && (
+        {item.tipo_ingreso === 'numero' && (
           <div className="campo">
             <label className="etiqueta-campo">Unidad</label>
             <input type="text" value={cfg.unidad ?? ''} placeholder="m³, bar, °C"
@@ -451,7 +541,7 @@ function ItemPlantilla({
           </div>
         )}
 
-        {borrador.tipo_ingreso === 'texto' && (
+        {item.tipo_ingreso === 'texto' && (
           <div className="campo">
             <label className="etiqueta-campo">Texto de ayuda</label>
             <input type="text" value={cfg.ejemplo ?? ''}
@@ -470,46 +560,39 @@ function ItemPlantilla({
                   onChange={e => {
                     const origen = e.target.value;
                     onCambiarConfig('origen', origen);
-                    if (origen === 'ninguna' && borrador.requiere_foto) onCambiar('requiere_foto', false);
+                    if (origen === 'ninguna' && item.requiere_foto) onCambiar('requiere_foto', false);
                   }}>
             <option value="ambas">Cámara o galería</option>
             <option value="camara">Solo cámara, en el momento</option>
             <option value="galeria">Solo galería</option>
-            {borrador.tipo_ingreso !== 'foto' && <option value="ninguna">Sin foto</option>}
+            {item.tipo_ingreso !== 'foto' && <option value="ninguna">Sin foto</option>}
           </select>
         </div>
 
         {cfg.origen !== 'ninguna' && (
           <label className="marca">
-            <input type="checkbox" checked={!!borrador.requiere_foto}
+            <input type="checkbox" checked={!!item.requiere_foto}
                    onChange={e => onCambiar('requiere_foto', e.target.checked)} />
             <span>Exigir al menos una foto</span>
           </label>
         )}
 
         <label className="marca">
-          <input type="checkbox" checked={borrador.obligatorio}
+          <input type="checkbox" checked={item.obligatorio !== false}
                  onChange={e => onCambiar('obligatorio', e.target.checked)} />
           <span>Responder es obligatorio</span>
         </label>
 
         <label className="marca">
-          <input type="checkbox" checked={!!borrador.es_critico}
+          <input type="checkbox" checked={!!item.es_critico}
                  onChange={e => onCambiar('es_critico', e.target.checked)} />
           <span>Es un punto crítico</span>
         </label>
 
         {aviso && <div className="aviso aviso-critico" style={{ marginTop: 14 }}>{aviso}</div>}
 
-        <div className="fila-botones" style={{ marginTop: 14 }}>
-          <button type="button" className="boton boton-movil crece"
-                  disabled={!sucio || guardando} onClick={onGuardar}>
-            {guardando ? 'Guardando…' : sucio ? 'Guardar' : 'Guardado'}
-          </button>
-        </div>
-
         <button type="button" className="boton boton-texto peligro"
-                style={{ marginTop: 10 }} onClick={onBorrar}>
+                style={{ marginTop: 14 }} onClick={onBorrar}>
           Eliminar este punto
         </button>
       </div>
