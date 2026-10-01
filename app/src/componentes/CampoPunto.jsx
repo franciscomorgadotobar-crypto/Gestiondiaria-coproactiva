@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { opcionesDe } from '../lib/opciones';
 
 /* Cómo se responde cada punto del levantamiento.
  *
@@ -83,19 +84,15 @@ export default function CampoPunto({ item, cerrado, onEstado, onRespuesta }) {
     case 'opciones':
       return (
         <div className="opciones">
-          {(cfg.opciones ?? []).map(o => {
-            const op = typeof o === 'string' ? o : o?.texto;
-            if (!op) return null;
-            return (
-              <button
-                key={op} type="button" disabled={cerrado}
-                aria-pressed={r.opcion === op}
-                onClick={() => onRespuesta(r.opcion === op ? null : { opcion: op })}
-              >
-                {op}
-              </button>
-            );
-          })}
+          {opcionesDe(cfg).map(({ texto: op }) => (
+            <button
+              key={op} type="button" disabled={cerrado}
+              aria-pressed={r.opcion === op}
+              onClick={() => onRespuesta(r.opcion === op ? null : { opcion: op })}
+            >
+              {op}
+            </button>
+          ))}
         </div>
       );
 

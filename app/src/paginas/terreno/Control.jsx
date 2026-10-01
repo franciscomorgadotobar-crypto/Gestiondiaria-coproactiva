@@ -11,6 +11,7 @@ import {
   nuevoId, leerControl, guardarControl, leerItems, fusionarItems, guardarItem,
   leerFotosDeControl, guardarFoto, borrarFoto, encolar
 } from '../../lib/local';
+import { opcionesDe, nivelPosible } from '../../lib/opciones';
 
 const ESTADOS = [
   ['cumple', 'Conforme'],
@@ -39,23 +40,24 @@ function respondido(i, tieneFoto) {
   return i.respuesta != null;
 }
 
-/* La opción elegida en un punto de tipo opciones, con lo que la plantilla dijo
- * de ella: si exige evidencia. */
-function opcionElegida(i) {
+/* Qué evidencia pide la opción elegida en un punto de tipo opciones, según la
+ * plantilla: 'ninguna', 'comentario' o 'comentario_foto'. En un punto sin
+ * fotos, la foto no se puede pedir y queda en comentario. */
+function evidenciaElegida(i) {
   const elegida = i.respuesta?.opcion;
-  if (!elegida) return null;
-  const op = (i.config?.opciones ?? []).find(o => (typeof o === 'string' ? o : o?.texto) === elegida);
-  return { texto: elegida, evidencia: Boolean(op && typeof op === 'object' && op.evidencia) };
+  if (!elegida || i.tipo_ingreso !== 'opciones') return 'ninguna';
+  const op = opcionesDe(i.config).find(o => o.texto === elegida);
+  return nivelPosible(op?.evidencia ?? 'ninguna', (i.config?.origen ?? 'ambas') !== 'ninguna');
 }
 
-/* Si la opción elegida exige evidencia y todavía falta: un comentario y, si el
- * punto admite fotos, al menos una. Mientras falte, el punto no cuenta como
- * respondido y el levantamiento no se envía, aunque el punto sea opcional: la
- * respuesta ya se dio y sin su respaldo no vale. */
+/* Si la opción elegida pide evidencia y todavía falta. Mientras falte, el
+ * punto no cuenta como respondido y el levantamiento no se envía, aunque el
+ * punto sea opcional: la respuesta ya se dio y sin su respaldo no vale. */
 function evidenciaPendiente(i, tieneFoto) {
-  if (i.tipo_ingreso !== 'opciones' || !opcionElegida(i)?.evidencia) return false;
+  const evidencia = evidenciaElegida(i);
+  if (evidencia === 'ninguna') return false;
   const sinComentario = !(i.nota ?? '').trim();
-  const sinFoto = (i.config?.origen ?? 'ambas') !== 'ninguna' && !tieneFoto(i.id);
+  const sinFoto = evidencia === 'comentario_foto' && !tieneFoto(i.id);
   return sinComentario || sinFoto;
 }
 
@@ -833,9 +835,10 @@ function BotonFoto({ camara = false, etiqueta, onArchivos }) {
 function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, onDescribir, onQuitar }) {
   const origen = item.config?.origen ?? 'ambas';
   const necesitaNota = item.estado === 'observacion' || item.estado === 'critico';
-  const exigeEvidencia = item.tipo_ingreso === 'opciones' && Boolean(opcionElegida(item)?.evidencia);
+  const evidencia = evidenciaElegida(item);
+  const exigeEvidencia = evidencia !== 'ninguna';
   const faltaComentario = exigeEvidencia && !(item.nota ?? '').trim();
-  const faltaFotoEvidencia = exigeEvidencia && origen !== 'ninguna' && fotos.length === 0;
+  const faltaFotoEvidencia = evidencia === 'comentario_foto' && fotos.length === 0;
 
   return (
     <article className="tarjeta punto">
@@ -860,8 +863,8 @@ function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, o
         </div>
       )}
 
-      {/* La opción elegida pide respaldo: el comentario siempre y, si el punto
-          admite fotos, al menos una (la grilla de abajo). */}
+      {/* La opción elegida pide respaldo: un comentario y, si así está en la
+          plantilla, al menos una foto (la grilla de abajo). */}
       {exigeEvidencia && (
         <div className="campo" style={{ marginTop: 12, marginBottom: 0 }}>
           <label className="etiqueta-campo" htmlFor={'nota-' + item.id}>Comentario</label>

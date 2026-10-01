@@ -747,13 +747,18 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
 .agregar-punto { padding: 10px 2px; font-size: 11px; }
 
-/* Opciones de un punto "con evidencia": texto, si exige evidencia y quitar. */
+/* Opciones de un punto "con evidencia": texto, qué evidencia pide y quitar.
+   En pantallas angostas la evidencia baja a su propia línea. */
 .opciones-tipicas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
 .opcion-plantilla {
   display: grid; grid-template-columns: 1fr auto auto; align-items: center;
-  gap: 8px; margin-bottom: 6px;
+  gap: 8px; margin-bottom: 8px;
 }
-.opcion-plantilla .marca { min-height: 0; padding: 0; font-size: 12.5px; white-space: nowrap; }
+.opcion-plantilla select { width: auto; min-width: 168px; }
+@media (max-width: 480px) {
+  .opcion-plantilla { grid-template-columns: 1fr auto; row-gap: 4px; }
+  .opcion-plantilla select { grid-column: 1 / -1; grid-row: 2; width: 100%; }
+}
 .quitar-opcion {
   width: 32px; height: 32px;
   border: 1px solid var(--borde); border-radius: var(--radio-control);

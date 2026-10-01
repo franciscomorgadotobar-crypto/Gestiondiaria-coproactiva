@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Confirmar from '../../componentes/Confirmar';
+import { NIVELES_EVIDENCIA, normalizarOpcion, nivelPosible } from '../../lib/opciones';
 
 /* Editor de una plantilla de levantamiento.
  *
@@ -184,8 +185,10 @@ export default function EditorPlantilla() {
      * El levantamiento guarda el texto de la opción elegida, así que dos
      * opciones con el mismo texto no se podrían distinguir después. */
     if (cambios.tipo_ingreso === 'opciones') {
+      const admiteFotos = cambios.config.origen !== 'ninguna';
       const opciones = (cambios.config.opciones ?? [])
-        .map(o => ({ texto: (o.texto ?? '').trim(), evidencia: Boolean(o.evidencia) }))
+        .map(normalizarOpcion)
+        .map(o => ({ texto: o.texto.trim(), evidencia: nivelPosible(o.evidencia, admiteFotos) }))
         .filter(o => o.texto);
       if (!opciones.length) return setAvisoPunto('Agrega al menos una opción.');
       const vistas = new Set();
@@ -519,63 +522,72 @@ function ItemPlantilla({
  * opción después de cargarlas. */
 const OPCIONES_TIPICAS = [
   ['Cumple / No cumple', [
-    { texto: 'Cumple', evidencia: false },
-    { texto: 'No cumple', evidencia: true },
-    { texto: 'Cumple con observaciones', evidencia: true },
-    { texto: 'No aplica', evidencia: false }
+    { texto: 'Cumple', evidencia: 'ninguna' },
+    { texto: 'No cumple', evidencia: 'comentario_foto' },
+    { texto: 'Cumple con observaciones', evidencia: 'comentario' },
+    { texto: 'No aplica', evidencia: 'ninguna' }
   ]],
   ['Sí / No', [
-    { texto: 'Sí', evidencia: false },
-    { texto: 'No', evidencia: false },
-    { texto: 'No aplica', evidencia: false }
+    { texto: 'Sí', evidencia: 'ninguna' },
+    { texto: 'No', evidencia: 'ninguna' },
+    { texto: 'No aplica', evidencia: 'ninguna' }
   ]]
 ];
 
-/* Las opciones de un punto de tipo "Opciones con evidencia". La evidencia es
- * un comentario obligatorio y, si el punto admite fotos, al menos una foto:
- * se pide solo cuando en el levantamiento se elige una opción marcada. */
+/* Las opciones de un punto de tipo "Opciones con evidencia". Cada una dice qué
+ * evidencia pide al elegirla en el levantamiento: ninguna, un comentario, o
+ * un comentario y al menos una foto. Si el punto no admite fotos, la foto no
+ * se ofrece y lo que la pedía queda en comentario. */
 function EditorOpciones({ opciones, conFoto, onCambiar }) {
+  const lista = opciones.map(normalizarOpcion);
+  const niveles = NIVELES_EVIDENCIA.filter(([valor]) => conFoto || valor !== 'comentario_foto');
   const cambiar = (n, campo, valor) =>
-    onCambiar(opciones.map((o, i) => (i === n ? { ...o, [campo]: valor } : o)));
+    onCambiar(lista.map((o, i) => (i === n ? { ...o, [campo]: valor } : o)));
 
   return (
     <div className="campo">
       <label className="etiqueta-campo">Opciones</label>
 
-      {opciones.length === 0 && (
+      {lista.length === 0 && (
         <div className="opciones-tipicas">
           <span className="micro apagado">Cargar:</span>
-          {OPCIONES_TIPICAS.map(([nombre, lista]) => (
+          {OPCIONES_TIPICAS.map(([nombre, tipicas]) => (
             <button key={nombre} type="button" className="boton boton-secundario"
-                    onClick={() => onCambiar(lista.map(o => ({ ...o })))}>
+                    onClick={() => onCambiar(tipicas.map(o => ({
+                      ...o, evidencia: nivelPosible(o.evidencia, conFoto)
+                    })))}>
               {nombre}
             </button>
           ))}
         </div>
       )}
 
-      {opciones.map((op, n) => (
+      {lista.map((op, n) => (
         <div key={n} className="opcion-plantilla">
           <input type="text" value={op.texto} placeholder="Ej: No cumple"
                  aria-label={`Opción ${n + 1}`}
                  onChange={e => cambiar(n, 'texto', e.target.value)} />
-          <label className="marca">
-            <input type="checkbox" checked={!!op.evidencia}
-                   onChange={e => cambiar(n, 'evidencia', e.target.checked)} />
-            <span>Exige evidencia</span>
-          </label>
+          <select value={nivelPosible(op.evidencia, conFoto)}
+                  aria-label={`Evidencia de ${op.texto || `la opción ${n + 1}`}`}
+                  onChange={e => cambiar(n, 'evidencia', e.target.value)}>
+            {niveles.map(([valor, etiqueta]) => (
+              <option key={valor} value={valor}>{etiqueta}</option>
+            ))}
+          </select>
           <button type="button" className="quitar-opcion"
                   aria-label={`Quitar ${op.texto || 'opción'}`}
-                  onClick={() => onCambiar(opciones.filter((_, i) => i !== n))}>×</button>
+                  onClick={() => onCambiar(lista.filter((_, i) => i !== n))}>×</button>
         </div>
       ))}
 
       <button type="button" className="boton boton-texto agregar-punto"
-              onClick={() => onCambiar([...opciones, { texto: '', evidencia: false }])}>
+              onClick={() => onCambiar([...lista, { texto: '', evidencia: 'ninguna' }])}>
         + Agregar opción
       </button>
       <p className="micro apagado" style={{ margin: '2px 0 0' }}>
-        Con evidencia, quien responde debe dejar un comentario{conFoto ? ' y al menos una foto' : ''}.
+        {conFoto
+          ? 'La evidencia se pide al elegir la opción: un comentario, o un comentario y al menos una foto.'
+          : 'Este punto no lleva fotos: la evidencia solo puede ser un comentario.'}
       </p>
     </div>
   );
