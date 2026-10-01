@@ -153,10 +153,14 @@ export default function Plantillas() {
         </div>
 
         {puedeEditar && (
-          <button className="boton boton-movil boton-ancho" style={{ marginTop: 20 }}
-                  onClick={crear}>
-            Nueva plantilla
-          </button>
+          <div className="acciones-plantillas">
+            <button className="boton boton-movil boton-ancho" onClick={crear}>
+              Nueva plantilla
+            </button>
+            <Link to="/plantillas/importar" className="boton boton-secundario boton-movil boton-ancho">
+              Importar desde Excel
+            </Link>
+          </div>
         )}
       </div>
     </div>

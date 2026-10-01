@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import Confirmar from '../../componentes/Confirmar';
 import { NIVELES_EVIDENCIA, normalizarOpcion, nivelPosible } from '../../lib/opciones';
 import { nuevoId } from '../../lib/local';
+import { TIPOS, ORIGENES_FOTO } from '../../lib/tiposDePunto';
 
 /* Editor de una plantilla de levantamiento.
  *
@@ -22,18 +23,6 @@ import { nuevoId } from '../../lib/local';
  * entera y se guarda una vez, no punto por punto. Salir con cambios sin
  * guardar pregunta antes.
  */
-
-const TIPOS = [
-  ['estado',    'Conforme / Observa / Crítico'],
-  ['opciones',  'Opciones con evidencia'],
-  ['texto',     'Texto libre'],
-  ['numero',    'Número o lectura'],
-  ['escala',    'Escala del 1 al 10'],
-  ['seleccion', 'Una opción de varias'],
-  ['checklist', 'Varias opciones'],
-  ['foto',      'Solo fotografía'],
-  ['firma',     'Firma de quien recibe']
-];
 
 /* Un punto tal como se guarda. Todas las filas llevan los mismos campos: el
  * guardado va en un solo upsert, y PostgREST arma las columnas con todas las
@@ -560,10 +549,9 @@ function ItemPlantilla({
                     onCambiarConfig('origen', origen);
                     if (origen === 'ninguna' && item.requiere_foto) onCambiar('requiere_foto', false);
                   }}>
-            <option value="ambas">Cámara o galería</option>
-            <option value="camara">Solo cámara, en el momento</option>
-            <option value="galeria">Solo galería</option>
-            {item.tipo_ingreso !== 'foto' && <option value="ninguna">Sin foto</option>}
+            {ORIGENES_FOTO
+              .filter(([valor]) => valor !== 'ninguna' || item.tipo_ingreso !== 'foto')
+              .map(([valor, etiqueta]) => <option key={valor} value={valor}>{etiqueta}</option>)}
           </select>
         </div>
 

@@ -45,6 +45,10 @@ export default defineConfig({
         // Todo el shell entra al precache, tipografías incluidas: si la primera
         // pantalla en un subterráneo aparece sin fuentes, la app se ve rota.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,ttf,otf,woff2}'],
+        // Menos el lector de Excel (940 KB): solo lo usa la importación de
+        // plantillas, en la oficina y con conexión. Precachearlo haría que cada
+        // teléfono de terreno lo descargue sin usarlo nunca.
+        globIgnores: ['**/exceljs.min-*.js'],
         // Montserrat variable pesa 688 KB y el bundle 400 KB. El tope por
         // defecto (2 MiB) alcanza, pero deja poco margen para crecer.
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,

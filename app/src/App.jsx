@@ -24,6 +24,9 @@ const PortalCliente = lazy(() => import('./paginas/cliente/PortalCliente'));
 // Propiedades es de administración: quien va a terreno con el teléfono no
 // tiene por qué descargarla.
 const Propiedades = lazy(() => import('./paginas/propiedades/Propiedades'));
+// Importar plantillas desde Excel es de oficina; el lector de Excel, además,
+// se carga recién al usarlo (ver lib/excelPlantillas.js).
+const ImportarPlantillas = lazy(() => import('./paginas/panel/ImportarPlantillas'));
 import Despacho from './paginas/terreno/Despacho';
 
 function Privada({ children }) {
@@ -124,6 +127,11 @@ export default function App() {
       <Route path="/inicio" element={<Interna><Inicio /></Interna>} />
       <Route path="/configuracion" element={<Interna><Configuracion /></Interna>} />
       <Route path="/plantillas" element={<Interna><Plantillas /></Interna>} />
+      <Route path="/plantillas/importar" element={
+        <Interna>
+          <Suspense fallback={<p className="cargando">Cargando…</p>}><ImportarPlantillas /></Suspense>
+        </Interna>
+      } />
       <Route path="/plantillas/:id" element={<Interna><EditorPlantilla /></Interna>} />
       <Route path="/equipo" element={<Interna><Equipo /></Interna>} />
       <Route path="/clientes" element={<Interna><Clientes /></Interna>} />

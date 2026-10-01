@@ -15,6 +15,7 @@ Esquema de Supabase (PostgreSQL) para la app de administración de comunidades.
 | `migrations/0040_propiedades.sql` | Propiedades en arriendo y venta que publica el sitio: anon lee solo las publicadas y sus columnas públicas; bucket público `propiedades` |
 | `migrations/0041_secciones_sitio.sql` | Interruptor de secciones del sitio (parte apagada). Apagada, anon tampoco lee propiedades; solo administración la cambia |
 | `migrations/0042_descripcion_de_puntos.sql` | `control_items.ayuda`: la descripción de cada punto de la plantilla llega al levantamiento. Se completó en los levantamientos abiertos |
+| `migrations/0043_importar_plantillas.sql` | `importar_plantillas(jsonb)`: crea las plantillas de un Excel en una transacción. Security invoker: pasa por las mismas políticas que el editor |
 | `seed/0001_prospectos.sql` | Los 9 prospectos reales migrados desde la planilla |
 | `seed/0002_plantilla_estandar.sql` | Checklist mensual estándar y comunidad de prueba |
 

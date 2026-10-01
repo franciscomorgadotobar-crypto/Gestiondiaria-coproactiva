@@ -60,6 +60,14 @@ de responder.
 | `/control/:id` | Formulario de control con check-in geolocalizado |
 | `/propiedades` | Arriendos y ventas del sitio (área Propiedades) |
 | `/propiedades/nueva`, `/propiedades/:id` | Ficha de una propiedad: datos, fotos y publicación |
+| `/plantillas/importar` | Crear plantillas desde Excel: descarga del formato, revisión del archivo y vista previa |
+
+**Plantillas desde Excel.** El formato (`lib/excelPlantillas.js`) trae una fila
+por punto, listas desplegables, una hoja de ejemplo y las instrucciones. Al
+subirlo, `lib/importarPlantillas.js` revisa todas las filas: con un solo error
+no se crea nada y se indica la fila. Lo válido se crea de una vez con la
+función `importar_plantillas` (migración 0043), en una sola transacción.
+ExcelJS se carga recién al usar la pantalla y queda fuera del precache.
 
 **Propiedades alimenta www.coproactiva.cl/propiedades.** El sitio lee la tabla
 `propiedades` directo con la clave pública, así que guardar en la app ya es

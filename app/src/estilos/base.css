@@ -1173,6 +1173,35 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .tarjeta-enlace .h4 { margin: 6px 0 4px; }
 .tarjeta-enlace p { margin: 0; }
 
+/* ------------------------------------------------- Importar plantillas */
+
+.acciones-plantillas { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.importar { display: flex; flex-direction: column; gap: 14px; }
+.paso-importar { padding: 16px; }
+.paso-importar .h4 { margin: 0 0 4px; }
+.paso-importar p { margin: 0 0 12px; }
+.paso-importar .nombre-archivo { margin: 8px 0 0; overflow-wrap: anywhere; }
+.lista-problemas { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; line-height: 1.45; }
+.lista-problemas li + li { margin-top: 4px; }
+.fila-excel { font-weight: 600; margin-right: 6px; white-space: nowrap; }
+.aviso-ok {
+  border-color: var(--ok-borde);
+  background: var(--ok-fondo);
+  color: var(--ok-texto);
+}
+.vista-previa { display: flex; flex-direction: column; gap: 12px; }
+.vista-previa > .h4, .vista-previa > p { margin: 0; }
+.plantilla-previa { padding: 14px 16px; }
+.plantilla-previa .dato-chico { margin: 0; }
+.plantilla-previa > p { margin: 2px 0 0; }
+.plantilla-previa summary { margin-top: 10px; cursor: pointer; color: var(--naranja); font-weight: 600; }
+.categoria-previa { margin-top: 12px; }
+.categoria-previa .etiqueta-campo { margin-bottom: 4px; }
+.categoria-previa ol { margin: 0; padding-left: 20px; }
+.categoria-previa li { margin-bottom: 8px; }
+.categoria-previa li > span { display: block; }
+.ayuda-previa { white-space: pre-line; margin-top: 2px; }
+
 /* ============================================================== Escritorio
  *
  * Todo lo anterior está pensado para el teléfono. En una pantalla ancha esa
@@ -1262,4 +1291,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   .panel-mapa .tablero { grid-template-columns: repeat(2, 1fr); }
 
   .pestanas { flex-wrap: wrap; overflow: visible; }
+
+  /* Plantillas: "Nueva plantilla" e "Importar desde Excel" lado a lado. */
+  .acciones-plantillas { flex-direction: row; }
 }
