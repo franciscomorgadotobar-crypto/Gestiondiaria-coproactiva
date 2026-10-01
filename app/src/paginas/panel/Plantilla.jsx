@@ -456,10 +456,6 @@ function ItemPlantilla({
 
   const cfg = item.config ?? {};
 
-  function cambiarOpciones(texto) {
-    onCambiarConfig('opciones', texto.split('\n').map(s => s.trim()).filter(Boolean));
-  }
-
   return (
     <article id={'punto-' + item.id} className="tarjeta item-plantilla abierto">
       <button type="button" className="cabecera" onClick={onAbrir} aria-expanded={true}>
@@ -511,10 +507,12 @@ function ItemPlantilla({
 
         {(item.tipo_ingreso === 'seleccion' || item.tipo_ingreso === 'checklist') && (
           <div className="campo">
-            <label className="etiqueta-campo">Opciones, una por línea</label>
-            <textarea rows={4} value={(cfg.opciones ?? []).join('\n')}
-                      placeholder={'Bueno\nRegular\nMalo'}
-                      onChange={e => cambiarOpciones(e.target.value)} />
+            <label className="etiqueta-campo" htmlFor={'opciones-' + item.id}>Opciones, una por línea</label>
+            {/* key: al cambiar de tipo las opciones se vacían, y el campo
+                tiene que partir de nuevo desde esa lista. */}
+            <OpcionesPorLinea key={item.tipo_ingreso} id={'opciones-' + item.id}
+                              opciones={cfg.opciones ?? []}
+                              onCambiar={opciones => onCambiarConfig('opciones', opciones)} />
           </div>
         )}
 
@@ -597,6 +595,27 @@ function ItemPlantilla({
         </button>
       </div>
     </article>
+  );
+}
+
+/* Opciones de "Una opción de varias" y "Varias opciones", una por línea.
+ *
+ * El campo guarda el texto tal como se escribe y la lista limpia se arma
+ * aparte. Si el campo se reconstruyera desde la lista en cada tecla, el
+ * salto de línea recién escrito (y un espacio al final) se borraría al
+ * instante: Enter no bajaba de línea y "Bueno", Enter, "Malo" quedaba
+ * "BuenoMalo". */
+function OpcionesPorLinea({ id, opciones, onCambiar }) {
+  const [texto, setTexto] = useState(() => opciones
+    .map(o => (typeof o === 'string' ? o : o?.etiqueta ?? o?.texto ?? ''))
+    .join('\n'));
+
+  return (
+    <textarea id={id} rows={4} value={texto} placeholder={'Bueno\nRegular\nMalo'}
+              onChange={e => {
+                setTexto(e.target.value);
+                onCambiar(e.target.value.split('\n').map(l => l.trim()).filter(Boolean));
+              }} />
   );
 }
 
