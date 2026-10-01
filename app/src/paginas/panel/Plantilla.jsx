@@ -387,6 +387,16 @@ function ItemPlantilla({
                  onChange={e => onCambiar('texto', e.target.value)} />
         </div>
 
+        {/* Lo que verá quien hace el levantamiento bajo la pregunta: qué
+            revisar, dónde, por qué importa. Va antes de cómo se responde,
+            en el mismo orden en que se lee en terreno. */}
+        <div className="campo">
+          <label className="etiqueta-campo" htmlFor={'ayuda-' + item.id}>Descripción</label>
+          <textarea id={'ayuda-' + item.id} rows={2} value={borrador.ayuda}
+                    placeholder="Qué revisar o cómo responder. Aparece bajo la pregunta en el levantamiento."
+                    onChange={e => onCambiar('ayuda', e.target.value)} />
+        </div>
+
         <div className="campo">
           <label className="etiqueta-campo">Cómo se responde</label>
           <select value={borrador.tipo_ingreso}
@@ -398,15 +408,6 @@ function ItemPlantilla({
               <option key={valor} value={valor}>{etiqueta}</option>
             ))}
           </select>
-        </div>
-
-        {/* Lo que verá quien hace el levantamiento bajo la pregunta: qué
-            revisar, dónde, por qué importa. */}
-        <div className="campo">
-          <label className="etiqueta-campo" htmlFor={'ayuda-' + item.id}>Descripción</label>
-          <textarea id={'ayuda-' + item.id} rows={2} value={borrador.ayuda}
-                    placeholder="Qué revisar o cómo responder. Aparece bajo la pregunta en el levantamiento."
-                    onChange={e => onCambiar('ayuda', e.target.value)} />
         </div>
 
         {/* Parámetros propios del tipo elegido */}
