@@ -86,6 +86,16 @@ function huella(valor) {
 }
 const huellaPunto = item => huella(filaGuardable(item));
 
+/* Los datos propios de la plantilla tal como se guardan: nombre, descripción
+ * (la que se ve en el listado de plantillas) y el orden obligatorio. */
+function datosPlantilla(p) {
+  return {
+    nombre: (p.nombre ?? '').trim(),
+    descripcion: (p.descripcion ?? '').trim() || null,
+    secuencial: Boolean(p.secuencial)
+  };
+}
+
 export default function EditorPlantilla() {
   const { id } = useParams();
   const navegar = useNavigate();
@@ -101,6 +111,7 @@ export default function EditorPlantilla() {
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [porConfirmar, setPorConfirmar] = useState(null);  // qué hacer si se confirma salir sin guardar
+  const [faltaNombre, setFaltaNombre] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -132,7 +143,7 @@ export default function EditorPlantilla() {
   }, [items]);
 
   /* Qué cambió respecto de lo guardado: puntos nuevos, modificados y quitados,
-   * y el orden obligatorio de la plantilla. */
+   * y el nombre, la descripción o el orden obligatorio de la plantilla. */
   const cambios = useMemo(() => {
     if (!guardada) return { nuevos: [], modificados: [], borrados: [], plantilla: false, total: 0 };
     const antes = new Map(guardada.items.map(x => [x.id, huellaPunto(x)]));
@@ -140,7 +151,7 @@ export default function EditorPlantilla() {
     const nuevos = items.filter(x => !antes.has(x.id));
     const modificados = items.filter(x => antes.has(x.id) && antes.get(x.id) !== huellaPunto(x));
     const borrados = guardada.items.filter(x => !ahora.has(x.id)).map(x => x.id);
-    const cambioPlantilla = Boolean(guardada.plantilla.secuencial) !== Boolean(plantilla?.secuencial);
+    const cambioPlantilla = huella(datosPlantilla(guardada.plantilla)) !== huella(datosPlantilla(plantilla));
     return {
       nuevos, modificados, borrados, plantilla: cambioPlantilla,
       total: nuevos.length + modificados.length + borrados.length + (cambioPlantilla ? 1 : 0)
@@ -265,6 +276,11 @@ export default function EditorPlantilla() {
    * ese punto con el aviso. Cada paso que sale bien pasa a lo guardado, así
    * que si algo falla, el reintento manda solo lo que faltó. */
   async function guardar() {
+    if (!datosPlantilla(plantilla).nombre) {
+      setFaltaNombre(true);
+      document.getElementById('plantilla-nombre')?.focus();
+      return;
+    }
     const porGuardar = [...cambios.nuevos, ...cambios.modificados];
     for (const item of porGuardar) {
       const problema = problemaDe(item);
@@ -299,10 +315,11 @@ export default function EditorPlantilla() {
         setGuardada(g => ({ ...g, items: g.items.filter(x => !quitados.has(x.id)) }));
       }
       if (cambios.plantilla) {
-        const secuencial = Boolean(plantilla.secuencial);
-        const { error: e } = await supabase.from('plantillas_control').update({ secuencial }).eq('id', id);
+        const datos = datosPlantilla(plantilla);
+        const { error: e } = await supabase.from('plantillas_control').update(datos).eq('id', id);
         if (e) throw e;
-        setGuardada(g => ({ ...g, plantilla: { ...g.plantilla, secuencial } }));
+        setGuardada(g => ({ ...g, plantilla: { ...g.plantilla, ...datos } }));
+        setPlantilla(p => (huella(datosPlantilla(p)) === huella(datos) ? { ...p, ...datos } : p));
       }
     } catch (e) {
       setError(`No se pudo guardar: ${e?.message ?? e}`);
@@ -344,15 +361,31 @@ export default function EditorPlantilla() {
             ‹ Plantillas
           </button>
         </div>
-        <h1 className="h3">{plantilla.nombre}</h1>
+        <h1 className="h3">{plantilla.nombre?.trim() || 'Plantilla sin nombre'}</h1>
         <p className="chico apagado" style={{ margin: '3px 0 0 0' }}>
           {items.length} puntos en {categorias.length} categorías
         </p>
 
+        <div className={'campo' + (faltaNombre ? ' campo-error' : '')} style={{ marginTop: 14 }}>
+          <label className="etiqueta-campo" htmlFor="plantilla-nombre">Nombre de la plantilla</label>
+          <input id="plantilla-nombre" value={plantilla.nombre ?? ''}
+                 onChange={e => {
+                   setFaltaNombre(false);
+                   setPlantilla(p => ({ ...p, nombre: e.target.value }));
+                 }} />
+          {faltaNombre && <p className="mensaje-error">Escribe el nombre de la plantilla.</p>}
+        </div>
+        <div className="campo">
+          <label className="etiqueta-campo" htmlFor="plantilla-descripcion">Descripción</label>
+          <textarea id="plantilla-descripcion" rows={2} value={plantilla.descripcion ?? ''}
+                    placeholder="Para qué sirve esta plantilla. Aparece en el listado de plantillas."
+                    onChange={e => setPlantilla(p => ({ ...p, descripcion: e.target.value }))} />
+        </div>
+
         {/* Se pide el orden completo, no solo "no dejar en blanco": exigir
             respuesta sin exigir orden ya lo hace cada punto por su cuenta con
             "Responder es obligatorio". Esto es lo que impide adelantarse. */}
-        <label className="marca" style={{ marginTop: 10 }}>
+        <label className="marca" style={{ marginTop: 2 }}>
           <input type="checkbox" checked={Boolean(plantilla.secuencial)}
                  onChange={e => setPlantilla(p => ({ ...p, secuencial: e.target.checked }))} />
           <span>Obliga a responder en orden, sin saltarse preguntas</span>
