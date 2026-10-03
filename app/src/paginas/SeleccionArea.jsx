@@ -26,7 +26,7 @@ export default function SeleccionArea() {
     guardarArea(area);
     // Nunca "/": esta pantalla ya está montada ahí, y navegar a la misma
     // ruta en la que se está no vuelve a renderizar nada en React Router.
-    const destino = { crm: '/pipeline', propiedades: '/propiedades' }[area] ?? '/inicio';
+    const destino = { crm: '/pipeline', propiedades: '/propiedades', proveedores: '/proveedores' }[area] ?? '/inicio';
     navegar(destino, { replace: true });
   }
 
@@ -69,6 +69,16 @@ export default function SeleccionArea() {
               Lo que se publica en coproactiva.cl/propiedades.
             </p>
           </button>
+
+          {puedeConfigurar && (
+            <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => elegir('proveedores')}>
+              <span className="seleccion-area-etiqueta">Proveedores</span>
+              <h2 className="h4" style={{ margin: '6px 0 4px' }}>Red de proveedores</h2>
+              <p className="chico apagado" style={{ margin: 0 }}>
+                Buscar, contactar y administrar proveedores para las comunidades.
+              </p>
+            </button>
+          )}
 
           {puedeConfigurar && (
             <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => navegar('/configuracion')}>
