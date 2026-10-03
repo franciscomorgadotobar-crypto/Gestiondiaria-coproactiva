@@ -14,6 +14,7 @@ import Configuracion from './paginas/panel/Configuracion';
 import Pipeline from './paginas/panel/Pipeline';
 import Ayuda from './paginas/panel/Ayuda';
 import PracticaLevantamiento from './paginas/panel/PracticaLevantamiento';
+import Proveedores from './paginas/panel/Proveedores';
 import SeleccionArea from './paginas/SeleccionArea';
 import PanelEscritorio from './componentes/PanelEscritorio';
 import { areaGuardada } from './lib/area';
@@ -77,6 +78,7 @@ function Entrada() {
   const area = areaGuardada();
   if (area === 'crm') return <Navigate to="/pipeline" replace />;
   if (area === 'propiedades') return <Navigate to="/propiedades" replace />;
+  if (area === 'proveedores') return <Navigate to="/proveedores" replace />;
   if (area === 'operacion') return <PanelEscritorio><Inicio /></PanelEscritorio>;
   return <SeleccionArea />;
 }
@@ -160,6 +162,8 @@ export default function App() {
           <Suspense fallback={<p className="cargando">Cargando…</p>}><Propiedades /></Suspense>
         </Interna>
       } />
+      <Route path="/proveedores" element={<Interna><Proveedores /></Interna>} />
+      <Route path="/proveedores/:id" element={<Interna><Proveedores /></Interna>} />
       <Route path="/nuevo" element={<Interna><Programar /></Interna>} />
       <Route path="/control/:id/editar" element={<Interna><Programar /></Interna>} />
       <Route path="/control/:id" element={<Privada><SoloInterno><Despacho /></SoloInterno></Privada>} />
