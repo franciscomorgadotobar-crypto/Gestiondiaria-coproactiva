@@ -19,11 +19,6 @@ export default function PracticaLevantamiento() {
     <div className="pantalla pantalla-angosta practica-levantamiento">
       <header className="encabezado encabezado-levantamiento" data-tutorial="practica-intro">
         <div className="fila" style={{ marginBottom: 6 }}>
-          <button type="button" className="boton boton-texto"
-                  style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/ayuda')}>
-            ‹ Ayuda
-          </button>
           <span className="crece" />
           <span className="chip chip-alerta">Modo práctica</span>
         </div>
