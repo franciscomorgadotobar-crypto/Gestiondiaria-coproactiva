@@ -13,7 +13,7 @@ const CHIP = {
   pendiente: ['chip-pendiente', 'Pendiente'],
   en_curso: ['chip-alerta', 'En curso'],
   pausado: ['chip-pausado', 'En pausa'],
-  enviado: ['chip-cumple', 'Enviado'],
+  enviado: ['chip-cumple', 'Finalizado'],
   anulado: ['chip-pendiente', 'Anulado']
 };
 
@@ -190,7 +190,7 @@ export default function Inicio() {
             </div>
             <div className="ok">
               <p className="n">{resumen.enviados}</p>
-              <p className="r">Enviados 30 d</p>
+              <p className="r">Finalizados 30 d</p>
             </div>
             <div className={resumen.criticos ? 'critico' : ''}>
               <p className="n">{resumen.criticos}</p>
