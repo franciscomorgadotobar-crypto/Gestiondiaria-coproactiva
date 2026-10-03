@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import Confirmar from '../../componentes/Confirmar';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Las plantillas del catálogo estándar (comunidad_id nulo) sirven para todas
  * las comunidades. Una plantilla con comunidad asignada existe porque ese
@@ -12,6 +13,7 @@ import Confirmar from '../../componentes/Confirmar';
 export default function Plantillas() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
+  useVolverGlobal(() => navegar(inicioSegunArea()));
   const [plantillas, setPlantillas] = useState(null);
   const [error, setError] = useState(null);
   const [porBorrar, setPorBorrar] = useState(null);
@@ -92,7 +94,7 @@ export default function Plantillas() {
       )}
 
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
