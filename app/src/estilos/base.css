@@ -271,6 +271,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .chip-alerta    { background: var(--alerta-fondo);  border-color: var(--alerta-borde);  color: var(--alerta-texto); }
 .chip-critico   { background: var(--critico-fondo); border-color: var(--critico-borde); color: var(--critico-texto); }
 .chip-pendiente { background: var(--info-fondo);    border-color: var(--info-borde);    color: var(--info-texto); }
+.chip-info      { background: var(--info-fondo);    border-color: var(--info-borde);    color: var(--info-texto); }
 
 /* --------------------------------------------------------------- Estructura */
 
