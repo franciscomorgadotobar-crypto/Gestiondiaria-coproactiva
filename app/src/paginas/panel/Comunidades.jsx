@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
+import { useVolverGlobal } from '../../lib/navegacion';
 import './Comunidades.css';
 
 const SECCIONES = [
@@ -175,6 +176,7 @@ const COMUNIDAD_VACIA = {
 
 function ListadoComunidades() {
   const navegar = useNavigate();
+  useVolverGlobal(() => navegar(inicioSegunArea()));
   const { perfil } = useSesion();
   // Igual que ganar un prospecto: lo hacen quienes trabajan el CRM.
   const puedeCrear = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
@@ -240,7 +242,7 @@ function ListadoComunidades() {
   return (
     <div className="pantalla">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
           </button>
@@ -371,6 +373,7 @@ function ListadoComunidades() {
 
 function DetalleComunidad({ id }) {
   const navegar = useNavigate();
+  useVolverGlobal(() => navegar('/comunidades'));
   const [searchParams, setSearchParams] = useSearchParams();
   const { perfil } = useSesion();
   const puedeGestionar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
@@ -751,7 +754,7 @@ function DetalleComunidad({ id }) {
   return (
     <div className="pantalla">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar('/comunidades')}>
             ‹ Comunidades
           </button>
