@@ -73,7 +73,10 @@ export default function Levantamiento() {
   const [ubicando, setUbicando] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [abierta, setAbierta] = useState(null);   // categoría desplegada
-  const [paso, setPaso] = useState(0);            // punto en curso dentro de ella
+  // null = índice de preguntas; número = pregunta individual abierta.
+  // Así cada categoría siempre entra primero por su lista y nunca salta
+  // directamente a una pregunta.
+  const [paso, setPaso] = useState(null);
   const [pausas, setPausas] = useState([]);
 
   /* Primero el teléfono, después el servidor. Al revés, entrar a un
@@ -217,9 +220,9 @@ export default function Levantamiento() {
     [categorias]
   );
 
-  // Al entrar a un levantamiento secuencial, partir directo en esa primera
-  // categoría pendiente en vez de dejar todo plegado. Solo una vez: después
-  // de eso el usuario manda sobre qué categoría (ya desbloqueada) mirar.
+  // Al entrar a un levantamiento secuencial, abrir la primera categoría
+  // pendiente, pero mostrando su índice. La pregunta se abre solo cuando la
+  // persona la elige explícitamente desde la lista.
   const partioSecuencial = useRef(false);
   useEffect(() => {
     if (partioSecuencial.current) return;
@@ -228,8 +231,7 @@ export default function Levantamiento() {
     const i = primeraCategoriaPendiente === -1 ? 0 : primeraCategoriaPendiente;
     const cat = categorias[i];
     setAbierta(cat.nombre);
-    const pendiente = cat.items.findIndex(it => !respondido(it, tieneFoto));
-    setPaso(pendiente === -1 ? 0 : pendiente);
+    setPaso(null);
   }, [control, categorias, primeraCategoriaPendiente, fotos]);
   const faltantes = items.length - evaluados;
 
@@ -657,8 +659,7 @@ export default function Levantamiento() {
                   if (bloqueada) return;
                   if (desplegada) return setAbierta(null);
                   setAbierta(cat.nombre);
-                  const pendiente = cat.items.findIndex(i => !respondido(i, tieneFoto));
-                  setPaso(pendiente === -1 ? 0 : pendiente);
+                  setPaso(null);
                 }}
               >
                 <span className="crece">{cat.nombre}</span>
@@ -667,11 +668,62 @@ export default function Levantamiento() {
                 <span className="flecha" aria-hidden="true">{bloqueada ? '🔒' : desplegada ? '−' : '+'}</span>
               </button>
 
-              {/* Un punto a la vez. Con siete preguntas apiladas se pierde de
-                  vista dónde va uno, y en una pantalla de teléfono la lista se
-                  hace interminable. */}
-              {desplegada && cat.items[paso] && (
+              {/* Primero se muestra el índice numerado de la categoría. Recién
+                  al elegir una fila se entra a la pregunta individual. */}
+              {desplegada && paso === null && (
+                <ol className="indice-preguntas" aria-label={`Preguntas de ${cat.nombre}`}>
+                  {(() => {
+                    const primerPendiente = cat.items.findIndex(it => !respondido(it, tieneFoto));
+                    return cat.items.map((it, i) => {
+                      const hecho = respondido(it, tieneFoto);
+                      const bloqueado = control.secuencial
+                        && primerPendiente !== -1 && i > primerPendiente;
+                      return (
+                        <li key={it.id}>
+                          <button
+                            type="button"
+                            className={
+                              'pregunta-indice'
+                              + (hecho ? ' respondida' : '')
+                              + (it.estado === 'critico' ? ' critica' : '')
+                            }
+                            disabled={bloqueado}
+                            onClick={() => setPaso(i)}
+                          >
+                            <span className="numero-pregunta" aria-hidden="true">{i + 1}</span>
+                            <span className="texto-pregunta">
+                              <span>{it.texto}</span>
+                              <small>
+                                {bloqueado
+                                  ? 'Completa la pregunta anterior para continuar'
+                                  : it.estado === 'critico'
+                                    ? 'Crítico'
+                                    : hecho ? 'Respondida' : 'Pendiente'}
+                              </small>
+                            </span>
+                            <span className="estado-pregunta" aria-hidden="true">
+                              {bloqueado ? '🔒' : hecho ? '✓' : '›'}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    });
+                  })()}
+                </ol>
+              )}
+
+              {/* Pregunta individual: conserva exactamente el formulario y el
+                  recorrido anterior/siguiente que ya usa el levantamiento. */}
+              {desplegada && paso !== null && cat.items[paso] && (
                 <>
+                  <button
+                    type="button"
+                    className="volver-indice"
+                    onClick={() => setPaso(null)}
+                  >
+                    ‹ Lista de preguntas
+                  </button>
+
                   <Punto
                     key={cat.items[paso].id}
                     item={cat.items[paso]}
@@ -694,11 +746,6 @@ export default function Levantamiento() {
 
                     <div className="conteo">
                       <span>{paso + 1} de {cat.items.length}</span>
-                      {/* Marcas del recorrido: se ve de un vistazo qué queda
-                          pendiente dentro de la categoría y se salta ahí.
-                          Con la plantilla en modo secuencial, no se puede
-                          saltar a un punto más allá del primero sin responder
-                          —volver atrás sí, siempre—. */}
                       <div className="marcadores">
                         {(() => {
                           const primerPendiente = cat.items.findIndex(it => !respondido(it, tieneFoto));
@@ -729,8 +776,8 @@ export default function Levantamiento() {
                         Siguiente ›
                       </button>
                     ) : (
-                      /* En el último punto, avanzar salta a la categoría
-                         siguiente: el recorrido continúa sin volver a la lista. */
+                      /* La categoría siguiente también entra por su índice,
+                         nunca directamente por una pregunta. */
                       <button type="button" className="boton"
                               disabled={control.secuencial && !respondido(cat.items[paso], tieneFoto)}
                               onClick={() => {
@@ -738,10 +785,10 @@ export default function Levantamiento() {
                                 const siguiente = categorias[i + 1];
                                 if (siguiente) {
                                   setAbierta(siguiente.nombre);
-                                  const pend = siguiente.items.findIndex(x => !respondido(x, tieneFoto));
-                                  setPaso(pend === -1 ? 0 : pend);
+                                  setPaso(null);
                                 } else {
                                   setAbierta(null);
+                                  setPaso(null);
                                 }
                               }}>
                         {categorias.findIndex(c => c.nombre === cat.nombre) < categorias.length - 1
