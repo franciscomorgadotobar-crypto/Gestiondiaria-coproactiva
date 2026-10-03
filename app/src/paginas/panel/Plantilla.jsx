@@ -5,6 +5,7 @@ import Confirmar from '../../componentes/Confirmar';
 import { NIVELES_EVIDENCIA, normalizarOpcion, nivelPosible } from '../../lib/opciones';
 import { nuevoId } from '../../lib/local';
 import { TIPOS, ORIGENES_FOTO } from '../../lib/tiposDePunto';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Editor de una plantilla de levantamiento.
  *
@@ -170,6 +171,7 @@ export default function EditorPlantilla() {
     else luego();
   }
   const volver = () => conAviso(() => navegar('/plantillas'));
+  useVolverGlobal(volver);
 
   useEffect(() => {
     if (!sucio) return;
@@ -355,7 +357,7 @@ export default function EditorPlantilla() {
       )}
 
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={volver}>
             ‹ Plantillas
