@@ -111,6 +111,13 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       ];
 
   const inicio = esCliente ? '/portal' : inicioSegunArea();
+
+  function volverGlobal() {
+    const evento = new CustomEvent('coproactiva:volver', { cancelable: true });
+    window.dispatchEvent(evento);
+    if (!evento.defaultPrevented) navegar(-1);
+  }
+
   const tutorialContextual =
     pathname === '/inicio' ? 'primeros_pasos'
     : pathname === '/ayuda/practica-levantamiento' ? 'ejecutar_levantamiento'
@@ -173,7 +180,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             fijo en la que se eligió la primera vez, sin salida. */}
         {!esCliente && (
           <div className="barra-area-movil">
-            <button type="button" className="barra-area-volver" onClick={() => navegar(-1)}>
+            <button type="button" className="barra-area-volver" onClick={volverGlobal}>
               ‹ Volver
             </button>
             <div className="barra-area-derecha">
