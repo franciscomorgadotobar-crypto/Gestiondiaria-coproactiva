@@ -12,6 +12,8 @@ import Comunidades from './paginas/panel/Comunidades';
 import Clientes from './paginas/panel/Clientes';
 import Configuracion from './paginas/panel/Configuracion';
 import Pipeline from './paginas/panel/Pipeline';
+import Ayuda from './paginas/panel/Ayuda';
+import PracticaLevantamiento from './paginas/panel/PracticaLevantamiento';
 import SeleccionArea from './paginas/SeleccionArea';
 import PanelEscritorio from './componentes/PanelEscritorio';
 import { areaGuardada } from './lib/area';
@@ -125,6 +127,8 @@ export default function App() {
           Inicio" del panel apunta acá, para no quedar en loop de vuelta al
           CRM cuando la área elegida es 'crm'. */}
       <Route path="/inicio" element={<Interna><Inicio /></Interna>} />
+      <Route path="/ayuda" element={<Interna><Ayuda /></Interna>} />
+      <Route path="/ayuda/practica-levantamiento" element={<Interna><PracticaLevantamiento /></Interna>} />
       <Route path="/configuracion" element={<Interna><Configuracion /></Interna>} />
       <Route path="/plantillas" element={<Interna><Plantillas /></Interna>} />
       <Route path="/plantillas/importar" element={
