@@ -10,13 +10,6 @@ export default function Ayuda() {
   return (
     <div className="pantalla">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
-          <button type="button" className="boton boton-texto"
-                  style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar(-1)}>
-            ‹ Volver
-          </button>
-        </div>
         <h1 className="h3">Ayuda y tutoriales</h1>
         <p className="chico apagado" style={{ margin: '3px 0 0' }}>
           Aprende una tarea y repítela cuando lo necesites
