@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ProveedorSesion } from './lib/sesion';
+import { ProveedorTutoriales } from './lib/tutorialesContexto';
 import { iniciarSincronizacion } from './lib/sincronizacion';
 import App from './App';
 import './estilos/tokens.css';
@@ -22,7 +23,9 @@ createRoot(document.getElementById('raiz')).render(
   <StrictMode>
     <BrowserRouter basename={raiz}>
       <ProveedorSesion>
-        <App />
+        <ProveedorTutoriales>
+          <App />
+        </ProveedorTutoriales>
       </ProveedorSesion>
     </BrowserRouter>
   </StrictMode>
