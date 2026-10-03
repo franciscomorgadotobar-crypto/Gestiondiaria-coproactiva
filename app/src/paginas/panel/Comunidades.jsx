@@ -18,7 +18,7 @@ const CHIP_CONTROL = {
   pendiente: ['chip-pendiente', 'Pendiente'],
   en_curso: ['chip-alerta', 'En curso'],
   pausado: ['chip-pausado', 'En pausa'],
-  enviado: ['chip-cumple', 'Enviado'],
+  enviado: ['chip-cumple', 'Finalizado'],
   anulado: ['chip-pendiente', 'Anulado']
 };
 
