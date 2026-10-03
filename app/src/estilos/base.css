@@ -864,6 +864,99 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
 /* ------------------------------------------- Recorrido dentro de una categoría */
 
+/* Al abrir una categoría se muestra primero un índice numerado. Una fila
+   completa es táctil para que en terreno no haya que acertar sobre el texto. */
+.indice-preguntas {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-top: none;
+  border-radius: 0 0 var(--radio-control) var(--radio-control);
+  overflow: hidden;
+}
+.indice-preguntas li + li { border-top: 1px solid var(--borde-suave); }
+
+.pregunta-indice {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 24px;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 62px;
+  padding: 10px 12px;
+  border: 0;
+  background: var(--tarjeta);
+  color: var(--texto-titulo);
+  text-align: left;
+  cursor: pointer;
+}
+.pregunta-indice:hover:not(:disabled),
+.pregunta-indice:focus-visible { background: var(--hover); outline: none; }
+.pregunta-indice:disabled { cursor: default; opacity: .55; }
+
+.numero-pregunta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  font: 700 11px/1 var(--fuente-display);
+  color: var(--texto-tenue);
+}
+.pregunta-indice.respondida .numero-pregunta {
+  border-color: var(--ok-borde);
+  background: var(--ok-fondo);
+  color: var(--ok-texto);
+}
+.pregunta-indice.critica .numero-pregunta {
+  border-color: var(--critico-borde);
+  background: var(--critico-fondo);
+  color: var(--critico-texto);
+}
+
+.texto-pregunta { min-width: 0; }
+.texto-pregunta > span {
+  display: block;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--texto-titulo);
+}
+.texto-pregunta small {
+  display: block;
+  margin-top: 3px;
+  font: 600 9.5px/1.25 var(--fuente-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+.pregunta-indice.respondida .texto-pregunta small { color: var(--ok-texto); }
+.pregunta-indice.critica .texto-pregunta small { color: var(--critico-texto); }
+
+.estado-pregunta {
+  justify-self: end;
+  font-size: 16px;
+  color: var(--texto-tenue);
+}
+
+.volver-indice {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  margin: 0 0 8px;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--naranja);
+  font: 600 10px/1 var(--fuente-display);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
 .pasos {
   display: flex;
   align-items: center;
