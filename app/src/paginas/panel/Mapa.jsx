@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '../../lib/supabase';
 import { inicioSegunArea } from '../../lib/area';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Mapa de lo hecho en terreno.
  *
@@ -63,6 +64,7 @@ function marcador(color, critico, cuantas) {
 
 export default function Mapa() {
   const navegar = useNavigate();
+  useVolverGlobal(() => navegar(inicioSegunArea()));
   const contenedor = useRef(null);
   const mapa = useRef(null);
   const capa = useRef(null);
@@ -231,7 +233,7 @@ export default function Mapa() {
   return (
     <div className="pantalla pantalla-mapa">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
