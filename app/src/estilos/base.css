@@ -1851,3 +1851,39 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   }
   .proveedor-origen-correo .boton { flex: none; }
 }
+
+
+/* --------------------------------------------- Ayuda tutorial contextual */
+
+.barra-area-derecha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.barra-area-tutorial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--naranja);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--naranja);
+  font: 700 14px/1 var(--fuente-display);
+  cursor: pointer;
+}
+.ayuda-contextual-escritorio {
+  display: block;
+  margin: 0 0 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--naranja);
+  font: 600 10px/1.3 var(--fuente-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
