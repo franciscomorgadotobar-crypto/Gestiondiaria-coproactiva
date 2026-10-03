@@ -157,7 +157,7 @@ export default function Inicio() {
         />
       )}
 
-      <header className="encabezado">
+      <header className="encabezado" data-tutorial="inicio-saludo">
         <div className="fila">
           <div className="crece">
             <h1 className="h3">Hola, {perfil?.nombre?.split(' ')[0] ?? ''}</h1>
@@ -179,7 +179,7 @@ export default function Inicio() {
 
         {/* Resumen de los últimos 30 días */}
         {resumen && (
-          <div className="tablero">
+          <div className="tablero" data-tutorial="inicio-resumen">
             <div>
               <p className="n">{resumen.pendientes}</p>
               <p className="r">Pendientes</p>
@@ -230,7 +230,7 @@ export default function Inicio() {
         )}
 
         <div className="inicio-trabajo">
-        <div className="grupo-titulo" id="por-hacer">
+        <div className="grupo-titulo" id="por-hacer" data-tutorial="inicio-por-hacer">
           <span className="etiqueta-grupo">Por hacer</span>
         </div>
 
