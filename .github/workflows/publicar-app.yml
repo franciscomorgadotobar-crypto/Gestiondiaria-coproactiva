@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: publicar-app-coproactiva
+  group: publicar-app-coproactiva-v2
   cancel-in-progress: true
 
 jobs:
