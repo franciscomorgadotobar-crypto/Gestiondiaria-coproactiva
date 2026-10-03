@@ -194,15 +194,12 @@ export default function Proveedores() {
 
   const resumen = useMemo(() => {
     const lista = proveedores ?? [];
-    const limite = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const especialidades = new Set(
+      lista.map(p => normalizar(p.rubro)).filter(Boolean)
+    );
     return {
-      disponibles: lista.filter(p => !p.lista_negra && p.estado !== 'descartado').length,
-      nuevos: lista.filter(p => !p.lista_negra && p.estado === 'nuevo').length,
-      sinContacto: lista.filter(p => {
-        if (p.lista_negra || p.estado === 'descartado') return false;
-        if (!p.fecha_contacto) return true;
-        return new Date(p.fecha_contacto).getTime() < limite;
-      }).length,
+      proveedores: lista.length,
+      especialidades: especialidades.size,
       listaNegra: lista.filter(p => p.lista_negra).length
     };
   }, [proveedores]);
@@ -441,7 +438,7 @@ export default function Proveedores() {
         <div className="proveedores-intro">
           <h1 className="h3">Proveedores</h1>
           <p className="chico apagado proveedores-descripcion">
-            Directorio para buscar, comparar y contactar proveedores según los servicios que ofrecen a las comunidades.
+            Repositorio de proveedores alimentado automáticamente desde Gmail y también de forma manual.
           </p>
         </div>
         <div className="acciones-proveedores-cabecera">
@@ -469,11 +466,19 @@ export default function Proveedores() {
         )}
 
         {proveedores && (
-          <div className="tablero proveedores-resumen">
-            <div className="ok"><p className="n">{resumen.disponibles}</p><p className="r">Disponibles</p></div>
-            <div className={resumen.nuevos ? 'alerta' : ''}><p className="n">{resumen.nuevos}</p><p className="r">Nuevos sin revisar</p></div>
-            <div className={resumen.sinContacto ? 'critico' : ''}><p className="n">{resumen.sinContacto}</p><p className="r">Sin contacto &gt; 30 días</p></div>
-            <div><p className="n">{resumen.listaNegra}</p><p className="r">Lista negra</p></div>
+          <div className="tablero proveedores-resumen proveedores-resumen-tres">
+            <div>
+              <p className="n">{resumen.proveedores}</p>
+              <p className="r">Proveedores</p>
+            </div>
+            <div>
+              <p className="n">{resumen.especialidades}</p>
+              <p className="r">Especialidades</p>
+            </div>
+            <div className={resumen.listaNegra ? 'critico' : ''}>
+              <p className="n">{resumen.listaNegra}</p>
+              <p className="r">Lista negra</p>
+            </div>
           </div>
         )}
 
