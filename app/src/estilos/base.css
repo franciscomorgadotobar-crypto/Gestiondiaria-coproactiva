@@ -1443,3 +1443,121 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   /* Plantillas: "Nueva plantilla" e "Importar desde Excel" lado a lado. */
   .acciones-plantillas { flex-direction: row; }
 }
+
+
+/* =========================================================== Tutoriales guiados */
+
+.ayuda-lateral {
+  display: block;
+  margin-bottom: 6px;
+  font: 600 10px/1.3 var(--fuente-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--naranja);
+}
+.ayuda-lateral:hover { color: var(--texto-titulo); }
+
+.tutorial-listado { padding: 18px; }
+.tutorial-listado .boton-ancho { width: 100%; }
+
+.capacitacion-persona {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--borde-suave);
+}
+.lista-tutoriales-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tutorial-admin-fila {
+  padding: 10px;
+  border: 1px solid var(--borde-suave);
+  border-radius: var(--radio-control);
+  background: var(--fondo-app);
+}
+.tutorial-admin-fila .marca { margin: 0; }
+.tutorial-admin-fila .marca strong {
+  display: block;
+  color: var(--texto-titulo);
+  font-weight: 600;
+}
+.tutorial-admin-fila .marca small {
+  display: block;
+  margin-top: 2px;
+  color: var(--texto-tenue);
+  font-size: 11px;
+}
+.tutorial-admin-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 7px 0 0 28px;
+}
+.marca.compacta { min-height: 0; padding: 4px 0; font-size: 12px; }
+.tutorial-admin-acciones .boton { margin-left: auto; }
+
+.tutorial-oferta-fondo,
+.tutorial-espera {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(22, 26, 31, .62);
+}
+.tutorial-oferta {
+  width: min(430px, 100%);
+  padding: 20px;
+  box-shadow: 0 18px 54px rgba(0,0,0,.24);
+}
+.tutorial-oferta .h3 { margin-top: 8px; }
+
+.tutorial-capa { position: fixed; inset: 0; z-index: 210; pointer-events: none; }
+.tutorial-bloque {
+  position: fixed;
+  background: rgba(18, 22, 27, .62);
+  pointer-events: auto;
+}
+.tutorial-marco {
+  position: fixed;
+  border: 2px solid var(--naranja);
+  border-radius: 5px;
+  box-shadow: 0 0 0 3px rgba(204, 133, 55, .22);
+  pointer-events: none;
+  transition: all .18s ease;
+}
+.tutorial-tarjeta {
+  position: fixed;
+  z-index: 212;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 24px));
+  padding: 16px;
+  box-shadow: 0 14px 48px rgba(0,0,0,.28);
+  pointer-events: auto;
+}
+.tutorial-instruccion {
+  margin: -4px 0 12px;
+  color: var(--naranja);
+  font-weight: 600;
+}
+.tutorial-espera .tutorial-tarjeta {
+  position: static;
+  transform: none;
+  width: min(420px, 100%);
+}
+.practica-levantamiento .cuerpo { padding-bottom: 108px; }
+
+@media (min-width: 700px) {
+  .tutorial-tarjeta {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    transform: none;
+    width: 390px;
+  }
+}
