@@ -6,6 +6,7 @@ import { descargarFormato, leerArchivo } from '../../lib/excelPlantillas';
 import { interpretarFilas, cargaParaImportar } from '../../lib/importarPlantillas';
 import { TIPOS, ORIGENES_FOTO } from '../../lib/tiposDePunto';
 import { NIVELES_EVIDENCIA } from '../../lib/opciones';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Importación masiva: se descarga el formato, se llena en Excel y se sube.
  *
@@ -22,6 +23,7 @@ const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 export default function ImportarPlantillas() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
+  useVolverGlobal(() => navegar('/plantillas'));
   const entrada = useRef(null);
   const [descargando, setDescargando] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
@@ -95,7 +97,7 @@ export default function ImportarPlantillas() {
   return (
     <div className="pantalla pantalla-angosta">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar('/plantillas')}>
             ‹ Plantillas
