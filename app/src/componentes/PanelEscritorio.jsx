@@ -135,6 +135,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               Cambiar de área
             </button>
           )}
+          {!esCliente && (
+            <Link to="/ayuda" data-tutorial="ayuda-menu"
+                  className="ayuda-lateral">
+              Ayuda y tutoriales
+            </Link>
+          )}
           <button type="button" className="boton boton-texto" style={{ padding: 0 }} onClick={salir}>
             Salir
           </button>
@@ -145,9 +151,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         {/* En el teléfono la barra lateral no existe (se oculta con CSS), así
             que sin esto "Cambiar de área" no tenía dónde vivir y quedaba
             fijo en la que se eligió la primera vez, sin salida. */}
-        {puedeConfigurar && (
+        {!esCliente && (
           <div className="barra-area-movil">
-            <button type="button" onClick={cambiarArea}>Cambiar de área</button>
+            {puedeConfigurar && <button type="button" onClick={cambiarArea}>Cambiar de área</button>}
+            <Link to="/ayuda" data-tutorial="ayuda-menu">Ayuda</Link>
           </div>
         )}
         {children}
