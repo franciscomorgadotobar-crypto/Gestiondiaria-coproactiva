@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import CapacitacionPersona from '../../componentes/CapacitacionPersona';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Administración del equipo: quién entra y qué ve.
  *
@@ -28,6 +29,7 @@ const ROLES = [
 export default function Equipo() {
   const navegar = useNavigate();
   const { perfil } = useSesion();
+  useVolverGlobal(() => navegar('/configuracion'));
 
   const [gente, setGente] = useState(null);
   const [comunidades, setComunidades] = useState([]);
@@ -165,7 +167,7 @@ export default function Equipo() {
   return (
     <div className="pantalla">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar('/configuracion')}>
             ‹ Configuración
