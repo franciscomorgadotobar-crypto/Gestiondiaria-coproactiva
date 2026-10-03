@@ -1897,3 +1897,9 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 @media (max-width: 899px) {
   .navegacion-interna { display: none !important; }
 }
+
+
+/* Resumen del repositorio: solo métricas útiles para búsqueda. */
+.proveedores-resumen-tres {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
