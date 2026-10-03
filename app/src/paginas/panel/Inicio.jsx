@@ -272,9 +272,6 @@ export default function Inicio() {
         )}
         </div>
 
-        <div className="ayuda-inicio-movil">
-          <Link to="/ayuda" data-tutorial="ayuda-menu">Ayuda y tutoriales</Link>
-        </div>
       </div>
     </div>
   );
