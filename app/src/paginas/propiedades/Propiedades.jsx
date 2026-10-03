@@ -150,8 +150,8 @@ function SeccionEnSitio({ seccion, setSeccion, puedeCambiar }) {
         <strong className="dato-chico">{visible ? 'Visible en el sitio' : 'Oculta en el sitio'}</strong>
         <p className="micro" style={{ margin: '3px 0 0' }}>
           {visible
-            ? 'Propiedades aparece en el menú de coproactiva.cl y se ven las publicadas.'
-            : 'coproactiva.cl no muestra Propiedades en el menú ni las propiedades, aunque estén publicadas.'}
+            ? 'Las propiedades publicadas están visibles en coproactiva.cl.'
+            : 'Las propiedades publicadas están guardadas, pero la sección no se muestra en coproactiva.cl.'}
         </p>
         {error && <p className="mensaje-error" role="alert">{error}</p>}
       </div>
@@ -215,18 +215,20 @@ function ListadoPropiedades() {
 
   return (
     <div className="pantalla">
-      <header className="encabezado">
-        <div className="fila">
+      <header className="encabezado propiedades-encabezado">
+        <div className="propiedades-encabezado-contenido">
           <div className="crece">
             <h1 className="h3">Propiedades</h1>
-            <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-              Arriendos y ventas de{' '}
+            <p className="chico apagado propiedades-descripcion">
+              Gestiona arriendos y ventas publicados en{' '}
               <a href={SITIO} target="_blank" rel="noopener noreferrer">coproactiva.cl/propiedades</a>.
-              Lo publicado se ve apenas se guarda, con la sección visible.
             </p>
           </div>
-          <Link to={`/propiedades/nueva${operacion === 'venta' ? '?operacion=venta' : ''}`} className="boton">
-            Nueva propiedad
+          <Link
+            to={`/propiedades/nueva${operacion === 'venta' ? '?operacion=venta' : ''}`}
+            className="boton propiedades-nueva"
+          >
+            + Nueva propiedad
           </Link>
         </div>
       </header>
@@ -249,13 +251,13 @@ function ListadoPropiedades() {
         </div>
 
         <div className="propiedades-filtros">
-          <div className="campo crece">
+          <div className="campo propiedades-buscar">
             <label className="etiqueta-campo" htmlFor="buscar-propiedad">Buscar</label>
             <input id="buscar-propiedad" type="search" placeholder="Código, título, comuna o sector"
                    value={buscar} onChange={e => setBuscar(e.target.value)} />
           </div>
-          <div className="campo">
-            <label className="etiqueta-campo" htmlFor="filtro-propiedad">Mostrar</label>
+          <div className="campo propiedades-estado">
+            <label className="etiqueta-campo" htmlFor="filtro-propiedad">Estado</label>
             <select id="filtro-propiedad" value={filtro} onChange={e => setFiltro(e.target.value)}>
               {FILTROS.map(([valor, texto]) => <option key={valor} value={valor}>{texto}</option>)}
             </select>
@@ -264,9 +266,20 @@ function ListadoPropiedades() {
 
         {propiedades === null && !error && <p className="cargando">Cargando…</p>}
         {propiedades && cantidad[operacion] === 0 && (
-          <p className="vacio">
-            Todavía no hay propiedades en {operacion === 'venta' ? 'venta' : 'arriendo'}.
-          </p>
+          <div className="propiedades-vacio">
+            <strong>
+              Todavía no hay propiedades en {operacion === 'venta' ? 'venta' : 'arriendo'}.
+            </strong>
+            <p className="chico apagado">
+              Cuando agregues una propiedad aparecerá aquí.
+            </p>
+            <Link
+              to={`/propiedades/nueva${operacion === 'venta' ? '?operacion=venta' : ''}`}
+              className="boton"
+            >
+              + Nueva propiedad
+            </Link>
+          </div>
         )}
         {propiedades && cantidad[operacion] > 0 && visibles.length === 0 && (
           <p className="vacio">No hay propiedades que coincidan con la búsqueda.</p>
