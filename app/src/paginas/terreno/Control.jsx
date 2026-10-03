@@ -12,6 +12,7 @@ import {
   leerFotosDeControl, guardarFoto, borrarFoto, encolar
 } from '../../lib/local';
 import { opcionesDe, nivelPosible } from '../../lib/opciones';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 const ESTADOS = [
   ['cumple', 'Conforme'],
@@ -65,6 +66,7 @@ export default function Levantamiento() {
   const { id } = useParams();
   const navegar = useNavigate();
   const { perfil } = useSesion();
+  useVolverGlobal(() => navegar(inicioSegunArea()));
 
   const [control, setControl] = useState(null);
   const [items, setItems] = useState([]);
@@ -565,7 +567,7 @@ export default function Levantamiento() {
       <AvisoConexion />
 
       <header className="encabezado encabezado-levantamiento">
-        <div className="fila" style={{ marginBottom: 6 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 6 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar(inicioSegunArea())} aria-label="Volver">
             ‹ Volver
