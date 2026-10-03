@@ -1,6 +1,7 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Ajustes que se tocan poco, no trabajo del día: equipo y accesos de
  * clientes. Alcanzable directo desde la capa de selección al entrar, junto
@@ -8,6 +9,7 @@ import { inicioSegunArea } from '../../lib/area';
 export default function Configuracion() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
+  useVolverGlobal(() => navegar(inicioSegunArea()));
 
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
@@ -18,7 +20,7 @@ export default function Configuracion() {
   return (
     <div className="pantalla">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
