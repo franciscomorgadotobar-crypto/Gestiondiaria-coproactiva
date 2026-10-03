@@ -1887,3 +1887,13 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   text-align: left;
   cursor: pointer;
 }
+
+
+/* -------------------------------------- Navegación interna estandarizada
+ * En teléfono la barra superior global es la única salida de pantalla.
+ * Los breadcrumbs internos se conservan en escritorio, donde no compiten
+ * visualmente y aportan contexto. Las acciones dentro de un flujo
+ * (Anterior, Volver a la lista, etc.) no usan esta clase y permanecen. */
+@media (max-width: 899px) {
+  .navegacion-interna { display: none !important; }
+}
