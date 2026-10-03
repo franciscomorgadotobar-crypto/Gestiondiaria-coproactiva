@@ -221,9 +221,10 @@ export default function Proveedores() {
 
       if (ultimoContacto) {
         const dias = Number(ultimoContacto);
-        if (!p.fecha_contacto) {
-          if (dias !== 9999) return false;
-        } else if (dias !== 9999) {
+        if (dias === 9999) {
+          if (p.fecha_contacto) return false;
+        } else {
+          if (!p.fecha_contacto) return false;
           const transcurridos = (ahora - new Date(p.fecha_contacto).getTime()) / 86400000;
           if (transcurridos < dias) return false;
         }
