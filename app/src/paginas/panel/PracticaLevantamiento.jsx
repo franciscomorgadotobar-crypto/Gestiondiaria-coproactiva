@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTutoriales } from '../../lib/tutorialesContexto';
 
 const preguntas = [
   'Iluminación perimetral y de acceso',
@@ -9,9 +10,38 @@ const preguntas = [
 
 export default function PracticaLevantamiento() {
   const navegar = useNavigate();
+  const { activo } = useTutoriales();
   const [categoria, setCategoria] = useState(false);
   const [pregunta, setPregunta] = useState(null);
   const [respuesta, setRespuesta] = useState(null);
+
+  // Si el usuario sale y continúa después, el motor recuerda el paso del
+  // tutorial pero esta pantalla se monta desde cero. Reconstruimos el estado
+  // mínimo necesario para que el elemento objetivo de ese paso exista.
+  useEffect(() => {
+    if (activo?.id !== 'ejecutar_levantamiento') return;
+    const paso = activo.paso ?? 0;
+
+    if (paso <= 1) {
+      setPregunta(null);
+      if (paso === 0) setCategoria(false);
+      return;
+    }
+
+    setCategoria(true);
+
+    if (paso === 2) {
+      setPregunta(null);
+      return;
+    }
+
+    // Desde "Registra la respuesta" en adelante debe existir la pregunta.
+    setPregunta(0);
+
+    // Para los pasos posteriores a la respuesta, recreamos también el estado
+    // completado para que avance, evidencia y finalización tengan sentido.
+    if (paso >= 4) setRespuesta('Cumple');
+  }, [activo?.id, activo?.paso]);
 
   const volverLista = () => setPregunta(null);
 
