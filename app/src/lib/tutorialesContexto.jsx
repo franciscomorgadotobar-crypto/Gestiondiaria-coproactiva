@@ -246,6 +246,7 @@ export function ProveedorTutoriales({ children }) {
         onIniciar={() => oferta && iniciar(oferta)}
         onPosponer={posponerOferta}
         onSalir={salirTutorial}
+        onReiniciar={() => activo && iniciar(activo.id, { continuar: false })}
         onAvanzar={avanzar}
         onRetroceder={retroceder}
       />
@@ -253,7 +254,7 @@ export function ProveedorTutoriales({ children }) {
   );
 }
 
-function CapaTutorial({ activo, oferta, elemento, onIniciar, onPosponer, onSalir, onAvanzar, onRetroceder }) {
+function CapaTutorial({ activo, oferta, elemento, onIniciar, onPosponer, onSalir, onReiniciar, onAvanzar, onRetroceder }) {
   const [, refrescar] = useState(0);
 
   useEffect(() => {
@@ -297,8 +298,13 @@ function CapaTutorial({ activo, oferta, elemento, onIniciar, onPosponer, onSalir
       <div className="tutorial-espera">
         <div className="tutorial-tarjeta tarjeta">
           <span className="etiqueta-grupo">{t.nombre}</span>
-          <p className="chico" style={{ margin: '8px 0' }}>Preparando el siguiente paso…</p>
-          <button type="button" className="boton boton-texto" onClick={onSalir}>Salir del tutorial</button>
+          <p className="chico" style={{ margin: '8px 0 14px' }}>
+            Preparando el siguiente paso…
+          </p>
+          <div className="fila-botones">
+            <button type="button" className="boton boton-secundario" onClick={onSalir}>Salir</button>
+            <button type="button" className="boton" onClick={onReiniciar}>Reiniciar tutorial</button>
+          </div>
         </div>
       </div>
     );
