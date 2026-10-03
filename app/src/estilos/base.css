@@ -862,6 +862,42 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   word-break: break-all;
 }
 
+/* -------------------------------------- Levantamiento: jerarquía y contexto */
+
+.encabezado-levantamiento { padding-bottom: 16px; }
+
+.categoria-contexto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.categoria-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.categoria-pregunta {
+  margin-bottom: 3px;
+  font: 700 9.5px/1 var(--fuente-display);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--naranja);
+}
+.categoria-titulo.en-pregunta {
+  align-items: center;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.categoria-titulo.completa:not(.abierta) {
+  border-color: var(--ok-borde);
+  background: var(--ok-fondo);
+}
+.categoria-ok {
+  flex: none;
+  color: var(--ok-texto);
+  font-weight: 700;
+}
+
 /* ------------------------------------------- Recorrido dentro de una categoría */
 
 /* Al abrir una categoría se muestra primero un índice numerado. Una fila
@@ -964,14 +1000,14 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .volver-indice {
   display: inline-flex;
   align-items: center;
-  min-height: 38px;
-  margin: 0 0 8px;
-  padding: 4px 2px;
+  min-height: 32px;
+  margin: -2px 0 8px;
+  padding: 3px 2px;
   border: 0;
   background: transparent;
   color: var(--naranja);
-  font: 600 10px/1 var(--fuente-display);
-  letter-spacing: .12em;
+  font: 600 9.5px/1 var(--fuente-display);
+  letter-spacing: .10em;
   text-transform: uppercase;
   cursor: pointer;
 }
