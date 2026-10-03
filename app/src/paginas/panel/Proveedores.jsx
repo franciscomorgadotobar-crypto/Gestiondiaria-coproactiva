@@ -438,23 +438,21 @@ export default function Proveedores() {
   return (
     <div className="pantalla proveedores-pantalla">
       <header className="encabezado">
-        <div className="fila proveedores-encabezado-fila">
-          <div className="crece">
-            <h1 className="h3">Proveedores</h1>
-            <p className="chico apagado" style={{ margin: '3px 0 0' }}>
-              Red de proveedores para las comunidades
-            </p>
-          </div>
-          <div className="acciones-proveedores-cabecera">
-            <button type="button" className="boton boton-secundario"
-                    disabled={sincronizando}
-                    onClick={() => cargar({ mostrarResultado: true })}>
-              {sincronizando ? 'Actualizando…' : '↻ Actualizar ahora'}
-            </button>
-            <button type="button" className="boton" onClick={() => setFormulario({})}>
-              + Agregar proveedor
-            </button>
-          </div>
+        <div className="proveedores-intro">
+          <h1 className="h3">Proveedores</h1>
+          <p className="chico apagado proveedores-descripcion">
+            Directorio para buscar, comparar y contactar proveedores según los servicios que ofrecen a las comunidades.
+          </p>
+        </div>
+        <div className="acciones-proveedores-cabecera">
+          <button type="button" className="boton" onClick={() => setFormulario({})}>
+            + Agregar proveedor
+          </button>
+          <button type="button" className="boton boton-secundario"
+                  disabled={sincronizando}
+                  onClick={() => cargar({ mostrarResultado: true })}>
+            {sincronizando ? 'Actualizando…' : '↻ Actualizar ahora'}
+          </button>
         </div>
         <p className="micro apagado proveedores-ultima">
           Datos desde Supabase · actualización automática diaria
@@ -638,10 +636,21 @@ function TarjetaProveedor({ p, onAbrir, onContacto }) {
   return (
     <article className="tarjeta proveedor-tarjeta">
       <button type="button" className="proveedor-tarjeta-principal" onClick={onAbrir}>
-        <span className="crece">
+        <span className="crece proveedor-tarjeta-contenido">
           <strong>{p.empresa}</strong>
-          <small>{p.contacto_nombre || 'Sin contacto'}</small>
-          <small>{p.rubro || 'Sin rubro'}{p.comunas ? ' · ' + p.comunas : ''}</small>
+          <span className="proveedor-servicios-resumen">
+            {p.servicios || p.notas || 'Sin descripción de servicios'}
+          </span>
+          <small>
+            {p.rubro || 'Sin rubro'}
+            {p.comunas ? ' · ' + p.comunas : ''}
+            {p.contacto_nombre ? ' · ' + p.contacto_nombre : ''}
+          </small>
+          {p.origen === 'correo' && (
+            <small className="proveedor-origen-resumen">
+              Correo de origen · {fechaCorta(p.fecha_contacto)}
+            </small>
+          )}
         </span>
         <span className={'chip ' + claseEstado(p)}>{etiquetaEstado(p)}</span>
         <span className="flecha">›</span>
@@ -659,7 +668,6 @@ function FichaProveedor({ p, historial, cargandoHistorial, puedeEliminar, onVolv
   return (
     <div className="pantalla proveedor-ficha">
       <header className="encabezado">
-        <button className="boton boton-texto proveedor-volver" onClick={onVolver}>‹ Proveedores</button>
         <div className="fila" style={{ alignItems: 'flex-start', gap: 10 }}>
           <div className="crece">
             <div className="fila" style={{ gap: 8, justifyContent: 'flex-start' }}>
@@ -719,6 +727,30 @@ function FichaProveedor({ p, historial, cargandoHistorial, puedeEliminar, onVolv
           <Seccion titulo="Notas" ancho>
             <p className="chico proveedor-texto-largo">{p.notas || 'Sin notas.'}</p>
           </Seccion>
+
+          {p.origen === 'correo' && (
+            <Seccion titulo="Origen del registro" ancho>
+              <div className="proveedor-origen-correo">
+                <div className="crece">
+                  <strong>Creado desde correo</strong>
+                  <p className="chico apagado">
+                    La ficha conserva el identificador del correo que dio origen al proveedor.
+                    El contenido resumido disponible está reflejado en Servicios y Notas.
+                  </p>
+                </div>
+                {p.gmail_thread_id && (
+                  <a
+                    className="boton boton-secundario"
+                    href={`https://mail.google.com/mail/u/0/#all/${p.gmail_thread_id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Ver correo original
+                  </a>
+                )}
+              </div>
+            </Seccion>
+          )}
 
           <Seccion titulo="Historial de contacto" ancho>
             {cargandoHistorial && <p className="micro apagado">Cargando historial…</p>}
