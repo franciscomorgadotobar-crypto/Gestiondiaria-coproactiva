@@ -1,4 +1,4 @@
-/* Qué área eligió el usuario al entrar: 'crm', 'operacion' o 'propiedades'.
+/* Qué área eligió el usuario al entrar: 'crm', 'operacion', 'propiedades' o 'proveedores'.
  * Se guarda en este navegador para no preguntar cada vez que inicia sesión;
  * "Cambiar de área" en el panel la borra y vuelve a mostrar la capa de
  * selección.
@@ -7,7 +7,7 @@
  * no hereda el área de la anterior. La sesión avisa quién está conectado
  * (fijarUsuarioArea) antes de dibujar cualquier pantalla que la consulte. */
 const PREFIJO = 'coproactiva_area:';
-const AREAS = ['crm', 'operacion', 'propiedades'];
+const AREAS = ['crm', 'operacion', 'propiedades', 'proveedores'];
 let usuario = null;
 
 try { localStorage.removeItem('coproactiva_area'); } catch { /* clave antigua, sin dueño */ }
@@ -45,5 +45,6 @@ export function inicioSegunArea() {
   const area = areaGuardada();
   if (area === 'crm') return '/pipeline';
   if (area === 'propiedades') return '/propiedades';
+  if (area === 'proveedores') return '/proveedores';
   return '/inicio';
 }
