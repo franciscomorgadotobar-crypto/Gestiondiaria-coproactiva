@@ -896,6 +896,25 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .pregunta-indice:focus-visible { background: var(--hover); outline: none; }
 .pregunta-indice:disabled { cursor: default; opacity: .55; }
 
+/* Una pregunta realmente terminada se reconoce en toda la fila, no solo por
+   un punto pequeño. El verde es el mismo lenguaje visual que usa el avance. */
+.pregunta-indice.respondida {
+  background: var(--ok-fondo);
+  box-shadow: inset 3px 0 0 var(--ok-texto);
+}
+.pregunta-indice.respondida:hover:not(:disabled),
+.pregunta-indice.respondida:focus-visible {
+  background: var(--ok-fondo);
+}
+.pregunta-indice.critica {
+  background: var(--critico-fondo);
+  box-shadow: inset 3px 0 0 var(--critico-texto);
+}
+.pregunta-indice.critica:hover:not(:disabled),
+.pregunta-indice.critica:focus-visible {
+  background: var(--critico-fondo);
+}
+
 .numero-pregunta {
   display: inline-flex;
   align-items: center;
