@@ -5,6 +5,7 @@ import { useSesion } from '../../lib/sesion';
 import { diagnosticoHtml } from '../../lib/diagnosticoInforme';
 import { imprimirInforme } from '../../lib/informe';
 import './DiagnosticoComercial.css';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Diagnóstico comercial: el mismo cuestionario y la misma lógica de puntaje
  * del CRM anterior, portados tal cual — mismas preguntas, mismos pesos,
@@ -68,6 +69,8 @@ export default function DiagnosticoComercial({ id }) {
   const [paso, setPaso] = useState('contexto');
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
+
+  useVolverGlobal(() => navegar(prospecto?.comunidad_id ? `/comunidades/${prospecto.comunidad_id}` : '/pipeline'));
 
   async function cargar() {
     setError(null);
@@ -296,7 +299,7 @@ export default function DiagnosticoComercial({ id }) {
   return (
     <div className="pantalla pantalla-angosta">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           {/* Ganado el prospecto, el diagnóstico se consulta desde su comunidad. */}
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar(prospecto.comunidad_id ? `/comunidades/${prospecto.comunidad_id}` : '/pipeline')}>
