@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { useVolverGlobal } from '../../lib/navegacion';
 import './Clientes.css';
 
 export default function Clientes() {
   const navegar = useNavigate();
   const { perfil } = useSesion();
+  useVolverGlobal(() => navegar('/configuracion'));
   const puedeAdministrar = perfil?.rol === 'superadmin';
   const [perfiles, setPerfiles] = useState([]);
   const [comunidades, setComunidades] = useState([]);
@@ -202,7 +204,7 @@ export default function Clientes() {
   return (
     <div className="pantalla">
       <header className="encabezado">
-        <button className="boton boton-texto" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar('/configuracion')}>
+        <button className="boton boton-texto navegacion-interna" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar('/configuracion')}>
           ‹ Configuración
         </button>
         <h1 className="h3">Clientes y accesos</h1>
