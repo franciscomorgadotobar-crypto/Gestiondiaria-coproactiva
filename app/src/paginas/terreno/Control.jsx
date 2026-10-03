@@ -71,7 +71,7 @@ export default function Levantamiento() {
   const [fotos, setFotos] = useState([]);
   const [error, setError] = useState(null);
   const [ubicando, setUbicando] = useState(false);
-  const [enviando, setEnviando] = useState(false);
+  const [finalizando, setFinalizando] = useState(false);
   const [abierta, setAbierta] = useState(null);   // categoría desplegada
   // null = índice de preguntas; número = pregunta individual abierta.
   // Así cada categoría siempre entra primero por su lista y nunca salta
@@ -532,14 +532,14 @@ export default function Levantamiento() {
     }
   }
 
-  async function enviar() {
-    setEnviando(true);
+  async function finalizar() {
+    setFinalizando(true);
     const cambios = { estado: 'enviado', enviado_en: new Date().toISOString() };
     const actualizado = { ...control, ...cambios };
     await guardarControl(actualizado);
     await encolar({ tipo: 'control', id, cambios });
     await sincronizar();
-    setEnviando(false);
+    setFinalizando(false);
     navegar(inicioSegunArea());
   }
 
@@ -564,8 +564,8 @@ export default function Levantamiento() {
     <div className="pantalla pantalla-angosta">
       <AvisoConexion />
 
-      <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+      <header className="encabezado encabezado-levantamiento">
+        <div className="fila" style={{ marginBottom: 6 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar(inicioSegunArea())} aria-label="Volver">
             ‹ Volver
@@ -575,7 +575,7 @@ export default function Levantamiento() {
         </div>
 
         <h1 className="h3">{control.destino_nombre ?? control.comunidades?.nombre}</h1>
-        <p className="chico apagado" style={{ margin: '3px 0 6px' }}>
+        <p className="chico apagado" style={{ margin: '2px 0 4px' }}>
           {[control.destino_direccion, control.destino_comuna].filter(Boolean).join(', ')}
           {control.destino_tipo === 'prospecto' && ' · Diagnóstico comercial'}
         </p>
@@ -584,7 +584,7 @@ export default function Levantamiento() {
             primero que hay que confirmar al entrar, antes de ponerse a
             responder puntos. */}
         {(control.plantilla_nombre || control.programado_para) && (
-          <p className="chico apagado" style={{ margin: '0 0 10px' }}>
+          <p className="chico apagado" style={{ margin: '0 0 8px' }}>
             {control.plantilla_nombre}
             {control.plantilla_nombre && control.programado_para && ' · '}
             {control.programado_para && new Date(control.programado_para).toLocaleDateString('es-CL', {
@@ -647,11 +647,19 @@ export default function Levantamiento() {
           const bloqueada = control.secuencial
             && primeraCategoriaPendiente !== -1
             && indiceCategoria > primeraCategoriaPendiente;
+          const enPregunta = desplegada && paso !== null;
+          const completa = cat.evaluados === cat.items.length;
           return (
             <section key={cat.nombre} className="categoria">
               <button
                 type="button"
-                className={'categoria-titulo' + (desplegada ? ' abierta' : '') + (bloqueada ? ' bloqueada' : '')}
+                className={
+                  'categoria-titulo'
+                  + (desplegada ? ' abierta' : '')
+                  + (bloqueada ? ' bloqueada' : '')
+                  + (completa ? ' completa' : '')
+                  + (enPregunta ? ' en-pregunta' : '')
+                }
                 aria-expanded={desplegada}
                 disabled={bloqueada}
                 title={bloqueada ? 'Termina las categorías anteriores primero' : undefined}
@@ -662,9 +670,19 @@ export default function Levantamiento() {
                   setPaso(null);
                 }}
               >
-                <span className="crece">{cat.nombre}</span>
+                <span className="crece categoria-contexto">
+                  {enPregunta ? (
+                    <>
+                      <span className="categoria-pregunta">Pregunta {paso + 1} de {cat.items.length}</span>
+                      <span className="categoria-nombre">{cat.nombre}</span>
+                    </>
+                  ) : (
+                    <span className="categoria-nombre">{cat.nombre}</span>
+                  )}
+                </span>
                 {cat.criticos > 0 && <span className="punto-critico" aria-label="Tiene críticos" />}
-                <span className="micro">{cat.evaluados}/{cat.items.length}</span>
+                {completa && <span className="categoria-ok" aria-label="Categoría completa">✓</span>}
+                {!enPregunta && <span className="micro">{cat.evaluados}/{cat.items.length}</span>}
                 <span className="flecha" aria-hidden="true">{bloqueada ? '🔒' : desplegada ? '−' : '+'}</span>
               </button>
 
@@ -721,7 +739,7 @@ export default function Levantamiento() {
                     className="volver-indice"
                     onClick={() => setPaso(null)}
                   >
-                    ‹ Lista de preguntas
+                    ‹ Volver a la lista
                   </button>
 
                   <Punto
@@ -745,7 +763,9 @@ export default function Levantamiento() {
                     </button>
 
                     <div className="conteo">
-                      <span>{paso + 1} de {cat.items.length}</span>
+                      <span>
+                        {paso + 1} de {cat.items.length} · {cat.evaluados} {cat.evaluados === 1 ? 'completada' : 'completadas'}
+                      </span>
                       <div className="marcadores">
                         {(() => {
                           const primerPendiente = cat.items.findIndex(it => !respondido(it, tieneFoto));
@@ -793,7 +813,7 @@ export default function Levantamiento() {
                               }}>
                         {categorias.findIndex(c => c.nombre === cat.nombre) < categorias.length - 1
                           ? 'Categoría siguiente ›'
-                          : 'Terminar ›'}
+                          : 'Volver a categorías'}
                       </button>
                     )}
                   </nav>
@@ -825,28 +845,29 @@ export default function Levantamiento() {
             Pausar
           </button>
           <button className="boton boton-movil crece"
-                  onClick={enviar}
-                  disabled={enviando || pendientesObligatorios.length > 0 || sinFoto.length > 0
+                  onClick={finalizar}
+                  disabled={finalizando || pendientesObligatorios.length > 0 || sinFoto.length > 0
                             || sinEvidencia.length > 0 || !control.checkin_en}
                   title={
                     !control.checkin_en ? 'Falta el check-in'
                     : pendientesObligatorios.length > 0
                       ? (pendientesObligatorios.length === 1
-                          ? 'Falta 1 punto obligatorio por responder'
-                          : `Faltan ${pendientesObligatorios.length} puntos obligatorios por responder`)
+                          ? 'Falta 1 pregunta obligatoria por responder'
+                          : `Faltan ${pendientesObligatorios.length} preguntas obligatorias por responder`)
                     : sinFoto.length > 0
                       ? `Faltan fotos en: ${sinFoto.map(i => i.texto).join(', ')}`
                     : sinEvidencia.length > 0
                       ? `Falta evidencia en: ${sinEvidencia.map(i => i.texto).join(', ')}`
                       : undefined
                   }>
-            {enviando ? 'Enviando…'
-             : pendientesObligatorios.length > 0 ? `Faltan ${pendientesObligatorios.length}`
+            {finalizando ? 'Finalizando…'
+             : pendientesObligatorios.length > 0
+               ? (pendientesObligatorios.length === 1 ? 'Falta 1 pregunta' : `Faltan ${pendientesObligatorios.length} preguntas`)
              : sinFoto.length > 0
                ? (sinFoto.length === 1 ? 'Falta 1 foto' : `Faltan ${sinFoto.length} fotos`)
              : sinEvidencia.length > 0
                ? (sinEvidencia.length === 1 ? 'Falta evidencia' : `Falta evidencia en ${sinEvidencia.length}`)
-             : 'Enviar levantamiento'}
+             : 'Finalizar levantamiento'}
           </button>
         </footer>
       )}
