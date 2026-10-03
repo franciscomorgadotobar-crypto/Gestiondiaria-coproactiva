@@ -81,7 +81,15 @@ function etiquetaTipo(tipo) {
   return TIPOS.find(([v]) => v === tipo)?.[1] ?? tipo;
 }
 
-function urlFoto(ruta) {
+function urlFoto(foto) {
+  if (!foto) return null;
+  if (typeof foto === 'string') {
+    return foto.startsWith('http://') || foto.startsWith('https://')
+      ? foto
+      : supabase.storage.from(BUCKET).getPublicUrl(foto).data.publicUrl;
+  }
+  if (foto.url) return foto.url;
+  const ruta = foto.mini || foto.ruta;
   return ruta ? supabase.storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl : null;
 }
 
@@ -300,7 +308,7 @@ function TarjetaPropiedad({ propiedad: p }) {
     <Link to={`/propiedades/${p.id}`} className="tarjeta propiedad-card">
       <div className="propiedad-card-foto">
         {portada
-          ? <img src={urlFoto(portada.mini || portada.ruta)} alt="" loading="lazy" />
+          ? <img src={urlFoto(portada)} alt="" loading="lazy" />
           : <span className="micro">Sin fotos</span>}
       </div>
       <div className="propiedad-card-cuerpo">
@@ -765,8 +773,8 @@ function FichaPropiedad({ id = null }) {
           {fotos.length > 0 && (
             <ol className="propiedad-fotos">
               {fotos.map((foto, i) => (
-                <li key={foto.ruta} className="propiedad-foto">
-                  <img src={urlFoto(foto.mini || foto.ruta)} alt={`Foto ${i + 1}`} loading="lazy" />
+                <li key={foto.ruta || foto.url || i} className="propiedad-foto">
+                  <img src={urlFoto(foto)} alt={`Foto ${i + 1}`} loading="lazy" />
                   {i === 0
                     ? <span className="chip chip-cumple propiedad-portada">Portada</span>
                     : (
