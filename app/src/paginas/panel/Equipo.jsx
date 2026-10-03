@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import CapacitacionPersona from '../../componentes/CapacitacionPersona';
 
 /* Administración del equipo: quién entra y qué ve.
  *
@@ -340,6 +341,8 @@ export default function Equipo() {
                       )}
                     </div>
                   )}
+
+                  {esSuperadmin && <CapacitacionPersona persona={persona} />}
 
                   <div className="fila" style={{ gap: 8, marginTop: 12 }}>
                     <button className="boton boton-secundario crece"
