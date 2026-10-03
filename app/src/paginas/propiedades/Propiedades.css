@@ -130,3 +130,95 @@
   }
   .propiedad-pie .boton { flex: none; min-width: 170px; }
 }
+
+
+/* --------------------------------------------------- UX móvil Propiedades */
+
+.propiedades-encabezado-contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.propiedades-descripcion {
+  margin: 5px 0 0;
+  max-width: 620px;
+  line-height: 1.45;
+}
+.propiedades-nueva {
+  align-self: stretch;
+  justify-content: center;
+  width: 100%;
+}
+
+.propiedades-sitio {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 13px 14px;
+}
+.propiedades-sitio .crece { min-width: 0; }
+.propiedades-sitio .boton {
+  width: 100%;
+  justify-content: center;
+}
+
+.propiedades-filtros {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: end;
+}
+.propiedades-filtros .campo {
+  min-width: 0;
+  margin: 0;
+}
+.propiedades-buscar,
+.propiedades-estado {
+  width: 100%;
+}
+.propiedades-buscar input,
+.propiedades-estado select {
+  width: 100%;
+}
+
+.propiedades-vacio {
+  margin: 36px auto 0;
+  max-width: 360px;
+  padding: 22px 18px;
+  text-align: center;
+}
+.propiedades-vacio strong {
+  display: block;
+  color: var(--texto-titulo);
+  font: 600 16px/1.35 var(--fuente-display);
+}
+.propiedades-vacio p {
+  margin: 7px 0 14px;
+}
+.propiedades-vacio .boton {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (min-width: 700px) {
+  .propiedades-encabezado-contenido {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .propiedades-nueva {
+    align-self: flex-start;
+    width: auto;
+    flex: none;
+  }
+  .propiedades-sitio {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .propiedades-sitio .boton {
+    width: auto;
+  }
+  .propiedades-filtros {
+    grid-template-columns: minmax(0, 1fr) 220px;
+  }
+}
