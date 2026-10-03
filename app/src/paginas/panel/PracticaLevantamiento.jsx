@@ -93,9 +93,10 @@ export default function PracticaLevantamiento() {
                   Comprueba visualmente la condición y registra la alternativa que corresponda.
                 </p>
 
-                <div className="opciones" data-tutorial="practica-respuesta">
+                <div className="opciones">
                   {['Cumple', 'No cumple', 'Cumple con observaciones', 'No aplica'].map(op => (
                     <button key={op} type="button"
+                            {...(op === 'Cumple' ? { 'data-tutorial': 'practica-respuesta' } : {})}
                             aria-pressed={respuesta === op}
                             onClick={() => op === 'Cumple' && setRespuesta('Cumple')}>
                       {op}
