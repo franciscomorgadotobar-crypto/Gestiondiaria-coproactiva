@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { comprimir } from '../../lib/sincronizacion';
 import Confirmar from '../../componentes/Confirmar';
+import { useVolverGlobal } from '../../lib/navegacion';
 import './Propiedades.css';
 
 /* Propiedades en arriendo y venta que publica www.coproactiva.cl/propiedades.
@@ -431,6 +432,7 @@ function FichaPropiedad({ id = null }) {
     if (hayCambios) setSalida(destino);
     else navegar(destino);
   }
+  useVolverGlobal(() => salir(volverA));
 
   async function guardar(e) {
     e.preventDefault();
@@ -586,7 +588,7 @@ function FichaPropiedad({ id = null }) {
   return (
     <div className="pantalla pantalla-angosta">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button type="button" className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => salir(volverA)}>
             ‹ Propiedades
