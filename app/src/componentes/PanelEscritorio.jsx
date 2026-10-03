@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
 import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
+import { useTutoriales } from '../lib/tutorialesContexto';
 
 function activa(pathname, ruta) {
   return pathname === ruta || pathname.startsWith(ruta + '/');
@@ -28,6 +29,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
   const { pathname } = useLocation();
   const navegar = useNavigate();
+  const { iniciar } = useTutoriales();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
 
   useEffect(() => {
@@ -109,6 +111,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       ];
 
   const inicio = esCliente ? '/portal' : inicioSegunArea();
+  const tutorialContextual =
+    pathname === '/inicio' ? 'primeros_pasos'
+    : pathname === '/ayuda/practica-levantamiento' ? 'ejecutar_levantamiento'
+    : null;
 
   return (
     <div className="layout-escritorio">
@@ -143,11 +149,17 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               Cambiar de área
             </button>
           )}
-          {!esCliente && (
-            <Link to="/ayuda" data-tutorial="ayuda-menu"
-                  className="ayuda-lateral">
-              Ayuda y tutoriales
-            </Link>
+          {!esCliente && tutorialContextual && (
+            <button
+              type="button"
+              className="ayuda-contextual-escritorio"
+              data-tutorial="ayuda-menu"
+              aria-label="Abrir tutorial de esta pantalla"
+              title="Tutorial de esta pantalla"
+              onClick={() => iniciar(tutorialContextual, { continuar: false })}
+            >
+              ? Tutorial
+            </button>
           )}
           <button type="button" className="boton boton-texto" style={{ padding: 0 }} onClick={salir}>
             Salir
@@ -164,11 +176,25 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             <button type="button" className="barra-area-volver" onClick={() => navegar(-1)}>
               ‹ Volver
             </button>
-            {puedeConfigurar && (
-              <button type="button" className="barra-area-cambiar" onClick={cambiarArea}>
-                Cambiar de área
-              </button>
-            )}
+            <div className="barra-area-derecha">
+              {tutorialContextual && (
+                <button
+                  type="button"
+                  className="barra-area-tutorial"
+                  data-tutorial="ayuda-menu"
+                  aria-label="Abrir tutorial de esta pantalla"
+                  title="Tutorial"
+                  onClick={() => iniciar(tutorialContextual, { continuar: false })}
+                >
+                  ?
+                </button>
+              )}
+              {puedeConfigurar && (
+                <button type="button" className="barra-area-cambiar" onClick={cambiarArea}>
+                  Cambiar de área
+                </button>
+              )}
+            </div>
           </div>
         )}
         {children}
