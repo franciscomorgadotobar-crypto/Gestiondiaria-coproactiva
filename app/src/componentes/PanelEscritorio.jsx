@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
 import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
@@ -27,6 +27,7 @@ function cambiarArea() {
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
   const { pathname } = useLocation();
+  const navegar = useNavigate();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
 
   useEffect(() => {
@@ -58,13 +59,16 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // enlaces no se repiten en las otras áreas: no son trabajo del día.
   const enConfiguracion = !esCliente && esAdministracion
     && ['/configuracion', '/equipo', '/clientes'].some(r => activa(pathname, r));
-  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion
+  const enProveedores = !esCliente && esAdministracion && !enConfiguracion
+    && (activa(pathname, '/proveedores') || areaGuardada() === 'proveedores');
+  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion && !enProveedores
     && (activa(pathname, '/propiedades')
       || (areaGuardada() === 'propiedades' && !activa(pathname, '/pipeline')));
-  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enPropiedades
+  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enProveedores && !enPropiedades
     && (areaGuardada() === 'crm' || activa(pathname, '/pipeline'));
   const nombreArea = esCliente ? null
     : enConfiguracion ? 'Configuración'
+    : enProveedores ? 'Proveedores'
     : enPropiedades ? 'Propiedades'
     : enCRM ? 'CRM'
     : puedeConfigurar ? 'Operación' : null;
@@ -81,6 +85,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     ? [
         { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: true },
         { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
+      ]
+    : enProveedores
+    ? [
+        { ruta: '/proveedores', etiqueta: 'Directorio', mostrar: true }
       ]
     : enPropiedades
     ? [
@@ -153,8 +161,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             fijo en la que se eligió la primera vez, sin salida. */}
         {!esCliente && (
           <div className="barra-area-movil">
-            {puedeConfigurar && <button type="button" onClick={cambiarArea}>Cambiar de área</button>}
-            <Link to="/ayuda" data-tutorial="ayuda-menu">Ayuda</Link>
+            <button type="button" className="barra-area-volver" onClick={() => navegar(-1)}>
+              ‹ Volver
+            </button>
+            {puedeConfigurar && (
+              <button type="button" className="barra-area-cambiar" onClick={cambiarArea}>
+                Cambiar de área
+              </button>
+            )}
           </div>
         )}
         {children}
