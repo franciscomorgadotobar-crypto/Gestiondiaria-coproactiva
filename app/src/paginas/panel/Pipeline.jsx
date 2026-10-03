@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import './Pipeline.css';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
  *
@@ -63,6 +64,7 @@ function fechaCL(valor, conHora = false) {
 export default function Pipeline() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
+  useVolverGlobal(() => navegar(inicioSegunArea()));
   const [prospectos, setProspectos] = useState(null);
   const [diagnosticos, setDiagnosticos] = useState(new Map());   // prospecto_id → { control, resultado }
   const [equipo, setEquipo] = useState([]);
@@ -239,7 +241,7 @@ export default function Pipeline() {
   return (
     <div className="pantalla pantalla-ancha">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
           </button>
