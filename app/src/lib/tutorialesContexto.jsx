@@ -170,7 +170,12 @@ export function ProveedorTutoriales({ children }) {
 
     const buscar = () => {
       if (!vivo) return false;
-      const encontrado = document.querySelector(paso.selector);
+      const candidatos = [...document.querySelectorAll(paso.selector)];
+      const encontrado = candidatos.find(el => {
+        const r = el.getBoundingClientRect();
+        const estilo = window.getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && estilo.display !== 'none' && estilo.visibility !== 'hidden';
+      }) ?? candidatos[0];
       if (!encontrado) return false;
       setElemento(encontrado);
       const r = encontrado.getBoundingClientRect();
