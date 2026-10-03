@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
+import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Programar o editar un levantamiento.
  *
@@ -152,6 +153,7 @@ export default function Programar() {
     if (prospectoInicial) return navegar('/pipeline');
     navegar(inicioSegunArea());
   }
+  useVolverGlobal(volver);
 
   async function guardar() {
     if (!datos.destino) return setError('Elige a qué comunidad o prospecto corresponde.');
@@ -273,7 +275,7 @@ export default function Programar() {
   return (
     <div className="pantalla pantalla-angosta">
       <header className="encabezado">
-        <div className="fila" style={{ marginBottom: 8 }}>
+        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={volver}>
             {comunidadInicial ? '‹ Comunidad' : prospectoInicial ? '‹ Pipeline' : '‹ Inicio'}
