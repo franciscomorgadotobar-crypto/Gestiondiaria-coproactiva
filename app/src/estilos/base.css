@@ -1784,3 +1784,70 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   .proveedor-acciones-peligro { flex-direction: row; justify-content: flex-end; }
   .ayuda-inicio-movil { display: none; }
 }
+
+
+/* ---------------------------------------------- Ajustes UX Proveedores */
+
+.proveedores-intro { max-width: 660px; }
+.proveedores-descripcion {
+  margin: 5px 0 0;
+  max-width: 620px;
+  line-height: 1.45;
+}
+.acciones-proveedores-cabecera {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+  max-width: 560px;
+}
+.acciones-proveedores-cabecera .boton {
+  width: 100%;
+  min-height: var(--tactil);
+}
+.proveedores-ultima { margin-top: 9px; }
+
+.proveedor-tarjeta-contenido { min-width: 0; }
+.proveedor-servicios-resumen {
+  display: -webkit-box;
+  margin-top: 5px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--texto-cuerpo);
+  font: 400 13px/1.35 var(--fuente-cuerpo);
+}
+.proveedor-origen-resumen {
+  color: var(--texto-tenue) !important;
+  font-size: 10.5px !important;
+}
+.proveedor-origen-correo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.proveedor-origen-correo strong {
+  color: var(--texto-titulo);
+  font-size: 13px;
+}
+.proveedor-origen-correo p { margin: 4px 0 0; }
+
+@media (max-width: 430px) {
+  .acciones-proveedores-cabecera {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
+}
+
+@media (min-width: 720px) {
+  .acciones-proveedores-cabecera {
+    display: flex;
+    max-width: none;
+  }
+  .acciones-proveedores-cabecera .boton { width: auto; }
+  .proveedor-origen-correo {
+    flex-direction: row;
+    align-items: center;
+  }
+  .proveedor-origen-correo .boton { flex: none; }
+}
