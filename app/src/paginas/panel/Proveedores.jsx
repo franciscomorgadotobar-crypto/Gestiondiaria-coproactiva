@@ -61,7 +61,7 @@ function fechaCorta(valor) {
 }
 
 function fechaHora(valor) {
-  if (!valor) return '—';
+  if (!valor) return 'Sin registro';
   return new Date(valor).toLocaleString('es-CL', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
@@ -98,6 +98,9 @@ export default function Proveedores() {
   const [aviso, setAviso] = useState(null);
   const [interacciones, setInteracciones] = useState([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
+  const [correos, setCorreos] = useState([]);
+  const [cargandoCorreos, setCargandoCorreos] = useState(false);
+  const [syncEstado, setSyncEstado] = useState(null);
 
   const puedeGestionar = ['superadmin', 'admin'].includes(perfil?.rol);
   const puedeEliminar = perfil?.rol === 'superadmin';
@@ -105,10 +108,20 @@ export default function Proveedores() {
   async function cargar({ mostrarResultado = false } = {}) {
     setSincronizando(true);
     setError(null);
-    const { data, error } = await supabase
-      .from('proveedores')
-      .select('*')
-      .order('editado_en', { ascending: false });
+    const [proveedoresResp, syncResp] = await Promise.all([
+      supabase
+        .from('proveedores')
+        .select('*')
+        .order('editado_en', { ascending: false }),
+      supabase
+        .from('proveedor_sync_estado')
+        .select('ultima_revision,ultimo_exito,ultimo_error,en_ejecucion_desde,correos_procesados,proveedores_actualizados')
+        .eq('clave', 'gmail_proveedores')
+        .maybeSingle()
+    ]);
+
+    const { data, error } = proveedoresResp;
+    if (!syncResp.error) setSyncEstado(syncResp.data ?? null);
 
     if (error) {
       setError(error.message);
@@ -158,21 +171,34 @@ export default function Proveedores() {
   useEffect(() => {
     if (!seleccionado) {
       setInteracciones([]);
+      setCorreos([]);
       return;
     }
     let vigente = true;
     setCargandoHistorial(true);
-    supabase
-      .from('proveedor_interacciones')
-      .select('id,canal,detalle,realizado_por,realizado_en')
-      .eq('proveedor_id', seleccionado.id)
-      .order('realizado_en', { ascending: false })
-      .limit(50)
-      .then(({ data, error }) => {
-        if (!vigente) return;
-        if (!error) setInteracciones(data ?? []);
-        setCargandoHistorial(false);
-      });
+    setCargandoCorreos(true);
+
+    Promise.all([
+      supabase
+        .from('proveedor_interacciones')
+        .select('id,canal,detalle,realizado_por,realizado_en')
+        .eq('proveedor_id', seleccionado.id)
+        .order('realizado_en', { ascending: false })
+        .limit(50),
+      supabase
+        .from('proveedor_correos')
+        .select('id,asunto,fecha_correo,remitente_nombre,remitente_email,snippet,cuerpo_texto,adjuntos,storage_path_eml')
+        .eq('proveedor_id', seleccionado.id)
+        .order('fecha_correo', { ascending: false })
+        .limit(50)
+    ]).then(([historialResp, correosResp]) => {
+      if (!vigente) return;
+      if (!historialResp.error) setInteracciones(historialResp.data ?? []);
+      if (!correosResp.error) setCorreos(correosResp.data ?? []);
+      setCargandoHistorial(false);
+      setCargandoCorreos(false);
+    });
+
     return () => { vigente = false; };
   }, [seleccionado?.id]);
 
@@ -194,9 +220,13 @@ export default function Proveedores() {
 
   const resumen = useMemo(() => {
     const lista = proveedores ?? [];
-    const especialidades = new Set(
-      lista.map(p => normalizar(p.rubro)).filter(Boolean)
-    );
+    const especialidades = new Set();
+    for (const p of lista) {
+      if (p.rubro) especialidades.add(normalizar(p.rubro));
+      for (const e of p.especialidades ?? []) {
+        if (e) especialidades.add(normalizar(e));
+      }
+    }
     return {
       proveedores: lista.length,
       especialidades: especialidades.size,
@@ -382,6 +412,46 @@ export default function Proveedores() {
     }
   }
 
+  async function sincronizarGmail() {
+    setSincronizando(true);
+    setError(null);
+    setResultadoSync(null);
+    setAviso(null);
+
+    const { data, error: e } = await supabase.functions.invoke('sincronizar-proveedores-gmail', {
+      body: { origen: 'manual', limite_backfill: 12 }
+    });
+
+    if (e || !data?.ok) {
+      setError(data?.error || e?.message || 'No se pudo sincronizar Gmail.');
+      setSincronizando(false);
+      return;
+    }
+
+    await cargar({ mostrarResultado: true });
+    const partes = [];
+    if (data.correos_nuevos) partes.push(`${data.correos_nuevos} correo${data.correos_nuevos === 1 ? '' : 's'} nuevo${data.correos_nuevos === 1 ? '' : 's'}`);
+    if (data.adjuntos_guardados) partes.push(`${data.adjuntos_guardados} adjunto${data.adjuntos_guardados === 1 ? '' : 's'} guardado${data.adjuntos_guardados === 1 ? '' : 's'}`);
+    if (data.proveedores_actualizados) partes.push(`${data.proveedores_actualizados} proveedor${data.proveedores_actualizados === 1 ? '' : 'es'} actualizado${data.proveedores_actualizados === 1 ? '' : 's'}`);
+    if (Number.isFinite(data.faltan_backfill) && data.faltan_backfill > 0) {
+      partes.push(`${data.faltan_backfill} proveedor${data.faltan_backfill === 1 ? '' : 'es'} pendiente${data.faltan_backfill === 1 ? '' : 's'} de reprocesar`);
+    }
+    setAviso(partes.length ? 'Gmail actualizado: ' + partes.join(' · ') + '.' : 'Gmail revisado. No había información nueva.');
+    setSincronizando(false);
+  }
+
+  async function abrirArchivoCorreo(storagePath) {
+    if (!storagePath) return;
+    const { data, error: e } = await supabase.storage
+      .from('proveedores-correo')
+      .createSignedUrl(storagePath, 300);
+    if (e || !data?.signedUrl) {
+      setError(e?.message || 'No se pudo abrir el archivo.');
+      return;
+    }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  }
+
   if (!puedeGestionar) return <Navigate to="/inicio" replace />;
 
   if (id && proveedores && !seleccionado) {
@@ -401,6 +471,9 @@ export default function Proveedores() {
         p={seleccionado}
         historial={interacciones}
         cargandoHistorial={cargandoHistorial}
+        correos={correos}
+        cargandoCorreos={cargandoCorreos}
+        onAbrirArchivo={abrirArchivoCorreo}
         puedeEliminar={puedeEliminar}
         onVolver={() => navegar('/proveedores')}
         onEditar={() => setFormulario({ ...seleccionado })}
@@ -451,12 +524,12 @@ export default function Proveedores() {
           </button>
           <button type="button" className="boton boton-secundario"
                   disabled={sincronizando}
-                  onClick={() => cargar({ mostrarResultado: true })}>
+                  onClick={sincronizarGmail}>
             {sincronizando ? 'Actualizando…' : '↻ Actualizar ahora'}
           </button>
         </div>
         <p className="micro apagado proveedores-ultima">
-          Datos desde Supabase · actualización automática diaria
+          Gmail automático · Última sincronización: {syncEstado?.ultimo_exito ? fechaHora(syncEstado.ultimo_exito) : 'pendiente'}
         </p>
       </header>
 
@@ -592,7 +665,7 @@ export default function Proveedores() {
                     <span>{p.contacto_nombre || 'Sin contacto'}</span>
                     <span>{p.email || p.telefono || 'Sin datos de contacto'}</span>
                   </td>
-                  <td><strong>{p.rubro || 'Sin rubro'}</strong><span>{p.servicios || '—'}</span></td>
+                  <td><strong>{p.rubro || 'Sin rubro'}</strong><span>{p.servicios || 'Sin servicios informados'}</span></td>
                   <td>{p.comunas || 'Sin cobertura informada'}</td>
                   <td>{fechaCorta(p.fecha_contacto)}</td>
                   <td><span className={'chip ' + claseEstado(p)}>{etiquetaEstado(p)}</span></td>
@@ -624,7 +697,7 @@ export default function Proveedores() {
             <div className="sync-ok">✓</div>
             <h2 className="h3" style={{ textAlign: 'center' }}>Actualización terminada</h2>
             <p className="chico apagado" style={{ textAlign: 'center', marginTop: 4 }}>
-              Se volvió a leer la información disponible en Supabase.
+              Se actualizaron los datos disponibles del repositorio.
             </p>
             <div className="sync-resumen">
               <div><strong>{resultadoSync.revisados}</strong><span>Revisados</span></div>
@@ -673,7 +746,7 @@ function TarjetaProveedor({ p, onAbrir, onContacto }) {
   );
 }
 
-function FichaProveedor({ p, historial, cargandoHistorial, puedeEliminar, onVolver, onEditar, onBlacklist, onEliminar, onContacto, aviso, error, onCerrarAviso, children }) {
+function FichaProveedor({ p, historial, cargandoHistorial, correos, cargandoCorreos, onAbrirArchivo, puedeEliminar, onVolver, onEditar, onBlacklist, onEliminar, onContacto, aviso, error, onCerrarAviso, children }) {
   return (
     <div className="pantalla proveedor-ficha">
       <header className="encabezado">
@@ -769,6 +842,50 @@ function FichaProveedor({ p, historial, cargandoHistorial, puedeEliminar, onVolv
             <p className="chico proveedor-texto-largo">{p.notas || 'Sin notas.'}</p>
           </Seccion>
 
+          <Seccion titulo="Correos y documentos" ancho>
+            {cargandoCorreos && <p className="micro apagado">Cargando correos…</p>}
+            {!cargandoCorreos && correos.length === 0 && (
+              <p className="micro apagado">No hay correos guardados todavía.</p>
+            )}
+            <div className="proveedor-correos">
+              {correos.map(correo => (
+                <article key={correo.id} className="proveedor-correo">
+                  <div className="proveedor-correo-cabecera">
+                    <strong>{correo.asunto || 'Correo sin asunto'}</strong>
+                    <span className="micro apagado">{fechaHora(correo.fecha_correo)}</span>
+                  </div>
+                  <p className="micro apagado">
+                    {[correo.remitente_nombre, correo.remitente_email].filter(Boolean).join(' · ') || 'Remitente no informado'}
+                  </p>
+                  {correo.snippet && <p className="chico proveedor-texto-largo">{correo.snippet}</p>}
+
+                  <div className="proveedor-correo-archivos">
+                    {correo.storage_path_eml && (
+                      <button type="button" className="boton boton-secundario"
+                              onClick={() => onAbrirArchivo(correo.storage_path_eml)}>
+                        Correo original
+                      </button>
+                    )}
+                    {(correo.adjuntos ?? []).filter(a => a.storage_path).map((a, i) => (
+                      <button key={(a.storage_path || a.filename || '') + i} type="button"
+                              className="boton boton-secundario"
+                              onClick={() => onAbrirArchivo(a.storage_path)}>
+                        {a.filename || 'Adjunto'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {correo.cuerpo_texto && (
+                    <details className="proveedor-correo-contenido">
+                      <summary>Ver contenido del correo</summary>
+                      <pre>{correo.cuerpo_texto}</pre>
+                    </details>
+                  )}
+                </article>
+              ))}
+            </div>
+          </Seccion>
+
           {p.origen === 'correo' && (
             <Seccion titulo="Origen del registro" ancho>
               <div className="proveedor-origen-correo">
@@ -840,7 +957,7 @@ function Dato({ etiqueta, valor }) {
   return (
     <div className="proveedor-dato">
       <span>{etiqueta}</span>
-      <strong>{valor || '—'}</strong>
+      <strong>{valor || 'No informado'}</strong>
     </div>
   );
 }
