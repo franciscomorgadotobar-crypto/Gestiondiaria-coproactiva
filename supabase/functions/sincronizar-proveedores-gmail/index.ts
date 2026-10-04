@@ -461,11 +461,22 @@ async function sincronizarRecientes(admin: any, client: any, proveedores: any[],
   const metadatos = await client.fetchAll(uids.slice(-250), {
     envelope: true,
     internalDate: true,
-    threadId: true
+    threadId: true,
+    emailId: true
   }, { uid: true });
+
+  const idsGmail = metadatos.map((m: any) => m.emailId ? String(m.emailId) : null).filter(Boolean);
+  const existentes = new Set<string>();
+  for (let i = 0; i < idsGmail.length; i += 100) {
+    const { data } = await admin.from('proveedor_correos')
+      .select('gmail_message_id')
+      .in('gmail_message_id', idsGmail.slice(i, i + 100));
+    for (const x of data ?? []) existentes.add(String(x.gmail_message_id));
+  }
 
   const porProveedor = new Map<string, { proveedor: any; uids: number[] }>();
   for (const m of metadatos) {
+    if (m.emailId && existentes.has(String(m.emailId))) continue;
     const desde = correoDe(m.envelope?.from).email;
     const p = desde ? mapa.get(desde) : null;
     if (!p) continue;
@@ -525,7 +536,7 @@ Deno.serve(async (req) => {
   if (!manual && !cronAutorizado) return responder({ error: 'Sin permiso' }, 403);
 
   const ahora = Date.now();
-  if (estado?.en_ejecucion_desde && ahora - new Date(estado.en_ejecucion_desde).getTime() < 15 * 60 * 1000) {
+  if (estado?.en_ejecucion_desde && ahora - new Date(estado.en_ejecucion_desde).getTime() < 3 * 60 * 1000) {
     return responder({ ok: true, omitida: true, motivo: 'Ya hay una sincronización en curso' }, 202);
   }
 
@@ -553,7 +564,7 @@ Deno.serve(async (req) => {
     imap = await abrirImap();
     const uidValidity = String((imap.client.mailbox as any)?.uidValidity ?? '0');
 
-    const limite = Math.max(1, Math.min(12, Number(cuerpo.limite_backfill ?? (manual ? 8 : 6))));
+    const limite = Math.max(1, Math.min(6, Number(cuerpo.limite_backfill ?? 6)));
     const { data: pendientes, error: ePendientes } = await admin.from('proveedores')
       .select('*')
       .not('gmail_thread_id', 'is', null)
@@ -593,6 +604,10 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact', head: true })
       .not('gmail_thread_id', 'is', null)
       .is('gmail_ultima_sincronizacion', null);
+
+    if ((faltan ?? 0) === 0) {
+      await admin.rpc('programar_sync_proveedores_gmail', { p_modo: 'diario' });
+    }
 
     const fin = new Date().toISOString();
     await admin.from('proveedor_sync_estado').update({
