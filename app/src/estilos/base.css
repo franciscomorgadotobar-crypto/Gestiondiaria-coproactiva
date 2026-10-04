@@ -1903,3 +1903,66 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .proveedores-resumen-tres {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+
+
+/* Correos y documentos conservados desde Gmail */
+.proveedor-correos {
+  display: grid;
+  gap: 10px;
+}
+.proveedor-correo {
+  padding: 12px 0;
+  border-top: 1px solid var(--borde-suave);
+}
+.proveedor-correo:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.proveedor-correo-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.proveedor-correo-cabecera strong {
+  min-width: 0;
+  color: var(--texto-titulo);
+}
+.proveedor-correo > p {
+  margin: 4px 0 0;
+}
+.proveedor-correo-archivos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+.proveedor-correo-archivos .boton {
+  min-height: 34px;
+  padding: 8px 10px;
+  white-space: normal;
+  text-align: left;
+}
+.proveedor-correo-contenido {
+  margin-top: 10px;
+  border-top: 1px solid var(--borde-suave);
+  padding-top: 9px;
+}
+.proveedor-correo-contenido summary {
+  cursor: pointer;
+  color: var(--texto-apagado);
+  font: 600 11px/1.4 var(--fuente-display);
+  letter-spacing: .04em;
+}
+.proveedor-correo-contenido pre {
+  max-height: 320px;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 12px;
+  border-radius: var(--radio-control);
+  background: var(--papel);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 400 12px/1.5 var(--fuente-cuerpo);
+  color: var(--texto);
+}
