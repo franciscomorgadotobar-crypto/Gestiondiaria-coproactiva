@@ -419,7 +419,7 @@ export default function Proveedores() {
     setAviso(null);
 
     const { data, error: e } = await supabase.functions.invoke('sincronizar-proveedores-gmail', {
-      body: { origen: 'manual', limite_backfill: 12 }
+      body: { origen: 'manual', limite_backfill: 6 }
     });
 
     if (e || !data?.ok) {
