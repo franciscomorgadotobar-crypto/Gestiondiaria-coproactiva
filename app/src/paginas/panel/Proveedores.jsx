@@ -230,7 +230,11 @@ export default function Proveedores() {
       if (!q) return true;
       const bolsa = [
         p.empresa, p.rut, p.contacto_nombre, p.contacto_cargo, p.email,
-        p.telefono, p.sitio_web, p.rubro, p.servicios, p.comunas, p.notas
+        p.telefono, p.sitio_web, p.rubro, p.servicios, p.comunas, p.notas,
+        p.direccion, p.condiciones_comerciales, p.gmail_asunto_ultimo,
+        ...(p.regiones ?? []), ...(p.especialidades ?? []),
+        ...(p.palabras_clave ?? []), ...(p.certificaciones ?? []), ...(p.marcas ?? []),
+        JSON.stringify(p.contactos ?? [])
       ].map(normalizar).join(' ');
       return bolsa.includes(q);
     });
@@ -726,8 +730,40 @@ function FichaProveedor({ p, historial, cargandoHistorial, puedeEliminar, onVolv
           </Seccion>
 
           <Seccion titulo="Cobertura">
-            <p className="chico proveedor-texto-largo">{p.comunas || 'Sin comunas informadas.'}</p>
+            <p className="chico proveedor-texto-largo">
+              {[p.comunas, ...(p.regiones ?? []), p.direccion].filter(Boolean).join(' · ') || 'Sin cobertura informada.'}
+            </p>
           </Seccion>
+
+          {(p.especialidades?.length > 0 || p.palabras_clave?.length > 0) && (
+            <Seccion titulo="Especialidades y búsqueda" ancho>
+              <p className="chico proveedor-texto-largo">
+                {[...(p.especialidades ?? []), ...(p.palabras_clave ?? [])].join(' · ')}
+              </p>
+            </Seccion>
+          )}
+
+          {p.contactos?.length > 0 && (
+            <Seccion titulo="Contactos adicionales" ancho>
+              <div className="proveedor-historial">
+                {p.contactos.map((contacto, i) => (
+                  <div key={(contacto.email || contacto.telefono || contacto.nombre || '') + i}>
+                    <strong>{contacto.nombre || contacto.email || contacto.telefono || 'Contacto'}</strong>
+                    {contacto.cargo && <p>{contacto.cargo}</p>}
+                    <p>{[contacto.email, contacto.telefono].filter(Boolean).join(' · ')}</p>
+                  </div>
+                ))}
+              </div>
+            </Seccion>
+          )}
+
+          {(p.certificaciones?.length > 0 || p.marcas?.length > 0 || p.condiciones_comerciales) && (
+            <Seccion titulo="Información adicional" ancho>
+              {p.certificaciones?.length > 0 && <Dato etiqueta="Certificaciones" valor={p.certificaciones.join(', ')} />}
+              {p.marcas?.length > 0 && <Dato etiqueta="Marcas" valor={p.marcas.join(', ')} />}
+              {p.condiciones_comerciales && <Dato etiqueta="Condiciones comerciales" valor={p.condiciones_comerciales} />}
+            </Seccion>
+          )}
 
           <Seccion titulo="Notas" ancho>
             <p className="chico proveedor-texto-largo">{p.notas || 'Sin notas.'}</p>
@@ -739,8 +775,8 @@ function FichaProveedor({ p, historial, cargandoHistorial, puedeEliminar, onVolv
                 <div className="crece">
                   <strong>Creado desde correo</strong>
                   <p className="chico apagado">
-                    La ficha conserva el identificador del correo que dio origen al proveedor.
-                    El contenido resumido disponible está reflejado en Servicios y Notas.
+                    La ficha conserva el origen del correo y los datos estructurados extraídos.
+                    Los nuevos correos pueden complementar contactos, especialidades, cobertura y antecedentes comerciales.
                   </p>
                 </div>
                 {p.gmail_thread_id && (
