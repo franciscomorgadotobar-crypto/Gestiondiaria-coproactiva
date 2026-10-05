@@ -9,6 +9,7 @@ import EditorPlantilla from './paginas/panel/Plantilla';
 import Programar from './paginas/panel/Programar';
 import Equipo from './paginas/panel/Equipo';
 import Comunidades from './paginas/panel/Comunidades';
+import Mantenciones from './paginas/panel/Mantenciones';
 import Clientes from './paginas/panel/Clientes';
 import Configuracion from './paginas/panel/Configuracion';
 import Pipeline from './paginas/panel/Pipeline';
@@ -144,6 +145,7 @@ export default function App() {
       <Route path="/pipeline" element={<Interna><Pipeline /></Interna>} />
       <Route path="/comunidades" element={<Interna><Comunidades /></Interna>} />
       <Route path="/comunidades/:id" element={<Interna><Comunidades /></Interna>} />
+      <Route path="/mantenciones" element={<Interna><Mantenciones /></Interna>} />
       <Route path="/historico" element={<Navigate to="/comunidades" replace />} />
       <Route path="/mapa" element={
         <Interna anchoCompleto>
