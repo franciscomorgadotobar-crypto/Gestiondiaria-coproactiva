@@ -28,6 +28,7 @@ const PortalCliente = lazy(() => import('./paginas/cliente/PortalCliente'));
 // Propiedades es de administración: quien va a terreno con el teléfono no
 // tiene por qué descargarla.
 const Propiedades = lazy(() => import('./paginas/propiedades/Propiedades'));
+const Contabilidad = lazy(() => import('./paginas/panel/Contabilidad'));
 // Importar plantillas desde Excel es de oficina; el lector de Excel, además,
 // se carga recién al usarlo (ver lib/excelPlantillas.js).
 const ImportarPlantillas = lazy(() => import('./paginas/panel/ImportarPlantillas'));
@@ -80,6 +81,7 @@ function Entrada() {
   if (area === 'crm') return <Navigate to="/pipeline" replace />;
   if (area === 'propiedades') return <Navigate to="/propiedades" replace />;
   if (area === 'proveedores') return <Navigate to="/proveedores" replace />;
+  if (area === 'contabilidad' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/contabilidad" replace />;
   if (area === 'operacion') return <PanelEscritorio><Inicio /></PanelEscritorio>;
   return <SeleccionArea />;
 }
@@ -166,6 +168,17 @@ export default function App() {
       } />
       <Route path="/proveedores" element={<Interna><Proveedores /></Interna>} />
       <Route path="/proveedores/:id" element={<Interna><Proveedores /></Interna>} />
+
+      <Route path="/contabilidad" element={
+        <Interna>
+          <Suspense fallback={<p className="cargando">Cargando Contabilidad…</p>}><Contabilidad /></Suspense>
+        </Interna>
+      } />
+      <Route path="/contabilidad/:vista" element={
+        <Interna>
+          <Suspense fallback={<p className="cargando">Cargando Contabilidad…</p>}><Contabilidad /></Suspense>
+        </Interna>
+      } />
       <Route path="/nuevo" element={<Interna><Programar /></Interna>} />
       <Route path="/control/:id/editar" element={<Interna><Programar /></Interna>} />
       <Route path="/control/:id" element={<Privada><SoloInterno><Despacho /></SoloInterno></Privada>} />
