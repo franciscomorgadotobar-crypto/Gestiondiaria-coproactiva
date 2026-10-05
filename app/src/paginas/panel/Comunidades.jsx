@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
+import DialogoCampos from '../../componentes/DialogoCampos';
 import './Comunidades.css';
 
 const SECCIONES = [
@@ -395,6 +396,8 @@ function DetalleComunidad({ id }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [reprogramacion, setReprogramacion] = useState(null);
+  const [ejecucionPendiente, setEjecucionPendiente] = useState(null);
 
   const [nuevoActivo, setNuevoActivo] = useState({
     nombre: '', categoria: '', ubicacion: '', marca: '', modelo: '', serie: '', estado: 'operativo', proveedor: '', documentos: ''
@@ -625,11 +628,16 @@ function DetalleComunidad({ id }) {
     setNuevoAgendamiento({ actividad_id: '', programado_para: '', responsable_id: '' });
   }
 
-  async function reprogramar(item) {
-    const valor = prompt('Nueva fecha y hora (AAAA-MM-DDTHH:MM)', item.programado_para?.slice(0, 16) ?? '');
-    if (!valor) return;
-    const d = new Date(valor);
+  function reprogramar(item) {
+    setReprogramacion(item);
+  }
+
+  async function confirmarReprogramacion({ fecha }) {
+    const item = reprogramacion;
+    if (!item || !fecha) return;
+    const d = new Date(fecha);
     if (Number.isNaN(d.getTime())) return setError('La nueva fecha no es válida.');
+    setReprogramacion(null);
     const { data, error } = await supabase.from('mantenimiento_agendamientos')
       .update({ programado_para: d.toISOString(), reprogramado_en: new Date().toISOString(), reprogramado_por: perfil?.id ?? null })
       .eq('id', item.id).select().single();
@@ -637,30 +645,30 @@ function DetalleComunidad({ id }) {
     setAgenda(xs => xs.map(x => x.id === item.id ? data : x));
   }
 
-  async function registrarEjecucion(item) {
+  function registrarEjecucion(item) {
     const actividad = actividadesPorId.get(item.actividad_id);
     const responsable = item.responsable_id ? equipoPorId.get(item.responsable_id)?.nombre : null;
     const quienSugerido = responsable || actividad?.proveedor || '';
-    const ejecutor = prompt('¿Quién realizó la mantención?', quienSugerido);
-    if (ejecutor === null) return;
-    if (!ejecutor.trim()) return setError('Indica quién realizó la mantención.');
+    setEjecucionPendiente({
+      item,
+      requeridas: actividad?.evidencias_requeridas ?? [],
+      quienSugerido
+    });
+  }
 
-    const observaciones = prompt('¿Qué se realizó? Observaciones de la ejecución (opcional)');
-    if (observaciones === null) return;
-    const requeridas = actividad?.evidencias_requeridas ?? [];
-    const mensajeEvidencia = requeridas.length
-      ? `Respaldo o evidencias (requerido: ${requeridas.join(', ')}). Separa varias referencias por coma.`
-      : 'URL o referencia del respaldo/evidencia (opcional). Separa varias referencias por coma.';
-    const respaldo = prompt(mensajeEvidencia);
-    if (respaldo === null) return;
+  async function confirmarEjecucion({ ejecutor, observaciones, respaldo }) {
+    const pendiente = ejecucionPendiente;
+    if (!pendiente) return;
     const evidencias = respaldo.split(',').map(v => v.trim()).filter(Boolean);
-    if (requeridas.length && !evidencias.length) {
-      return setError(`Esta actividad exige evidencia: ${requeridas.join(', ')}.`);
+    if (pendiente.requeridas.length && !evidencias.length) {
+      return setError(`Esta actividad exige evidencia: ${pendiente.requeridas.join(', ')}.`);
     }
 
+    setEjecucionPendiente(null);
     setGuardando(true);
     setError(null);
     const realizadoEn = new Date().toISOString();
+    const { item } = pendiente;
     const { data: ejecucion, error: e1 } = await supabase.from('ejecuciones_mantenimiento').insert({
       comunidad_id: id,
       actividad_id: item.actividad_id,
@@ -753,6 +761,60 @@ function DetalleComunidad({ id }) {
 
   return (
     <div className="pantalla">
+      {reprogramacion && (
+        <DialogoCampos
+          titulo="Reprogramar mantención"
+          mensaje="Define la nueva fecha y hora de esta visita."
+          campos={[{
+            id: 'fecha',
+            label: 'Fecha y hora',
+            tipo: 'datetime-local',
+            valor: reprogramacion.programado_para?.slice(0, 16) ?? '',
+            obligatorio: true
+          }]}
+          textoConfirmar="Reprogramar"
+          textoCancelar="Cancelar"
+          onConfirmar={confirmarReprogramacion}
+          onCancelar={() => setReprogramacion(null)}
+        />
+      )}
+
+      {ejecucionPendiente && (
+        <DialogoCampos
+          titulo="Registrar mantención"
+          mensaje={ejecucionPendiente.requeridas.length
+            ? `Esta actividad exige evidencia: ${ejecucionPendiente.requeridas.join(', ')}.`
+            : 'Registra quién realizó el trabajo y su respaldo.'}
+          campos={[
+            {
+              id: 'ejecutor',
+              label: 'Quién realizó la mantención',
+              valor: ejecucionPendiente.quienSugerido,
+              obligatorio: true
+            },
+            {
+              id: 'observaciones',
+              label: 'Qué se realizó',
+              multiline: true,
+              filas: 3,
+              placeholder: 'Observaciones de la ejecución'
+            },
+            {
+              id: 'respaldo',
+              label: 'Respaldo o evidencias',
+              multiline: true,
+              filas: 2,
+              placeholder: 'URLs o referencias separadas por coma',
+              obligatorio: ejecucionPendiente.requeridas.length > 0
+            }
+          ]}
+          textoConfirmar="Registrar ejecución"
+          textoCancelar="Cancelar"
+          onConfirmar={confirmarEjecucion}
+          onCancelar={() => setEjecucionPendiente(null)}
+        />
+      )}
+
       <header className="encabezado">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar('/comunidades')}>
