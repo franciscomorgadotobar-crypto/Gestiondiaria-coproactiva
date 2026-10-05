@@ -430,6 +430,20 @@ function ReporteEerr({ detalle, sinClasificar }) {
 
   return (
     <div className="contabilidad-reporte">
+      <div className="contabilidad-reporte-intro">
+        <div>
+          <h3 className="h3">Estado de Resultados</h3>
+          <p className="micro apagado">Ingresos, costos, gastos y resultado del período seleccionado.</p>
+        </div>
+      </div>
+
+      <div className="contabilidad-reporte-resumen">
+        <div><span>Ingresos</span><strong>{moneda(r.totalIngresos)}</strong></div>
+        <div><span>Costos</span><strong>{moneda(r.totalCostos)}</strong></div>
+        <div><span>Gastos administración</span><strong>{moneda(r.totalAdministracion)}</strong></div>
+        <div><span>Resultado</span><strong className={r.utilidad < 0 ? 'negativo' : ''}>{moneda(r.utilidad)}</strong></div>
+      </div>
+
       <div className="contabilidad-eerr">
         {r.filas.map((fila, i) => (
           <div key={fila.etiqueta + i}
