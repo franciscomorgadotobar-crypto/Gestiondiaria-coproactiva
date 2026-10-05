@@ -1966,3 +1966,48 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   font: 400 12px/1.5 var(--fuente-cuerpo);
   color: var(--texto);
 }
+
+
+/* Evidencias de mantención */
+.visualmente-oculto {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.mantencion-selector-archivo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio-control);
+  padding: 14px;
+  cursor: pointer;
+  background: var(--papel);
+}
+
+.mantencion-selector-archivo:hover {
+  border-color: var(--texto-apagado);
+}
+
+.mantencion-archivos-seleccionados {
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.mantencion-archivo-seleccionado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 7px 9px;
+  border: 1px solid var(--borde-suave);
+  border-radius: var(--radio-control);
+}
