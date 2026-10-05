@@ -5,6 +5,7 @@ import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
 import DialogoCampos from '../../componentes/DialogoCampos';
+import ModalEjecucionMantencion from '../../componentes/ModalEjecucionMantencion';
 import './Comunidades.css';
 
 const SECCIONES = [
@@ -60,6 +61,25 @@ function fechaCL(valor, conHora = false) {
   return d.toLocaleString('es-CL', conHora
     ? { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }
     : { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function nombreArchivoSeguro(nombre) {
+  return String(nombre || 'archivo')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 120) || 'archivo';
+}
+
+function tipoDocumentoMantencion(archivo) {
+  const n = normalizar(archivo?.name);
+  const mime = archivo?.type ?? '';
+  if (mime.startsWith('image/')) return 'foto';
+  if (n.includes('certific')) return 'certificado';
+  if (n.includes('cotiz')) return 'cotizacion';
+  if (n.includes('factura')) return 'factura';
+  if (n.includes('informe') || mime === 'application/pdf') return 'informe';
+  return 'otro';
 }
 
 function sugerenciasPara(categoria) {
@@ -390,6 +410,8 @@ function DetalleComunidad({ id }) {
   const [agenda, setAgenda] = useState([]);
   const [ejecuciones, setEjecuciones] = useState([]);
   const [equipo, setEquipo] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
+  const [documentos, setDocumentos] = useState([]);
   const [reglas, setReglas] = useState([]);
   const [notificaciones, setNotificaciones] = useState([]);
   const [diagnosticoInicial, setDiagnosticoInicial] = useState(null);
@@ -400,10 +422,10 @@ function DetalleComunidad({ id }) {
   const [ejecucionPendiente, setEjecucionPendiente] = useState(null);
 
   const [nuevoActivo, setNuevoActivo] = useState({
-    nombre: '', categoria: '', ubicacion: '', marca: '', modelo: '', serie: '', estado: 'operativo', proveedor: '', documentos: ''
+    nombre: '', categoria: '', ubicacion: '', marca: '', modelo: '', serie: '', estado: 'operativo', proveedor_id: ''
   });
   const [nuevaActividad, setNuevaActividad] = useState({
-    activo_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor: '', evidencias: ''
+    activo_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor_id: '', evidencias: ''
   });
   const [nuevoAgendamiento, setNuevoAgendamiento] = useState({
     actividad_id: '', programado_para: '', responsable_id: ''
@@ -417,7 +439,7 @@ function DetalleComunidad({ id }) {
   async function cargar() {
     setCargando(true);
     setError(null);
-    const [rc, rl, ra, rp, rag, rx, re, rr, rn] = await Promise.all([
+    const [rc, rl, ra, rp, rag, rx, re, rr, rn, rprov, rdoc] = await Promise.all([
       supabase.from('comunidades').select('id, nombre, comuna, direccion, latitud, longitud').eq('id', id).maybeSingle(),
       supabase.from('controles_con_avance')
         .select('id, comunidad_id, estado, enviado_en, programado_para, creado_en, checkin_en, responsable_id, responsable_nombre, plantilla_nombre, items_criticos, periodo')
@@ -437,10 +459,15 @@ function DetalleComunidad({ id }) {
         ? supabase.from('mantenimiento_alertas_config').select('*').eq('comunidad_id', id)
         : Promise.resolve({ data: [], error: null }),
       supabase.from('notificaciones_mantenimiento')
-        .select('*').eq('comunidad_id', id).eq('destinatario_id', perfil?.id ?? '').order('creado_en', { ascending: false }).limit(20)
+        .select('*').eq('comunidad_id', id).eq('destinatario_id', perfil?.id ?? '').order('creado_en', { ascending: false }).limit(20),
+      puedeGestionar
+        ? supabase.rpc('proveedores_para_operacion')
+        : Promise.resolve({ data: [], error: null }),
+      supabase.from('mantenimiento_documentos')
+        .select('*').eq('comunidad_id', id).order('creado_en', { ascending: false })
     ]);
 
-    const fallo = [rc, rl, ra, rp, rag, rx, re, rr, rn].find(r => r.error);
+    const fallo = [rc, rl, ra, rp, rag, rx, re, rr, rn, rprov, rdoc].find(r => r.error);
     if (fallo?.error) setError(fallo.error.message);
     if (rc.data) {
       setComunidad(rc.data);
@@ -457,6 +484,8 @@ function DetalleComunidad({ id }) {
     setAgenda(rag.data ?? []);
     setEjecuciones(rx.data ?? []);
     setEquipo(re.data ?? []);
+    setProveedores(rprov.data ?? []);
+    setDocumentos(rdoc.data ?? []);
     setReglas(rr.data ?? []);
     setNotificaciones(rn.data ?? []);
     setCargando(false);
@@ -522,7 +551,17 @@ function DetalleComunidad({ id }) {
   const activosPorId = useMemo(() => new Map(activos.map(a => [a.id, a])), [activos]);
   const actividadesPorId = useMemo(() => new Map(actividades.map(a => [a.id, a])), [actividades]);
   const equipoPorId = useMemo(() => new Map(equipo.map(p => [p.id, p])), [equipo]);
+  const proveedorPorId = useMemo(() => new Map(proveedores.map(p => [p.id, p])), [proveedores]);
   const ejecucionPorAgenda = useMemo(() => new Map(ejecuciones.filter(e => e.agendamiento_id).map(e => [e.agendamiento_id, e])), [ejecuciones]);
+  const documentosPorEjecucion = useMemo(() => {
+    const mapa = new Map();
+    for (const d of documentos) {
+      if (!d.ejecucion_id) continue;
+      if (!mapa.has(d.ejecucion_id)) mapa.set(d.ejecucion_id, []);
+      mapa.get(d.ejecucion_id).push(d);
+    }
+    return mapa;
+  }, [documentos]);
 
   const kpisMantencion = useMemo(() => {
     const hoy = fechaISOChile();
@@ -560,13 +599,14 @@ function DetalleComunidad({ id }) {
       modelo: nuevoActivo.modelo.trim() || null,
       serie: nuevoActivo.serie.trim() || null,
       estado: nuevoActivo.estado,
-      proveedor: nuevoActivo.proveedor.trim() || null,
-      documentos: nuevoActivo.documentos.split(',').map(v => v.trim()).filter(Boolean)
+      proveedor_id: nuevoActivo.proveedor_id || null,
+      proveedor: proveedorPorId.get(nuevoActivo.proveedor_id)?.empresa ?? null,
+      documentos: []
     }).select().single();
     setGuardando(false);
     if (error) return setError(error.message);
     setActivos(xs => [...xs, data].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')));
-    setNuevoActivo({ nombre: '', categoria: '', ubicacion: '', marca: '', modelo: '', serie: '', estado: 'operativo', proveedor: '', documentos: '' });
+    setNuevoActivo({ nombre: '', categoria: '', ubicacion: '', marca: '', modelo: '', serie: '', estado: 'operativo', proveedor_id: '' });
   }
 
   async function guardarActividad() {
@@ -598,13 +638,14 @@ function DetalleComunidad({ id }) {
       dia_limite: nuevaActividad.limite_tipo === 'dia_mes' ? Number(nuevaActividad.dia_limite) : null,
       proxima_exigible: fechaLimite,
       responsable_id: nuevaActividad.responsable_id || null,
-      proveedor: nuevaActividad.proveedor.trim() || null,
+      proveedor_id: nuevaActividad.proveedor_id || null,
+      proveedor: proveedorPorId.get(nuevaActividad.proveedor_id)?.empresa ?? null,
       evidencias_requeridas: nuevaActividad.evidencias.split(',').map(v => v.trim()).filter(Boolean)
     }).select().single();
     setGuardando(false);
     if (error) return setError(error.message);
     setActividades(xs => [...xs, data]);
-    setNuevaActividad({ activo_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor: '', evidencias: '' });
+    setNuevaActividad({ activo_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor_id: '', evidencias: '' });
   }
 
   async function guardarAgendamiento() {
@@ -648,7 +689,13 @@ function DetalleComunidad({ id }) {
   function registrarEjecucion(item) {
     const actividad = actividadesPorId.get(item.actividad_id);
     const responsable = item.responsable_id ? equipoPorId.get(item.responsable_id)?.nombre : null;
-    const quienSugerido = responsable || actividad?.proveedor || '';
+    const activo = activosPorId.get(actividad?.activo_id);
+    const proveedorId = actividad?.proveedor_id || activo?.proveedor_id;
+    const quienSugerido = responsable
+      || proveedorPorId.get(proveedorId)?.empresa
+      || actividad?.proveedor
+      || activo?.proveedor
+      || '';
     setEjecucionPendiente({
       item,
       requeridas: actividad?.evidencias_requeridas ?? [],
@@ -656,38 +703,77 @@ function DetalleComunidad({ id }) {
     });
   }
 
-  async function confirmarEjecucion({ ejecutor, observaciones, respaldo }) {
+  async function confirmarEjecucion({ ejecutor, observaciones, archivos }) {
     const pendiente = ejecucionPendiente;
     if (!pendiente) return;
-    const evidencias = respaldo.split(',').map(v => v.trim()).filter(Boolean);
-    if (pendiente.requeridas.length && !evidencias.length) {
+    if (pendiente.requeridas.length && archivos.length === 0) {
       return setError(`Esta actividad exige evidencia: ${pendiente.requeridas.join(', ')}.`);
     }
 
-    setEjecucionPendiente(null);
     setGuardando(true);
     setError(null);
-    const realizadoEn = new Date().toISOString();
-    const { item } = pendiente;
-    const { data: ejecucion, error: e1 } = await supabase.from('ejecuciones_mantenimiento').insert({
-      comunidad_id: id,
-      actividad_id: item.actividad_id,
-      agendamiento_id: item.id,
-      ejecutado_por: perfil?.id ?? null,
-      ejecutor_texto: ejecutor.trim(),
-      realizado_en: realizadoEn,
-      observaciones: observaciones.trim() || null,
-      respaldo_url: evidencias[0] || null,
-      evidencias
-    }).select().single();
-    if (e1) { setGuardando(false); return setError(e1.message); }
-    const { data, error: e2 } = await supabase.from('mantenimiento_agendamientos')
-      .update({ estado: 'completada', completada_en: realizadoEn })
-      .eq('id', item.id).select().single();
-    setGuardando(false);
-    if (e2) return setError(e2.message);
-    setAgenda(xs => xs.map(x => x.id === item.id ? data : x));
-    setEjecuciones(xs => [ejecucion, ...xs]);
+
+    const subidos = [];
+    try {
+      for (const archivo of archivos) {
+        if (archivo.size > 25 * 1024 * 1024) {
+          throw new Error(`${archivo.name} supera el límite de 25 MB.`);
+        }
+        const path = [
+          id,
+          pendiente.item.actividad_id,
+          crypto.randomUUID() + '-' + nombreArchivoSeguro(archivo.name)
+        ].join('/');
+
+        const { error: eUpload } = await supabase.storage
+          .from('mantencion-documentos')
+          .upload(path, archivo, { contentType: archivo.type || 'application/octet-stream', upsert: false });
+
+        if (eUpload) throw eUpload;
+
+        subidos.push({
+          storage_path: path,
+          nombre_archivo: archivo.name,
+          mime_type: archivo.type || null,
+          tamanio_bytes: archivo.size,
+          tipo: tipoDocumentoMantencion(archivo)
+        });
+      }
+
+      const { data: ejecucion, error: eRegistro } = await supabase.rpc('registrar_ejecucion_mantenimiento', {
+        p_agendamiento_id: pendiente.item.id,
+        p_ejecutor_texto: ejecutor.trim(),
+        p_observaciones: observaciones.trim() || null,
+        p_documentos: subidos
+      });
+
+      if (eRegistro) throw eRegistro;
+
+      const filaEjecucion = Array.isArray(ejecucion) ? ejecucion[0] : ejecucion;
+      if (!filaEjecucion?.id) throw new Error('La ejecución se registró sin identificador.');
+
+      setEjecucionPendiente(null);
+      await cargar();
+    } catch (e) {
+      if (subidos.length) {
+        await supabase.storage.from('mantencion-documentos')
+          .remove(subidos.map(x => x.storage_path));
+      }
+      setError(e?.message || 'No se pudo registrar la mantención.');
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function abrirDocumentoMantencion(doc) {
+    const { data, error } = await supabase.storage
+      .from('mantencion-documentos')
+      .createSignedUrl(doc.storage_path, 300);
+    if (error || !data?.signedUrl) {
+      setError(error?.message || 'No se pudo abrir el documento.');
+      return;
+    }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
   }
 
   async function guardarAlertas() {
@@ -780,36 +866,14 @@ function DetalleComunidad({ id }) {
       )}
 
       {ejecucionPendiente && (
-        <DialogoCampos
-          titulo="Registrar mantención"
+        <ModalEjecucionMantencion
           mensaje={ejecucionPendiente.requeridas.length
-            ? `Esta actividad exige evidencia: ${ejecucionPendiente.requeridas.join(', ')}.`
-            : 'Registra quién realizó el trabajo y su respaldo.'}
-          campos={[
-            {
-              id: 'ejecutor',
-              label: 'Quién realizó la mantención',
-              valor: ejecucionPendiente.quienSugerido,
-              obligatorio: true
-            },
-            {
-              id: 'observaciones',
-              label: 'Qué se realizó',
-              multiline: true,
-              filas: 3,
-              placeholder: 'Observaciones de la ejecución'
-            },
-            {
-              id: 'respaldo',
-              label: 'Respaldo o evidencias',
-              multiline: true,
-              filas: 2,
-              placeholder: 'URLs o referencias separadas por coma',
-              obligatorio: ejecucionPendiente.requeridas.length > 0
-            }
-          ]}
-          textoConfirmar="Registrar ejecución"
-          textoCancelar="Cancelar"
+            ? `Evidencia requerida: ${ejecucionPendiente.requeridas.join(', ')}.`
+            : 'Registra quién realizó el trabajo y adjunta su respaldo si corresponde.'}
+          ejecutorInicial={ejecucionPendiente.quienSugerido}
+          evidenciaObligatoria={ejecucionPendiente.requeridas.length > 0}
+          tiposRequeridos={ejecucionPendiente.requeridas}
+          guardando={guardando}
           onConfirmar={confirmarEjecucion}
           onCancelar={() => setEjecucionPendiente(null)}
         />
@@ -873,11 +937,16 @@ function DetalleComunidad({ id }) {
                   <Campo label="Nombre" valor={nuevoActivo.nombre} onChange={v => setNuevoActivo(x => ({ ...x, nombre: v }))} />
                   <Campo label="Categoría" valor={nuevoActivo.categoria} onChange={v => setNuevoActivo(x => ({ ...x, categoria: v }))} placeholder="Ascensor, bomba, HVAC…" />
                   <Campo label="Ubicación dentro de la comunidad" valor={nuevoActivo.ubicacion} onChange={v => setNuevoActivo(x => ({ ...x, ubicacion: v }))} />
-                  <Campo label="Proveedor" valor={nuevoActivo.proveedor} onChange={v => setNuevoActivo(x => ({ ...x, proveedor: v }))} />
+                  <div className="campo">
+                    <label className="etiqueta-campo">Proveedor</label>
+                    <select value={nuevoActivo.proveedor_id} onChange={e => setNuevoActivo(x => ({ ...x, proveedor_id: e.target.value }))}>
+                      <option value="">Sin proveedor</option>
+                      {proveedores.map(p => <option key={p.id} value={p.id}>{p.empresa}</option>)}
+                    </select>
+                  </div>
                   <Campo label="Marca" valor={nuevoActivo.marca} onChange={v => setNuevoActivo(x => ({ ...x, marca: v }))} />
                   <Campo label="Modelo" valor={nuevoActivo.modelo} onChange={v => setNuevoActivo(x => ({ ...x, modelo: v }))} />
                   <Campo label="Serie" valor={nuevoActivo.serie} onChange={v => setNuevoActivo(x => ({ ...x, serie: v }))} />
-                  <Campo label="Documentos / respaldos" valor={nuevoActivo.documentos} onChange={v => setNuevoActivo(x => ({ ...x, documentos: v }))} placeholder="URLs o referencias, separadas por coma" />
                   <div className="campo">
                     <label className="etiqueta-campo">Estado</label>
                     <select value={nuevoActivo.estado} onChange={e => setNuevoActivo(x => ({ ...x, estado: e.target.value }))}>
@@ -901,7 +970,7 @@ function DetalleComunidad({ id }) {
                   <span className="chip">{a.estado?.replaceAll('_', ' ')}</span>
                 </div>
                 <p className="micro apagado" style={{ margin: '7px 0 0' }}>
-                  {[a.ubicacion, a.marca, a.modelo, a.serie && `Serie ${a.serie}`, a.proveedor].filter(Boolean).join(' · ') || 'Sin datos adicionales'}
+                  {[a.ubicacion, a.marca, a.modelo, a.serie && `Serie ${a.serie}`, proveedorPorId.get(a.proveedor_id)?.empresa || a.proveedor].filter(Boolean).join(' · ') || 'Sin datos adicionales'}
                 </p>
                 {Array.isArray(a.documentos) && a.documentos.length > 0 && (
                   <div className="comunidad-documentos micro">
@@ -994,7 +1063,16 @@ function DetalleComunidad({ id }) {
                       {equipo.map(p => <option key={p.id} value={p.id}>{p.nombre} — {p.rol}</option>)}
                     </select>
                   </div>
-                  <Campo label="Proveedor" valor={nuevaActividad.proveedor} onChange={v => setNuevaActividad(x => ({ ...x, proveedor: v }))} />
+                  <div className="campo">
+                    <label className="etiqueta-campo">Proveedor</label>
+                    <select value={nuevaActividad.proveedor_id} onChange={e => setNuevaActividad(x => ({ ...x, proveedor_id: e.target.value }))}>
+                      <option value="">Usar proveedor del activo / sin proveedor</option>
+                      {proveedores.map(p => <option key={p.id} value={p.id}>{p.empresa}</option>)}
+                    </select>
+                    <p className="micro apagado" style={{ margin: '5px 0 0' }}>
+                      Selecciona un proveedor del repositorio. Puedes administrarlos desde Proveedores.
+                    </p>
+                  </div>
                 </div>
                 {previsualizarFechasLimite(nuevaActividad).length > 0 && (
                   <div className="aviso" style={{ marginBottom: 14 }}>
@@ -1032,6 +1110,11 @@ function DetalleComunidad({ id }) {
                     Fecha límite actual: {a.proxima_exigible ? fechaCL(a.proxima_exigible) : 'por definir'}
                     {a.responsable_id ? ` · Responsable: ${equipoPorId.get(a.responsable_id)?.nombre ?? 'Asignado'}` : ''}
                   </p>
+                  {(a.proveedor_id || a.proveedor || activo?.proveedor_id || activo?.proveedor) && (
+                    <p className="micro apagado" style={{ margin: '5px 0 0' }}>
+                      Proveedor: {proveedorPorId.get(a.proveedor_id || activo?.proveedor_id)?.empresa || a.proveedor || activo?.proveedor}
+                    </p>
+                  )}
                   {a.evidencias_requeridas?.length > 0 && (
                     <p className="micro apagado" style={{ margin: '5px 0 0' }}>Evidencias: {a.evidencias_requeridas.join(', ')}</p>
                   )}
@@ -1120,8 +1203,15 @@ function DetalleComunidad({ id }) {
                       <strong>Ejecución registrada</strong>
                       <span>{fechaCL(ejecucion.realizado_en, true)} · {ejecucion.ejecutor_texto || 'Ejecutor no indicado'}</span>
                       {ejecucion.observaciones && <span>{ejecucion.observaciones}</span>}
-                      {Array.isArray(ejecucion.evidencias) && ejecucion.evidencias.length > 0 && (
-                        <span>{ejecucion.evidencias.join(' · ')}</span>
+                      {(documentosPorEjecucion.get(ejecucion.id) ?? []).length > 0 && (
+                        <div className="comunidad-documentos">
+                          {(documentosPorEjecucion.get(ejecucion.id) ?? []).map(doc => (
+                            <button key={doc.id} type="button" className="boton boton-texto"
+                                    onClick={() => abrirDocumentoMantencion(doc)}>
+                              {doc.nombre_archivo}
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
                   )}
