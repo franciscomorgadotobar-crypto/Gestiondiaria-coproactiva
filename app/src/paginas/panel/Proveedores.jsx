@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { limpiarArea } from '../../lib/area';
+import { useVolverGlobal } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 
 const MOTIVOS_LISTA_NEGRA = [
@@ -67,6 +69,15 @@ export default function Proveedores() {
 
   const puedeGestionar = ['superadmin', 'admin'].includes(perfil?.rol);
   const puedeEliminar = perfil?.rol === 'superadmin';
+
+  useVolverGlobal(() => {
+    if (id) {
+      navegar('/proveedores');
+      return;
+    }
+    limpiarArea();
+    navegar('/', { replace: true });
+  });
 
   async function cargar({ mostrarResultado = false } = {}) {
     setSincronizando(true);
