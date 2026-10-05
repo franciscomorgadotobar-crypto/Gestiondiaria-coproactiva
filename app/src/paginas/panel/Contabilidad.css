@@ -62,12 +62,12 @@
 
 .contabilidad-resumen-kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
 .contabilidad-resumen-kpis .tarjeta {
-  padding: 16px;
+  min-width: 0;
 }
 
 .contabilidad-resumen-kpis p {
@@ -77,11 +77,71 @@
   font-weight: 700;
 }
 
-.contabilidad-resumen-kpis strong {
+.contabilidad-kpi-principal {
+  padding: 20px;
+  border-width: 2px;
+}
+
+.contabilidad-kpi-principal strong {
   display: block;
-  margin-top: 7px;
+  margin-top: 10px;
   color: var(--texto-titulo);
-  font: 600 25px/1.1 var(--fuente-display);
+  font: 650 clamp(26px, 3vw, 34px)/1.05 var(--fuente-display);
+  overflow-wrap: anywhere;
+}
+
+.contabilidad-kpi-principal.cuadrado {
+  border-color: var(--ok-borde);
+}
+
+.contabilidad-kpi-principal.descuadrado {
+  border-color: var(--critico-texto);
+  background: var(--critico-fondo);
+}
+
+.contabilidad-kpi-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.contabilidad-cuadratura-estado {
+  flex: none;
+  padding: 4px 7px;
+  border: 1px solid;
+  border-radius: var(--radio-pastilla);
+  font: 700 9px/1 var(--fuente-display);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.contabilidad-cuadratura-estado.ok {
+  color: var(--ok-texto);
+  border-color: var(--ok-borde);
+  background: var(--ok-fondo);
+}
+
+.contabilidad-cuadratura-estado.error {
+  color: var(--critico-texto);
+  border-color: var(--critico-borde);
+  background: #fff;
+}
+
+.contabilidad-kpi-formula {
+  display: block;
+  margin-top: 8px;
+}
+
+.contabilidad-kpi-secundario {
+  padding: 14px 16px;
+}
+
+.contabilidad-kpi-secundario strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--texto-titulo);
+  font: 600 22px/1.1 var(--fuente-display);
   overflow-wrap: anywhere;
 }
 
@@ -743,8 +803,35 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .contabilidad-resumen-kpis strong {
+  .contabilidad-kpi-principal {
+    padding: 14px 12px;
+  }
+
+  .contabilidad-kpi-principal strong {
+    font-size: 21px;
+  }
+
+  .contabilidad-kpi-secundario {
+    padding: 12px;
+  }
+
+  .contabilidad-kpi-secundario strong {
     font-size: 19px;
+  }
+
+  .contabilidad-kpi-cabecera {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .contabilidad-cuadratura-estado {
+    font-size: 8px;
+  }
+
+  .contabilidad-kpi-formula {
+    font-size: 10px;
+    line-height: 1.25;
   }
 
   .contabilidad-acciones-principales {
