@@ -642,7 +642,7 @@ export async function descargarPPT({
       align: 'right', margin: 0
     }
   );
-  addPptFooter(slide, entidad, periodo, 6);
+  addPptFooter(slide, entidad, periodo, 4);
 
   slide = pptx.addSlide();
   slide.background = { color: MARCA.blanco };
@@ -686,7 +686,7 @@ export async function descargarPPT({
     rowH: 0.43,
     colW: [4.45, 1.65]
   });
-  addPptFooter(slide, entidad, periodo, 4);
+  addPptFooter(slide, entidad, periodo, 5);
 
   slide = pptx.addSlide();
   slide.background = { color: MARCA.blanco };
@@ -712,7 +712,7 @@ export async function descargarPPT({
     rowH: 0.4,
     colW: [0.7, 1.2, 2.55, 1.45, 6.3]
   });
-  addPptFooter(slide, entidad, periodo, 5);
+  addPptFooter(slide, entidad, periodo, 6);
 
   await pptx.writeFile({ fileName: nombreArchivo(entidad, 'pptx') });
 }
