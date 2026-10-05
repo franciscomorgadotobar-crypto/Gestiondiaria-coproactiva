@@ -170,6 +170,7 @@ export function descargarPDF({
   const periodo = textoPeriodo(desde, hasta);
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
+  const pasivoPatrimonio = tb.pasivo + eerr.utilidad;
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
   cabeceraPdf(doc, entidad, periodo);
@@ -178,9 +179,9 @@ export function descargarPDF({
   doc.roundedRect(14, 54, 182, 48, 2, 2, 'F');
 
   const kpis = [
-    ['Resultado del ejercicio', moneda(eerr.utilidad)],
     ['Activo', moneda(tb.activo)],
-    ['Pasivo + Patrimonio', moneda(tb.pasivo)],
+    ['Pasivo + Patrimonio', moneda(pasivoPatrimonio)],
+    ['Resultado del ejercicio', moneda(eerr.utilidad)],
     ['Movimientos', numero(diario.length)]
   ];
   kpis.forEach((k, i) => {
@@ -192,7 +193,7 @@ export function descargarPDF({
     doc.text(k[0].toUpperCase(), x, y);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.setTextColor('#' + (i === 0 && eerr.utilidad < 0 ? MARCA.rojo : MARCA.tinta));
+    doc.setTextColor('#' + (i === 2 && eerr.utilidad < 0 ? MARCA.rojo : MARCA.tinta));
     doc.text(k[1], x, y + 7);
   });
 
@@ -345,6 +346,7 @@ export async function descargarPPT({
   const periodo = textoPeriodo(desde, hasta);
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
+  const pasivoPatrimonio = tb.pasivo + eerr.utilidad;
 
   const pptx = new pptxgen();
   pptx.layout = 'LAYOUT_WIDE';
@@ -373,9 +375,9 @@ export async function descargarPPT({
   slide.background = { color: MARCA.blanco };
   addPptTitle(slide, 'Resumen ejecutivo', periodo);
   const kpis = [
-    ['Resultado del ejercicio', moneda(eerr.utilidad), eerr.utilidad < 0 ? MARCA.rojo : MARCA.verde],
     ['Activo', moneda(tb.activo), MARCA.tinta],
-    ['Pasivo + Patrimonio', moneda(tb.pasivo), MARCA.tinta],
+    ['Pasivo + Patrimonio', moneda(pasivoPatrimonio), MARCA.tinta],
+    ['Resultado del ejercicio', moneda(eerr.utilidad), eerr.utilidad < 0 ? MARCA.rojo : MARCA.verde],
     ['Movimientos contables', numero(diario.length), MARCA.tinta]
   ];
   kpis.forEach((k, i) => {
@@ -440,7 +442,7 @@ export async function descargarPPT({
     ['Saldo deudor', moneda(tb.deudor)],
     ['Saldo acreedor', moneda(tb.acreedor)],
     ['Activo', moneda(tb.activo)],
-    ['Pasivo + Patrimonio', moneda(tb.pasivo)],
+    ['Pasivo + Patrimonio', moneda(pasivoPatrimonio)],
     ['Pérdida', moneda(tb.perdida)],
     ['Ganancia', moneda(tb.ganancia)]
   ];
