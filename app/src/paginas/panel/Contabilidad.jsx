@@ -117,6 +117,7 @@ function lineaVacia() {
 }
 
 function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar }) {
+  const [numeroAsiento, setNumeroAsiento] = useState('');
   const [fecha, setFecha] = useState(hoyChile());
   const [glosa, setGlosa] = useState('');
   const [referencia, setReferencia] = useState('');
@@ -160,6 +161,7 @@ function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar 
     e.preventDefault();
     if (!valido || guardando) return;
     onGuardar({
+      numero: numeroAsiento ? Number(numeroAsiento) : null,
       fecha,
       glosa: glosa.trim(),
       referencia: referencia.trim(),
@@ -185,13 +187,19 @@ function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar 
       >
         <div className="contabilidad-editor-cabecera">
           <div>
-            <p className="micro apagado" style={{ margin: 0 }}>El número se asigna automáticamente</p>
+            <p className="micro apagado" style={{ margin: 0 }}>Puedes dejar el número vacío para asignarlo automáticamente.</p>
             <h2 id="nuevo-asiento-titulo" className="h2">Nuevo asiento contable</h2>
           </div>
           <button type="button" className="boton boton-texto" onClick={onCancelar}>Cerrar</button>
         </div>
 
         <div className="contabilidad-asiento-datos">
+          <label className="campo">
+            <span className="etiqueta-campo">N° asiento</span>
+            <input type="number" min="1" step="1" inputMode="numeric"
+                   value={numeroAsiento} onChange={e => setNumeroAsiento(e.target.value)}
+                   placeholder="Automático" />
+          </label>
           <label className="campo">
             <span className="etiqueta-campo">Fecha *</span>
             <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
@@ -567,7 +575,8 @@ export default function Contabilidad() {
       p_origen: 'manual',
       p_referencia: datos.referencia || null,
       p_proveedor_id: datos.proveedor_id,
-      p_origen_id: null
+      p_origen_id: null,
+      p_numero: datos.numero
     });
     setGuardando(false);
 
