@@ -582,6 +582,13 @@ function ReporteBalance({ balance }) {
         </div>
       </div>
 
+      <div className="contabilidad-reporte-resumen">
+        <div><span>Debe</span><strong>{moneda(t.debe)}</strong></div>
+        <div><span>Haber</span><strong>{moneda(t.haber)}</strong></div>
+        <div><span>Activo</span><strong>{moneda(t.activo)}</strong></div>
+        <div><span>Pasivo + resultado</span><strong>{moneda(totalPasivo)}</strong></div>
+      </div>
+
       <div className="contabilidad-balance-movil contabilidad-solo-movil">
         {balance.filter(x => Number(x.debe) || Number(x.haber)).map(x => (
           <article className="tarjeta contabilidad-reporte-card" key={x.cuenta_id}>
@@ -603,83 +610,82 @@ function ReporteBalance({ balance }) {
             </div>
           </article>
         ))}
-        <article className="tarjeta contabilidad-reporte-card contabilidad-reporte-card-total">
-          <strong>Totales</strong>
-          <div className="contabilidad-reporte-card-grid">
-            <div><span>Debe</span><strong>{moneda(t.debe)}</strong></div>
-            <div><span>Haber</span><strong>{moneda(t.haber)}</strong></div>
-            <div><span>Activo</span><strong>{moneda(t.activo)}</strong></div>
-            <div><span>Pasivo + Resultado</span><strong>{moneda(totalPasivo)}</strong></div>
-          </div>
-        </article>
       </div>
 
-      <div className="tabla-responsive contabilidad-solo-escritorio">
-        <table className="tabla contabilidad-balance-tabla">
-          <thead>
-            <tr>
-              <th rowSpan="2">Código</th>
-              <th rowSpan="2">Cuenta</th>
-              <th colSpan="2">Sumas</th>
-              <th colSpan="2">Saldos</th>
-              <th colSpan="2">Inventario</th>
-              <th colSpan="2">Resultado</th>
-            </tr>
-            <tr>
-              <th>Debe</th><th>Haber</th><th>Deudor</th><th>Acreedor</th>
-              <th>Activo</th><th>Pasivo</th><th>Pérdida</th><th>Ganancia</th>
-            </tr>
-          </thead>
-          <tbody>
-            {balance.map(x => (
-              <tr key={x.cuenta_id}>
-                <td>{x.codigo}</td>
-                <td>{x.cuenta}</td>
-                <td className="numero">{moneda(x.debe)}</td>
-                <td className="numero">{moneda(x.haber)}</td>
-                <td className="numero">{Number(x.deudor) ? moneda(x.deudor) : ''}</td>
-                <td className="numero">{Number(x.acreedor) ? moneda(x.acreedor) : ''}</td>
-                <td className="numero">{Number(x.activo) ? moneda(x.activo) : ''}</td>
-                <td className="numero">{Number(x.pasivo) ? moneda(x.pasivo) : ''}</td>
-                <td className="numero">{Number(x.perdida) ? moneda(x.perdida) : ''}</td>
-                <td className="numero">{Number(x.ganancia) ? moneda(x.ganancia) : ''}</td>
+      <section className="contabilidad-reporte-panel contabilidad-solo-escritorio">
+        <div className="contabilidad-reporte-panel-cabecera">
+          <div>
+            <h4>Detalle por cuenta</h4>
+            <p>Sumas, saldos, inventario y resultado de todas las cuentas.</p>
+          </div>
+        </div>
+        <div className="tabla-responsive">
+          <table className="tabla contabilidad-balance-tabla contabilidad-tabla-reporte">
+            <thead>
+              <tr>
+                <th rowSpan="2">Código</th>
+                <th rowSpan="2">Cuenta</th>
+                <th colSpan="2">Sumas</th>
+                <th colSpan="2">Saldos</th>
+                <th colSpan="2">Inventario</th>
+                <th colSpan="2">Resultado</th>
               </tr>
-            ))}
-            <tr className="contabilidad-total">
-              <td />
-              <td>SUBTOTAL</td>
-              <td className="numero">{moneda(t.debe)}</td>
-              <td className="numero">{moneda(t.haber)}</td>
-              <td className="numero">{moneda(t.deudor)}</td>
-              <td className="numero">{moneda(t.acreedor)}</td>
-              <td className="numero">{moneda(t.activo)}</td>
-              <td className="numero">{moneda(t.pasivo)}</td>
-              <td className="numero">{moneda(t.perdida)}</td>
-              <td className="numero">{moneda(t.ganancia)}</td>
-            </tr>
-            <tr className="contabilidad-resultado">
-              <td />
-              <td>RESULTADO DEL EJERCICIO</td>
-              <td colSpan="5" />
-              <td className="numero">{resultado < 0 ? moneda(resultado) : ''}</td>
-              <td className="numero">{resultado < 0 ? moneda(resultado) : ''}</td>
-              <td className="numero">{resultado > 0 ? moneda(resultado) : ''}</td>
-            </tr>
-            <tr className="contabilidad-total">
-              <td />
-              <td>TOTAL</td>
-              <td className="numero">{moneda(t.debe)}</td>
-              <td className="numero">{moneda(t.haber)}</td>
-              <td className="numero">{moneda(t.deudor)}</td>
-              <td className="numero">{moneda(t.acreedor)}</td>
-              <td className="numero">{moneda(t.activo + Math.max(resultado, 0))}</td>
-              <td className="numero">{moneda(totalPasivo)}</td>
-              <td className="numero">{moneda(totalPerdida)}</td>
-              <td className="numero">{moneda(totalGanancia)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              <tr>
+                <th>Debe</th><th>Haber</th><th>Deudor</th><th>Acreedor</th>
+                <th>Activo</th><th>Pasivo</th><th>Pérdida</th><th>Ganancia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {balance.map(x => (
+                <tr key={x.cuenta_id}>
+                  <td>{x.codigo}</td>
+                  <td>{x.cuenta}</td>
+                  <td className="numero">{moneda(x.debe)}</td>
+                  <td className="numero">{moneda(x.haber)}</td>
+                  <td className="numero">{Number(x.deudor) ? moneda(x.deudor) : ''}</td>
+                  <td className="numero">{Number(x.acreedor) ? moneda(x.acreedor) : ''}</td>
+                  <td className="numero">{Number(x.activo) ? moneda(x.activo) : ''}</td>
+                  <td className="numero">{Number(x.pasivo) ? moneda(x.pasivo) : ''}</td>
+                  <td className="numero">{Number(x.perdida) ? moneda(x.perdida) : ''}</td>
+                  <td className="numero">{Number(x.ganancia) ? moneda(x.ganancia) : ''}</td>
+                </tr>
+              ))}
+              <tr className="contabilidad-total">
+                <td />
+                <td>SUBTOTAL</td>
+                <td className="numero">{moneda(t.debe)}</td>
+                <td className="numero">{moneda(t.haber)}</td>
+                <td className="numero">{moneda(t.deudor)}</td>
+                <td className="numero">{moneda(t.acreedor)}</td>
+                <td className="numero">{moneda(t.activo)}</td>
+                <td className="numero">{moneda(t.pasivo)}</td>
+                <td className="numero">{moneda(t.perdida)}</td>
+                <td className="numero">{moneda(t.ganancia)}</td>
+              </tr>
+              <tr className="contabilidad-resultado">
+                <td />
+                <td>RESULTADO DEL EJERCICIO</td>
+                <td colSpan="5" />
+                <td className="numero">{resultado < 0 ? moneda(resultado) : ''}</td>
+                <td className="numero">{resultado < 0 ? moneda(resultado) : ''}</td>
+                <td className="numero">{resultado > 0 ? moneda(resultado) : ''}</td>
+              </tr>
+              <tr className="contabilidad-total">
+                <td />
+                <td>TOTAL</td>
+                <td className="numero">{moneda(t.debe)}</td>
+                <td className="numero">{moneda(t.haber)}</td>
+                <td className="numero">{moneda(t.deudor)}</td>
+                <td className="numero">{moneda(t.acreedor)}</td>
+                <td className="numero">{moneda(t.activo + Math.max(resultado, 0))}</td>
+                <td className="numero">{moneda(totalPasivo)}</td>
+                <td className="numero">{moneda(totalPerdida)}</td>
+                <td className="numero">{moneda(totalGanancia)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
@@ -1529,40 +1535,72 @@ export default function Contabilidad() {
             )}
 
             {!cargandoReportes && reporte === 'diario' && (
-              <>
-                <ListaMovimientosMovil filas={diario} />
-                <div className="tabla-responsive contabilidad-solo-escritorio">
-                <table className="tabla contabilidad-diario-tabla">
-                  <thead>
-                    <tr><th>N° Asiento</th><th>Fecha</th><th>Código</th><th>Cuenta</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr>
-                  </thead>
-                  <tbody>
-                    {diario.map((x, i) => (
-                      <tr key={x.asiento_id + '-' + x.cuenta_id + '-' + i}>
-                        <td>{x.numero}</td><td>{fechaCL(x.fecha)}</td><td>{x.codigo}</td><td>{x.cuenta}</td>
-                        <td className="numero">{Number(x.debe) ? moneda(x.debe) : ''}</td>
-                        <td className="numero">{Number(x.haber) ? moneda(x.haber) : ''}</td>
-                        <td>{x.glosa_linea || x.glosa}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="contabilidad-reporte">
+                <div className="contabilidad-reporte-intro">
+                  <div>
+                    <h3 className="h3">Libro Diario</h3>
+                    <p className="micro apagado">Movimientos contables ordenados cronológicamente por asiento.</p>
+                  </div>
                 </div>
-              </>
+
+                <div className="contabilidad-reporte-resumen">
+                  <div><span>Movimientos</span><strong>{diario.length}</strong></div>
+                  <div><span>Debe</span><strong>{moneda(diario.reduce((s, x) => s + Number(x.debe || 0), 0))}</strong></div>
+                  <div><span>Haber</span><strong>{moneda(diario.reduce((s, x) => s + Number(x.haber || 0), 0))}</strong></div>
+                  <div><span>Estado</span><strong>{Math.abs(diario.reduce((s, x) => s + Number(x.debe || 0) - Number(x.haber || 0), 0)) < 0.005 ? 'Cuadrado' : 'Revisar'}</strong></div>
+                </div>
+
+                <ListaMovimientosMovil filas={diario} />
+
+                <section className="contabilidad-reporte-panel contabilidad-solo-escritorio">
+                  <div className="contabilidad-reporte-panel-cabecera">
+                    <div>
+                      <h4>Detalle de movimientos</h4>
+                      <p>Asientos y líneas contables del período seleccionado.</p>
+                    </div>
+                  </div>
+                  <div className="tabla-responsive">
+                    <table className="tabla contabilidad-diario-tabla contabilidad-tabla-reporte">
+                      <thead>
+                        <tr><th>N° Asiento</th><th>Fecha</th><th>Código</th><th>Cuenta</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr>
+                      </thead>
+                      <tbody>
+                        {diario.map((x, i) => (
+                          <tr key={x.asiento_id + '-' + x.cuenta_id + '-' + i}>
+                            <td>{x.numero}</td><td>{fechaCL(x.fecha)}</td><td>{x.codigo}</td><td>{x.cuenta}</td>
+                            <td className="numero">{Number(x.debe) ? moneda(x.debe) : ''}</td>
+                            <td className="numero">{Number(x.haber) ? moneda(x.haber) : ''}</td>
+                            <td>{x.glosa_linea || x.glosa}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
             )}
 
             {!cargandoReportes && reporte === 'mayor' && (
-              <>
-                <label className="campo contabilidad-mayor-cuenta">
-                  <span className="etiqueta-campo">Cuenta</span>
-                  <select value={mayorCuentaId} onChange={e => setMayorCuentaId(e.target.value)}>
-                    {cuentas.filter(x => x.activa).map(c => (
-                      <option key={c.id} value={c.id}>{c.codigo} · {c.cuenta}</option>
-                    ))}
-                  </select>
-                </label>
+              <div className="contabilidad-reporte">
+                <div className="contabilidad-reporte-intro">
+                  <div>
+                    <h3 className="h3">Libro Mayor</h3>
+                    <p className="micro apagado">Movimientos y saldo acumulado de una cuenta contable.</p>
+                  </div>
+                </div>
 
-                <div className="contabilidad-mayor-resumen">
+                <div className="contabilidad-reporte-controles">
+                  <label className="campo contabilidad-mayor-cuenta">
+                    <span className="etiqueta-campo">Cuenta</span>
+                    <select value={mayorCuentaId} onChange={e => setMayorCuentaId(e.target.value)}>
+                      {cuentas.filter(x => x.activa).map(c => (
+                        <option key={c.id} value={c.id}>{c.codigo} · {c.cuenta}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="contabilidad-reporte-resumen">
                   <div><span>Debe</span><strong>{moneda(mayorDebe)}</strong></div>
                   <div><span>Haber</span><strong>{moneda(mayorHaber)}</strong></div>
                   <div><span>Saldo</span><strong>{moneda(Math.abs(mayorSaldo))}</strong></div>
@@ -1570,22 +1608,31 @@ export default function Contabilidad() {
                 </div>
 
                 <ListaMovimientosMovil filas={mayor.map(x => ({ ...x, cuenta: cuentaMayor?.cuenta }))} />
-                <div className="tabla-responsive contabilidad-solo-escritorio">
-                  <table className="tabla">
-                    <thead><tr><th>N° Asiento</th><th>Fecha</th><th>Cuenta</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr></thead>
-                    <tbody>
-                      {mayor.map((x, i) => (
-                        <tr key={x.asiento_id + '-' + i}>
-                          <td>{x.numero}</td><td>{fechaCL(x.fecha)}</td><td>{cuentaMayor?.cuenta}</td>
-                          <td className="numero">{Number(x.debe) ? moneda(x.debe) : ''}</td>
-                          <td className="numero">{Number(x.haber) ? moneda(x.haber) : ''}</td>
-                          <td>{x.glosa_linea || x.glosa}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
+
+                <section className="contabilidad-reporte-panel contabilidad-solo-escritorio">
+                  <div className="contabilidad-reporte-panel-cabecera">
+                    <div>
+                      <h4>{cuentaMayor ? cuentaMayor.codigo + ' · ' + cuentaMayor.cuenta : 'Movimientos de la cuenta'}</h4>
+                      <p>Detalle de cargos y abonos del período seleccionado.</p>
+                    </div>
+                  </div>
+                  <div className="tabla-responsive">
+                    <table className="tabla contabilidad-tabla-reporte">
+                      <thead><tr><th>N° Asiento</th><th>Fecha</th><th>Cuenta</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr></thead>
+                      <tbody>
+                        {mayor.map((x, i) => (
+                          <tr key={x.asiento_id + '-' + i}>
+                            <td>{x.numero}</td><td>{fechaCL(x.fecha)}</td><td>{cuentaMayor?.cuenta}</td>
+                            <td className="numero">{Number(x.debe) ? moneda(x.debe) : ''}</td>
+                            <td className="numero">{Number(x.haber) ? moneda(x.haber) : ''}</td>
+                            <td>{x.glosa_linea || x.glosa}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
             )}
           </>
         )}
