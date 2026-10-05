@@ -28,7 +28,7 @@ function soloDigitos(texto) {
 }
 
 function fechaCorta(valor) {
-  if (!valor) return 'Sin contacto';
+  if (!valor) return 'Sin fecha';
   return new Date(valor).toLocaleDateString('es-CL', {
     day: '2-digit', month: 'short', year: 'numeric'
   });
