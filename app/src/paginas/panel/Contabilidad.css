@@ -546,6 +546,118 @@
   margin: 3px 0 0;
 }
 
+
+.contabilidad-reporte-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.contabilidad-reporte-resumen > div {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--borde);
+  background: var(--tarjeta);
+}
+
+.contabilidad-reporte-resumen span,
+.contabilidad-reporte-resumen strong {
+  display: block;
+}
+
+.contabilidad-reporte-resumen span {
+  color: var(--texto-apagado);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.contabilidad-reporte-resumen strong {
+  margin-top: 5px;
+  color: var(--texto-titulo);
+  font: 650 18px/1.15 var(--fuente-display);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.contabilidad-reporte-resumen strong.negativo {
+  color: var(--critico-texto);
+}
+
+.contabilidad-reporte-controles {
+  width: 100%;
+  max-width: 100%;
+  padding: 14px;
+  border: 1px solid var(--borde);
+  background: var(--tarjeta);
+}
+
+.contabilidad-reporte-controles .campo {
+  margin: 0;
+}
+
+.contabilidad-reporte-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  background: var(--tarjeta);
+}
+
+.contabilidad-reporte-panel-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--borde);
+  background: var(--papel);
+}
+
+.contabilidad-reporte-panel-cabecera h4 {
+  margin: 0;
+  color: var(--texto-titulo);
+  font: 700 13px/1.25 var(--fuente-display);
+}
+
+.contabilidad-reporte-panel-cabecera p {
+  margin: 3px 0 0;
+  color: var(--texto-apagado);
+  font-size: 11px;
+}
+
+.contabilidad-tabla-reporte {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--tarjeta);
+}
+
+.contabilidad-tabla-reporte th,
+.contabilidad-tabla-reporte td {
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--borde-suave);
+  vertical-align: top;
+}
+
+.contabilidad-tabla-reporte thead th {
+  background: var(--tarjeta);
+  color: var(--texto-titulo);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.contabilidad-tabla-reporte tbody tr:hover td {
+  background: var(--hover);
+}
+
+.contabilidad-tabla-reporte tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 .contabilidad-balance-general {
   display: grid;
   gap: 12px;
@@ -828,7 +940,7 @@
 
 .contabilidad-mayor-resumen > div {
   min-width: 0;
-  padding: 12px;
+  padding: 13px 14px;
   border: 1px solid var(--borde);
   background: var(--tarjeta);
 }
@@ -840,13 +952,15 @@
 
 .contabilidad-mayor-resumen span {
   color: var(--texto-apagado);
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .06em;
 }
 
 .contabilidad-mayor-resumen strong {
-  margin-top: 4px;
+  margin-top: 5px;
+  font: 650 18px/1.15 var(--fuente-display);
 }
 
 .contabilidad-entidades-grid {
@@ -944,6 +1058,23 @@
 }
 
 @media (max-width: 760px) {
+
+  .contabilidad-reporte-resumen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contabilidad-reporte-resumen > div {
+    padding: 11px 12px;
+  }
+
+  .contabilidad-reporte-resumen strong {
+    font-size: 16px;
+  }
+
+  .contabilidad-reporte-controles {
+    padding: 12px;
+  }
+
 
   .contabilidad-pantalla,
   .contabilidad-encabezado,
@@ -1134,6 +1265,23 @@
 }
 
 @media (max-width: 480px) {
+
+  .contabilidad-reporte-resumen {
+    gap: 6px;
+  }
+
+  .contabilidad-reporte-resumen > div {
+    padding: 10px;
+  }
+
+  .contabilidad-reporte-resumen span {
+    font-size: 9px;
+  }
+
+  .contabilidad-reporte-resumen strong {
+    font-size: 15px;
+  }
+
 
   .contabilidad-reporte-intro {
     flex-direction: column;
