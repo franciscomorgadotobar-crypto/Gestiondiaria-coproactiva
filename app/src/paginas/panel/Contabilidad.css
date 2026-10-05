@@ -1023,10 +1023,13 @@
   }
 
   .contabilidad-nav {
-    margin-left: -20px;
-    margin-right: -20px;
+    width: auto;
+    max-width: none;
+    margin-left: -16px;
+    margin-right: -16px;
     padding-left: 10px;
     padding-right: 10px;
+    overscroll-behavior-x: contain;
   }
 
   .contabilidad-nav a {
@@ -1241,8 +1244,10 @@
   }
 
   .contabilidad-eerr-fila strong {
+    min-width: 0;
     font-size: 13px;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }
 
