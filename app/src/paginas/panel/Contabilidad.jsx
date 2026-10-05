@@ -34,6 +34,17 @@ const TIPOS_CUENTA = [
   ['impuesto', 'Impuesto']
 ];
 
+const TIPOS_CUENTA_FORM = [
+  ['activo', 'Activo'],
+  ['activo_contra', 'Activo*'],
+  ['pasivo', 'Pasivo'],
+  ['patrimonio', 'Patrimonio'],
+  ['ingreso', 'Ingreso'],
+  ['gasto', 'Gasto'],
+  ['costo', 'Costo'],
+  ['impuesto', 'Impuesto']
+];
+
 const EERR_SECCIONES = [
   ['', 'Sin clasificación en EERR'],
   ['ingresos_operacionales', 'Ingresos operacionales'],
@@ -102,8 +113,14 @@ function gruposCuentas(cuentas) {
     .filter(([, xs]) => xs.length);
 }
 
-function etiquetaTipo(tipo) {
+function etiquetaTipo(tipo, naturaleza = null) {
+  if (tipo === 'activo' && naturaleza === 'acreedora') return 'Activo*';
   return TIPOS_CUENTA.find(x => x[0] === tipo)?.[1] ?? tipo;
+}
+
+function tipoCuentaFormulario(cuenta) {
+  if (cuenta?.tipo_contable === 'activo' && cuenta?.naturaleza === 'acreedora') return 'activo_contra';
+  return cuenta?.tipo_contable ?? 'gasto';
 }
 
 function lineaVacia() {
@@ -605,7 +622,11 @@ export default function Contabilidad() {
 
   async function guardarCuenta(valores) {
     const codigo = valores.codigo.trim();
-    const tipo = valores.tipo_contable;
+    const tipoFormulario = valores.tipo_contable;
+    const tipo = tipoFormulario === 'activo_contra' ? 'activo' : tipoFormulario;
+    const naturaleza = tipoFormulario === 'activo_contra'
+      ? 'acreedora'
+      : naturalezaDesdeTipo(tipo, codigo);
     const payload = {
       entidad_id: entidadId,
       codigo,
@@ -613,7 +634,7 @@ export default function Contabilidad() {
       clase: 'movimiento',
       tipo_contable: tipo,
       grupo: valores.grupo.trim() || 'Sin grupo',
-      naturaleza: naturalezaDesdeTipo(tipo, codigo),
+      naturaleza,
       clasificacion_balance: clasificacionDesdeCodigo(codigo),
       eerr_seccion: valores.eerr_seccion || null,
       eerr_orden: valores.eerr_seccion ? Number(valores.eerr_orden || 999) : null,
@@ -755,8 +776,8 @@ export default function Contabilidad() {
             { id: 'codigo', label: 'Código', valor: cuentaEditando.codigo ?? '', obligatorio: true },
             { id: 'cuenta', label: 'Cuenta', valor: cuentaEditando.cuenta ?? '', obligatorio: true },
             {
-              id: 'tipo_contable', label: 'Tipo', valor: cuentaEditando.tipo_contable ?? 'gasto',
-              obligatorio: true, opciones: TIPOS_CUENTA
+              id: 'tipo_contable', label: 'Tipo', valor: tipoCuentaFormulario(cuentaEditando),
+              obligatorio: true, opciones: TIPOS_CUENTA_FORM
             },
             { id: 'grupo', label: 'Grupo', valor: cuentaEditando.grupo ?? '', obligatorio: true },
             {
@@ -1018,7 +1039,7 @@ export default function Contabilidad() {
                     <tr key={c.id} className={!c.activa ? 'inactiva' : ''}>
                       <td><strong>{c.codigo}</strong></td>
                       <td>{c.cuenta}</td>
-                      <td>{etiquetaTipo(c.tipo_contable)}</td>
+                      <td>{etiquetaTipo(c.tipo_contable, c.naturaleza)}</td>
                       <td>{c.grupo}</td>
                       <td>{EERR_SECCIONES.find(x => x[0] === (c.eerr_seccion ?? ''))?.[1] ?? 'Sin clasificación'}</td>
                       <td>{c.activa ? <span className="chip chip-cumple">Activa</span> : <span className="chip">Inactiva</span>}</td>
