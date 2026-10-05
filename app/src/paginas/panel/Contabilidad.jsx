@@ -877,6 +877,9 @@ export default function Contabilidad() {
 
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
+  const pasivoPatrimonio = tb.pasivo + eerr.utilidad;
+  const diferenciaBalance = tb.activo - pasivoPatrimonio;
+  const balanceCuadrado = Math.abs(diferenciaBalance) < 0.005;
   const asientosVisibles = asientos.filter(a => {
     const q = normalizar(busquedaAsiento);
     if (!q) return true;
@@ -1052,19 +1055,35 @@ export default function Contabilidad() {
         {!cargando && entidad && vista === 'resumen' && (
           <>
             <section className="contabilidad-resumen-kpis">
-              <div className="tarjeta">
+              <div className={'tarjeta contabilidad-kpi-principal ' + (balanceCuadrado ? 'cuadrado' : 'descuadrado')}>
+                <div className="contabilidad-kpi-cabecera">
+                  <p className="micro apagado">Activo</p>
+                  <span className={'contabilidad-cuadratura-estado ' + (balanceCuadrado ? 'ok' : 'error')}>
+                    {balanceCuadrado ? 'Cuadrado' : 'Descuadrado'}
+                  </span>
+                </div>
+                <strong>{moneda(tb.activo)}</strong>
+              </div>
+
+              <div className={'tarjeta contabilidad-kpi-principal ' + (balanceCuadrado ? 'cuadrado' : 'descuadrado')}>
+                <div className="contabilidad-kpi-cabecera">
+                  <p className="micro apagado">Pasivo + patrimonio</p>
+                  <span className={'contabilidad-cuadratura-estado ' + (balanceCuadrado ? 'ok' : 'error')}>
+                    {balanceCuadrado ? 'Cuadrado' : 'Descuadrado'}
+                  </span>
+                </div>
+                <strong>{moneda(pasivoPatrimonio)}</strong>
+                <span className="micro apagado contabilidad-kpi-formula">
+                  Incluye resultado del ejercicio: {moneda(eerr.utilidad)}
+                </span>
+              </div>
+
+              <div className="tarjeta contabilidad-kpi-secundario">
                 <p className="micro apagado">Resultado del ejercicio</p>
                 <strong className={eerr.utilidad < 0 ? 'negativo' : ''}>{moneda(eerr.utilidad)}</strong>
               </div>
-              <div className="tarjeta">
-                <p className="micro apagado">Activo</p>
-                <strong>{moneda(tb.activo)}</strong>
-              </div>
-              <div className="tarjeta">
-                <p className="micro apagado">Pasivo + patrimonio</p>
-                <strong>{moneda(tb.pasivo)}</strong>
-              </div>
-              <div className="tarjeta">
+
+              <div className="tarjeta contabilidad-kpi-secundario">
                 <p className="micro apagado">Asientos</p>
                 <strong>{asientos.filter(x => x.estado === 'contabilizado').length}</strong>
               </div>
