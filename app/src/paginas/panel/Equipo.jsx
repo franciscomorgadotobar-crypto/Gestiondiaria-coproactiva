@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import CapacitacionPersona from '../../componentes/CapacitacionPersona';
+import Confirmar from '../../componentes/Confirmar';
 import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Administración del equipo: quién entra y qué ve.
@@ -47,6 +48,7 @@ export default function Equipo() {
   // correo vive ahí; el navegador no tiene cómo saberlo por su cuenta.
   const [correoListo, setCorreoListo] = useState(null);
   const [horas, setHoras] = useState(24);
+  const [personaReenvio, setPersonaReenvio] = useState(null);
   // Cuando el correo falla, el enlace igual sirve: se muestra para poder
   // entregarlo por otro medio en vez de dejar a alguien sin acceso.
   const [enlace, setEnlace] = useState(null);
@@ -144,11 +146,7 @@ export default function Equipo() {
    * de un solo uso y esa persona define la suya. Sirve igual para una invitación
    * que venció sin usarse y para alguien que perdió su clave. */
   async function reenviarAcceso(persona) {
-    if (!confirm(
-      `Se le enviará a ${persona.email} un enlace para crear una contraseña nueva. ` +
-      'El enlace anterior, si lo había, deja de servir.'
-    )) return;
-
+    setPersonaReenvio(null);
     setOcupado(true);
     setError(null);
     try {
@@ -349,7 +347,7 @@ export default function Equipo() {
                   <div className="fila" style={{ gap: 8, marginTop: 12 }}>
                     <button className="boton boton-secundario crece"
                             disabled={bloqueada || ocupado || !persona.activo}
-                            onClick={() => reenviarAcceso(persona)}>
+                            onClick={() => setPersonaReenvio(persona)}>
                       Reenviar acceso
                     </button>
                     <button className="boton boton-secundario crece"
@@ -366,6 +364,17 @@ export default function Equipo() {
         })}
         </div>
       </div>
+      {personaReenvio && (
+        <Confirmar
+          titulo="Reenviar acceso"
+          mensaje={`Enviaremos a ${personaReenvio.email} un enlace para crear una contraseña nueva. El enlace anterior dejará de funcionar.`}
+          textoConfirmar="Reenviar acceso"
+          textoCancelar="Cancelar"
+          onConfirmar={() => reenviarAcceso(personaReenvio)}
+          onCancelar={() => setPersonaReenvio(null)}
+        />
+      )}
+
     </div>
   );
 }
