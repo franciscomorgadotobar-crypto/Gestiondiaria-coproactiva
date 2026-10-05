@@ -134,14 +134,12 @@ function useSeccionSitio() {
 function SeccionEnSitio({ seccion, setSeccion, puedeCambiar }) {
   const [cambiando, setCambiando] = useState(false);
   const [error, setError] = useState(null);
+  const [confirmando, setConfirmando] = useState(false);
   if (!seccion) return null;
   const visible = seccion.visible;
 
   async function alternar() {
-    if (!window.confirm(visible
-      ? 'Se ocultará Propiedades en coproactiva.cl: sale del menú y nadie verá las propiedades, aunque estén publicadas. ¿Continuar?'
-      : 'Se mostrará Propiedades en coproactiva.cl: aparece en el menú de todo el sitio y se ven las propiedades publicadas. ¿Continuar?'
-    )) return;
+    setConfirmando(false);
     setCambiando(true);
     setError(null);
     const { data, error: e } = await supabase.from('secciones_sitio')
@@ -153,7 +151,20 @@ function SeccionEnSitio({ seccion, setSeccion, puedeCambiar }) {
   }
 
   return (
-    <section className={'tarjeta propiedades-sitio' + (visible ? ' visible' : '')} aria-live="polite">
+    <>
+      {confirmando && (
+        <Confirmar
+          titulo={visible ? 'Ocultar Propiedades del sitio' : 'Mostrar Propiedades en el sitio'}
+          mensaje={visible
+            ? 'La sección saldrá del menú de coproactiva.cl y las propiedades dejarán de mostrarse públicamente.'
+            : 'La sección aparecerá en coproactiva.cl y se mostrarán las propiedades marcadas como publicadas.'}
+          textoConfirmar={visible ? 'Ocultar del sitio' : 'Mostrar en el sitio'}
+          textoCancelar="Cancelar"
+          onConfirmar={alternar}
+          onCancelar={() => setConfirmando(false)}
+        />
+      )}
+      <section className={'tarjeta propiedades-sitio' + (visible ? ' visible' : '')} aria-live="polite">
       <div className="crece">
         <strong className="dato-chico">{visible ? 'Visible en el sitio' : 'Oculta en el sitio'}</strong>
         <p className="micro" style={{ margin: '3px 0 0' }}>
@@ -166,12 +177,13 @@ function SeccionEnSitio({ seccion, setSeccion, puedeCambiar }) {
       {puedeCambiar
         ? (
           <button type="button" className={'boton' + (visible ? ' boton-secundario' : '')}
-                  onClick={alternar} disabled={cambiando}>
+                  onClick={() => setConfirmando(true)} disabled={cambiando}>
             {cambiando ? 'Guardando…' : visible ? 'Ocultar del sitio' : 'Mostrar en el sitio'}
           </button>
         )
         : <span className="micro">Solo administración puede cambiarlo.</span>}
-    </section>
+      </section>
+    </>
   );
 }
 
