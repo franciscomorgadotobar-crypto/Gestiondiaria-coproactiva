@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import Confirmar from '../../componentes/Confirmar';
+import DialogoCampos from '../../componentes/DialogoCampos';
 import { useVolverGlobal } from '../../lib/navegacion';
 
 /* Las plantillas del catálogo estándar (comunidad_id nulo) sirven para todas
@@ -17,6 +18,7 @@ export default function Plantillas() {
   const [plantillas, setPlantillas] = useState(null);
   const [error, setError] = useState(null);
   const [porBorrar, setPorBorrar] = useState(null);
+  const [dialogoNombre, setDialogoNombre] = useState(null);
 
   const puedeEditar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
   // Borrar una plantilla se lleva su estructura completa —y la de cualquier
@@ -35,9 +37,9 @@ export default function Plantillas() {
     else setPlantillas(data ?? []);
   }
 
-  async function crear() {
-    const nombre = prompt('Nombre de la plantilla');
+  async function crear(nombre) {
     if (!nombre?.trim()) return;
+    setDialogoNombre(null);
     const { data, error } = await supabase
       .from('plantillas_control')
       .insert({ nombre: nombre.trim(), creado_por: perfil.id })
@@ -48,9 +50,9 @@ export default function Plantillas() {
 
   /* Duplicar es la forma práctica de partir: se toma la plantilla estándar y se
    * ajusta para una comunidad, en vez de escribir treinta puntos de cero. */
-  async function duplicar(p) {
-    const nombre = prompt('Nombre de la copia', `${p.nombre} (copia)`);
+  async function duplicar(p, nombre) {
     if (!nombre?.trim()) return;
+    setDialogoNombre(null);
 
     const { data: nueva, error: e1 } = await supabase
       .from('plantillas_control')
@@ -82,6 +84,26 @@ export default function Plantillas() {
 
   return (
     <div className="pantalla">
+      {dialogoNombre && (
+        <DialogoCampos
+          titulo={dialogoNombre.tipo === 'crear' ? 'Nueva plantilla' : 'Duplicar plantilla'}
+          mensaje={dialogoNombre.tipo === 'crear'
+            ? 'Escribe un nombre para la nueva plantilla.'
+            : 'La copia tendrá los mismos puntos y podrás editarla después.'}
+          campos={[{
+            id: 'nombre',
+            label: 'Nombre',
+            valor: dialogoNombre.tipo === 'crear' ? '' : `${dialogoNombre.plantilla.nombre} (copia)`,
+            obligatorio: true
+          }]}
+          textoConfirmar={dialogoNombre.tipo === 'crear' ? 'Crear plantilla' : 'Duplicar'}
+          onCancelar={() => setDialogoNombre(null)}
+          onConfirmar={({ nombre }) => dialogoNombre.tipo === 'crear'
+            ? crear(nombre)
+            : duplicar(dialogoNombre.plantilla, nombre)}
+        />
+      )}
+
       {porBorrar && (
         <Confirmar
           titulo="Eliminar plantilla"
@@ -139,7 +161,8 @@ export default function Plantillas() {
                       style={{ textAlign: 'center' }}>
                   Editar
                 </Link>
-                <button className="boton boton-secundario crece" onClick={() => duplicar(p)}>
+                <button className="boton boton-secundario crece"
+                        onClick={() => setDialogoNombre({ tipo: 'duplicar', plantilla: p })}>
                   Duplicar
                 </button>
               </div>
@@ -156,7 +179,8 @@ export default function Plantillas() {
 
         {puedeEditar && (
           <div className="acciones-plantillas">
-            <button className="boton boton-movil boton-ancho" onClick={crear}>
+            <button className="boton boton-movil boton-ancho"
+                    onClick={() => setDialogoNombre({ tipo: 'crear' })}>
               Nueva plantilla
             </button>
             <Link to="/plantillas/importar" className="boton boton-secundario boton-movil boton-ancho">
