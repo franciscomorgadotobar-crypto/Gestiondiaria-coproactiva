@@ -4,32 +4,6 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import Confirmar from '../../componentes/Confirmar';
 
-const ESTADOS = [
-  ['todos', 'Todos'],
-  ['nuevo', 'Nuevos'],
-  ['contactado', 'Contactados'],
-  ['aprobado', 'Activos'],
-  ['evaluado', 'En evaluación'],
-  ['descartado', 'Descartados'],
-  ['lista_negra', 'Lista negra']
-];
-
-const ETIQUETA_ESTADO = {
-  nuevo: 'Nuevo',
-  contactado: 'Contactado',
-  evaluado: 'En evaluación',
-  aprobado: 'Activo',
-  descartado: 'Descartado'
-};
-
-const CLASE_ESTADO = {
-  nuevo: 'chip-alerta',
-  contactado: 'chip-info',
-  evaluado: 'chip-pausado',
-  aprobado: 'chip-cumple',
-  descartado: 'chip-pendiente'
-};
-
 const MOTIVOS_LISTA_NEGRA = [
   'Mala experiencia',
   'Incumplimiento',
@@ -68,25 +42,16 @@ function fechaHora(valor) {
   });
 }
 
-function etiquetaEstado(p) {
-  return p.lista_negra ? 'Lista negra' : (ETIQUETA_ESTADO[p.estado] ?? p.estado);
-}
-
-function claseEstado(p) {
-  return p.lista_negra ? 'chip-critico' : (CLASE_ESTADO[p.estado] ?? 'chip-pendiente');
-}
-
 export default function Proveedores() {
   const { perfil } = useSesion();
   const { id } = useParams();
   const navegar = useNavigate();
   const [proveedores, setProveedores] = useState(null);
   const [busqueda, setBusqueda] = useState('');
-  const [estado, setEstado] = useState('todos');
   const [rubro, setRubro] = useState('');
   const [comuna, setComuna] = useState('');
   const [origen, setOrigen] = useState('');
-  const [ultimoContacto, setUltimoContacto] = useState('');
+  const [mostrarListaNegra, setMostrarListaNegra] = useState(false);
   const [orden, setOrden] = useState('reciente');
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [formulario, setFormulario] = useState(null);
@@ -96,8 +61,6 @@ export default function Proveedores() {
   const [resultadoSync, setResultadoSync] = useState(null);
   const [error, setError] = useState(null);
   const [aviso, setAviso] = useState(null);
-  const [interacciones, setInteracciones] = useState([]);
-  const [cargandoHistorial, setCargandoHistorial] = useState(false);
   const [correos, setCorreos] = useState([]);
   const [cargandoCorreos, setCargandoCorreos] = useState(false);
   const [syncEstado, setSyncEstado] = useState(null);
@@ -170,34 +133,24 @@ export default function Proveedores() {
 
   useEffect(() => {
     if (!seleccionado) {
-      setInteracciones([]);
       setCorreos([]);
       return;
     }
+
     let vigente = true;
-    setCargandoHistorial(true);
     setCargandoCorreos(true);
 
-    Promise.all([
-      supabase
-        .from('proveedor_interacciones')
-        .select('id,canal,detalle,realizado_por,realizado_en')
-        .eq('proveedor_id', seleccionado.id)
-        .order('realizado_en', { ascending: false })
-        .limit(50),
-      supabase
-        .from('proveedor_correos')
-        .select('id,asunto,fecha_correo,remitente_nombre,remitente_email,snippet,cuerpo_texto,adjuntos,storage_path_eml')
-        .eq('proveedor_id', seleccionado.id)
-        .order('fecha_correo', { ascending: false })
-        .limit(50)
-    ]).then(([historialResp, correosResp]) => {
-      if (!vigente) return;
-      if (!historialResp.error) setInteracciones(historialResp.data ?? []);
-      if (!correosResp.error) setCorreos(correosResp.data ?? []);
-      setCargandoHistorial(false);
-      setCargandoCorreos(false);
-    });
+    supabase
+      .from('proveedor_correos')
+      .select('id,asunto,fecha_correo,remitente_nombre,remitente_email,snippet,cuerpo_texto,adjuntos,storage_path_eml')
+      .eq('proveedor_id', seleccionado.id)
+      .order('fecha_correo', { ascending: false })
+      .limit(50)
+      .then(({ data, error }) => {
+        if (!vigente) return;
+        if (!error) setCorreos(data ?? []);
+        setCargandoCorreos(false);
+      });
 
     return () => { vigente = false; };
   }, [seleccionado?.id]);
@@ -236,26 +189,12 @@ export default function Proveedores() {
 
   const listaFiltrada = useMemo(() => {
     const q = normalizar(busqueda);
-    const ahora = Date.now();
 
     let lista = (proveedores ?? []).filter(p => {
-      if (estado === 'lista_negra' && !p.lista_negra) return false;
-      if (estado !== 'todos' && estado !== 'lista_negra' && (p.lista_negra || p.estado !== estado)) return false;
-      if (estado === 'todos' && p.lista_negra) return false;
+      if (!mostrarListaNegra && p.lista_negra) return false;
       if (rubro && p.rubro !== rubro) return false;
       if (origen && p.origen !== origen) return false;
-      if (comuna && !normalizar(p.comunas).includes(normalizar(comuna))) return false;
-
-      if (ultimoContacto) {
-        const dias = Number(ultimoContacto);
-        if (dias === 9999) {
-          if (p.fecha_contacto) return false;
-        } else {
-          if (!p.fecha_contacto) return false;
-          const transcurridos = (ahora - new Date(p.fecha_contacto).getTime()) / 86400000;
-          if (transcurridos < dias) return false;
-        }
-      }
+      if (comuna && !normalizar([p.comunas, ...(p.regiones ?? [])].filter(Boolean).join(' ')).includes(normalizar(comuna))) return false;
 
       if (!q) return true;
       const bolsa = [
@@ -271,24 +210,17 @@ export default function Proveedores() {
 
     lista = [...lista].sort((a, b) => {
       if (orden === 'empresa') return (a.empresa ?? '').localeCompare(b.empresa ?? '', 'es');
-      if (orden === 'contacto') return new Date(b.fecha_contacto ?? 0) - new Date(a.fecha_contacto ?? 0);
+      if (orden === 'especialidad') return (a.rubro ?? '').localeCompare(b.rubro ?? '', 'es');
       return new Date(b.editado_en ?? b.creado_en ?? 0) - new Date(a.editado_en ?? a.creado_en ?? 0);
     });
     return lista;
-  }, [proveedores, busqueda, estado, rubro, comuna, origen, ultimoContacto, orden]);
-
-  const conteoEstado = clave => {
-    const lista = proveedores ?? [];
-    if (clave === 'todos') return lista.filter(p => !p.lista_negra).length;
-    if (clave === 'lista_negra') return lista.filter(p => p.lista_negra).length;
-    return lista.filter(p => !p.lista_negra && p.estado === clave).length;
-  };
+  }, [proveedores, busqueda, rubro, comuna, origen, mostrarListaNegra, orden]);
 
   function limpiarFiltros() {
     setRubro('');
     setComuna('');
     setOrigen('');
-    setUltimoContacto('');
+    setMostrarListaNegra(false);
   }
 
   async function guardarProveedor(datos) {
@@ -306,7 +238,6 @@ export default function Proveedores() {
       sitio_web: datos.sitio_web.trim() || null,
       comunas: datos.comunas.trim() || null,
       notas: datos.notas.trim() || null,
-      estado: datos.estado || 'nuevo',
       origen: datos.origen || 'manual',
       editado_en: ahora,
       editado_por: perfil.id
@@ -379,29 +310,7 @@ export default function Proveedores() {
     setAviso('Proveedor eliminado.');
   }
 
-  async function registrarContacto(p, canal) {
-    const ahora = new Date().toISOString();
-    const nuevoEstado = p.estado === 'nuevo' ? 'contactado' : p.estado;
-
-    await Promise.all([
-      supabase.from('proveedor_interacciones').insert({
-        proveedor_id: p.id,
-        canal,
-        detalle: 'Contacto iniciado desde la aplicación',
-        realizado_por: perfil.id
-      }),
-      supabase.from('proveedores').update({
-        fecha_contacto: ahora,
-        estado: nuevoEstado,
-        editado_en: ahora,
-        editado_por: perfil.id
-      }).eq('id', p.id)
-    ]);
-
-    setProveedores(xs => xs?.map(x => x.id === p.id
-      ? { ...x, fecha_contacto: ahora, estado: nuevoEstado, editado_en: ahora }
-      : x));
-
+  function abrirContacto(p, canal) {
     if (canal === 'llamada' && p.telefono) {
       window.location.href = 'tel:' + p.telefono.replace(/\s+/g, '');
     } else if (canal === 'whatsapp' && p.telefono) {
@@ -469,8 +378,6 @@ export default function Proveedores() {
     return (
       <FichaProveedor
         p={seleccionado}
-        historial={interacciones}
-        cargandoHistorial={cargandoHistorial}
         correos={correos}
         cargandoCorreos={cargandoCorreos}
         onAbrirArchivo={abrirArchivoCorreo}
@@ -479,7 +386,7 @@ export default function Proveedores() {
         onEditar={() => setFormulario({ ...seleccionado })}
         onBlacklist={() => seleccionado.lista_negra ? cambiarListaNegra(seleccionado) : setBlacklist(seleccionado)}
         onEliminar={() => setPorEliminar(seleccionado)}
-        onContacto={canal => registrarContacto(seleccionado, canal)}
+        onContacto={canal => abrirContacto(seleccionado, canal)}
         aviso={aviso}
         error={error}
         onCerrarAviso={() => setAviso(null)}
@@ -498,7 +405,7 @@ export default function Proveedores() {
         {porEliminar && (
           <Confirmar
             titulo="Eliminar proveedor"
-            mensaje={`“${porEliminar.empresa}” y su historial de contacto se eliminarán definitivamente. Esta acción está reservada al superadministrador.`}
+            mensaje={`“${porEliminar.empresa}” y su información asociada se eliminarán definitivamente. Esta acción está reservada al superadministrador.`}
             textoConfirmar="Eliminar"
             textoCancelar="Cancelar"
             onConfirmar={() => eliminarProveedor(porEliminar)}
@@ -571,16 +478,6 @@ export default function Proveedores() {
           </button>
         </div>
 
-        <div className="proveedores-estados" aria-label="Filtrar por estado">
-          {ESTADOS.map(([valor, etiqueta]) => (
-            <button key={valor} type="button"
-                    className={estado === valor ? 'activo' : ''}
-                    onClick={() => setEstado(valor)}>
-              {etiqueta} <span>{conteoEstado(valor)}</span>
-            </button>
-          ))}
-        </div>
-
         {filtrosAbiertos && (
           <div className="tarjeta proveedores-filtros">
             <div className="campo">
@@ -604,16 +501,11 @@ export default function Proveedores() {
                 {origenes.map(x => <option key={x} value={x}>{x === 'correo' ? 'Correo' : 'Manual'}</option>)}
               </select>
             </div>
-            <div className="campo">
-              <label className="etiqueta-campo">Último contacto</label>
-              <select value={ultimoContacto} onChange={e => setUltimoContacto(e.target.value)}>
-                <option value="">Cualquier fecha</option>
-                <option value="30">Hace más de 30 días</option>
-                <option value="60">Hace más de 60 días</option>
-                <option value="90">Hace más de 90 días</option>
-                <option value="9999">Nunca contactado</option>
-              </select>
-            </div>
+            <label className="marca proveedor-filtro-lista-negra">
+              <input type="checkbox" checked={mostrarListaNegra}
+                     onChange={e => setMostrarListaNegra(e.target.checked)} />
+              <span>Incluir proveedores en lista negra</span>
+            </label>
             <button type="button" className="boton boton-texto proveedores-limpiar" onClick={limpiarFiltros}>
               Limpiar filtros
             </button>
@@ -627,7 +519,7 @@ export default function Proveedores() {
             <select value={orden} onChange={e => setOrden(e.target.value)} className="select-inline">
               <option value="reciente">Más reciente</option>
               <option value="empresa">Empresa</option>
-              <option value="contacto">Último contacto</option>
+              <option value="especialidad">Especialidad</option>
             </select>
           </label>
         </div>
@@ -641,7 +533,7 @@ export default function Proveedores() {
           {listaFiltrada.map(p => (
             <TarjetaProveedor key={p.id} p={p}
               onAbrir={() => navegar('/proveedores/' + p.id)}
-              onContacto={canal => registrarContacto(p, canal)} />
+              onContacto={canal => abrirContacto(p, canal)} />
           ))}
         </div>
 
@@ -650,10 +542,9 @@ export default function Proveedores() {
             <thead>
               <tr>
                 <th>Empresa / Contacto</th>
-                <th>Rubro / Servicios</th>
+                <th>Especialidad / Servicios</th>
                 <th>Cobertura</th>
-                <th>Último contacto</th>
-                <th>Estado</th>
+                <th>Origen</th>
                 <th aria-label="Acciones" />
               </tr>
             </thead>
@@ -665,15 +556,17 @@ export default function Proveedores() {
                     <span>{p.contacto_nombre || 'Sin contacto'}</span>
                     <span>{p.email || p.telefono || 'Sin datos de contacto'}</span>
                   </td>
-                  <td><strong>{p.rubro || 'Sin rubro'}</strong><span>{p.servicios || 'Sin servicios informados'}</span></td>
-                  <td>{p.comunas || 'Sin cobertura informada'}</td>
-                  <td>{fechaCorta(p.fecha_contacto)}</td>
-                  <td><span className={'chip ' + claseEstado(p)}>{etiquetaEstado(p)}</span></td>
+                  <td><strong>{p.rubro || p.especialidades?.[0] || 'Sin especialidad'}</strong><span>{p.servicios || 'Sin servicios informados'}</span></td>
+                  <td>{[p.comunas, ...(p.regiones ?? [])].filter(Boolean).join(', ') || 'Sin cobertura informada'}</td>
+                  <td>
+                    <span>{p.origen === 'correo' ? 'Gmail' : 'Manual'}</span>
+                    {p.lista_negra && <span className="chip chip-critico">Lista negra</span>}
+                  </td>
                   <td onClick={e => e.stopPropagation()}>
                     <div className="acciones-contacto-mini">
-                      <button disabled={!p.telefono} onClick={() => registrarContacto(p, 'llamada')} title="Llamar">☎</button>
-                      <button disabled={!p.telefono} onClick={() => registrarContacto(p, 'whatsapp')} title="WhatsApp">WA</button>
-                      <button disabled={!p.email} onClick={() => registrarContacto(p, 'correo')} title="Correo">✉</button>
+                      <button disabled={!p.telefono} onClick={() => abrirContacto(p, 'llamada')} title="Llamar">☎</button>
+                      <button disabled={!p.telefono} onClick={() => abrirContacto(p, 'whatsapp')} title="WhatsApp">WA</button>
+                      <button disabled={!p.email} onClick={() => abrirContacto(p, 'correo')} title="Correo">✉</button>
                       <button onClick={() => navegar('/proveedores/' + p.id)} title="Ver ficha">›</button>
                     </div>
                   </td>
@@ -734,7 +627,7 @@ function TarjetaProveedor({ p, onAbrir, onContacto }) {
             </small>
           )}
         </span>
-        <span className={'chip ' + claseEstado(p)}>{etiquetaEstado(p)}</span>
+        {p.lista_negra && <span className="chip chip-critico">Lista negra</span>}
         <span className="flecha">›</span>
       </button>
       <div className="proveedor-contactos">
@@ -746,7 +639,7 @@ function TarjetaProveedor({ p, onAbrir, onContacto }) {
   );
 }
 
-function FichaProveedor({ p, historial, cargandoHistorial, correos, cargandoCorreos, onAbrirArchivo, puedeEliminar, onVolver, onEditar, onBlacklist, onEliminar, onContacto, aviso, error, onCerrarAviso, children }) {
+function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeEliminar, onVolver, onEditar, onBlacklist, onEliminar, onContacto, aviso, error, onCerrarAviso, children }) {
   return (
     <div className="pantalla proveedor-ficha">
       <header className="encabezado">
@@ -754,7 +647,7 @@ function FichaProveedor({ p, historial, cargandoHistorial, correos, cargandoCorr
           <div className="crece">
             <div className="fila" style={{ gap: 8, justifyContent: 'flex-start' }}>
               <h1 className="h3" style={{ margin: 0 }}>{p.empresa}</h1>
-              <span className={'chip ' + claseEstado(p)}>{etiquetaEstado(p)}</span>
+              {p.lista_negra && <span className="chip chip-critico">Lista negra</span>}
             </div>
             <p className="chico apagado" style={{ margin: '4px 0 0' }}>
               {[p.rut, p.rubro].filter(Boolean).join(' · ') || 'Proveedor'}
@@ -790,12 +683,11 @@ function FichaProveedor({ p, historial, cargandoHistorial, correos, cargandoCorr
             <Dato etiqueta="Correo" valor={p.email} />
           </Seccion>
 
-          <Seccion titulo="Información comercial">
+          <Seccion titulo="Datos del proveedor">
             <Dato etiqueta="RUT" valor={p.rut} />
-            <Dato etiqueta="Rubro" valor={p.rubro} />
-            <Dato etiqueta="Estado" valor={etiquetaEstado(p)} />
-            <Dato etiqueta="Origen" valor={p.origen === 'correo' ? 'Correo' : 'Manual'} />
-            <Dato etiqueta="Último contacto" valor={fechaCorta(p.fecha_contacto)} />
+            <Dato etiqueta="Especialidad" valor={p.rubro || p.especialidades?.[0]} />
+            <Dato etiqueta="Origen" valor={p.origen === 'correo' ? 'Gmail' : 'Manual'} />
+            <Dato etiqueta="Sitio web" valor={p.sitio_web} />
           </Seccion>
 
           <Seccion titulo="Servicios">
@@ -893,7 +785,7 @@ function FichaProveedor({ p, historial, cargandoHistorial, correos, cargandoCorr
                   <strong>Creado desde correo</strong>
                   <p className="chico apagado">
                     La ficha conserva el origen del correo y los datos estructurados extraídos.
-                    Los nuevos correos pueden complementar contactos, especialidades, cobertura y antecedentes comerciales.
+                    Los nuevos correos pueden complementar contactos, especialidades, cobertura y documentos.
                   </p>
                 </div>
                 {p.gmail_thread_id && (
@@ -910,21 +802,6 @@ function FichaProveedor({ p, historial, cargandoHistorial, correos, cargandoCorr
             </Seccion>
           )}
 
-          <Seccion titulo="Historial de contacto" ancho>
-            {cargandoHistorial && <p className="micro apagado">Cargando historial…</p>}
-            {!cargandoHistorial && historial.length === 0 && (
-              <p className="micro apagado">Todavía no hay contactos registrados desde la aplicación.</p>
-            )}
-            <div className="proveedor-historial">
-              {historial.map(h => (
-                <div key={h.id}>
-                  <span className="chip chip-info">{h.canal}</span>
-                  <strong>{fechaHora(h.realizado_en)}</strong>
-                  <p>{h.detalle || 'Contacto registrado'}</p>
-                </div>
-              ))}
-            </div>
-          </Seccion>
         </div>
 
         <div className="proveedor-acciones-peligro">
@@ -976,7 +853,6 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
     sitio_web: inicial.sitio_web ?? '',
     comunas: inicial.comunas ?? '',
     notas: inicial.notas ?? '',
-    estado: inicial.estado ?? 'nuevo',
     origen: inicial.origen ?? 'manual'
   });
   const [guardando, setGuardando] = useState(false);
@@ -1036,18 +912,6 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
           <label className="etiqueta-campo">Cobertura</label>
           <input value={datos.comunas} onChange={e => cambiar('comunas', e.target.value)} placeholder="Santiago, Ñuñoa, Providencia…" />
         </div>
-        {datos.id && (
-          <div className="campo">
-            <label className="etiqueta-campo">Estado</label>
-            <select value={datos.estado} onChange={e => cambiar('estado', e.target.value)}>
-              <option value="nuevo">Nuevo</option>
-              <option value="contactado">Contactado</option>
-              <option value="evaluado">En evaluación</option>
-              <option value="aprobado">Activo</option>
-              <option value="descartado">Descartado</option>
-            </select>
-          </div>
-        )}
         <div className="campo ancho-total">
           <label className="etiqueta-campo">Notas</label>
           <textarea value={datos.notas} onChange={e => cambiar('notas', e.target.value)} placeholder="Información adicional…" />
