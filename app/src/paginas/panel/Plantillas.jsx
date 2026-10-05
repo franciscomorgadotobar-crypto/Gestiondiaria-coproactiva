@@ -6,6 +6,7 @@ import { inicioSegunArea } from '../../lib/area';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import { useVolverGlobal } from '../../lib/navegacion';
+import './Plantillas.css';
 
 /* Las plantillas del catálogo estándar (comunidad_id nulo) sirven para todas
  * las comunidades. Una plantilla con comunidad asignada existe porque ese
@@ -115,78 +116,121 @@ export default function Plantillas() {
         />
       )}
 
-      <header className="encabezado">
-        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
-          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
+      <header className="encabezado plantillas-encabezado">
+        <div className="fila navegacion-interna plantillas-volver">
+          <button className="boton boton-texto"
                   onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
           </button>
         </div>
-        <h1 className="h3">Plantillas</h1>
-        <p className="chico apagado" style={{ margin: '3px 0 0' }}>
-          Qué se pregunta en cada levantamiento
-        </p>
+
+        <div className="plantillas-cabecera-principal">
+          <div>
+            <h1 className="h3">Plantillas</h1>
+            <p className="chico apagado">
+              Define qué se revisa en cada tipo de levantamiento.
+            </p>
+          </div>
+
+          {puedeEditar && (
+            <div className="plantillas-acciones-cabecera">
+              <button className="boton boton-movil"
+                      onClick={() => setDialogoNombre({ tipo: 'crear' })}>
+                + Nueva plantilla
+              </button>
+              <Link to="/plantillas/importar" className="boton boton-secundario boton-movil">
+                Importar Excel
+              </Link>
+            </div>
+          )}
+        </div>
       </header>
 
-      <div className="cuerpo">
+      <div className="cuerpo plantillas-cuerpo">
         {error && <div className="aviso aviso-critico">{error}</div>}
         {plantillas === null && !error && <p className="cargando">Cargando…</p>}
-        {plantillas?.length === 0 && (
-          <p className="vacio">Todavía no hay plantillas.</p>
-        )}
 
-        <div className="rejilla">
-        {plantillas?.map(p => (
-          <article key={p.id} className="tarjeta" style={{ padding: 16 }}>
-            <div className="fila" style={{ marginBottom: 6 }}>
-              <span className="etiqueta-campo crece" style={{ margin: 0 }}>
-                {p.comunidades?.nombre ?? 'Catálogo estándar'}
-              </span>
-              {!p.activa && <span className="chip chip-pendiente">Inactiva</span>}
+        {plantillas && (
+          <section className="plantillas-catalogo">
+            <div className="plantillas-catalogo-cabecera">
+              <div>
+                <h2 className="h3">Plantillas disponibles</h2>
+                <p className="micro apagado">
+                  {plantillas.length} {plantillas.length === 1 ? 'plantilla' : 'plantillas'} configuradas.
+                </p>
+              </div>
             </div>
 
-            <Link to={`/plantillas/${p.id}`} className="dato-chico" style={{ color: 'inherit' }}>
-              {p.nombre}
-            </Link>
-            {p.descripcion && (
-              <p className="micro" style={{ margin: '3px 0 0' }}>{p.descripcion}</p>
-            )}
-            <p className="micro apagado" style={{ margin: '6px 0 10px' }}>
-              {p.plantilla_items?.[0]?.count ?? 0} puntos
-            </p>
+            {plantillas.length === 0 ? (
+              <div className="tarjeta plantillas-vacio">
+                <h3 className="h3">Todavía no hay plantillas</h3>
+                <p className="chico apagado">
+                  Crea una desde cero o importa una estructura desde Excel.
+                </p>
+                {puedeEditar && (
+                  <button className="boton"
+                          onClick={() => setDialogoNombre({ tipo: 'crear' })}>
+                    + Nueva plantilla
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="plantillas-grid">
+                {plantillas.map(p => {
+                  const puntos = p.plantilla_items?.[0]?.count ?? 0;
+                  return (
+                    <article key={p.id} className={'tarjeta plantilla-card ' + (!p.activa ? 'inactiva' : '')}>
+                      <div className="plantilla-card-meta">
+                        <span className="plantilla-card-origen">
+                          {p.comunidades?.nombre ?? 'Catálogo estándar'}
+                        </span>
+                        <span className="chip plantilla-card-puntos">
+                          {puntos} {puntos === 1 ? 'punto' : 'puntos'}
+                        </span>
+                      </div>
 
-            {puedeEditar && (
-              <div className="fila" style={{ gap: 8 }}>
-                <Link to={`/plantillas/${p.id}`} className="boton boton-secundario crece"
-                      style={{ textAlign: 'center' }}>
-                  Editar
-                </Link>
-                <button className="boton boton-secundario crece"
-                        onClick={() => setDialogoNombre({ tipo: 'duplicar', plantilla: p })}>
-                  Duplicar
-                </button>
+                      <div className="plantilla-card-contenido">
+                        <Link to={`/plantillas/${p.id}`} className="plantilla-card-titulo">
+                          {p.nombre}
+                        </Link>
+
+                        <p className={'plantilla-card-descripcion ' + (!p.descripcion ? 'sin-descripcion' : '')}>
+                          {p.descripcion || 'Sin descripción. Abre la plantilla para completar su propósito o alcance.'}
+                        </p>
+
+                        {!p.activa && (
+                          <span className="chip chip-pendiente plantilla-card-estado">Inactiva</span>
+                        )}
+                      </div>
+
+                      {(puedeEditar || puedeBorrar) && (
+                        <div className="plantilla-card-footer">
+                          {puedeEditar && (
+                            <div className="plantilla-card-acciones">
+                              <Link to={`/plantillas/${p.id}`} className="boton boton-secundario">
+                                Editar
+                              </Link>
+                              <button className="boton boton-secundario"
+                                      onClick={() => setDialogoNombre({ tipo: 'duplicar', plantilla: p })}>
+                                Duplicar
+                              </button>
+                            </div>
+                          )}
+
+                          {puedeBorrar && (
+                            <button type="button" className="boton boton-texto peligro plantilla-card-eliminar"
+                                    onClick={() => setPorBorrar(p)}>
+                              Eliminar
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             )}
-            {puedeBorrar && (
-              <button type="button" className="boton boton-texto peligro"
-                      style={{ marginTop: 8 }} onClick={() => setPorBorrar(p)}>
-                Eliminar plantilla
-              </button>
-            )}
-          </article>
-        ))}
-        </div>
-
-        {puedeEditar && (
-          <div className="acciones-plantillas">
-            <button className="boton boton-movil boton-ancho"
-                    onClick={() => setDialogoNombre({ tipo: 'crear' })}>
-              Nueva plantilla
-            </button>
-            <Link to="/plantillas/importar" className="boton boton-secundario boton-movil boton-ancho">
-              Importar desde Excel
-            </Link>
-          </div>
+          </section>
         )}
       </div>
     </div>
