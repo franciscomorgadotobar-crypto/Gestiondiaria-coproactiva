@@ -41,10 +41,19 @@ const REGIONES = [
   'Los Ríos','Los Lagos','Aysén','Magallanes'
 ];
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-coproactiva-sync',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
 function responder(cuerpo: unknown, estado = 200) {
   return new Response(JSON.stringify(cuerpo), {
     status: estado,
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      ...CORS_HEADERS,
+      'Content-Type': 'application/json'
+    }
   });
 }
 
@@ -509,6 +518,9 @@ async function sincronizarRecientes(admin: any, client: any, proveedores: any[],
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: CORS_HEADERS });
+  }
   if (req.method !== 'POST') return responder({ error: 'Método no permitido' }, 405);
 
   const admin = createClient(URL, SERVICE, {
