@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
+import Confirmar from '../../componentes/Confirmar';
 import './Clientes.css';
 
 export default function Clientes() {
@@ -27,6 +28,8 @@ export default function Clientes() {
   // Cuando el correo falla, el enlace igual sirve: se muestra para poder
   // entregarlo por otro medio en vez de dejar a alguien sin acceso.
   const [enlace, setEnlace] = useState(null);
+  const [confirmarBaja, setConfirmarBaja] = useState(false);
+  const [confirmarReenvio, setConfirmarReenvio] = useState(false);
 
   /* Llama a la función del servidor con el token de la sesión actual. Ella
    * verifica el permiso contra la base: acá no se decide nada, solo se pide.
@@ -108,12 +111,13 @@ export default function Clientes() {
   /* No se borra a nadie, ni siquiera a un cliente: se da de baja, igual que
    * en Equipo. Borrar la cuenta perdería qué comunidades y levantamientos
    * podía ver, y esa historia importa aunque ya no tenga acceso. */
-  async function cambiarEstado() {
+  async function cambiarEstado(confirmado = false) {
     if (!usuario) return;
-    if (usuario.activo && !confirm(
-      `"${usuario.nombre}" quedará sin acceso al portal. Sus comunidades y accesos asignados no se pierden: se puede reactivar después.`
-    )) return;
-
+    if (usuario.activo && !confirmado) {
+      setConfirmarBaja(true);
+      return;
+    }
+    setConfirmarBaja(false);
     setGuardando(true);
     setError(null);
     try {
@@ -126,13 +130,13 @@ export default function Clientes() {
     setGuardando(false);
   }
 
-  async function reenviarAcceso() {
+  async function reenviarAcceso(confirmado = false) {
     if (!usuario) return;
-    if (!confirm(
-      `Se le enviará a ${usuario.email} un enlace para crear una contraseña nueva. ` +
-      'El enlace anterior, si lo había, deja de servir.'
-    )) return;
-
+    if (!confirmado) {
+      setConfirmarReenvio(true);
+      return;
+    }
+    setConfirmarReenvio(false);
     setGuardando(true);
     setError(null);
     try {
@@ -351,6 +355,28 @@ export default function Clientes() {
         </div>
         </div>
       </div>
+
+      {confirmarBaja && usuario && (
+        <Confirmar
+          titulo="Dar de baja cliente"
+          mensaje={`“${usuario.nombre}” quedará sin acceso al portal. Sus comunidades y permisos se conservan para poder reactivarlo después.`}
+          textoConfirmar="Dar de baja"
+          textoCancelar="Cancelar"
+          onConfirmar={() => cambiarEstado(true)}
+          onCancelar={() => setConfirmarBaja(false)}
+        />
+      )}
+
+      {confirmarReenvio && usuario && (
+        <Confirmar
+          titulo="Reenviar acceso"
+          mensaje={`Enviaremos a ${usuario.email} un enlace para crear una contraseña nueva. El enlace anterior dejará de funcionar.`}
+          textoConfirmar="Reenviar acceso"
+          textoCancelar="Cancelar"
+          onConfirmar={() => reenviarAcceso(true)}
+          onCancelar={() => setConfirmarReenvio(false)}
+        />
+      )}
     </div>
   );
 }
