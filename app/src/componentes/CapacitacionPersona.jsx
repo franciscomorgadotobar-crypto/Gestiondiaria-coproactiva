@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import Confirmar from './Confirmar';
 
 export default function CapacitacionPersona({ persona }) {
   const [tutoriales, setTutoriales] = useState([]);
@@ -7,6 +8,7 @@ export default function CapacitacionPersona({ persona }) {
   const [progreso, setProgreso] = useState({});
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
+  const [porReiniciar, setPorReiniciar] = useState(null);
 
   useEffect(() => { cargar(); }, [persona.id, persona.rol]);
 
@@ -60,7 +62,7 @@ export default function CapacitacionPersona({ persona }) {
   }
 
   async function reiniciar(t) {
-    if (!confirm(`¿Volver a asignar “${t.nombre}” desde el primer paso?`)) return;
+    setPorReiniciar(null);
     setGuardando(true);
     setError(null);
     const { data: { user } } = await supabase.auth.getUser();
@@ -131,7 +133,7 @@ export default function CapacitacionPersona({ persona }) {
                   </label>
                   {p?.estado === 'completado' && (
                     <button type="button" className="boton boton-texto"
-                            disabled={guardando} onClick={() => reiniciar(t)}>
+                            disabled={guardando} onClick={() => setPorReiniciar(t)}>
                       Reasignar
                     </button>
                   )}
@@ -141,6 +143,17 @@ export default function CapacitacionPersona({ persona }) {
           );
         })}
       </div>
+
+      {porReiniciar && (
+        <Confirmar
+          titulo="Reasignar capacitación"
+          mensaje={`“${porReiniciar.nombre}” volverá al primer paso para ${persona.nombre}.`}
+          textoConfirmar="Reasignar"
+          textoCancelar="Cancelar"
+          onConfirmar={() => reiniciar(porReiniciar)}
+          onCancelar={() => setPorReiniciar(null)}
+        />
+      )}
     </div>
   );
 }
