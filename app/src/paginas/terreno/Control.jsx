@@ -13,6 +13,7 @@ import {
 } from '../../lib/local';
 import { opcionesDe, nivelPosible } from '../../lib/opciones';
 import { useVolverGlobal } from '../../lib/navegacion';
+import DialogoCampos from '../../componentes/DialogoCampos';
 
 const ESTADOS = [
   ['cumple', 'Conforme'],
@@ -80,6 +81,7 @@ export default function Levantamiento() {
   // directamente a una pregunta.
   const [paso, setPaso] = useState(null);
   const [pausas, setPausas] = useState([]);
+  const [pedirMotivoPausa, setPedirMotivoPausa] = useState(false);
 
   /* Primero el teléfono, después el servidor. Al revés, entrar a un
    * levantamiento en un subterráneo mostraría una pantalla vacía mientras la
@@ -300,6 +302,7 @@ export default function Levantamiento() {
    * burocracia — tres levantamientos pausados porque nadie tenía la llave del
    * subterráneo son un hallazgo de la administración. */
   async function pausar(motivo) {
+    setPedirMotivoPausa(false);
     const pos = await posicionActual();
     const fila = {
       id: nuevoId(),
@@ -564,6 +567,24 @@ export default function Levantamiento() {
 
   return (
     <div className="pantalla pantalla-angosta">
+      {pedirMotivoPausa && (
+        <DialogoCampos
+          titulo="Pausar levantamiento"
+          mensaje="El avance queda guardado y podrás continuar después."
+          campos={[{
+            id: 'motivo',
+            label: 'Motivo de la pausa',
+            multiline: true,
+            filas: 3,
+            placeholder: 'Ej.: sin acceso a sala de máquinas, fin de turno, conserje no disponible'
+          }]}
+          textoConfirmar="Pausar levantamiento"
+          textoCancelar="Cancelar"
+          onConfirmar={({ motivo }) => pausar(motivo)}
+          onCancelar={() => setPedirMotivoPausa(false)}
+        />
+      )}
+
       <AvisoConexion />
 
       <header className="encabezado encabezado-levantamiento">
@@ -836,14 +857,7 @@ export default function Levantamiento() {
       {!cerrado && items.length > 0 && (
         <footer className="pie-fijo">
           <button className="boton boton-secundario boton-movil crece"
-                  onClick={() => {
-                    const motivo = prompt(
-                      'Motivo de la pausa (opcional)\n\nPor ejemplo: sin acceso a sala de máquinas, ' +
-                      'fin de turno, conserje no disponible.'
-                    );
-                    // Cancelar el diálogo no pausa; dejarlo vacío sí.
-                    if (motivo !== null) pausar(motivo);
-                  }}>
+                  onClick={() => setPedirMotivoPausa(true)}>
             Pausar
           </button>
           <button className="boton boton-movil crece"
