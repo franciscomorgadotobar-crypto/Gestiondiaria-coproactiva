@@ -1474,7 +1474,7 @@ export default function Contabilidad() {
             </section>
 
             <div className="contabilidad-reportes-cabecera">
-              <div className="pestanas contabilidad-reportes-tabs">
+              <div className="pestanas contabilidad-reportes-tabs contabilidad-solo-escritorio">
                 {[
                   ['eerr','Estado de Resultados'],
                   ['balance_general','Balance General'],
@@ -1488,6 +1488,18 @@ export default function Contabilidad() {
                   </button>
                 ))}
               </div>
+
+              <label className="campo contabilidad-reporte-selector-movil contabilidad-solo-movil">
+                <span className="etiqueta-campo">Reporte</span>
+                <select value={reporte} onChange={e => setReporte(e.target.value)}>
+                  <option value="eerr">Estado de Resultados</option>
+                  <option value="balance_general">Balance General</option>
+                  <option value="balance">Balance Tributario</option>
+                  <option value="diario">Libro Diario</option>
+                  <option value="mayor">Libro Mayor</option>
+                </select>
+              </label>
+
               <div className="contabilidad-exportaciones">
                 <button type="button" className="boton boton-secundario"
                         disabled={exportando || cargandoReportes} onClick={() => exportar('pdf')}>
