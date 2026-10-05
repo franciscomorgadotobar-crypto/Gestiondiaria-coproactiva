@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
+import Confirmar from '../../componentes/Confirmar';
 import './Mantenciones.css';
 
 function fechaISOChile(valor = new Date()) {
@@ -40,12 +42,18 @@ function sumarDiasISO(iso, dias) {
 
 export default function Mantenciones() {
   const navegar = useNavigate();
+  const { perfil } = useSesion();
   useVolverGlobal(() => navegar('/inicio'));
+
+  const puedeGestionar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
 
   const [filas, setFilas] = useState(null);
   const [filtro, setFiltro] = useState('vencidas');
   const [buscar, setBuscar] = useState('');
   const [error, setError] = useState(null);
+  const [aviso, setAviso] = useState(null);
+  const [porEliminar, setPorEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
     let vigente = true;
@@ -150,8 +158,43 @@ export default function Mantenciones() {
     ['todas', 'Todas', conteos.todas]
   ];
 
+  async function confirmarEliminar() {
+    const actividad = porEliminar;
+    if (!actividad) return;
+    setPorEliminar(null);
+    setEliminando(true);
+    setError(null);
+    setAviso(null);
+
+    const { data, error } = await supabase.rpc('mantenimiento_eliminar_actividad', {
+      p_actividad_id: actividad.actividad_id
+    });
+
+    setEliminando(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    setFilas(xs => (xs ?? []).filter(x => x.actividad_id !== actividad.actividad_id));
+    setAviso(data?.mensaje || 'Mantención eliminada.');
+  }
+
   return (
     <div className="pantalla">
+      {porEliminar && (
+        <Confirmar
+          titulo="Eliminar mantención"
+          mensaje={porEliminar.ultima_ejecucion
+            ? `“${porEliminar.activo_nombre}: ${porEliminar.trabajo}” tiene historial de ejecución. Se retirará de uso, pero el historial se conservará.`
+            : `“${porEliminar.activo_nombre}: ${porEliminar.trabajo}” se eliminará junto con su agenda pendiente. Esta acción no se puede deshacer.`}
+          textoConfirmar="Eliminar"
+          textoCancelar="Cancelar"
+          onConfirmar={confirmarEliminar}
+          onCancelar={() => setPorEliminar(null)}
+        />
+      )}
+
       <header className="encabezado">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar('/inicio')}>
@@ -166,6 +209,12 @@ export default function Mantenciones() {
 
       <div className="cuerpo mantenciones-cuerpo">
         {error && <div className="aviso aviso-critico">{error}</div>}
+        {aviso && (
+          <div className="aviso aviso-ok">
+            <span>{aviso}</span>
+            <button type="button" className="boton boton-texto" onClick={() => setAviso(null)}>Cerrar</button>
+          </div>
+        )}
 
         <section className="mantenciones-kpis" aria-label="Resumen de mantenciones">
           <button type="button" className={filtro === 'vencidas' ? 'critico activo' : 'critico'} onClick={() => setFiltro('vencidas')}>
@@ -269,6 +318,16 @@ export default function Mantenciones() {
                   )}
                   {x.proveedor_email && (
                     <a href={'mailto:' + x.proveedor_email} className="boton boton-texto">Correo</a>
+                  )}
+                  {puedeGestionar && (
+                    <button
+                      type="button"
+                      className="boton boton-texto peligro"
+                      disabled={eliminando}
+                      onClick={() => setPorEliminar(x)}
+                    >
+                      Eliminar
+                    </button>
                   )}
                   {x.documentos > 0 && <span className="micro apagado">{x.documentos} documento{x.documentos === 1 ? '' : 's'}</span>}
                 </div>
