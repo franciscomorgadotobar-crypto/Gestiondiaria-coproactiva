@@ -15,7 +15,10 @@
     "leaflet": "^1.9.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0"
+    "react-router-dom": "^6.28.0",
+    "jspdf": "latest",
+    "jspdf-autotable": "latest",
+    "pptxgenjs": "latest"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
