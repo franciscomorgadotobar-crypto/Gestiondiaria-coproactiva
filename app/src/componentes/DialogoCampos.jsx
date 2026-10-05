@@ -53,7 +53,20 @@ export default function DialogoCampos({
               {campo.label}
               {campo.obligatorio ? ' *' : ''}
             </label>
-            {campo.multiline ? (
+            {campo.opciones ? (
+              <select
+                id={'dialogo-' + campo.id}
+                autoFocus={i === 0}
+                value={valores[campo.id] ?? ''}
+                onChange={e => cambiar(campo.id, e.target.value)}
+              >
+                {campo.opciones.map(op => {
+                  const valor = Array.isArray(op) ? op[0] : op.valor;
+                  const texto = Array.isArray(op) ? op[1] : op.texto;
+                  return <option key={valor} value={valor}>{texto}</option>;
+                })}
+              </select>
+            ) : campo.multiline ? (
               <textarea
                 id={'dialogo-' + campo.id}
                 rows={campo.filas ?? 4}
