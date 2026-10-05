@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Confirmar from '../../componentes/Confirmar';
+import DialogoCampos from '../../componentes/DialogoCampos';
 import { NIVELES_EVIDENCIA, normalizarOpcion, nivelPosible } from '../../lib/opciones';
 import { nuevoId } from '../../lib/local';
 import { TIPOS, ORIGENES_FOTO } from '../../lib/tiposDePunto';
@@ -113,6 +114,9 @@ export default function EditorPlantilla() {
   const [guardando, setGuardando] = useState(false);
   const [porConfirmar, setPorConfirmar] = useState(null);  // qué hacer si se confirma salir sin guardar
   const [faltaNombre, setFaltaNombre] = useState(false);
+  const [dialogoCategoria, setDialogoCategoria] = useState(null);
+  const [puntoPorQuitar, setPuntoPorQuitar] = useState(null);
+  const [mensajeModal, setMensajeModal] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -235,20 +239,33 @@ export default function EditorPlantilla() {
   }
 
   function agregarCategoria() {
-    const nombre = prompt('Nombre de la categoría')?.trim();
-    if (!nombre) return;
-    if (categorias.some(c => c.nombre === nombre)) return alert('Ya hay una categoría con ese nombre.');
-    const orden = categorias.length ? Math.max(...categorias.map(c => c.orden)) + 1 : 0;
-    const nuevo = puntoNuevo({ grupo: nombre, orden_grupo: orden, orden: 0 });
-    setItems(xs => [...xs, nuevo]);
-    mostrar(nuevo.id);
+    setDialogoCategoria({ tipo: 'crear' });
   }
 
   function renombrarCategoria(cat) {
-    const nombre = prompt('Nuevo nombre de la categoría', cat.nombre)?.trim();
-    if (!nombre || nombre === cat.nombre) return;
-    if (categorias.some(c => c.nombre === nombre)) return alert('Ya hay una categoría con ese nombre.');
-    setItems(xs => xs.map(x => (x.grupo === cat.nombre ? { ...x, grupo: nombre } : x)));
+    setDialogoCategoria({ tipo: 'renombrar', categoria: cat });
+  }
+
+  function confirmarCategoria({ nombre }) {
+    const limpio = nombre.trim();
+    if (!limpio) return;
+    const actual = dialogoCategoria?.categoria?.nombre ?? null;
+    if (categorias.some(c => c.nombre === limpio && c.nombre !== actual)) {
+      setMensajeModal('Ya hay una categoría con ese nombre.');
+      return;
+    }
+
+    if (dialogoCategoria?.tipo === 'renombrar') {
+      setItems(xs => xs.map(x => (x.grupo === actual ? { ...x, grupo: limpio } : x)));
+      setDialogoCategoria(null);
+      return;
+    }
+
+    const orden = categorias.length ? Math.max(...categorias.map(c => c.orden)) + 1 : 0;
+    const nuevo = puntoNuevo({ grupo: limpio, orden_grupo: orden, orden: 0 });
+    setItems(xs => [...xs, nuevo]);
+    setDialogoCategoria(null);
+    mostrar(nuevo.id);
   }
 
   /* Mover una categoría intercambia su orden con la vecina en todos sus
@@ -266,7 +283,13 @@ export default function EditorPlantilla() {
   }
 
   function quitarPunto(item) {
-    if (!confirm(`¿Quitar "${item.texto}"? Se elimina al guardar la plantilla.`)) return;
+    setPuntoPorQuitar(item);
+  }
+
+  function confirmarQuitarPunto() {
+    const item = puntoPorQuitar;
+    setPuntoPorQuitar(null);
+    if (!item) return;
     if (abierto === item.id) setAbierto(null);
     if (aviso?.id === item.id) setAviso(null);
     setItems(xs => xs.filter(x => x.id !== item.id));
@@ -345,6 +368,45 @@ export default function EditorPlantilla() {
 
   return (
     <div className="pantalla pantalla-angosta">
+      {dialogoCategoria && (
+        <DialogoCampos
+          titulo={dialogoCategoria.tipo === 'renombrar' ? 'Renombrar categoría' : 'Nueva categoría'}
+          campos={[{
+            id: 'nombre',
+            label: 'Nombre de la categoría',
+            valor: dialogoCategoria.categoria?.nombre ?? '',
+            obligatorio: true
+          }]}
+          textoConfirmar={dialogoCategoria.tipo === 'renombrar' ? 'Guardar nombre' : 'Crear categoría'}
+          textoCancelar="Cancelar"
+          onConfirmar={confirmarCategoria}
+          onCancelar={() => setDialogoCategoria(null)}
+        />
+      )}
+
+      {mensajeModal && (
+        <DialogoCampos
+          titulo="Nombre repetido"
+          mensaje={mensajeModal}
+          campos={[]}
+          mostrarCancelar={false}
+          textoConfirmar="Entendido"
+          onConfirmar={() => setMensajeModal(null)}
+          onCancelar={() => setMensajeModal(null)}
+        />
+      )}
+
+      {puntoPorQuitar && (
+        <Confirmar
+          titulo="Quitar punto"
+          mensaje={`“${puntoPorQuitar.texto}” se quitará de la plantilla cuando guardes los cambios.`}
+          textoConfirmar="Quitar punto"
+          textoCancelar="Cancelar"
+          onConfirmar={confirmarQuitarPunto}
+          onCancelar={() => setPuntoPorQuitar(null)}
+        />
+      )}
+
       {porConfirmar && (
         <Confirmar
           titulo="Hay cambios sin guardar"
