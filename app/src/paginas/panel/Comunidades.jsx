@@ -423,6 +423,7 @@ function DetalleComunidad({ id }) {
   const [guardando, setGuardando] = useState(false);
   const [reprogramacion, setReprogramacion] = useState(null);
   const [ejecucionPendiente, setEjecucionPendiente] = useState(null);
+  const [actividadPorEliminar, setActividadPorEliminar] = useState(null);
   const [datosEditando, setDatosEditando] = useState(false);
   const [eliminarAbierto, setEliminarAbierto] = useState(false);
   const [aviso, setAviso] = useState(null);
@@ -652,6 +653,25 @@ function DetalleComunidad({ id }) {
     if (error) return setError(error.message);
     setActividades(xs => [...xs, data]);
     setNuevaActividad({ activo_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor_id: '', evidencias: '' });
+  }
+
+  async function eliminarActividadMantencion() {
+    const actividad = actividadPorEliminar;
+    if (!actividad) return;
+    setActividadPorEliminar(null);
+    setGuardando(true);
+    setError(null);
+    setAviso(null);
+
+    const { data, error } = await supabase.rpc('mantenimiento_eliminar_actividad', {
+      p_actividad_id: actividad.id
+    });
+
+    setGuardando(false);
+    if (error) return setError(error.message);
+
+    setAviso(data?.mensaje || 'Mantención eliminada.');
+    await cargar();
   }
 
   async function guardarAgendamiento() {
@@ -924,6 +944,19 @@ function DetalleComunidad({ id }) {
           textoCancelar="Cancelar"
           onConfirmar={eliminarComunidad}
           onCancelar={() => setEliminarAbierto(false)}
+        />
+      )}
+
+      {actividadPorEliminar && (
+        <Confirmar
+          titulo="Eliminar mantención"
+          mensaje={ejecuciones.some(x => x.actividad_id === actividadPorEliminar.id)
+            ? `“${actividadPorEliminar.trabajo}” tiene ejecuciones registradas. Se retirará del plan activo, pero el historial se conservará.`
+            : `“${actividadPorEliminar.trabajo}” se eliminará junto con sus agendamientos. Esta acción no se puede deshacer.`}
+          textoConfirmar="Eliminar"
+          textoCancelar="Cancelar"
+          onConfirmar={eliminarActividadMantencion}
+          onCancelar={() => setActividadPorEliminar(null)}
         />
       )}
 
@@ -1217,6 +1250,18 @@ function DetalleComunidad({ id }) {
                   )}
                   {a.evidencias_requeridas?.length > 0 && (
                     <p className="micro apagado" style={{ margin: '5px 0 0' }}>Evidencias: {a.evidencias_requeridas.join(', ')}</p>
+                  )}
+                  {puedeGestionar && (
+                    <div className="comunidad-acciones" style={{ marginTop: 8 }}>
+                      <button
+                        type="button"
+                        className="boton boton-texto peligro"
+                        disabled={guardando}
+                        onClick={() => setActividadPorEliminar(a)}
+                      >
+                        Eliminar mantención
+                      </button>
+                    </div>
                   )}
                 </article>
               );
