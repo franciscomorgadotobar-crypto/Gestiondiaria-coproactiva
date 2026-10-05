@@ -562,6 +562,8 @@ export default function Contabilidad() {
   const [cuentaEditando, setCuentaEditando] = useState(null);
   const [cuentaDesactivar, setCuentaDesactivar] = useState(null);
   const [nuevaEntidad, setNuevaEntidad] = useState(false);
+  const [entidadEditando, setEntidadEditando] = useState(null);
+  const [entidadEliminar, setEntidadEliminar] = useState(null);
   const [exportando, setExportando] = useState(false);
 
   const entidad = entidades.find(x => x.id === entidadId) ?? null;
@@ -775,6 +777,22 @@ export default function Contabilidad() {
     await cargarEntidad(entidadId);
   }
 
+  async function recargarEntidades(preferidaId = null) {
+    const { data: lista, error } = await supabase.from('contabilidad_entidades')
+      .select('*').eq('activa', true).order('nombre');
+    if (error) {
+      setError(error.message);
+      return [];
+    }
+    const xs = lista ?? [];
+    setEntidades(xs);
+    const siguiente = preferidaId && xs.some(x => x.id === preferidaId)
+      ? preferidaId
+      : (xs.find(x => x.tipo === 'empresa')?.id ?? xs[0]?.id ?? '');
+    setEntidadId(siguiente);
+    return xs;
+  }
+
   async function crearEntidad({ nombre, rut, tipo }) {
     setNuevaEntidad(false);
     setGuardando(true);
@@ -791,12 +809,50 @@ export default function Contabilidad() {
     setGuardando(false);
     if (error) return setError(error.message);
 
-    const { data: lista } = await supabase.from('contabilidad_entidades')
-      .select('*').eq('activa', true).order('nombre');
-    setEntidades(lista ?? []);
-    setEntidadId(data.id);
+    await recargarEntidades(data.id);
     setAviso('Entidad creada con el plan de cuentas base.');
     navegar('/contabilidad');
+  }
+
+  async function guardarEntidad({ nombre, rut }) {
+    const objetivo = entidadEditando;
+    if (!objetivo) return;
+    setEntidadEditando(null);
+    setGuardando(true);
+    setError(null);
+
+    const { data, error } = await supabase.rpc('contabilidad_editar_entidad', {
+      p_entidad_id: objetivo.id,
+      p_nombre: nombre.trim(),
+      p_rut: rut.trim() || null
+    });
+
+    setGuardando(false);
+    if (error) return setError(error.message);
+
+    await recargarEntidades(objetivo.id);
+    setAviso(objetivo.comunidad_id
+      ? 'Datos actualizados. El cambio también quedó reflejado en Comunidades.'
+      : 'Entidad contable actualizada.');
+  }
+
+  async function eliminarEntidadContable() {
+    const objetivo = entidadEliminar;
+    if (!objetivo) return;
+    setEntidadEliminar(null);
+    setGuardando(true);
+    setError(null);
+
+    const { data, error } = await supabase.rpc('contabilidad_eliminar_entidad', {
+      p_entidad_id: objetivo.id
+    });
+
+    setGuardando(false);
+    if (error) return setError(error.message);
+
+    const preferida = objetivo.id === entidadId ? null : entidadId;
+    await recargarEntidades(preferida);
+    setAviso(data?.mensaje || 'Entidad retirada.');
   }
 
   async function exportar(tipo) {
@@ -907,6 +963,36 @@ export default function Contabilidad() {
           textoCancelar="Cancelar"
           onConfirmar={desactivarCuenta}
           onCancelar={() => setCuentaDesactivar(null)}
+        />
+      )}
+
+      {entidadEditando && (
+        <DialogoCampos
+          titulo={entidadEditando.comunidad_id ? 'Editar comunidad' : 'Editar entidad'}
+          mensaje={entidadEditando.comunidad_id
+            ? 'Nombre y RUT pertenecen a la ficha de Comunidad. El cambio se reflejará automáticamente en ambos módulos.'
+            : 'Actualiza los datos principales de esta entidad contable.'}
+          campos={[
+            { id: 'nombre', label: 'Nombre', valor: entidadEditando.nombre ?? '', obligatorio: true },
+            { id: 'rut', label: 'RUT', valor: entidadEditando.rut ?? '', placeholder: 'Opcional' }
+          ]}
+          textoConfirmar="Guardar cambios"
+          textoCancelar="Cancelar"
+          onConfirmar={guardarEntidad}
+          onCancelar={() => setEntidadEditando(null)}
+        />
+      )}
+
+      {entidadEliminar && (
+        <Confirmar
+          titulo="Eliminar entidad"
+          mensaje={entidadEliminar.comunidad_id
+            ? `“${entidadEliminar.nombre}” también existe en Comunidades. Si no tiene historial se eliminará definitivamente; si tiene registros, quedará terminada y se conservará su historial.`
+            : `“${entidadEliminar.nombre}” se eliminará definitivamente si no tiene asientos. Si tiene movimientos, se retirará de uso conservando su historial.`}
+          textoConfirmar="Eliminar"
+          textoCancelar="Cancelar"
+          onConfirmar={eliminarEntidadContable}
+          onCancelar={() => setEntidadEliminar(null)}
         />
       )}
 
@@ -1292,7 +1378,7 @@ export default function Contabilidad() {
               <div className="crece">
                 <h2 className="h3">Entidades contables</h2>
                 <p className="micro apagado" style={{ margin: '3px 0 0' }}>
-                  Cada entidad mantiene libros, numeración y plan de cuentas separados.
+                  Las comunidades se sincronizan con su ficha principal. Empresas y otras entidades se administran aquí.
                 </p>
               </div>
               <button type="button" className="boton boton-movil" onClick={() => setNuevaEntidad(true)}>
@@ -1302,14 +1388,29 @@ export default function Contabilidad() {
 
             <div className="contabilidad-entidades-grid">
               {entidades.map(e => (
-                <button type="button" key={e.id}
-                        className={'tarjeta contabilidad-entidad-card ' + (e.id === entidadId ? 'activa' : '')}
-                        onClick={() => { setEntidadId(e.id); navegar('/contabilidad'); }}>
-                  <span className="micro apagado">{e.tipo === 'comunidad' ? 'Comunidad' : e.tipo === 'empresa' ? 'Empresa' : 'Otra entidad'}</span>
-                  <strong>{e.nombre}</strong>
-                  <span>{e.rut || 'Sin RUT informado'}</span>
-                  <span className="micro apagado">Moneda: {e.moneda}</span>
-                </button>
+                <div key={e.id}
+                     className={'tarjeta contabilidad-entidad-card ' + (e.id === entidadId ? 'activa' : '')}>
+                  <button type="button" className="contabilidad-entidad-contenido"
+                          onClick={() => { setEntidadId(e.id); navegar('/contabilidad'); }}>
+                    <span className="micro apagado">{e.tipo === 'comunidad' ? 'Comunidad' : e.tipo === 'empresa' ? 'Empresa' : 'Otra entidad'}</span>
+                    <strong>{e.nombre}</strong>
+                    <span>{e.rut || 'Sin RUT informado'}</span>
+                    <span className="micro apagado">Moneda: {e.moneda}</span>
+                  </button>
+                  <div className="contabilidad-entidad-acciones">
+                    {e.comunidad_id && (
+                      <Link className="boton boton-texto" to={`/comunidades/${e.comunidad_id}`}>
+                        Ver comunidad
+                      </Link>
+                    )}
+                    <button type="button" className="boton boton-texto" onClick={() => setEntidadEditando(e)}>
+                      Editar
+                    </button>
+                    <button type="button" className="boton boton-texto boton-peligro" onClick={() => setEntidadEliminar(e)}>
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </>
