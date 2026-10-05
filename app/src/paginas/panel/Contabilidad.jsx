@@ -7,6 +7,7 @@ import { useVolverGlobal } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import {
+  armarBalanceGeneral,
   armarEstadoResultados,
   descargarPDF,
   descargarPPT,
@@ -451,6 +452,120 @@ function ReporteEerr({ detalle, sinClasificar }) {
   );
 }
 
+function SeccionBalanceGeneral({ titulo, descripcion, filas, total, etiquetaTotal }) {
+  return (
+    <section className="contabilidad-bg-seccion">
+      <div className="contabilidad-bg-seccion-titulo">
+        <div>
+          <h4>{titulo}</h4>
+          {descripcion && <p>{descripcion}</p>}
+        </div>
+      </div>
+      <div className="contabilidad-bg-cuentas">
+        {filas.map(x => (
+          <div key={x.cuenta_id || x.cuenta} className={x.calculado ? 'calculado' : ''}>
+            <span>
+              {x.codigo && <small>{x.codigo}</small>}
+              {x.cuenta}
+            </span>
+            <strong className={Number(x.monto) < 0 ? 'negativo' : ''}>{moneda(x.monto)}</strong>
+          </div>
+        ))}
+        {!filas.length && <p className="micro apagado contabilidad-bg-vacio">Sin saldos en el período.</p>}
+      </div>
+      <div className="contabilidad-bg-total">
+        <span>{etiquetaTotal}</span>
+        <strong>{moneda(total)}</strong>
+      </div>
+    </section>
+  );
+}
+
+function ReporteBalanceGeneral({ balance, cuentas, resultado }) {
+  const bg = armarBalanceGeneral(balance, cuentas, resultado);
+
+  return (
+    <div className="contabilidad-balance-general">
+      <div className="contabilidad-reporte-intro">
+        <div>
+          <h3 className="h3">Balance General</h3>
+          <p className="micro apagado">
+            Activos ordenados por liquidez, pasivos por exigibilidad y patrimonio con el resultado del ejercicio.
+          </p>
+        </div>
+        <span className={'contabilidad-cuadratura-estado ' + (bg.cuadrado ? 'ok' : 'error')}>
+          {bg.cuadrado ? 'Cuadrado' : 'Descuadrado'}
+        </span>
+      </div>
+
+      <div className="contabilidad-bg-columnas">
+        <div className="contabilidad-bg-columna">
+          <div className="contabilidad-bg-bloque-titulo">
+            <span>ACTIVO</span>
+            <strong>{moneda(bg.totalActivo)}</strong>
+          </div>
+          <SeccionBalanceGeneral
+            titulo="Activo Corriente"
+            descripcion="Mayor liquidez"
+            filas={bg.activoCorriente}
+            total={bg.totalActivoCorriente}
+            etiquetaTotal="Total Activo Corriente"
+          />
+          <SeccionBalanceGeneral
+            titulo="Activo No Corriente"
+            descripcion="Bienes y derechos de largo plazo"
+            filas={bg.activoNoCorriente}
+            total={bg.totalActivoNoCorriente}
+            etiquetaTotal="Total Activo No Corriente"
+          />
+          <div className="contabilidad-bg-gran-total">
+            <span>TOTAL ACTIVO</span>
+            <strong>{moneda(bg.totalActivo)}</strong>
+          </div>
+        </div>
+
+        <div className="contabilidad-bg-columna">
+          <div className="contabilidad-bg-bloque-titulo">
+            <span>PASIVO + PATRIMONIO</span>
+            <strong>{moneda(bg.totalPasivoPatrimonio)}</strong>
+          </div>
+          <SeccionBalanceGeneral
+            titulo="Pasivo Corriente"
+            descripcion="Obligaciones de corto plazo"
+            filas={bg.pasivoCorriente}
+            total={bg.totalPasivoCorriente}
+            etiquetaTotal="Total Pasivo Corriente"
+          />
+          <SeccionBalanceGeneral
+            titulo="Pasivo No Corriente"
+            descripcion="Obligaciones de largo plazo"
+            filas={bg.pasivoNoCorriente}
+            total={bg.totalPasivoNoCorriente}
+            etiquetaTotal="Total Pasivo No Corriente"
+          />
+          <SeccionBalanceGeneral
+            titulo="Patrimonio"
+            descripcion="Capital, reservas y resultado"
+            filas={[...bg.patrimonio, bg.resultadoFila]}
+            total={bg.totalPatrimonio}
+            etiquetaTotal="Total Patrimonio"
+          />
+          <div className="contabilidad-bg-gran-total">
+            <span>TOTAL PASIVO + PATRIMONIO</span>
+            <strong>{moneda(bg.totalPasivoPatrimonio)}</strong>
+          </div>
+        </div>
+      </div>
+
+      {!bg.cuadrado && (
+        <div className="aviso aviso-critico">
+          <strong>Balance descuadrado.</strong> Diferencia: {moneda(Math.abs(bg.diferencia))}.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReporteBalance({ balance }) {
   const t = totalesBalance(balance);
   const resultado = t.ganancia - t.perdida;
@@ -459,75 +574,138 @@ function ReporteBalance({ balance }) {
   const totalGanancia = t.ganancia - Math.max(resultado, 0);
 
   return (
-    <div className="tabla-responsive">
-      <table className="tabla contabilidad-balance-tabla">
-        <thead>
-          <tr>
-            <th rowSpan="2">Código</th>
-            <th rowSpan="2">Cuenta</th>
-            <th colSpan="2">Sumas</th>
-            <th colSpan="2">Saldos</th>
-            <th colSpan="2">Inventario</th>
-            <th colSpan="2">Resultado</th>
-          </tr>
-          <tr>
-            <th>Debe</th><th>Haber</th><th>Deudor</th><th>Acreedor</th>
-            <th>Activo</th><th>Pasivo</th><th>Pérdida</th><th>Ganancia</th>
-          </tr>
-        </thead>
-        <tbody>
-          {balance.map(x => (
-            <tr key={x.cuenta_id}>
-              <td>{x.codigo}</td>
-              <td>{x.cuenta}</td>
-              <td className="numero">{moneda(x.debe)}</td>
-              <td className="numero">{moneda(x.haber)}</td>
-              <td className="numero">{Number(x.deudor) ? moneda(x.deudor) : ''}</td>
-              <td className="numero">{Number(x.acreedor) ? moneda(x.acreedor) : ''}</td>
-              <td className="numero">{Number(x.activo) ? moneda(x.activo) : ''}</td>
-              <td className="numero">{Number(x.pasivo) ? moneda(x.pasivo) : ''}</td>
-              <td className="numero">{Number(x.perdida) ? moneda(x.perdida) : ''}</td>
-              <td className="numero">{Number(x.ganancia) ? moneda(x.ganancia) : ''}</td>
+    <div className="contabilidad-reporte">
+      <div className="contabilidad-reporte-intro">
+        <div>
+          <h3 className="h3">Balance Tributario</h3>
+          <p className="micro apagado">Balance de comprobación y saldos con sumas, saldos, inventario y resultado.</p>
+        </div>
+      </div>
+
+      <div className="contabilidad-balance-movil contabilidad-solo-movil">
+        {balance.filter(x => Number(x.debe) || Number(x.haber)).map(x => (
+          <article className="tarjeta contabilidad-reporte-card" key={x.cuenta_id}>
+            <div className="contabilidad-reporte-card-cabecera">
+              <div>
+                <span className="micro apagado">{x.codigo}</span>
+                <strong>{x.cuenta}</strong>
+              </div>
+            </div>
+            <div className="contabilidad-reporte-card-grid">
+              <div><span>Debe</span><strong>{moneda(x.debe)}</strong></div>
+              <div><span>Haber</span><strong>{moneda(x.haber)}</strong></div>
+              {Number(x.deudor) !== 0 && <div><span>Saldo deudor</span><strong>{moneda(x.deudor)}</strong></div>}
+              {Number(x.acreedor) !== 0 && <div><span>Saldo acreedor</span><strong>{moneda(x.acreedor)}</strong></div>}
+              {Number(x.activo) !== 0 && <div><span>Activo</span><strong>{moneda(x.activo)}</strong></div>}
+              {Number(x.pasivo) !== 0 && <div><span>Pasivo</span><strong>{moneda(x.pasivo)}</strong></div>}
+              {Number(x.perdida) !== 0 && <div><span>Pérdida</span><strong>{moneda(x.perdida)}</strong></div>}
+              {Number(x.ganancia) !== 0 && <div><span>Ganancia</span><strong>{moneda(x.ganancia)}</strong></div>}
+            </div>
+          </article>
+        ))}
+        <article className="tarjeta contabilidad-reporte-card contabilidad-reporte-card-total">
+          <strong>Totales</strong>
+          <div className="contabilidad-reporte-card-grid">
+            <div><span>Debe</span><strong>{moneda(t.debe)}</strong></div>
+            <div><span>Haber</span><strong>{moneda(t.haber)}</strong></div>
+            <div><span>Activo</span><strong>{moneda(t.activo)}</strong></div>
+            <div><span>Pasivo + Resultado</span><strong>{moneda(totalPasivo)}</strong></div>
+          </div>
+        </article>
+      </div>
+
+      <div className="tabla-responsive contabilidad-solo-escritorio">
+        <table className="tabla contabilidad-balance-tabla">
+          <thead>
+            <tr>
+              <th rowSpan="2">Código</th>
+              <th rowSpan="2">Cuenta</th>
+              <th colSpan="2">Sumas</th>
+              <th colSpan="2">Saldos</th>
+              <th colSpan="2">Inventario</th>
+              <th colSpan="2">Resultado</th>
             </tr>
-          ))}
-          <tr className="contabilidad-total">
-            <td />
-            <td>SUBTOTAL</td>
-            <td className="numero">{moneda(t.debe)}</td>
-            <td className="numero">{moneda(t.haber)}</td>
-            <td className="numero">{moneda(t.deudor)}</td>
-            <td className="numero">{moneda(t.acreedor)}</td>
-            <td className="numero">{moneda(t.activo)}</td>
-            <td className="numero">{moneda(t.pasivo)}</td>
-            <td className="numero">{moneda(t.perdida)}</td>
-            <td className="numero">{moneda(t.ganancia)}</td>
-          </tr>
-          <tr className="contabilidad-resultado">
-            <td />
-            <td>RESULTADO DEL EJERCICIO</td>
-            <td colSpan="5" />
-            <td className="numero">{resultado < 0 ? moneda(resultado) : ''}</td>
-            <td className="numero">{resultado < 0 ? moneda(resultado) : ''}</td>
-            <td className="numero">{resultado > 0 ? moneda(resultado) : ''}</td>
-          </tr>
-          <tr className="contabilidad-total">
-            <td />
-            <td>TOTAL</td>
-            <td className="numero">{moneda(t.debe)}</td>
-            <td className="numero">{moneda(t.haber)}</td>
-            <td className="numero">{moneda(t.deudor)}</td>
-            <td className="numero">{moneda(t.acreedor)}</td>
-            <td className="numero">{moneda(t.activo + Math.max(resultado, 0))}</td>
-            <td className="numero">{moneda(totalPasivo)}</td>
-            <td className="numero">{moneda(totalPerdida)}</td>
-            <td className="numero">{moneda(totalGanancia)}</td>
-          </tr>
-        </tbody>
-      </table>
+            <tr>
+              <th>Debe</th><th>Haber</th><th>Deudor</th><th>Acreedor</th>
+              <th>Activo</th><th>Pasivo</th><th>Pérdida</th><th>Ganancia</th>
+            </tr>
+          </thead>
+          <tbody>
+            {balance.map(x => (
+              <tr key={x.cuenta_id}>
+                <td>{x.codigo}</td>
+                <td>{x.cuenta}</td>
+                <td className="numero">{moneda(x.debe)}</td>
+                <td className="numero">{moneda(x.haber)}</td>
+                <td className="numero">{Number(x.deudor) ? moneda(x.deudor) : ''}</td>
+                <td className="numero">{Number(x.acreedor) ? moneda(x.acreedor) : ''}</td>
+                <td className="numero">{Number(x.activo) ? moneda(x.activo) : ''}</td>
+                <td className="numero">{Number(x.pasivo) ? moneda(x.pasivo) : ''}</td>
+                <td className="numero">{Number(x.perdida) ? moneda(x.perdida) : ''}</td>
+                <td className="numero">{Number(x.ganancia) ? moneda(x.ganancia) : ''}</td>
+              </tr>
+            ))}
+            <tr className="contabilidad-total">
+              <td />
+              <td>SUBTOTAL</td>
+              <td className="numero">{moneda(t.debe)}</td>
+              <td className="numero">{moneda(t.haber)}</td>
+              <td className="numero">{moneda(t.deudor)}</td>
+              <td className="numero">{moneda(t.acreedor)}</td>
+              <td className="numero">{moneda(t.activo)}</td>
+              <td className="numero">{moneda(t.pasivo)}</td>
+              <td className="numero">{moneda(t.perdida)}</td>
+              <td className="numero">{moneda(t.ganancia)}</td>
+            </tr>
+            <tr className="contabilidad-resultado">
+              <td />
+              <td>RESULTADO DEL EJERCICIO</td>
+              <td colSpan="5" />
+              <td className="numero">{resultado < 0 ? moneda(resultado) : ''}</td>
+              <td className="numero">{resultado < 0 ? moneda(resultado) : ''}</td>
+              <td className="numero">{resultado > 0 ? moneda(resultado) : ''}</td>
+            </tr>
+            <tr className="contabilidad-total">
+              <td />
+              <td>TOTAL</td>
+              <td className="numero">{moneda(t.debe)}</td>
+              <td className="numero">{moneda(t.haber)}</td>
+              <td className="numero">{moneda(t.deudor)}</td>
+              <td className="numero">{moneda(t.acreedor)}</td>
+              <td className="numero">{moneda(t.activo + Math.max(resultado, 0))}</td>
+              <td className="numero">{moneda(totalPasivo)}</td>
+              <td className="numero">{moneda(totalPerdida)}</td>
+              <td className="numero">{moneda(totalGanancia)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
+function ListaMovimientosMovil({ filas }) {
+  return (
+    <div className="contabilidad-movimientos-movil contabilidad-solo-movil">
+      {filas.map((x, i) => (
+        <article className="tarjeta contabilidad-reporte-card" key={(x.asiento_id || '') + '-' + (x.cuenta_id || '') + '-' + i}>
+          <div className="contabilidad-reporte-card-cabecera">
+            <div>
+              <span className="micro apagado">Asiento N° {x.numero} · {fechaCL(x.fecha)}</span>
+              <strong>{[x.codigo, x.cuenta].filter(Boolean).join(' · ')}</strong>
+            </div>
+          </div>
+          <div className="contabilidad-reporte-card-grid">
+            {Number(x.debe) !== 0 && <div><span>Debe</span><strong>{moneda(x.debe)}</strong></div>}
+            {Number(x.haber) !== 0 && <div><span>Haber</span><strong>{moneda(x.haber)}</strong></div>}
+          </div>
+          {(x.glosa_linea || x.glosa) && <p className="micro contabilidad-reporte-card-glosa">{x.glosa_linea || x.glosa}</p>}
+        </article>
+      ))}
+      {!filas.length && <p className="vacio">No hay movimientos para el período seleccionado.</p>}
+    </div>
+  );
+}
 export default function Contabilidad() {
   const { perfil, cargando: cargandoSesion } = useSesion();
   const navegar = useNavigate();
@@ -861,9 +1039,9 @@ export default function Contabilidad() {
     setError(null);
     try {
       if (tipo === 'pdf') {
-        descargarPDF({ entidad, desde, hasta, balance, eerrDetalle, diario, sinClasificar });
+        descargarPDF({ entidad, desde, hasta, balance, cuentas, eerrDetalle, diario, sinClasificar });
       } else {
-        await descargarPPT({ entidad, desde, hasta, balance, eerrDetalle, diario, sinClasificar });
+        await descargarPPT({ entidad, desde, hasta, balance, cuentas, eerrDetalle, diario, sinClasificar });
       }
     } catch (e) {
       setError(e?.message || 'No se pudo generar el archivo.');
@@ -1299,7 +1477,8 @@ export default function Contabilidad() {
               <div className="pestanas contabilidad-reportes-tabs">
                 {[
                   ['eerr','Estado de Resultados'],
-                  ['balance','Balance'],
+                  ['balance_general','Balance General'],
+                  ['balance','Balance Tributario'],
                   ['diario','Libro Diario'],
                   ['mayor','Libro Mayor']
                 ].map(([id, texto]) => (
@@ -1329,12 +1508,18 @@ export default function Contabilidad() {
               <ReporteEerr detalle={eerrDetalle} sinClasificar={sinClasificar} />
             )}
 
+            {!cargandoReportes && reporte === 'balance_general' && (
+              <ReporteBalanceGeneral balance={balance} cuentas={cuentas} resultado={eerr.utilidad} />
+            )}
+
             {!cargandoReportes && reporte === 'balance' && (
               <ReporteBalance balance={balance} />
             )}
 
             {!cargandoReportes && reporte === 'diario' && (
-              <div className="tabla-responsive">
+              <>
+                <ListaMovimientosMovil filas={diario} />
+                <div className="tabla-responsive contabilidad-solo-escritorio">
                 <table className="tabla contabilidad-diario-tabla">
                   <thead>
                     <tr><th>N° Asiento</th><th>Fecha</th><th>Código</th><th>Cuenta</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr>
@@ -1350,7 +1535,8 @@ export default function Contabilidad() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+                </div>
+              </>
             )}
 
             {!cargandoReportes && reporte === 'mayor' && (
@@ -1371,7 +1557,8 @@ export default function Contabilidad() {
                   <div><span>Tipo</span><strong>{mayorSaldo > 0 ? 'Deudor' : mayorSaldo < 0 ? 'Acreedor' : 'Cuenta saldada'}</strong></div>
                 </div>
 
-                <div className="tabla-responsive">
+                <ListaMovimientosMovil filas={mayor.map(x => ({ ...x, cuenta: cuentaMayor?.cuenta }))} />
+                <div className="tabla-responsive contabilidad-solo-escritorio">
                   <table className="tabla">
                     <thead><tr><th>N° Asiento</th><th>Fecha</th><th>Cuenta</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr></thead>
                     <tbody>
