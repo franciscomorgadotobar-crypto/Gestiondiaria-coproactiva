@@ -275,7 +275,7 @@
 
 .contabilidad-asiento-datos {
   display: grid;
-  grid-template-columns: 160px minmax(250px, 1fr) minmax(180px, .7fr) minmax(180px, .7fr);
+  grid-template-columns: 125px 150px minmax(240px, 1fr) minmax(170px, .7fr) minmax(185px, .8fr);
   gap: 10px;
 }
 
