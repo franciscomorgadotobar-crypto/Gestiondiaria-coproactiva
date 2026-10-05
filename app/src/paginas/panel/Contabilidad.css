@@ -471,8 +471,11 @@
 }
 
 .contabilidad-reportes-tabs {
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   justify-content: flex-start;
+  margin-bottom: 0;
 }
 
 .contabilidad-exportaciones {
@@ -489,6 +492,226 @@
   display: grid;
   gap: 12px;
 }
+
+.contabilidad-pantalla .tabla-responsive {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.contabilidad-solo-movil {
+  display: none;
+}
+
+.contabilidad-reporte-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.contabilidad-reporte-intro p {
+  margin: 3px 0 0;
+}
+
+.contabilidad-balance-general {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.contabilidad-bg-columnas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.contabilidad-bg-columna {
+  min-width: 0;
+  border: 1px solid var(--borde);
+  background: var(--tarjeta);
+}
+
+.contabilidad-bg-bloque-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--tinta);
+  color: var(--texto-inverso);
+  font: 700 12px/1.2 var(--fuente-display);
+  letter-spacing: .05em;
+}
+
+.contabilidad-bg-bloque-titulo strong {
+  font-size: 17px;
+  letter-spacing: 0;
+  text-align: right;
+}
+
+.contabilidad-bg-seccion {
+  border-top: 1px solid var(--borde-suave);
+}
+
+.contabilidad-bg-seccion-titulo {
+  padding: 12px 14px 7px;
+  background: var(--papel);
+}
+
+.contabilidad-bg-seccion-titulo h4 {
+  margin: 0;
+  font: 700 12px/1.25 var(--fuente-display);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.contabilidad-bg-seccion-titulo p {
+  margin: 2px 0 0;
+  color: var(--texto-apagado);
+  font-size: 11px;
+}
+
+.contabilidad-bg-cuentas > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 14px;
+  border-top: 1px solid var(--borde-suave);
+}
+
+.contabilidad-bg-cuentas > div:first-child {
+  border-top: 0;
+}
+
+.contabilidad-bg-cuentas span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.contabilidad-bg-cuentas small {
+  display: inline-block;
+  min-width: 42px;
+  margin-right: 6px;
+  color: var(--texto-tenue);
+  font-size: 10px;
+}
+
+.contabilidad-bg-cuentas strong,
+.contabilidad-bg-total strong,
+.contabilidad-bg-gran-total strong {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.contabilidad-bg-cuentas strong.negativo {
+  color: var(--critico-texto);
+}
+
+.contabilidad-bg-cuentas > div.calculado {
+  background: var(--hover);
+  font-weight: 700;
+}
+
+.contabilidad-bg-vacio {
+  margin: 0;
+  padding: 8px 14px 10px;
+}
+
+.contabilidad-bg-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 14px;
+  border-top: 1px solid var(--borde);
+  font-weight: 700;
+}
+
+.contabilidad-bg-gran-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 14px;
+  border-top: 2px solid var(--tinta);
+  background: var(--papel);
+  font: 700 13px/1.2 var(--fuente-display);
+}
+
+.contabilidad-reporte-card {
+  padding: 13px;
+  min-width: 0;
+}
+
+.contabilidad-reporte-card-cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.contabilidad-reporte-card-cabecera span,
+.contabilidad-reporte-card-cabecera strong {
+  display: block;
+}
+
+.contabilidad-reporte-card-cabecera strong {
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.contabilidad-reporte-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.contabilidad-reporte-card-grid > div {
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--papel);
+  border: 1px solid var(--borde-suave);
+}
+
+.contabilidad-reporte-card-grid span,
+.contabilidad-reporte-card-grid strong {
+  display: block;
+}
+
+.contabilidad-reporte-card-grid span {
+  color: var(--texto-apagado);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.contabilidad-reporte-card-grid strong {
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.contabilidad-reporte-card-total {
+  border-color: var(--tinta);
+}
+
+.contabilidad-reporte-card-glosa {
+  margin: 10px 0 0;
+  padding-top: 9px;
+  border-top: 1px solid var(--borde-suave);
+  color: var(--texto-apagado);
+  overflow-wrap: anywhere;
+}
+
+.contabilidad-balance-movil,
+.contabilidad-movimientos-movil {
+  gap: 8px;
+}
+
 
 .contabilidad-eerr {
   width: min(760px, 100%);
@@ -681,6 +904,34 @@
 }
 
 @media (max-width: 760px) {
+
+  .contabilidad-solo-escritorio {
+    display: none !important;
+  }
+
+  .contabilidad-solo-movil {
+    display: grid;
+  }
+
+  .contabilidad-reportes-tabs {
+    width: 100%;
+    padding-bottom: 8px;
+  }
+
+  .contabilidad-reporte-intro {
+    align-items: flex-start;
+  }
+
+  .contabilidad-bg-columnas {
+    grid-template-columns: 1fr;
+  }
+
+  .contabilidad-bg-bloque-titulo {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
   .contabilidad-cabecera-principal {
     align-items: stretch;
     flex-direction: column;
@@ -799,6 +1050,41 @@
 }
 
 @media (max-width: 480px) {
+
+  .contabilidad-reporte-intro {
+    flex-direction: column;
+  }
+
+  .contabilidad-bg-bloque-titulo {
+    padding: 12px;
+  }
+
+  .contabilidad-bg-bloque-titulo strong {
+    font-size: 15px;
+  }
+
+  .contabilidad-bg-cuentas > div {
+    grid-template-columns: minmax(0, 1fr) minmax(105px, auto);
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .contabilidad-bg-cuentas small {
+    display: block;
+    min-width: 0;
+    margin: 0 0 1px;
+  }
+
+  .contabilidad-bg-total,
+  .contabilidad-bg-gran-total {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .contabilidad-reporte-card-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .contabilidad-resumen-kpis {
     grid-template-columns: 1fr 1fr;
   }
@@ -862,7 +1148,20 @@
   }
 
   .contabilidad-eerr-fila {
-    grid-template-columns: minmax(0, 1fr) 120px;
+    grid-template-columns: minmax(0, 1fr) minmax(105px, auto);
+    gap: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .contabilidad-eerr-fila span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .contabilidad-eerr-fila strong {
+    font-size: 13px;
+    white-space: nowrap;
   }
 }
 
