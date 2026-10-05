@@ -532,24 +532,52 @@
   gap: 10px;
 }
 
-button.contabilidad-entidad-card {
+.contabilidad-entidad-card {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  gap: 4px;
-  color: inherit;
-  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
 }
 
-button.contabilidad-entidad-card.activa {
+.contabilidad-entidad-card.activa {
   border-color: var(--naranja);
   box-shadow: inset 0 0 0 1px var(--naranja);
 }
 
-.contabilidad-entidad-card strong {
+.contabilidad-entidad-contenido {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 14px 14px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contabilidad-entidad-contenido strong {
   margin: 2px 0;
   font: 600 15px var(--fuente-display);
+}
+
+.contabilidad-entidad-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px 8px;
+  border-top: 1px solid var(--borde, #e4dfd9);
+}
+
+.contabilidad-entidad-acciones .boton {
+  min-height: 36px;
+  padding: 7px 9px;
+}
+
+.contabilidad-entidad-acciones .boton-peligro {
+  margin-left: auto;
 }
 
 .contabilidad-vacio {
