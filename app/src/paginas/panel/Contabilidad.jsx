@@ -140,7 +140,71 @@ function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar 
   const [referencia, setReferencia] = useState('');
   const [proveedorId, setProveedorId] = useState('');
   const [lineas, setLineas] = useState([lineaVacia(), lineaVacia()]);
+  const [montoOperacion, setMontoOperacion] = useState('');
   const grupos = useMemo(() => gruposCuentas(cuentas), [cuentas]);
+
+  const cuentaPorCodigo = codigo => cuentas.find(x => x.codigo === codigo && x.activa)?.id ?? '';
+
+  function aplicarOperacion(tipo) {
+    const total = monto(montoOperacion);
+    if (total <= 0) return;
+
+    const banco = cuentaPorCodigo('1102');
+    const ivaCredito = cuentaPorCodigo('1104');
+    const proveedores = cuentaPorCodigo('2101');
+    const socioFrancisco = cuentaPorCodigo('2108');
+    const socioOsmar = cuentaPorCodigo('2109');
+    const ingresoAdministracion = cuentaPorCodigo('4101');
+
+    const linea = (cuenta_id, debe = '', haber = '', detalle = '') => ({
+      key: crypto.randomUUID(),
+      cuenta_id,
+      debe: debe === '' ? '' : String(debe),
+      haber: haber === '' ? '' : String(haber),
+      glosa: detalle
+    });
+
+    if (tipo === 'aporte_francisco' && banco && socioFrancisco) {
+      setGlosa('Aporte transferencia socio Francisco');
+      setLineas([linea(banco, total, ''), linea(socioFrancisco, '', total)]);
+      return;
+    }
+
+    if (tipo === 'aporte_osmar' && banco && socioOsmar) {
+      setGlosa('Aporte transferencia socio Osmar');
+      setLineas([linea(banco, total, ''), linea(socioOsmar, '', total)]);
+      return;
+    }
+
+    if (tipo === 'pago_proveedor' && proveedores && banco) {
+      setGlosa('Pago a proveedor');
+      setLineas([linea(proveedores, total, ''), linea(banco, '', total)]);
+      return;
+    }
+
+    if (tipo === 'cobro_administracion' && banco && ingresoAdministracion) {
+      setGlosa('Cobro servicio de administración');
+      setLineas([linea(banco, total, ''), linea(ingresoAdministracion, '', total)]);
+      return;
+    }
+
+    if (tipo === 'gasto_banco' && banco) {
+      setGlosa('Gasto pagado desde banco');
+      setLineas([linea('', total, '', 'Selecciona la cuenta de gasto'), linea(banco, '', total)]);
+      return;
+    }
+
+    if (tipo === 'compra_iva' && ivaCredito && proveedores) {
+      const neto = Math.round((total / 1.19) * 100) / 100;
+      const iva = Math.round((total - neto) * 100) / 100;
+      setGlosa('Compra afecta a IVA');
+      setLineas([
+        linea('', neto, '', 'Selecciona gasto o activo'),
+        linea(ivaCredito, iva, '', 'IVA crédito fiscal'),
+        linea(proveedores, '', total)
+      ]);
+    }
+  }
 
   const totalDebe = lineas.reduce((a, x) => a + monto(x.debe), 0);
   const totalHaber = lineas.reduce((a, x) => a + monto(x.haber), 0);
@@ -238,6 +302,46 @@ function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar 
               {proveedores.map(p => <option key={p.id} value={p.id}>{p.empresa}</option>)}
             </select>
           </label>
+        </div>
+
+        <div className="contabilidad-operaciones">
+          <div className="contabilidad-operaciones-cabecera">
+            <div>
+              <h3 className="h3">Operación guiada</h3>
+              <p className="micro apagado" style={{ margin: '3px 0 0' }}>
+                Ingresa el monto total y elige una operación. El asiento queda prearmado para revisión antes de contabilizar.
+              </p>
+            </div>
+            <label className="campo contabilidad-operacion-monto">
+              <span className="etiqueta-campo">Monto total</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={montoOperacion}
+                onChange={e => setMontoOperacion(e.target.value)}
+                placeholder="0"
+              />
+            </label>
+          </div>
+          <div className="contabilidad-operaciones-botones">
+            <button type="button" className="boton boton-secundario" disabled={monto(montoOperacion) <= 0}
+                    onClick={() => aplicarOperacion('pago_proveedor')}>Pago a proveedor</button>
+            <button type="button" className="boton boton-secundario" disabled={monto(montoOperacion) <= 0}
+                    onClick={() => aplicarOperacion('compra_iva')}>Compra con IVA</button>
+            <button type="button" className="boton boton-secundario" disabled={monto(montoOperacion) <= 0}
+                    onClick={() => aplicarOperacion('gasto_banco')}>Gasto desde banco</button>
+            <button type="button" className="boton boton-secundario" disabled={monto(montoOperacion) <= 0}
+                    onClick={() => aplicarOperacion('cobro_administracion')}>Cobro administración</button>
+            <button type="button" className="boton boton-secundario" disabled={monto(montoOperacion) <= 0}
+                    onClick={() => aplicarOperacion('aporte_francisco')}>Aporte Francisco</button>
+            <button type="button" className="boton boton-secundario" disabled={monto(montoOperacion) <= 0}
+                    onClick={() => aplicarOperacion('aporte_osmar')}>Aporte Osmar</button>
+          </div>
+          <p className="micro apagado contabilidad-operaciones-nota">
+            Compra con IVA calcula neto e IVA al 19% desde el total; debes seleccionar la cuenta de gasto o activo antes de contabilizar.
+          </p>
         </div>
 
         <div className="contabilidad-lineas-titulo">
