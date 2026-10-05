@@ -116,6 +116,94 @@ export function totalesBalance(balance = []) {
   };
 }
 
+function normalizarTexto(valor) {
+  return String(valor ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+export function armarBalanceGeneral(balance = [], cuentas = [], resultado = 0) {
+  const porId = new Map((cuentas ?? []).map(c => [c.id, c]));
+
+  const filas = (balance ?? [])
+    .map(x => {
+      const cuenta = porId.get(x.cuenta_id) ?? {};
+      const tipo = cuenta.tipo_contable ?? null;
+      const grupo = cuenta.grupo ?? '';
+      let monto = 0;
+      if (tipo === 'activo') monto = Number(x.activo || 0);
+      else if (tipo === 'pasivo' || tipo === 'patrimonio') monto = Number(x.pasivo || 0);
+      return {
+        cuenta_id: x.cuenta_id,
+        codigo: x.codigo,
+        cuenta: x.cuenta,
+        tipo,
+        grupo,
+        monto
+      };
+    })
+    .filter(x => x.tipo && Math.abs(x.monto) >= 0.005)
+    .sort((a, b) => String(a.codigo).localeCompare(String(b.codigo), 'es', { numeric: true }));
+
+  const esNoCorriente = x => {
+    const g = normalizarTexto(x.grupo);
+    if (g.includes('no corriente') || g.includes('largo plazo')) return true;
+    if (x.tipo === 'activo') return /^1[2-9]/.test(String(x.codigo));
+    if (x.tipo === 'pasivo') return /^2[2-9]/.test(String(x.codigo));
+    return false;
+  };
+
+  const activoCorriente = filas.filter(x => x.tipo === 'activo' && !esNoCorriente(x));
+  const activoNoCorriente = filas.filter(x => x.tipo === 'activo' && esNoCorriente(x));
+  const pasivoCorriente = filas.filter(x => x.tipo === 'pasivo' && !esNoCorriente(x));
+  const pasivoNoCorriente = filas.filter(x => x.tipo === 'pasivo' && esNoCorriente(x));
+
+  // 3104 es la cuenta nominal "Resultado ejercicio". Para el Balance General
+  // usamos el resultado calculado del período, evitando duplicarlo si luego se
+  // contabiliza un asiento de cierre contra esa cuenta.
+  const patrimonio = filas.filter(x => x.tipo === 'patrimonio' && String(x.codigo) !== '3104');
+  const resultadoFila = {
+    cuenta_id: 'resultado-ejercicio',
+    codigo: '',
+    cuenta: 'Resultado del Ejercicio',
+    tipo: 'patrimonio',
+    grupo: 'Patrimonio',
+    monto: Number(resultado || 0),
+    calculado: true
+  };
+
+  const totalActivoCorriente = suma(activoCorriente);
+  const totalActivoNoCorriente = suma(activoNoCorriente);
+  const totalActivo = totalActivoCorriente + totalActivoNoCorriente;
+  const totalPasivoCorriente = suma(pasivoCorriente);
+  const totalPasivoNoCorriente = suma(pasivoNoCorriente);
+  const totalPasivo = totalPasivoCorriente + totalPasivoNoCorriente;
+  const totalPatrimonioBase = suma(patrimonio);
+  const totalPatrimonio = totalPatrimonioBase + resultadoFila.monto;
+  const totalPasivoPatrimonio = totalPasivo + totalPatrimonio;
+
+  return {
+    activoCorriente,
+    activoNoCorriente,
+    pasivoCorriente,
+    pasivoNoCorriente,
+    patrimonio,
+    resultadoFila,
+    totalActivoCorriente,
+    totalActivoNoCorriente,
+    totalActivo,
+    totalPasivoCorriente,
+    totalPasivoNoCorriente,
+    totalPasivo,
+    totalPatrimonioBase,
+    totalPatrimonio,
+    totalPasivoPatrimonio,
+    diferencia: totalActivo - totalPasivoPatrimonio,
+    cuadrado: Math.abs(totalActivo - totalPasivoPatrimonio) < 0.005
+  };
+}
+
 function nombreArchivo(entidad, extension) {
   const base = String(entidad?.nombre || 'contabilidad')
     .normalize('NFD')
@@ -163,6 +251,7 @@ export function descargarPDF({
   desde,
   hasta,
   balance = [],
+  cuentas = [],
   eerrDetalle = [],
   diario = [],
   sinClasificar = []
@@ -170,7 +259,8 @@ export function descargarPDF({
   const periodo = textoPeriodo(desde, hasta);
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
-  const pasivoPatrimonio = tb.pasivo + eerr.utilidad;
+  const balanceGeneral = armarBalanceGeneral(balance, cuentas, eerr.utilidad);
+  const pasivoPatrimonio = balanceGeneral.totalPasivoPatrimonio;
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
   cabeceraPdf(doc, entidad, periodo);
@@ -240,6 +330,73 @@ export function descargarPDF({
     doc.text(sinClasificar.map(x => x.codigo + ' ' + x.cuenta).join(' · '), 14, y + 5, { maxWidth: 180 });
   }
 
+  doc.addPage('a4', 'portrait');
+  doc.setFillColor('#' + MARCA.tinta);
+  doc.rect(0, 0, 210, 16, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor('#' + MARCA.blanco);
+  doc.setFontSize(10);
+  doc.text('COPROACTIVA', 14, 10.5);
+  doc.setTextColor('#' + MARCA.tinta);
+  doc.setFontSize(14);
+  doc.text('Balance General', 14, 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor('#' + MARCA.pizarra);
+  doc.text('Activo por liquidez · Pasivo por exigibilidad · Patrimonio', 14, 34);
+
+  const tituloBG = titulo => [
+    { content: titulo, styles: { fontStyle: 'bold', fillColor: '#' + MARCA.papel } },
+    { content: '', styles: { fillColor: '#' + MARCA.papel } }
+  ];
+  const filaBG = x => [x.codigo ? x.codigo + ' · ' + x.cuenta : x.cuenta, moneda(x.monto)];
+  const totalBG = (titulo, valor) => [
+    { content: titulo, styles: { fontStyle: 'bold' } },
+    { content: moneda(valor), styles: { fontStyle: 'bold', halign: 'right' } }
+  ];
+
+  const cuerpoBG = [
+    tituloBG('ACTIVO CORRIENTE'),
+    ...balanceGeneral.activoCorriente.map(filaBG),
+    totalBG('Total Activo Corriente', balanceGeneral.totalActivoCorriente),
+    tituloBG('ACTIVO NO CORRIENTE'),
+    ...balanceGeneral.activoNoCorriente.map(filaBG),
+    totalBG('Total Activo No Corriente', balanceGeneral.totalActivoNoCorriente),
+    totalBG('TOTAL ACTIVO', balanceGeneral.totalActivo),
+    tituloBG('PASIVO CORRIENTE'),
+    ...balanceGeneral.pasivoCorriente.map(filaBG),
+    totalBG('Total Pasivo Corriente', balanceGeneral.totalPasivoCorriente),
+    tituloBG('PASIVO NO CORRIENTE'),
+    ...balanceGeneral.pasivoNoCorriente.map(filaBG),
+    totalBG('Total Pasivo No Corriente', balanceGeneral.totalPasivoNoCorriente),
+    tituloBG('PATRIMONIO'),
+    ...balanceGeneral.patrimonio.map(filaBG),
+    filaBG(balanceGeneral.resultadoFila),
+    totalBG('Total Patrimonio', balanceGeneral.totalPatrimonio),
+    totalBG('TOTAL PASIVO + PATRIMONIO', balanceGeneral.totalPasivoPatrimonio)
+  ];
+
+  autoTable(doc, {
+    startY: 40,
+    head: [['Concepto', 'Monto']],
+    body: cuerpoBG,
+    theme: 'grid',
+    styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2, textColor: '#' + MARCA.tinta },
+    headStyles: { fillColor: '#' + MARCA.tinta, textColor: '#' + MARCA.blanco, fontStyle: 'bold' },
+    columnStyles: { 1: { halign: 'right', cellWidth: 45 } }
+  });
+
+  const yCuadre = Math.min((doc.lastAutoTable?.finalY || 245) + 7, 275);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor('#' + (balanceGeneral.cuadrado ? MARCA.verde : MARCA.rojo));
+  doc.text(
+    balanceGeneral.cuadrado
+      ? 'Balance cuadrado'
+      : 'Descuadrado · Diferencia ' + moneda(Math.abs(balanceGeneral.diferencia)),
+    14, yCuadre
+  );
+
   doc.addPage('a4', 'landscape');
   doc.setFillColor('#' + MARCA.tinta);
   doc.rect(0, 0, 297, 16, 'F');
@@ -249,7 +406,7 @@ export function descargarPDF({
   doc.text('COPROACTIVA', 14, 10.5);
   doc.setTextColor('#' + MARCA.tinta);
   doc.setFontSize(14);
-  doc.text('Balance de comprobación y saldos', 14, 28);
+  doc.text('Balance tributario · comprobación y saldos', 14, 28);
 
   autoTable(doc, {
     startY: 34,
@@ -339,6 +496,7 @@ export async function descargarPPT({
   desde,
   hasta,
   balance = [],
+  cuentas = [],
   eerrDetalle = [],
   diario = [],
   sinClasificar = []
@@ -346,7 +504,8 @@ export async function descargarPPT({
   const periodo = textoPeriodo(desde, hasta);
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
-  const pasivoPatrimonio = tb.pasivo + eerr.utilidad;
+  const balanceGeneral = armarBalanceGeneral(balance, cuentas, eerr.utilidad);
+  const pasivoPatrimonio = balanceGeneral.totalPasivoPatrimonio;
 
   const pptx = new pptxgen();
   pptx.layout = 'LAYOUT_WIDE';
@@ -435,7 +594,59 @@ export async function descargarPPT({
 
   slide = pptx.addSlide();
   slide.background = { color: MARCA.blanco };
-  addPptTitle(slide, 'Posición financiera', 'Balance de comprobación y saldos');
+  addPptTitle(slide, 'Balance General', 'Activo por liquidez · Pasivo por exigibilidad · Patrimonio');
+
+  const filasActivo = [
+    ['ACTIVO CORRIENTE', ''],
+    ...balanceGeneral.activoCorriente.map(x => [x.codigo + ' ' + x.cuenta, moneda(x.monto)]),
+    ['Total Activo Corriente', moneda(balanceGeneral.totalActivoCorriente)],
+    ['ACTIVO NO CORRIENTE', ''],
+    ...balanceGeneral.activoNoCorriente.map(x => [x.codigo + ' ' + x.cuenta, moneda(x.monto)]),
+    ['Total Activo No Corriente', moneda(balanceGeneral.totalActivoNoCorriente)],
+    ['TOTAL ACTIVO', moneda(balanceGeneral.totalActivo)]
+  ];
+  const filasPasivoPatrimonio = [
+    ['PASIVO CORRIENTE', ''],
+    ...balanceGeneral.pasivoCorriente.map(x => [x.codigo + ' ' + x.cuenta, moneda(x.monto)]),
+    ['Total Pasivo Corriente', moneda(balanceGeneral.totalPasivoCorriente)],
+    ['PASIVO NO CORRIENTE', ''],
+    ...balanceGeneral.pasivoNoCorriente.map(x => [x.codigo + ' ' + x.cuenta, moneda(x.monto)]),
+    ['Total Pasivo No Corriente', moneda(balanceGeneral.totalPasivoNoCorriente)],
+    ['PATRIMONIO', ''],
+    ...balanceGeneral.patrimonio.map(x => [x.codigo + ' ' + x.cuenta, moneda(x.monto)]),
+    ['Resultado del Ejercicio', moneda(balanceGeneral.resultadoFila.monto)],
+    ['Total Patrimonio', moneda(balanceGeneral.totalPatrimonio)],
+    ['TOTAL PASIVO + PATRIMONIO', moneda(balanceGeneral.totalPasivoPatrimonio)]
+  ];
+
+  slide.addTable(filasActivo, {
+    x: 0.6, y: 1.62, w: 5.95, h: 4.95,
+    border: { type: 'solid', color: MARCA.niebla, pt: 1 },
+    fill: MARCA.blanco, color: MARCA.tinta, fontFace: 'Arial',
+    fontSize: 9, margin: 0.05, rowH: 0.35, colW: [4.2, 1.75]
+  });
+  slide.addTable(filasPasivoPatrimonio, {
+    x: 6.78, y: 1.62, w: 5.95, h: 4.95,
+    border: { type: 'solid', color: MARCA.niebla, pt: 1 },
+    fill: MARCA.blanco, color: MARCA.tinta, fontFace: 'Arial',
+    fontSize: 9, margin: 0.05, rowH: 0.35, colW: [4.2, 1.75]
+  });
+  slide.addText(
+    balanceGeneral.cuadrado
+      ? 'Balance cuadrado'
+      : 'Descuadrado · Diferencia ' + moneda(Math.abs(balanceGeneral.diferencia)),
+    {
+      x: 9.15, y: 0.55, w: 3.55, h: 0.35,
+      fontFace: 'Arial', fontSize: 10, bold: true,
+      color: balanceGeneral.cuadrado ? MARCA.verde : MARCA.rojo,
+      align: 'right', margin: 0
+    }
+  );
+  addPptFooter(slide, entidad, periodo, 6);
+
+  slide = pptx.addSlide();
+  slide.background = { color: MARCA.blanco };
+  addPptTitle(slide, 'Balance tributario', 'Balance de comprobación y saldos');
   const bRows = [
     ['Suma Debe', moneda(tb.debe)],
     ['Suma Haber', moneda(tb.haber)],
