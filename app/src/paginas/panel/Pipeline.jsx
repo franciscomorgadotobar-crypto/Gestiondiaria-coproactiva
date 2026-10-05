@@ -5,6 +5,8 @@ import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import './Pipeline.css';
 import { useVolverGlobal } from '../../lib/navegacion';
+import Confirmar from '../../componentes/Confirmar';
+import DialogoCampos from '../../componentes/DialogoCampos';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
  *
@@ -73,6 +75,8 @@ export default function Pipeline() {
   const [abierto, setAbierto] = useState(null);   // id en edición, o 'nuevo'
   const [form, setForm] = useState(VACIO);
   const [guardando, setGuardando] = useState(false);
+  const [perdidaPendiente, setPerdidaPendiente] = useState(null);
+  const [ganarPendiente, setGanarPendiente] = useState(null);
 
   async function cargar() {
     setError(null);
@@ -196,29 +200,43 @@ export default function Pipeline() {
     cerrarForm();
   }
 
-  async function cambiarEtapa(p, nuevaEtapa) {
-    if (nuevaEtapa === p.etapa) return;
-    if (nuevaEtapa === 'ganado') return convertirEnComunidad(p);
-
-    let motivo = p.motivo_perdida ?? null;
-    if (nuevaEtapa === 'perdido') {
-      motivo = window.prompt('¿Motivo de la pérdida? (opcional)', p.motivo_perdida ?? '') ?? p.motivo_perdida ?? null;
-    }
-
+  async function guardarEtapa(p, nuevaEtapa, motivo = null) {
     setGuardando(true);
     setError(null);
     const { data, error } = await supabase.from('prospectos')
-      .update({ etapa: nuevaEtapa, motivo_perdida: nuevaEtapa === 'perdido' ? motivo : null, fecha_ultima_interaccion: new Date().toISOString() })
+      .update({
+        etapa: nuevaEtapa,
+        motivo_perdida: nuevaEtapa === 'perdido' ? (motivo || null) : null,
+        fecha_ultima_interaccion: new Date().toISOString()
+      })
       .eq('id', p.id).select().single();
     setGuardando(false);
     if (error || !data) return setError(error?.message || 'No se pudo actualizar el prospecto.');
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
   }
 
-  async function convertirEnComunidad(p) {
-    const ok = window.confirm(`"${p.nombre_condominio}" pasará a Ganado y se creará como comunidad para gestionarla operativamente (levantamientos, mantención, portal cliente). ¿Continuar?`);
-    if (!ok) return;
+  async function cambiarEtapa(p, nuevaEtapa) {
+    if (nuevaEtapa === p.etapa) return;
+    if (nuevaEtapa === 'ganado') {
+      setGanarPendiente(p);
+      return;
+    }
+    if (nuevaEtapa === 'perdido') {
+      setPerdidaPendiente(p);
+      return;
+    }
+    await guardarEtapa(p, nuevaEtapa);
+  }
 
+  async function confirmarPerdida({ motivo }) {
+    const p = perdidaPendiente;
+    setPerdidaPendiente(null);
+    if (!p) return;
+    await guardarEtapa(p, 'perdido', motivo.trim() || null);
+  }
+
+  async function convertirEnComunidad(p) {
+    setGanarPendiente(null);
     setGuardando(true);
     setError(null);
     // Un solo paso en el servidor (ganar_prospecto): crea la comunidad, la
@@ -240,6 +258,35 @@ export default function Pipeline() {
 
   return (
     <div className="pantalla pantalla-ancha">
+      {perdidaPendiente && (
+        <DialogoCampos
+          titulo="Marcar prospecto como perdido"
+          mensaje={`Puedes registrar por qué no continuó “${perdidaPendiente.nombre_condominio}”.`}
+          campos={[{
+            id: 'motivo',
+            label: 'Motivo de la pérdida',
+            valor: perdidaPendiente.motivo_perdida ?? '',
+            multiline: true,
+            filas: 3,
+            placeholder: 'Opcional'
+          }]}
+          textoConfirmar="Marcar como perdido"
+          textoCancelar="Cancelar"
+          onConfirmar={confirmarPerdida}
+          onCancelar={() => setPerdidaPendiente(null)}
+        />
+      )}
+
+      {ganarPendiente && (
+        <Confirmar
+          titulo="Convertir en comunidad"
+          mensaje={`“${ganarPendiente.nombre_condominio}” pasará a Ganado y se creará como comunidad para gestionar levantamientos, mantención y portal cliente.`}
+          textoConfirmar="Convertir en comunidad"
+          textoCancelar="Cancelar"
+          onConfirmar={() => convertirEnComunidad(ganarPendiente)}
+          onCancelar={() => setGanarPendiente(null)}
+        />
+      )}
       <header className="encabezado">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
