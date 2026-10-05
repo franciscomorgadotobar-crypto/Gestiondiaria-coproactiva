@@ -61,15 +61,18 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // enlaces no se repiten en las otras áreas: no son trabajo del día.
   const enConfiguracion = !esCliente && esAdministracion
     && ['/configuracion', '/equipo', '/clientes'].some(r => activa(pathname, r));
-  const enProveedores = !esCliente && esAdministracion && !enConfiguracion
+  const enContabilidad = !esCliente && esAdministracion && !enConfiguracion
+    && (activa(pathname, '/contabilidad') || areaGuardada() === 'contabilidad');
+  const enProveedores = !esCliente && esAdministracion && !enConfiguracion && !enContabilidad
     && (activa(pathname, '/proveedores') || areaGuardada() === 'proveedores');
-  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion && !enProveedores
+  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion && !enContabilidad && !enProveedores
     && (activa(pathname, '/propiedades')
       || (areaGuardada() === 'propiedades' && !activa(pathname, '/pipeline')));
-  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enProveedores && !enPropiedades
+  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enContabilidad && !enProveedores && !enPropiedades
     && (areaGuardada() === 'crm' || activa(pathname, '/pipeline'));
   const nombreArea = esCliente ? null
     : enConfiguracion ? 'Configuración'
+    : enContabilidad ? 'Contabilidad'
     : enProveedores ? 'Proveedores'
     : enPropiedades ? 'Propiedades'
     : enCRM ? 'CRM'
@@ -87,6 +90,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     ? [
         { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: true },
         { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
+      ]
+    : enContabilidad
+    ? [
+        { ruta: '/contabilidad', etiqueta: 'Resumen', mostrar: true },
+        { ruta: '/contabilidad/asientos', etiqueta: 'Asientos', mostrar: true },
+        { ruta: '/contabilidad/plan', etiqueta: 'Plan de cuentas', mostrar: true },
+        { ruta: '/contabilidad/reportes', etiqueta: 'Reportes', mostrar: true },
+        { ruta: '/contabilidad/entidades', etiqueta: 'Entidades', mostrar: true }
       ]
     : enProveedores
     ? [
