@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
+import DialogoCampos from '../../componentes/DialogoCampos';
 
 /* Programar o editar un levantamiento.
  *
@@ -46,6 +47,7 @@ export default function Programar() {
   });
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [pedirMotivoReapertura, setPedirMotivoReapertura] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -256,9 +258,8 @@ export default function Programar() {
 
   /* Reabrir un levantamiento enviado es legítimo —se anotó mal un punto, faltó
    * una foto—, pero queda registrado: el informe pudo haberse entregado ya. */
-  async function reabrir() {
-    const motivo = prompt('¿Por qué se reabre este levantamiento?');
-    if (motivo === null) return;
+  async function reabrir(motivo) {
+    setPedirMotivoReapertura(false);
     setGuardando(true);
     const { error } = await supabase.from('controles').update({
       estado: 'en_curso',
@@ -274,6 +275,23 @@ export default function Programar() {
   const enviado = control?.estado === 'enviado';
   return (
     <div className="pantalla pantalla-angosta">
+      {pedirMotivoReapertura && (
+        <DialogoCampos
+          titulo="Reabrir levantamiento"
+          mensaje="La reapertura queda registrada en el historial del levantamiento."
+          campos={[{
+            id: 'motivo',
+            label: 'Motivo de la reapertura',
+            multiline: true,
+            filas: 3,
+            placeholder: 'Indica brevemente por qué se necesita corregirlo'
+          }]}
+          textoConfirmar="Reabrir"
+          textoCancelar="Cancelar"
+          onCancelar={() => setPedirMotivoReapertura(false)}
+          onConfirmar={({ motivo }) => reabrir(motivo)}
+        />
+      )}
       <header className="encabezado">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
@@ -293,7 +311,7 @@ export default function Programar() {
               y queda registrado quién lo hizo y por qué.
             </p>
             <button className="boton boton-texto" style={{ padding: '6px 0 0' }}
-                    onClick={reabrir} disabled={guardando}>
+                    onClick={() => setPedirMotivoReapertura(true)} disabled={guardando}>
               Reabrir
             </button>
           </div>
