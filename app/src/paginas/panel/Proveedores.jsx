@@ -343,7 +343,11 @@ export default function Proveedores() {
     });
 
     if (e || !data?.ok) {
-      setError(data?.error || e?.message || 'No se pudo sincronizar Gmail.');
+      const mensajeTecnico = data?.error || e?.message || '';
+      const falloConexion = /failed to send a request|fetch|network/i.test(mensajeTecnico);
+      setError(falloConexion
+        ? 'No se pudo conectar con la sincronización de Gmail. Intenta nuevamente en unos segundos.'
+        : (mensajeTecnico || 'No se pudo sincronizar Gmail.'));
       setSincronizando(false);
       return;
     }
