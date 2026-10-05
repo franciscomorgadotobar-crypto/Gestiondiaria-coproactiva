@@ -5,6 +5,7 @@ import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
 import DialogoCampos from '../../componentes/DialogoCampos';
+import Confirmar from '../../componentes/Confirmar';
 import ModalEjecucionMantencion from '../../componentes/ModalEjecucionMantencion';
 import './Comunidades.css';
 
@@ -213,7 +214,8 @@ function ListadoComunidades() {
     let vigente = true;
     Promise.all([
       supabase.from('comunidades')
-        .select('id, nombre, comuna, direccion, latitud, longitud')
+        .select('id, nombre, rut, estado, comuna, direccion, latitud, longitud')
+        .neq('estado', 'terminado')
         .order('nombre'),
       supabase.from('notificaciones_mantenimiento')
         .select('id, comunidad_id, titulo, mensaje, creado_en')
@@ -398,6 +400,7 @@ function DetalleComunidad({ id }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { perfil } = useSesion();
   const puedeGestionar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
+  const puedeEliminar = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const seccionInicial = SECCIONES.some(([k]) => k === searchParams.get('seccion'))
     ? searchParams.get('seccion')
     : 'resumen';
@@ -420,6 +423,9 @@ function DetalleComunidad({ id }) {
   const [guardando, setGuardando] = useState(false);
   const [reprogramacion, setReprogramacion] = useState(null);
   const [ejecucionPendiente, setEjecucionPendiente] = useState(null);
+  const [datosEditando, setDatosEditando] = useState(false);
+  const [eliminarAbierto, setEliminarAbierto] = useState(false);
+  const [aviso, setAviso] = useState(null);
 
   const [nuevoActivo, setNuevoActivo] = useState({
     nombre: '', categoria: '', ubicacion: '', marca: '', modelo: '', serie: '', estado: 'operativo', proveedor_id: ''
@@ -440,7 +446,7 @@ function DetalleComunidad({ id }) {
     setCargando(true);
     setError(null);
     const [rc, rl, ra, rp, rag, rx, re, rr, rn, rprov, rdoc] = await Promise.all([
-      supabase.from('comunidades').select('id, nombre, comuna, direccion, latitud, longitud').eq('id', id).maybeSingle(),
+      supabase.from('comunidades').select('id, nombre, rut, estado, comuna, direccion, latitud, longitud').eq('id', id).maybeSingle(),
       supabase.from('controles_con_avance')
         .select('id, comunidad_id, estado, enviado_en, programado_para, creado_en, checkin_en, responsable_id, responsable_nombre, plantilla_nombre, items_criticos, periodo')
         .eq('comunidad_id', id)
@@ -810,6 +816,52 @@ function DetalleComunidad({ id }) {
     setReglas(xs => [...xs.filter(x => x.actividad_id !== data.actividad_id), data]);
   }
 
+  async function guardarDatosComunidad({ nombre, rut, direccion, comuna }) {
+    if (!nombre.trim()) return setError('La comunidad necesita un nombre.');
+    setDatosEditando(false);
+    setGuardando(true);
+    setError(null);
+
+    const { data, error } = await supabase.from('comunidades').update({
+      nombre: nombre.trim(),
+      rut: rut.trim() || null,
+      direccion: direccion.trim() || null,
+      comuna: comuna.trim() || null,
+      editado_en: new Date().toISOString()
+    }).eq('id', id)
+      .select('id, nombre, rut, estado, comuna, direccion, latitud, longitud')
+      .single();
+
+    setGuardando(false);
+    if (error) return setError(error.message);
+
+    setComunidad(data);
+    setUbicacion(x => ({
+      ...x,
+      direccion: data.direccion ?? '',
+      comuna: data.comuna ?? ''
+    }));
+    setAviso('Datos actualizados. Nombre y RUT también quedaron sincronizados en Contabilidad.');
+  }
+
+  async function eliminarComunidad() {
+    setEliminarAbierto(false);
+    setGuardando(true);
+    setError(null);
+
+    const { data, error } = await supabase.rpc('comunidad_eliminar_segura', {
+      p_comunidad_id: id
+    });
+
+    setGuardando(false);
+    if (error) return setError(error.message);
+
+    navegar('/comunidades', {
+      replace: true,
+      state: { aviso: data?.mensaje || 'Comunidad eliminada.' }
+    });
+  }
+
   async function guardarUbicacion() {
     const lat = ubicacion.latitud === '' ? null : Number(ubicacion.latitud);
     const lng = ubicacion.longitud === '' ? null : Number(ubicacion.longitud);
@@ -847,6 +899,34 @@ function DetalleComunidad({ id }) {
 
   return (
     <div className="pantalla">
+      {datosEditando && (
+        <DialogoCampos
+          titulo="Editar comunidad"
+          mensaje="Nombre y RUT se comparten con Contabilidad; al guardar, ambos módulos quedan sincronizados."
+          campos={[
+            { id: 'nombre', label: 'Nombre', valor: comunidad.nombre ?? '', obligatorio: true },
+            { id: 'rut', label: 'RUT', valor: comunidad.rut ?? '', placeholder: 'Opcional' },
+            { id: 'direccion', label: 'Dirección', valor: comunidad.direccion ?? '', placeholder: 'Opcional' },
+            { id: 'comuna', label: 'Comuna', valor: comunidad.comuna ?? '', placeholder: 'Opcional' }
+          ]}
+          textoConfirmar="Guardar cambios"
+          textoCancelar="Cancelar"
+          onConfirmar={guardarDatosComunidad}
+          onCancelar={() => setDatosEditando(false)}
+        />
+      )}
+
+      {eliminarAbierto && (
+        <Confirmar
+          titulo="Eliminar comunidad"
+          mensaje="Si la comunidad no tiene historial se eliminará definitivamente. Si ya tiene información operativa o contable, se retirará de uso y se conservará su historial."
+          textoConfirmar="Eliminar"
+          textoCancelar="Cancelar"
+          onConfirmar={eliminarComunidad}
+          onCancelar={() => setEliminarAbierto(false)}
+        />
+      )}
+
       {reprogramacion && (
         <DialogoCampos
           titulo="Reprogramar mantención"
@@ -885,14 +965,34 @@ function DetalleComunidad({ id }) {
             ‹ Comunidades
           </button>
         </div>
-        <h1 className="h3">{comunidad.nombre}</h1>
-        <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-          {[comunidad.direccion, comunidad.comuna].filter(Boolean).join(' · ') || 'Sin ubicación registrada'}
-        </p>
+        <div className="fila comunidad-cabecera-acciones">
+          <div className="crece">
+            <h1 className="h3">{comunidad.nombre}</h1>
+            <p className="chico apagado" style={{ margin: '4px 0 0' }}>
+              {[comunidad.direccion, comunidad.comuna].filter(Boolean).join(' · ') || 'Sin ubicación registrada'}
+            </p>
+          </div>
+          {puedeGestionar && (
+            <button type="button" className="boton boton-secundario" onClick={() => setDatosEditando(true)}>
+              Editar datos
+            </button>
+          )}
+          {puedeEliminar && (
+            <button type="button" className="boton boton-peligro" onClick={() => setEliminarAbierto(true)}>
+              Eliminar
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="cuerpo">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
+        {aviso && (
+          <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>
+            {aviso}
+            <button type="button" className="boton boton-texto" onClick={() => setAviso(null)}>Cerrar</button>
+          </div>
+        )}
 
         <div className="pestanas" role="tablist" aria-label="Secciones de la comunidad">
           {SECCIONES.map(([clave, nombre]) => (
