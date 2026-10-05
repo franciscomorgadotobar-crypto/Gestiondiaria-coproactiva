@@ -222,6 +222,11 @@ export default function Inicio() {
               <span aria-hidden="true">›</span>
             </Link>
 
+            <Link to="/mantenciones" className="acceso">
+              <span>Mantenciones</span>
+              <span aria-hidden="true">›</span>
+            </Link>
+
             {/* Configuración no va acá: ya es su propia tarjeta en la capa de
                 entrada, al mismo nivel que CRM y Operación. Repetirla adentro
                 de Operación la volvería a mezclar con esa área en vez de
