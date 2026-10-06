@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
-import { inicioSegunArea } from '../../lib/area';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import { useVolverGlobal } from '../../lib/navegacion';
@@ -16,7 +15,7 @@ import './Plantillas.css';
 export default function Plantillas() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
-  useVolverGlobal(() => navegar(inicioSegunArea()));
+  useVolverGlobal(() => navegar('/levantamientos'));
   const [plantillas, setPlantillas] = useState(null);
   const [error, setError] = useState(null);
   const [porBorrar, setPorBorrar] = useState(null);
@@ -135,8 +134,8 @@ export default function Plantillas() {
       <header className="encabezado plantillas-encabezado">
         <div className="fila navegacion-interna plantillas-volver">
           <button className="boton boton-texto"
-                  onClick={() => navegar(inicioSegunArea())}>
-            ‹ Inicio
+                  onClick={() => navegar('/levantamientos')}>
+            ‹ Levantamientos
           </button>
         </div>
 
