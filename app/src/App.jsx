@@ -6,6 +6,7 @@ import Clave from './paginas/Clave';
 import Inicio from './paginas/panel/Inicio';
 import Plantillas from './paginas/panel/Plantillas';
 import Bitacora from './paginas/panel/Bitacora';
+import Notificaciones from './paginas/panel/Notificaciones';
 import EditorPlantilla from './paginas/panel/Plantilla';
 import Programar from './paginas/panel/Programar';
 import Equipo from './paginas/panel/Equipo';
@@ -139,6 +140,7 @@ export default function App() {
       <Route path="/bitacora" element={<Interna><Bitacora /></Interna>} />
       <Route path="/bitacora/nueva" element={<Interna><Bitacora /></Interna>} />
       <Route path="/bitacora/:id" element={<Interna><Bitacora /></Interna>} />
+      <Route path="/notificaciones" element={<Interna><Notificaciones /></Interna>} />
       <Route path="/plantillas" element={<Interna><Plantillas /></Interna>} />
       <Route path="/plantillas/importar" element={
         <Interna>
