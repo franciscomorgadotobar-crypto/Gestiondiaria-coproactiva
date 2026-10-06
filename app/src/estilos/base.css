@@ -1410,14 +1410,12 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     grid-template-areas:
       "aviso   aviso"
       "tablero tablero"
-      "guia    guia"
       "trabajo mapa";
     column-gap: 24px;
     align-items: start;
   }
   .inicio-cuerpo.con-mapa > .aviso { grid-area: aviso; margin-bottom: 14px; }
   .inicio-cuerpo.con-mapa > .tablero { grid-area: tablero; }
-  .inicio-cuerpo.con-mapa > .inicio-guia-registro { grid-area: guia; }
   .inicio-cuerpo.con-mapa > .tarjeta-mapa { grid-area: mapa; position: sticky; top: 24px; }
   .inicio-cuerpo.con-mapa > .inicio-trabajo { grid-area: trabajo; }
 
@@ -2014,60 +2012,4 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   border-radius: var(--radio-control);
 }
 
-
-/* Home Operación: tarjeta de orientación igual al mockup aprobado. */
-.inicio-guia-registro {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  margin: 14px 0 20px;
-  padding: 18px 17px;
-  border: 1px solid #f1dfc4;
-  border-radius: var(--radio-tarjeta);
-  background: #fff4e3;
-}
-
-.inicio-guia-registro-icono {
-  display: grid;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  color: #d78a16;
-}
-
-.inicio-guia-registro-icono svg {
-  width: 25px;
-  height: 25px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.inicio-guia-registro strong {
-  display: block;
-  margin: 1px 0 6px;
-  color: var(--texto-titulo);
-  font: 700 14px/1.3 var(--fuente-display);
-}
-
-.inicio-guia-registro p {
-  margin: 0;
-  color: var(--texto);
-  font-size: 12.5px;
-  line-height: 1.55;
-}
-
-.inicio-guia-registro b {
-  font-weight: 700;
-}
-
-@media (max-width: 600px) {
-  .inicio-guia-registro {
-    margin-top: 6px;
-    padding: 17px 15px;
-  }
-}
 
