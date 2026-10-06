@@ -33,6 +33,7 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
   // Tercer nivel → listado/módulo.
   if (/^\/comunidades\/[^/]+$/.test(ruta)) return navegar('/comunidades');
   if (/^\/plantillas\/[^/]+$/.test(ruta)) return navegar('/plantillas');
+  if (/^\/bitacora\/[^/]+$/.test(ruta)) return navegar('/bitacora');
   if (/^\/propiedades\/[^/]+$/.test(ruta)) return navegar('/propiedades');
   if (/^\/proveedores\/[^/]+$/.test(ruta)) return navegar('/proveedores');
   if (/^\/contabilidad\/[^/]+$/.test(ruta)) return navegar('/contabilidad');
@@ -43,6 +44,8 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
 
   // Operación: módulos → inicio del área.
   if ([
+    '/levantamientos',
+    '/bitacora',
     '/plantillas',
     '/comunidades',
     '/mantenciones',
