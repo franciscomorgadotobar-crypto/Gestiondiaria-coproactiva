@@ -2353,3 +2353,27 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     grid-template-columns: minmax(0, 1fr) 390px;
   }
 }
+
+
+/* Corrección definitiva del Home desktop:
+ * .cuerpo hereda flex:1 y, al mismo tiempo, aquí funciona como grid.
+ * Esa combinación hacía que el grid midiera todo el alto disponible y
+ * repartiera visualmente las filas, dejando grandes vacíos. En Inicio no
+ * necesitamos que el cuerpo se estire: la propia .pantalla ya pinta el fondo. */
+@media (min-width: 900px) {
+  .inicio-pantalla > .inicio-cuerpo {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  .inicio-pantalla .inicio-cuerpo.con-mapa {
+    grid-template-rows: auto auto auto;
+    align-content: start;
+  }
+
+  .inicio-pantalla .inicio-cuerpo.con-mapa > .tablero,
+  .inicio-pantalla .inicio-cuerpo.con-mapa > .inicio-trabajo,
+  .inicio-pantalla .inicio-cuerpo.con-mapa > .tarjeta-mapa {
+    align-self: start;
+  }
+}
