@@ -337,11 +337,12 @@ export default function ContabilidadConfiguracion({
           Al deshabilitar esta opción no se modifica el histórico.
         </div>
 
-        {entidad.usa_centros_costo && (
+        {(entidad.usa_centros_costo || centros.length > 0) && (
           <>
             <div className="contabilidad-centros-toolbar">
               <span className="micro apagado">{centros.filter(x => x.activa).length} activos</span>
-              <button type="button" className="boton boton-secundario" onClick={() => editarCentro()}>+ Centro de costo</button>
+              <button type="button" className="boton boton-secundario" disabled={!entidad.usa_centros_costo}
+                      onClick={() => editarCentro()}>+ Centro de costo</button>
             </div>
 
             {centroEditando && (
