@@ -368,7 +368,7 @@
 
 .contabilidad-linea {
   display: grid;
-  grid-template-columns: 28px minmax(230px, 1.2fr) 130px 130px minmax(160px, .8fr) auto;
+  grid-template-columns: 28px minmax(210px, 1.2fr) 120px 120px minmax(170px, .8fr) minmax(150px, .75fr) auto;
   gap: 7px;
   align-items: end;
   padding: 10px;
@@ -466,7 +466,7 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  grid-template-columns: minmax(220px, 1fr) 170px 170px auto auto;
+  grid-template-columns: minmax(210px, 1fr) repeat(3, minmax(150px, 180px)) auto auto;
   gap: 10px;
   align-items: end;
   padding: 14px;
@@ -1462,5 +1462,62 @@
 @media (max-width: 430px) {
   .contabilidad-operaciones-botones {
     grid-template-columns: 1fr;
+  }
+}
+
+.contabilidad-plan-pendiente,
+.contabilidad-plan-protegido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.contabilidad-plan-pendiente p { color: inherit; }
+.contabilidad-plan-tabla tr.agrupadora td {
+  background: var(--papel);
+  font-weight: 600;
+}
+.contabilidad-cuenta-jerarquia {
+  display: inline-block;
+}
+.contabilidad-chip-agrupadora {
+  margin-left: 7px;
+}
+.contabilidad-plan-acciones {
+  flex-wrap: nowrap;
+}
+.contabilidad-linea-centro select {
+  min-width: 0;
+}
+@media (max-width: 1120px) {
+  .contabilidad-linea {
+    grid-template-columns: 28px minmax(190px,1.2fr) 110px 110px minmax(150px,.8fr) minmax(140px,.7fr);
+  }
+  .contabilidad-linea-acciones {
+    grid-column: 2 / -1;
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 760px) {
+  .contabilidad-plan-pendiente,
+  .contabilidad-plan-protegido {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .contabilidad-filtros-reporte {
+    grid-template-columns: 1fr;
+  }
+  .contabilidad-linea {
+    grid-template-columns: 24px 1fr 1fr;
+  }
+  .contabilidad-linea > .campo:nth-of-type(1) {
+    grid-column: 2 / -1;
+  }
+  .contabilidad-linea-centro,
+  .contabilidad-linea-glosa {
+    grid-column: 2 / -1;
+  }
+  .contabilidad-linea-acciones {
+    grid-column: 2 / -1;
   }
 }
