@@ -200,8 +200,22 @@ export default function Inicio() {
         )}
 
         <div className="accesos-inicio">
-          <Link to="/levantamientos" className="acceso acceso-principal">
-            <span>Levantamientos</span>
+          {puedeConfigurar && (
+            <>
+              <Link to="/nuevo" className="acceso acceso-principal">
+                <span>Nuevo levantamiento</span>
+                <span aria-hidden="true">+</span>
+              </Link>
+
+              <Link to="/plantillas" className="acceso">
+                <span>Plantillas</span>
+                <span aria-hidden="true">›</span>
+              </Link>
+            </>
+          )}
+
+          <Link to="/bitacora" className="acceso">
+            <span>Bitácora</span>
             <span aria-hidden="true">›</span>
           </Link>
 
@@ -215,6 +229,17 @@ export default function Inicio() {
             <span aria-hidden="true">›</span>
           </Link>
         </div>
+
+        <aside className="inicio-guia-registro">
+          <span className="inicio-guia-registro-icono" aria-hidden="true">💡</span>
+          <div>
+            <strong>¿Cuál usar?</strong>
+            <p>
+              Usa <b>Levantamiento</b> para inspecciones estructuradas con plantilla.
+              Usa <b>Bitácora</b> para registrar novedades u observaciones rápidas de una comunidad.
+            </p>
+          </div>
+        </aside>
 
         <div className="inicio-trabajo">
         <div className="grupo-titulo" id="por-hacer" data-tutorial="inicio-por-hacer">
