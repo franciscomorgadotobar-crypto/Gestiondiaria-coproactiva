@@ -1,7 +1,7 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
-import { useVolverGlobal } from '../../lib/navegacion';
+import { useVolverGlobal, volverPorJerarquia } from '../../lib/navegacion';
 
 /* Ajustes que se tocan poco, no trabajo del día: equipo y accesos de
  * clientes. Alcanzable directo desde la capa de selección al entrar, junto
@@ -9,7 +9,7 @@ import { useVolverGlobal } from '../../lib/navegacion';
 export default function Configuracion() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
-  useVolverGlobal(() => navegar(inicioSegunArea()));
+  useVolverGlobal(() => volverPorJerarquia(navegar, '/configuracion'));
 
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
