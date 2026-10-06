@@ -1104,8 +1104,8 @@ export default function Contabilidad() {
     if (error) return setError(error.message);
 
     await recargarEntidades(data.id);
-    setAviso('Entidad creada con el plan de cuentas base.');
-    navegar('/contabilidad');
+    setAviso('Entidad creada. Ahora configura su plan de cuentas.');
+    navegar('/contabilidad/configuracion');
   }
 
   async function guardarEntidad({ nombre, rut }) {
