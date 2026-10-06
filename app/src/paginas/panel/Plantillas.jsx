@@ -6,6 +6,7 @@ import { inicioSegunArea } from '../../lib/area';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import { useVolverGlobal } from '../../lib/navegacion';
+import { descargarGuiaPlantilla } from '../../lib/plantillasPDF';
 import './Plantillas.css';
 
 /* Las plantillas del catálogo estándar (comunidad_id nulo) sirven para todas
@@ -20,6 +21,7 @@ export default function Plantillas() {
   const [error, setError] = useState(null);
   const [porBorrar, setPorBorrar] = useState(null);
   const [dialogoNombre, setDialogoNombre] = useState(null);
+  const [descargandoId, setDescargandoId] = useState(null);
 
   const puedeEditar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
   // Borrar una plantilla se lleva su estructura completa —y la de cualquier
@@ -73,6 +75,20 @@ export default function Plantillas() {
       if (e3) return setError(e3.message);
     }
     navegar(`/plantillas/${nueva.id}`);
+  }
+
+  async function descargarGuia(p) {
+    setDescargandoId(p.id);
+    setError(null);
+    const { data, error } = await supabase.from('plantilla_items')
+      .select('*')
+      .eq('plantilla_id', p.id)
+      .eq('activo', true)
+      .order('orden_grupo')
+      .order('orden');
+    setDescargandoId(null);
+    if (error) return setError(error.message);
+    descargarGuiaPlantilla(p, data ?? []);
   }
 
   async function borrar() {
@@ -203,28 +219,36 @@ export default function Plantillas() {
                         )}
                       </div>
 
-                      {(puedeEditar || puedeBorrar) && (
-                        <div className="plantilla-card-footer">
+                      <div className="plantilla-card-footer">
+                        <div className="plantilla-card-acciones">
                           {puedeEditar && (
-                            <div className="plantilla-card-acciones">
-                              <Link to={`/plantillas/${p.id}`} className="boton boton-secundario">
-                                Editar
-                              </Link>
-                              <button className="boton boton-secundario"
-                                      onClick={() => setDialogoNombre({ tipo: 'duplicar', plantilla: p })}>
-                                Duplicar
-                              </button>
-                            </div>
+                            <Link to={`/plantillas/${p.id}`} className="boton boton-secundario">
+                              Editar
+                            </Link>
                           )}
-
-                          {puedeBorrar && (
-                            <button type="button" className="boton boton-texto peligro plantilla-card-eliminar"
-                                    onClick={() => setPorBorrar(p)}>
-                              Eliminar
+                          <button
+                            type="button"
+                            className="boton boton-secundario"
+                            disabled={descargandoId === p.id}
+                            onClick={() => descargarGuia(p)}
+                          >
+                            {descargandoId === p.id ? 'Preparando…' : 'Descargar guía'}
+                          </button>
+                          {puedeEditar && (
+                            <button className="boton boton-secundario"
+                                    onClick={() => setDialogoNombre({ tipo: 'duplicar', plantilla: p })}>
+                              Duplicar
                             </button>
                           )}
                         </div>
-                      )}
+
+                        {puedeBorrar && (
+                          <button type="button" className="boton boton-texto peligro plantilla-card-eliminar"
+                                  onClick={() => setPorBorrar(p)}>
+                            Eliminar
+                          </button>
+                        )}
+                      </div>
                     </article>
                   );
                 })}
