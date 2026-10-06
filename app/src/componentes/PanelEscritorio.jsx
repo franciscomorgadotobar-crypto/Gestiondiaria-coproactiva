@@ -38,23 +38,30 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   useEffect(() => {
     if (!perfil?.id) return;
     let vigente = true;
-    supabase.from('notificaciones_mantenimiento')
-      .select('id', { count: 'exact', head: true })
-      .eq('destinatario_id', perfil.id)
-      .eq('leida', false)
-      .then(({ count }) => { if (vigente) setAlertasMantencion(count ?? 0); });
-    return () => { vigente = false; };
-  }, [perfil?.id, pathname]);
 
-  useEffect(() => {
-    if (!perfil?.id) return;
-    let vigente = true;
-    supabase.from('notificaciones')
-      .select('id', { count: 'exact', head: true })
-      .eq('destinatario_id', perfil.id)
-      .eq('leida', false)
-      .then(({ count }) => { if (vigente) setAlertasGenerales(count ?? 0); });
-    return () => { vigente = false; };
+    async function actualizarAlertas() {
+      const [m, g] = await Promise.all([
+        supabase.from('notificaciones_mantenimiento')
+          .select('id', { count: 'exact', head: true })
+          .eq('destinatario_id', perfil.id)
+          .eq('leida', false),
+        supabase.from('notificaciones')
+          .select('id', { count: 'exact', head: true })
+          .eq('destinatario_id', perfil.id)
+          .eq('leida', false)
+      ]);
+      if (!vigente) return;
+      setAlertasMantencion(m.count ?? 0);
+      setAlertasGenerales(g.count ?? 0);
+    }
+
+    actualizarAlertas();
+    const escuchar = () => actualizarAlertas();
+    window.addEventListener('coproactiva:notificaciones-cambio', escuchar);
+    return () => {
+      vigente = false;
+      window.removeEventListener('coproactiva:notificaciones-cambio', escuchar);
+    };
   }, [perfil?.id, pathname]);
 
   const esCliente = perfil?.rol === 'cliente';
@@ -163,6 +170,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (tipo === 'comunidades') return <svg {...comun}><path d="M4 20h16"/><path d="M6 20V7h12v13"/><path d="M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>;
     if (tipo === 'levantamientos') return <svg {...comun}><path d="M8 4h8"/><path d="M9 3h6v3H9z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="m8 11 1.5 1.5L12 10M14 11h2M8 16l1.5 1.5L12 15M14 16h2"/></svg>;
     if (tipo === 'notificaciones') return <svg {...comun}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>;
+    if (tipo === 'plantillas') return <svg {...comun}><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>;
+    if (tipo === 'bitacora') return <svg {...comun}><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>;
+    if (tipo === 'mantenciones') return <svg {...comun}><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v6a6 6 0 0 1-6 6H6"/><path d="m10 18-4 4-4-4 4-4"/><path d="M6 22v-6"/></svg>;
+    if (tipo === 'mapa') return <svg {...comun}><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>;
     return <svg {...comun}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   }
 
@@ -174,6 +185,44 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       return;
     }
     navegar('/inicio#por-hacer');
+  }
+
+  const opcionesOperacion = [
+    { id: 'inicio', etiqueta: 'Inicio', ruta: '/inicio' },
+    { id: 'comunidades', etiqueta: 'Comunidades', ruta: '/comunidades' },
+    { id: 'levantamientos', etiqueta: 'Levantamientos', accion: irLevantamientos },
+    { id: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', badge: alertasTotales },
+    { id: 'plantillas', etiqueta: 'Plantillas', ruta: '/plantillas', mostrar: puedeConfigurar },
+    { id: 'bitacora', etiqueta: 'Bitácora', ruta: '/bitacora' },
+    { id: 'mantenciones', etiqueta: 'Mantenciones', ruta: '/mantenciones' },
+    { id: 'mapa', etiqueta: 'Mapa', ruta: '/mapa' }
+  ].filter(x => x.mostrar !== false);
+
+  const idsPermitidos = new Set(opcionesOperacion.map(x => x.id));
+  const preferidos = Array.isArray(perfil?.bottom_nav) && perfil.bottom_nav.length
+    ? perfil.bottom_nav.filter(id => idsPermitidos.has(id))
+    : ['inicio', 'comunidades', 'levantamientos', 'notificaciones'];
+
+  const barraIds = [...preferidos];
+  for (const item of opcionesOperacion) {
+    if (barraIds.length >= 4) break;
+    if (!barraIds.includes(item.id)) barraIds.push(item.id);
+  }
+  const barraMovil = barraIds.slice(0, 4)
+    .map(id => opcionesOperacion.find(x => x.id === id))
+    .filter(Boolean);
+  const menuMasOperacion = opcionesOperacion.filter(x => !barraIds.slice(0, 4).includes(x.id));
+
+  function itemMovilActivo(item) {
+    if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
+    if (item.id === 'levantamientos') return levantamientosActivo;
+    return item.ruta ? activa(pathname, item.ruta) : false;
+  }
+
+  function ejecutarItemMovil(item) {
+    setMasAbierto(false);
+    if (item.accion) return item.accion();
+    if (item.ruta) navegar(item.ruta);
   }
 
   return (
@@ -202,6 +251,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             <span className="micro apagado" style={{ display: 'block', marginBottom: 6 }}>
               Cliente
             </span>
+          )}
+          {!esCliente && (
+            <Link to="/mi-cuenta" className="boton boton-texto"
+                  style={{ padding: 0, display: 'block', marginBottom: 6 }}>
+              Mi cuenta
+            </Link>
           )}
           {puedeConfigurar && (
             <button type="button" className="boton boton-texto" style={{ padding: 0, display: 'block', marginBottom: 6 }}
@@ -265,36 +320,22 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       {enOperacion && (
         <>
           <nav className="barra-inferior-movil" aria-label="Navegación principal">
-            <Link to="/inicio"
-                  className={'nav-movil-item' + (pathname === '/inicio' && hash !== '#por-hacer' ? ' activo' : '')}
-                  onClick={() => setMasAbierto(false)}>
-              <IconoMovil tipo="inicio" />
-              <span>Inicio</span>
-            </Link>
-
-            <Link to="/comunidades"
-                  className={'nav-movil-item' + (activa(pathname, '/comunidades') ? ' activo' : '')}
-                  onClick={() => setMasAbierto(false)}>
-              <IconoMovil tipo="comunidades" />
-              <span>Comunidades</span>
-            </Link>
-
-            <button type="button"
-                    className={'nav-movil-item' + (levantamientosActivo ? ' activo' : '')}
-                    onClick={irLevantamientos}>
-              <IconoMovil tipo="levantamientos" />
-              <span>Levantamientos</span>
-            </button>
-
-            <Link to="/notificaciones"
-                  className={'nav-movil-item nav-movil-notificaciones' + (activa(pathname, '/notificaciones') ? ' activo' : '')}
-                  onClick={() => setMasAbierto(false)}>
-              <span className="nav-movil-icono-wrap">
-                <IconoMovil tipo="notificaciones" />
-                {alertasTotales > 0 && <span className="nav-movil-badge">{alertasTotales > 99 ? '99+' : alertasTotales}</span>}
-              </span>
-              <span>Notificaciones</span>
-            </Link>
+            {barraMovil.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                className={'nav-movil-item' + (itemMovilActivo(item) ? ' activo' : '')}
+                onClick={() => ejecutarItemMovil(item)}
+              >
+                <span className="nav-movil-icono-wrap">
+                  <IconoMovil tipo={item.id} />
+                  {item.badge > 0 && (
+                    <span className="nav-movil-badge">{item.badge > 99 ? '99+' : item.badge}</span>
+                  )}
+                </span>
+                <span>{item.etiqueta}</span>
+              </button>
+            ))}
 
             <button type="button"
                     className={'nav-movil-item' + (masAbierto ? ' activo' : '')}
@@ -314,20 +355,25 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   <button type="button" onClick={() => setMasAbierto(false)} aria-label="Cerrar">×</button>
                 </div>
                 <div className="menu-mas-enlaces">
-                  {puedeConfigurar && <Link to="/plantillas" onClick={() => setMasAbierto(false)}>Plantillas <span>›</span></Link>}
-                  <Link to="/bitacora" onClick={() => setMasAbierto(false)}>Bitácora <span>›</span></Link>
-                  <Link to="/mantenciones" onClick={() => setMasAbierto(false)}>Mantenciones <span>›</span></Link>
-                  <Link to="/mapa" onClick={() => setMasAbierto(false)}>Mapa <span>›</span></Link>
+                  {menuMasOperacion.map(item => (
+                    <button key={item.id} type="button" onClick={() => ejecutarItemMovil(item)}>
+                      {item.etiqueta}
+                      <span>›</span>
+                    </button>
+                  ))}
+                  <Link to="/mi-cuenta" onClick={() => setMasAbierto(false)}>
+                    Mi cuenta <span>›</span>
+                  </Link>
                   {puedeCambiarArea && (
                     <button type="button" onClick={() => { setMasAbierto(false); cambiarArea(); }}>
                       Cambiar de área <span>›</span>
                     </button>
                   )}
-                  <button type="button" className="menu-mas-salir" onClick={salir}>Salir</button>
                 </div>
               </div>
             </div>
           )}
+
         </>
       )}
     </div>
