@@ -2171,3 +2171,76 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   .barra-inferior-movil,
   .menu-mas-fondo { display: none !important; }
 }
+
+/* Inicio de Operación: composición específica para escritorio ancho. */
+@media (min-width: 900px) {
+  .inicio-pantalla {
+    --ancho-contenido: 1400px;
+  }
+
+  .inicio-pantalla > .encabezado {
+    padding-top: 22px;
+    padding-bottom: 18px;
+  }
+
+  .inicio-pantalla .inicio-salir-superior {
+    display: none;
+  }
+
+  .inicio-pantalla .inicio-cuerpo.con-mapa {
+    grid-template-columns: minmax(0, 2fr) minmax(320px, .9fr);
+    grid-template-areas:
+      "aviso aviso"
+      "tablero tablero"
+      "trabajo mapa";
+    column-gap: 28px;
+    row-gap: 22px;
+  }
+
+  .inicio-pantalla .tablero {
+    gap: 10px;
+    margin-bottom: 0;
+  }
+
+  .inicio-pantalla .tablero > div {
+    min-height: 74px;
+    padding: 15px 16px;
+  }
+
+  .inicio-pantalla .tablero .n {
+    font-size: 25px;
+  }
+
+  .inicio-pantalla .tablero .r {
+    margin-top: 6px;
+    font-size: 9px;
+  }
+
+  .inicio-pantalla .tarjeta-mapa {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .inicio-pantalla .tarjeta-mapa .previo {
+    height: 220px;
+  }
+
+  .inicio-pantalla .inicio-trabajo {
+    min-width: 0;
+  }
+
+  .inicio-pantalla .cabecera-trabajador {
+    min-height: 54px;
+    padding: 14px 16px;
+  }
+
+  .inicio-pantalla .inicio-trabajo > .grupo-titulo {
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 1350px) {
+  .inicio-pantalla .inicio-cuerpo.con-mapa {
+    grid-template-columns: minmax(0, 2.2fr) 390px;
+  }
+}
