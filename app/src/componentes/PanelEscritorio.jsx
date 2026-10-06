@@ -125,6 +125,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/contabilidad/asientos', etiqueta: 'Asientos', mostrar: true },
         { ruta: '/contabilidad/plan', etiqueta: 'Plan de cuentas', mostrar: true },
         { ruta: '/contabilidad/reportes', etiqueta: 'Reportes', mostrar: true },
+        { ruta: '/contabilidad/configuracion', etiqueta: 'Configuración', mostrar: true },
         { ruta: '/contabilidad/entidades', etiqueta: 'Entidades', mostrar: true }
       ]
     : enProveedores
