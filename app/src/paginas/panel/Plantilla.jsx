@@ -7,6 +7,7 @@ import { NIVELES_EVIDENCIA, normalizarOpcion, nivelPosible } from '../../lib/opc
 import { nuevoId } from '../../lib/local';
 import { TIPOS, ORIGENES_FOTO } from '../../lib/tiposDePunto';
 import { useVolverGlobal } from '../../lib/navegacion';
+import { descargarGuiaPlantilla } from '../../lib/plantillasPDF';
 
 /* Editor de una plantilla de levantamiento.
  *
@@ -429,6 +430,15 @@ export default function EditorPlantilla() {
         <p className="chico apagado" style={{ margin: '3px 0 0 0' }}>
           {items.length} puntos en {categorias.length} categorías
         </p>
+
+        <button
+          type="button"
+          className="boton boton-secundario boton-movil"
+          style={{ marginTop: 12 }}
+          onClick={() => descargarGuiaPlantilla(plantilla, items)}
+        >
+          Descargar guía PDF
+        </button>
 
         <div className={'campo' + (faltaNombre ? ' campo-error' : '')} style={{ marginTop: 14 }}>
           <label className="etiqueta-campo" htmlFor="plantilla-nombre">Nombre de la plantilla</label>
