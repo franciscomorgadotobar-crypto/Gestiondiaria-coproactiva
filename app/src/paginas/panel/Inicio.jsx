@@ -143,7 +143,7 @@ export default function Inicio() {
   }
 
   return (
-    <div className="pantalla">
+    <div className="pantalla inicio-pantalla">
       <AvisoConexion />
 
       {porBorrar && (
@@ -166,7 +166,7 @@ export default function Inicio() {
             </p>
           </div>
           <Campana miId={perfil?.id} />
-          <button className="boton boton-texto" onClick={salir}>Salir</button>
+          <button className="boton boton-texto inicio-salir-superior" onClick={salir}>Salir</button>
         </div>
       </header>
 
