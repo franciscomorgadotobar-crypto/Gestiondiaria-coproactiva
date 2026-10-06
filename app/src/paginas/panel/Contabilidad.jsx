@@ -1206,7 +1206,7 @@ export default function Contabilidad() {
 
   return (
     <div className="pantalla contabilidad-pantalla">
-      {editorAbierto && (
+      {editorAbierto && entidad?.plan_origen !== 'pendiente' && (
         <EditorAsiento
           cuentas={cuentas.filter(x => x.activa && x.clase === 'movimiento' && x.imputable !== false)}
           proveedores={proveedores}
@@ -1257,8 +1257,9 @@ export default function Contabilidad() {
                   id: 'parent_id',
                   label: 'Cuenta agrupadora',
                   valor: cuentaEditando.parent_id ?? '',
+                  obligatorio: tieneMovimientosEntidad,
                   opciones: [
-                    ['','Sin cuenta agrupadora'],
+                    ['', tieneMovimientosEntidad ? 'Selecciona una cuenta agrupadora' : 'Sin cuenta agrupadora'],
                     ...cuentas
                       .filter(x => x.id !== cuentaEditando.id && x.activa && Number(x.nivel || 1) < 5)
                       .map(x => [x.id, x.codigo + ' · ' + x.cuenta])
@@ -1436,10 +1437,16 @@ export default function Contabilidad() {
             </section>
 
             <section className="contabilidad-acciones-principales">
-              <button type="button" className="boton boton-movil"
-                      onClick={() => navegar('/contabilidad/asientos?nuevo=1')}>
-                + Nuevo asiento
-              </button>
+              {entidad.plan_origen === 'pendiente' ? (
+                <Link className="boton boton-movil" to="/contabilidad/configuracion">
+                  Configurar plan
+                </Link>
+              ) : (
+                <button type="button" className="boton boton-movil"
+                        onClick={() => navegar('/contabilidad/asientos?nuevo=1')}>
+                  + Nuevo asiento
+                </button>
+              )}
               <Link className="boton boton-secundario boton-movil" to="/contabilidad/reportes">
                 Ver reportes
               </Link>
@@ -1504,6 +1511,17 @@ export default function Contabilidad() {
 
         {!cargando && entidad && vista === 'asientos' && (
           <>
+            {entidad.plan_origen === 'pendiente' && (
+              <div className="aviso aviso-alerta contabilidad-plan-pendiente">
+                <div>
+                  <strong>Configura el plan de cuentas antes de contabilizar.</strong>
+                  <p className="micro" style={{ margin: '4px 0 0' }}>
+                    Puedes usar una plantilla, importar un plan o crearlo desde cero.
+                  </p>
+                </div>
+                <Link to="/contabilidad/configuracion" className="boton boton-secundario">Configurar plan</Link>
+              </div>
+            )}
             <div className="contabilidad-toolbar">
               <label className="campo crece">
                 <span className="etiqueta-campo">Buscar asiento</span>
@@ -1511,9 +1529,15 @@ export default function Contabilidad() {
                        placeholder="Número, fecha, glosa o cuenta"
                        onChange={e => setBusquedaAsiento(e.target.value)} />
               </label>
-              <button type="button" className="boton boton-movil" onClick={() => setEditorAbierto(true)}>
-                + Nuevo asiento
-              </button>
+              {entidad.plan_origen === 'pendiente' ? (
+                <Link to="/contabilidad/configuracion" className="boton boton-movil">
+                  Configurar plan
+                </Link>
+              ) : (
+                <button type="button" className="boton boton-movil" onClick={() => setEditorAbierto(true)}>
+                  + Nuevo asiento
+                </button>
+              )}
             </div>
 
             <div className="contabilidad-asientos-lista">
