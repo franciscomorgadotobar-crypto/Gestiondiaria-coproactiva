@@ -6,6 +6,8 @@ import { limpiarArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
+import ContabilidadConfiguracion from '../../componentes/ContabilidadConfiguracion';
+import '../../componentes/ContabilidadConfiguracion.css';
 import {
   armarBalanceGeneral,
   armarEstadoResultados,
@@ -22,6 +24,7 @@ const VISTAS = [
   ['asientos', 'Asientos', '/contabilidad/asientos'],
   ['plan', 'Plan de cuentas', '/contabilidad/plan'],
   ['reportes', 'Reportes', '/contabilidad/reportes'],
+  ['configuracion', 'Configuración', '/contabilidad/configuracion'],
   ['entidades', 'Entidades', '/contabilidad/entidades']
 ];
 
@@ -103,6 +106,7 @@ function vistaDesdeRuta(pathname) {
   if (pathname.includes('/asientos')) return 'asientos';
   if (pathname.includes('/plan')) return 'plan';
   if (pathname.includes('/reportes')) return 'reportes';
+  if (pathname.includes('/configuracion')) return 'configuracion';
   if (pathname.includes('/entidades')) return 'entidades';
   return 'resumen';
 }
@@ -110,7 +114,7 @@ function vistaDesdeRuta(pathname) {
 function gruposCuentas(cuentas) {
   const orden = ['activo','pasivo','patrimonio','ingreso','costo','gasto','impuesto'];
   return orden
-    .map(tipo => [tipo, cuentas.filter(c => c.tipo_contable === tipo && c.activa)])
+    .map(tipo => [tipo, cuentas.filter(c => c.tipo_contable === tipo && c.activa && c.clase === 'movimiento' && c.imputable !== false)])
     .filter(([, xs]) => xs.length);
 }
 
@@ -130,11 +134,12 @@ function lineaVacia() {
     cuenta_id: '',
     debe: '',
     haber: '',
-    glosa: ''
+    glosa: '',
+    centro_costo_id: ''
   };
 }
 
-function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar }) {
+function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = false, guardando, onGuardar, onCancelar }) {
   const [numeroAsiento, setNumeroAsiento] = useState('');
   const [fecha, setFecha] = useState(hoyChile());
   const [glosa, setGlosa] = useState('');
@@ -144,25 +149,32 @@ function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar 
   const [montoOperacion, setMontoOperacion] = useState('');
   const grupos = useMemo(() => gruposCuentas(cuentas), [cuentas]);
 
-  const cuentaPorCodigo = codigo => cuentas.find(x => x.codigo === codigo && x.activa)?.id ?? '';
+  const cuentaPorCodigos = codigos => {
+    for (const codigo of codigos) {
+      const id = cuentas.find(x => x.codigo === codigo && x.activa && x.imputable !== false)?.id;
+      if (id) return id;
+    }
+    return '';
+  };
 
   function aplicarOperacion(tipo) {
     const total = monto(montoOperacion);
     if (total <= 0) return;
 
-    const banco = cuentaPorCodigo('1102');
-    const ivaCredito = cuentaPorCodigo('1104');
-    const proveedores = cuentaPorCodigo('2101');
-    const socioFrancisco = cuentaPorCodigo('2108');
-    const socioOsmar = cuentaPorCodigo('2109');
-    const ingresoAdministracion = cuentaPorCodigo('4101');
+    const banco = cuentaPorCodigos(['1.1.01.002','1.1.02','1102']);
+    const ivaCredito = cuentaPorCodigos(['1.1.01.004','1.1.04','1104']);
+    const proveedores = cuentaPorCodigos(['2.1.01.002','2.1.02','2101']);
+    const socioFrancisco = cuentaPorCodigos(['2.1.01.011','2.1.13','2108']);
+    const socioOsmar = cuentaPorCodigos(['2.1.01.012','2.1.14','2109']);
+    const ingresoAdministracion = cuentaPorCodigos(['4.1.01.001','4.1.01','4101']);
 
     const linea = (cuenta_id, debe = '', haber = '', detalle = '') => ({
       key: crypto.randomUUID(),
       cuenta_id,
       debe: debe === '' ? '' : String(debe),
       haber: haber === '' ? '' : String(haber),
-      glosa: detalle
+      glosa: detalle,
+      centro_costo_id: ''
     });
 
     if (tipo === 'aporte_francisco' && banco && socioFrancisco) {
@@ -211,7 +223,13 @@ function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar 
   const totalHaber = lineas.reduce((a, x) => a + monto(x.haber), 0);
   const diferencia = totalDebe - totalHaber;
   const completas = lineas.filter(x => x.cuenta_id && (monto(x.debe) > 0 || monto(x.haber) > 0));
-  const valido = fecha && completas.length >= 2 && totalDebe > 0 && Math.abs(diferencia) < 0.005;
+  const centrosCompletos = completas.every(x => {
+    if (!usaCentrosCosto) return true;
+    const cuenta = cuentas.find(c => c.id === x.cuenta_id);
+    return !(cuenta?.requiere_centro_costo && ['4','5'].includes(String(cuenta.codigo || '')[0]))
+      || Boolean(x.centro_costo_id);
+  });
+  const valido = fecha && completas.length >= 2 && totalDebe > 0 && Math.abs(diferencia) < 0.005 && centrosCompletos;
 
   function cambiarLinea(key, campo, valor) {
     setLineas(xs => xs.map(x => {
@@ -252,7 +270,8 @@ function EditorAsiento({ cuentas, proveedores, guardando, onGuardar, onCancelar 
         cuenta_id: x.cuenta_id,
         debe: monto(x.debe),
         haber: monto(x.haber),
-        glosa: x.glosa.trim()
+        glosa: x.glosa.trim(),
+        centro_costo_id: x.centro_costo_id || null
       }))
     });
   }
