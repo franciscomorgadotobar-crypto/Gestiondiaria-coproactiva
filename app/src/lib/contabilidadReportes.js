@@ -254,9 +254,11 @@ export function descargarPDF({
   cuentas = [],
   eerrDetalle = [],
   diario = [],
-  sinClasificar = []
+  sinClasificar = [],
+  centroCostoNombre = ''
 }) {
-  const periodo = textoPeriodo(desde, hasta);
+  const periodoBase = textoPeriodo(desde, hasta);
+  const periodo = centroCostoNombre ? periodoBase + ' · Centro de costo: ' + centroCostoNombre : periodoBase;
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
   const balanceGeneral = armarBalanceGeneral(balance, cuentas, eerr.utilidad);
@@ -441,12 +443,13 @@ export function descargarPDF({
 
     autoTable(doc, {
       startY: 34,
-      head: [['Asiento','Fecha','Código','Cuenta','Debe','Haber','Glosa']],
+      head: [['Asiento','Fecha','Código','Cuenta','Centro de costo','Debe','Haber','Glosa']],
       body: diario.map(x => [
         x.numero,
         x.fecha,
         x.codigo,
         x.cuenta,
+        x.centro_costo || 'General / Sin asignar',
         Number(x.debe || 0) ? moneda(x.debe) : '',
         Number(x.haber || 0) ? moneda(x.haber) : '',
         x.glosa_linea || x.glosa || ''
@@ -458,10 +461,11 @@ export function descargarPDF({
         0: { cellWidth: 15 },
         1: { cellWidth: 22 },
         2: { cellWidth: 18 },
-        3: { cellWidth: 45 },
-        4: { cellWidth: 25, halign: 'right' },
-        5: { cellWidth: 25, halign: 'right' },
-        6: { cellWidth: 118 }
+        3: { cellWidth: 38 },
+        4: { cellWidth: 38 },
+        5: { cellWidth: 23, halign: 'right' },
+        6: { cellWidth: 23, halign: 'right' },
+        7: { cellWidth: 87 }
       }
     });
   }
@@ -499,9 +503,11 @@ export async function descargarPPT({
   cuentas = [],
   eerrDetalle = [],
   diario = [],
-  sinClasificar = []
+  sinClasificar = [],
+  centroCostoNombre = ''
 }) {
-  const periodo = textoPeriodo(desde, hasta);
+  const periodoBase = textoPeriodo(desde, hasta);
+  const periodo = centroCostoNombre ? periodoBase + ' · Centro de costo: ' + centroCostoNombre : periodoBase;
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
   const balanceGeneral = armarBalanceGeneral(balance, cuentas, eerr.utilidad);
