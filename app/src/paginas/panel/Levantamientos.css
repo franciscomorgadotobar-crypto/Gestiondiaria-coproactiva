@@ -1,0 +1,127 @@
+.levantamientos-pantalla {
+  max-width: 900px;
+}
+
+.levantamientos-volver {
+  padding: 4px 8px 4px 0;
+}
+
+.levantamientos-bajada {
+  margin: 3px 0 0;
+}
+
+.levantamientos-cuerpo {
+  display: grid;
+  gap: 18px;
+}
+
+.levantamientos-opciones {
+  display: grid;
+  gap: 12px;
+}
+
+.levantamientos-opcion {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 112px;
+  padding: 18px;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .15s ease, transform .15s ease;
+}
+
+.levantamientos-opcion:hover {
+  border-color: var(--naranja);
+}
+
+.levantamientos-icono {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid var(--borde);
+  color: var(--tinta);
+  background: var(--papel);
+  font: 700 24px/1 var(--fuente-display);
+}
+
+.levantamientos-opcion-texto {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.levantamientos-opcion-texto strong {
+  color: var(--texto-titulo);
+  font: 650 17px/1.25 var(--fuente-display);
+}
+
+.levantamientos-opcion-texto small {
+  color: var(--texto-apagado);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.levantamientos-flecha {
+  color: var(--texto-tenue);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.levantamientos-guia {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #f0dcbd;
+  background: #fdf3e6;
+}
+
+.levantamientos-guia-icono {
+  flex: none;
+  font-size: 22px;
+}
+
+.levantamientos-guia strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--texto-titulo);
+}
+
+.levantamientos-guia p {
+  margin: 0;
+  color: var(--texto);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@media (min-width: 760px) {
+  .levantamientos-opciones {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .levantamientos-opcion {
+    grid-template-columns: 1fr auto;
+    align-content: start;
+    min-height: 190px;
+  }
+
+  .levantamientos-icono {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .levantamientos-opcion {
+    min-height: 100px;
+    padding: 15px;
+  }
+
+  .levantamientos-icono {
+    width: 42px;
+    height: 42px;
+    font-size: 21px;
+  }
+}
