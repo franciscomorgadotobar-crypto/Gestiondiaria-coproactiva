@@ -46,6 +46,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   const esCliente = perfil?.rol === 'cliente';
   const puedeConfigurar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
+  const puedeCambiarArea = Boolean(puedeConfigurar);
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
 
@@ -128,7 +129,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   function volverGlobal() {
     const evento = new CustomEvent('coproactiva:volver', { cancelable: true });
     window.dispatchEvent(evento);
-    if (!evento.defaultPrevented) volverPorJerarquia(navegar, pathname);
+    if (!evento.defaultPrevented) volverPorJerarquia(navegar, pathname, puedeCambiarArea);
   }
 
   const tutorialContextual =
@@ -193,9 +194,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             fijo en la que se eligió la primera vez, sin salida. */}
         {!esCliente && (
           <div className="barra-area-movil">
-            <button type="button" className="barra-area-volver" onClick={volverGlobal}>
-              ‹ Volver
-            </button>
+            {(puedeCambiarArea || !['/', '/inicio'].includes(pathname)) && (
+              <button type="button" className="barra-area-volver" onClick={volverGlobal}>
+                ‹ Volver
+              </button>
+            )}
             <div className="barra-area-derecha">
               {tutorialContextual && (
                 <button
@@ -209,7 +212,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   ?
                 </button>
               )}
-              {puedeConfigurar && (
+              {puedeCambiarArea && (
                 <button type="button" className="barra-area-cambiar" onClick={cambiarArea}>
                   Cambiar de área
                 </button>
