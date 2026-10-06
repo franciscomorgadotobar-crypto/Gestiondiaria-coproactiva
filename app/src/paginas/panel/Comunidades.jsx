@@ -939,7 +939,7 @@ function DetalleComunidad({ id }) {
       {eliminarAbierto && (
         <Confirmar
           titulo="Eliminar comunidad"
-          mensaje="Si la comunidad no tiene historial se eliminará definitivamente. Si ya tiene información operativa o contable, se retirará de uso y se conservará su historial."
+          mensaje="La comunidad se eliminará definitivamente junto con sus datos operativos asociados. Si existe contabilidad con asientos históricos, esos asientos se conservarán como historial contable independiente."
           textoConfirmar="Eliminar"
           textoCancelar="Cancelar"
           onConfirmar={eliminarComunidad}
