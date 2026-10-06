@@ -1,0 +1,451 @@
+.bitacora-pantalla {
+  max-width: 980px;
+}
+
+.bitacora-volver {
+  padding: 4px 8px 4px 0;
+}
+
+.bitacora-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.bitacora-cabecera p {
+  margin: 3px 0 0;
+}
+
+.bitacora-cuerpo,
+.bitacora-formulario,
+.bitacora-detalle {
+  display: grid;
+  gap: 14px;
+}
+
+.bitacora-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bitacora-kpis > div {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  padding: 14px 14px 14px 18px;
+  border: 1px solid var(--borde);
+  background: var(--tarjeta);
+}
+
+.bitacora-kpis > div::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+}
+
+.bitacora-kpis .urgente::before { background: var(--critico-texto); }
+.bitacora-kpis .atencion::before { background: var(--naranja); }
+.bitacora-kpis .registro::before { background: var(--texto-tenue); }
+
+.bitacora-kpis strong {
+  color: var(--texto-titulo);
+  font: 700 22px/1 var(--fuente-display);
+}
+
+.bitacora-kpis span {
+  color: var(--texto-apagado);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bitacora-filtros {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr));
+  gap: 10px;
+  padding: 14px;
+}
+
+.bitacora-filtros .campo {
+  min-width: 0;
+  margin: 0;
+}
+
+.bitacora-lista {
+  display: grid;
+  gap: 9px;
+}
+
+.bitacora-card {
+  position: relative;
+  display: block;
+  min-width: 0;
+  padding: 14px 16px 15px 18px;
+  color: inherit;
+  overflow: hidden;
+}
+
+.bitacora-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--texto-tenue);
+}
+
+.bitacora-card.atencion::before { background: var(--naranja); }
+.bitacora-card.urgente::before { background: var(--critico-texto); }
+
+.bitacora-card-superior {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bitacora-card-superior time {
+  color: var(--texto-tenue);
+  font-size: 10px;
+}
+
+.bitacora-nivel {
+  display: inline-block;
+  padding: 5px 8px;
+  border-radius: var(--radio-pastilla);
+  background: var(--hover);
+  color: var(--texto-apagado);
+  font: 700 9px/1 var(--fuente-display);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.bitacora-nivel.atencion {
+  background: #fff1df;
+  color: #a85400;
+}
+
+.bitacora-nivel.urgente {
+  background: var(--critico-fondo);
+  color: var(--critico-texto);
+}
+
+.bitacora-card h3 {
+  margin: 10px 0 3px;
+  color: var(--texto-titulo);
+  font: 650 16px/1.3 var(--fuente-display);
+}
+
+.bitacora-card-comunidad {
+  margin: 0;
+  color: var(--texto);
+  font-size: 12px;
+}
+
+.bitacora-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 10px;
+  color: var(--texto-apagado);
+  font-size: 11px;
+}
+
+.bitacora-vacio {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 22px;
+}
+
+.bitacora-vacio p {
+  margin: 0 0 4px;
+}
+
+.bitacora-sugerencia {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid #cfe0f3;
+  background: #edf5fd;
+  color: #2d5f91;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.bitacora-niveles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.bitacora-niveles legend {
+  grid-column: 1 / -1;
+}
+
+.bitacora-nivel-opcion {
+  position: relative;
+  display: grid;
+  min-height: 78px;
+  place-items: center;
+  padding: 10px;
+  border: 1px solid var(--borde);
+  background: var(--tarjeta);
+  color: var(--texto);
+  text-align: center;
+  cursor: pointer;
+}
+
+.bitacora-nivel-opcion input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bitacora-nivel-opcion span {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.bitacora-nivel-opcion.activa {
+  border-width: 2px;
+  border-color: var(--tinta);
+}
+
+.bitacora-nivel-opcion.atencion.activa {
+  border-color: var(--naranja);
+  background: #fff8ef;
+  color: #a85400;
+}
+
+.bitacora-nivel-opcion.urgente.activa {
+  border-color: var(--critico-texto);
+  background: var(--critico-fondo);
+  color: var(--critico-texto);
+}
+
+.bitacora-adjuntar {
+  display: grid;
+  gap: 3px;
+  padding: 16px;
+  border: 1px dashed var(--borde-fuerte, #b9b1a8);
+  background: var(--tarjeta);
+  cursor: pointer;
+}
+
+.bitacora-adjuntar input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.bitacora-adjuntar strong {
+  color: var(--texto-titulo);
+  font-size: 13px;
+}
+
+.bitacora-adjuntar span {
+  color: var(--texto-apagado);
+  font-size: 11px;
+}
+
+.bitacora-archivos-seleccionados {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.bitacora-archivos-seleccionados > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--borde-suave);
+  background: var(--papel);
+  font-size: 12px;
+}
+
+.bitacora-form-acciones {
+  justify-content: flex-end;
+  margin-top: 3px;
+}
+
+.bitacora-detalle-titulo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.bitacora-detalle-titulo h2 {
+  margin: 10px 0 0;
+  color: var(--texto-titulo);
+  font: 700 24px/1.25 var(--fuente-display);
+}
+
+.bitacora-detalle-titulo time {
+  color: var(--texto-tenue);
+  font-size: 11px;
+}
+
+.bitacora-detalle-datos {
+  padding: 6px 16px;
+}
+
+.bitacora-detalle-datos > div {
+  display: grid;
+  grid-template-columns: minmax(120px, .8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.bitacora-detalle-datos > div:last-child {
+  border-bottom: 0;
+}
+
+.bitacora-detalle-datos span {
+  color: var(--texto-apagado);
+  font-size: 12px;
+}
+
+.bitacora-detalle-datos strong {
+  color: var(--texto-titulo);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.bitacora-detalle-seccion h3 {
+  margin: 0 0 8px;
+  color: var(--texto-titulo);
+  font: 700 16px/1.3 var(--fuente-display);
+}
+
+.bitacora-detalle-seccion > p {
+  margin: 0;
+  color: var(--texto);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.bitacora-adjuntos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 9px;
+}
+
+.bitacora-adjunto {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  color: inherit;
+}
+
+.bitacora-adjunto img,
+.bitacora-adjunto-documento {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  background: var(--papel);
+}
+
+.bitacora-adjunto-documento {
+  display: grid;
+  place-items: center;
+  color: var(--texto-apagado);
+  font: 700 18px/1 var(--fuente-display);
+}
+
+.bitacora-adjunto span {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .bitacora-filtros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bitacora-buscar {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .bitacora-cabecera {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bitacora-cabecera .boton {
+    width: 100%;
+  }
+
+  .bitacora-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bitacora-kpis > div {
+    padding: 11px 8px 11px 12px;
+  }
+
+  .bitacora-kpis strong {
+    font-size: 19px;
+  }
+
+  .bitacora-kpis span {
+    font-size: 9px;
+  }
+
+  .bitacora-filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .bitacora-buscar {
+    grid-column: auto;
+  }
+
+  .bitacora-niveles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bitacora-nivel-opcion {
+    min-height: 88px;
+    padding: 8px 5px;
+  }
+
+  .bitacora-nivel-opcion span {
+    font-size: 10.5px;
+  }
+
+  .bitacora-form-acciones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bitacora-detalle-titulo {
+    flex-direction: column;
+  }
+
+  .bitacora-detalle-datos > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .bitacora-adjuntos-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bitacora-adjunto img,
+  .bitacora-adjunto-documento {
+    height: 112px;
+  }
+}
