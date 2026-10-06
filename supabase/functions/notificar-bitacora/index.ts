@@ -86,8 +86,11 @@ Deno.serve(async (req) => {
     ? (registro.tipo_otro || 'Otro')
     : (tipo?.nombre ?? registro.tipo_codigo);
   const urgente = registro.nivel === 'urgente';
-  const limpiarAsunto = (s: string) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const asunto = limpiarAsunto(`${urgente ? '[URGENTE] ' : ''}Bitacora · ${nombreComunidad} · ${registro.titulo}`);
+  const limpiarAsunto = (s: string) => String(s)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '');
+  const asunto = limpiarAsunto(`${urgente ? '[URGENTE] ' : ''}Bitacora - ${nombreComunidad} - ${registro.titulo}`);
   const enlace = `${URL_APP.replace(/\/$/, '')}/bitacora/${registro.id}`;
 
   const sinAcentos = (s: unknown) => String(s ?? '')
