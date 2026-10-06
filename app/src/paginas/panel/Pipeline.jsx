@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import './Pipeline.css';
-import { useVolverGlobal } from '../../lib/navegacion';
+import { useVolverGlobal, volverPorJerarquia } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
 
@@ -66,7 +66,7 @@ function fechaCL(valor, conHora = false) {
 export default function Pipeline() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
-  useVolverGlobal(() => navegar(inicioSegunArea()));
+  useVolverGlobal(() => volverPorJerarquia(navegar, '/pipeline'));
   const [prospectos, setProspectos] = useState(null);
   const [diagnosticos, setDiagnosticos] = useState(new Map());   // prospecto_id → { control, resultado }
   const [equipo, setEquipo] = useState([]);
