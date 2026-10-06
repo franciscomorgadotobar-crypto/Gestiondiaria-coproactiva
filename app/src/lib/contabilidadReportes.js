@@ -215,6 +215,29 @@ function nombreArchivo(entidad, extension) {
   return (base || 'contabilidad') + '-informe-contable.' + extension;
 }
 
+function agruparDiarioPorAsiento(diario = []) {
+  const mapa = new Map();
+  for (const x of diario) {
+    const clave = x.asiento_id || [x.numero, x.fecha, x.glosa].join('|');
+    if (!mapa.has(clave)) {
+      mapa.set(clave, {
+        asiento_id: x.asiento_id,
+        numero: x.numero,
+        fecha: x.fecha,
+        glosa: x.glosa || '',
+        lineas: [],
+        debe: 0,
+        haber: 0
+      });
+    }
+    const a = mapa.get(clave);
+    a.lineas.push(x);
+    a.debe += Number(x.debe || 0);
+    a.haber += Number(x.haber || 0);
+  }
+  return [...mapa.values()];
+}
+
 function cabeceraPdf(doc, entidad, periodo) {
   doc.setFillColor('#' + MARCA.tinta);
   doc.rect(0, 0, 210, 18, 'F');
@@ -264,6 +287,7 @@ export function descargarPDF({
   const tb = totalesBalance(balance);
   const balanceGeneral = armarBalanceGeneral(balance, cuentas, eerr.utilidad);
   const pasivoPatrimonio = balanceGeneral.totalPasivoPatrimonio;
+  const asientosDiario = agruparDiarioPorAsiento(diario);
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
   cabeceraPdf(doc, entidad, periodo);
@@ -275,7 +299,7 @@ export function descargarPDF({
     ['Activo', moneda(tb.activo)],
     ['Pasivo + Patrimonio', moneda(pasivoPatrimonio)],
     ['Resultado del ejercicio', moneda(eerr.utilidad)],
-    ['Movimientos', numero(diario.length)]
+    ['Asientos', numero(asientosDiario.length)]
   ];
   kpis.forEach((k, i) => {
     const x = 19 + (i % 2) * 88;
@@ -430,7 +454,7 @@ export function descargarPDF({
     }
   });
 
-  if (diario.length) {
+  if (asientosDiario.length) {
     doc.addPage('a4', 'landscape');
     doc.setFillColor('#' + MARCA.tinta);
     doc.rect(0, 0, 297, 16, 'F');
@@ -444,29 +468,31 @@ export function descargarPDF({
 
     autoTable(doc, {
       startY: 34,
-      head: [['Asiento','Fecha','Código','Cuenta','Centro de costo','Debe','Haber','Glosa']],
-      body: diario.map(x => [
-        x.numero,
-        x.fecha,
-        x.codigo,
-        x.cuenta,
-        x.centro_costo || 'General / Sin asignar',
-        Number(x.debe || 0) ? moneda(x.debe) : '',
-        Number(x.haber || 0) ? moneda(x.haber) : '',
-        x.glosa_linea || x.glosa || ''
+      head: [['Asiento','Fecha','Cuentas involucradas','Debe','Haber','Glosa']],
+      body: asientosDiario.map(a => [
+        a.numero,
+        a.fecha,
+        a.lineas.map(x => {
+          const centro = x.centro_costo && x.centro_costo !== 'General / Sin asignar'
+            ? ' · CC: ' + x.centro_costo
+            : '';
+          const importe = Number(x.debe || 0) ? 'Debe ' + moneda(x.debe) : 'Haber ' + moneda(x.haber);
+          return x.codigo + ' · ' + x.cuenta + centro + ' · ' + importe;
+        }).join('\n'),
+        moneda(a.debe),
+        moneda(a.haber),
+        a.glosa || ''
       ]),
       theme: 'striped',
-      styles: { font: 'helvetica', fontSize: 7, cellPadding: 1.5, textColor: '#' + MARCA.tinta },
+      styles: { font: 'helvetica', fontSize: 7, cellPadding: 1.5, textColor: '#' + MARCA.tinta, valign: 'top' },
       headStyles: { fillColor: '#' + MARCA.tinta, textColor: '#' + MARCA.blanco, fontStyle: 'bold' },
       columnStyles: {
         0: { cellWidth: 15 },
         1: { cellWidth: 22 },
-        2: { cellWidth: 18 },
-        3: { cellWidth: 38 },
-        4: { cellWidth: 38 },
-        5: { cellWidth: 23, halign: 'right' },
-        6: { cellWidth: 23, halign: 'right' },
-        7: { cellWidth: 87 }
+        2: { cellWidth: 105 },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 78 }
       }
     });
   }
@@ -513,6 +539,7 @@ export async function descargarPPT({
   const tb = totalesBalance(balance);
   const balanceGeneral = armarBalanceGeneral(balance, cuentas, eerr.utilidad);
   const pasivoPatrimonio = balanceGeneral.totalPasivoPatrimonio;
+  const asientosDiario = agruparDiarioPorAsiento(diario);
 
   const pptx = new pptxgen();
   pptx.layout = 'LAYOUT_WIDE';
@@ -544,7 +571,7 @@ export async function descargarPPT({
     ['Activo', moneda(tb.activo), MARCA.tinta],
     ['Pasivo + Patrimonio', moneda(pasivoPatrimonio), MARCA.tinta],
     ['Resultado del ejercicio', moneda(eerr.utilidad), eerr.utilidad < 0 ? MARCA.rojo : MARCA.verde],
-    ['Movimientos contables', numero(diario.length), MARCA.tinta]
+    ['Asientos contables', numero(asientosDiario.length), MARCA.tinta]
   ];
   kpis.forEach((k, i) => {
     const x = 0.65 + (i % 2) * 6.15;
@@ -697,27 +724,28 @@ export async function descargarPPT({
 
   slide = pptx.addSlide();
   slide.background = { color: MARCA.blanco };
-  addPptTitle(slide, 'Actividad contable', 'Últimos movimientos del período');
-  const recientes = [...diario]
-    .slice(-12)
+  addPptTitle(slide, 'Actividad contable', 'Últimos asientos del período');
+  const recientes = [...asientosDiario]
+    .slice(-10)
     .reverse()
-    .map(x => [
-      '#' + x.numero,
-      String(x.fecha || ''),
-      x.cuenta,
-      Number(x.debe || 0) ? moneda(x.debe) : moneda(x.haber),
-      (x.glosa_linea || x.glosa || '').slice(0, 80)
+    .map(a => [
+      '#' + a.numero,
+      String(a.fecha || ''),
+      a.lineas.map(x => x.codigo + ' ' + x.cuenta).join('\n'),
+      moneda(a.debe),
+      moneda(a.haber),
+      (a.glosa || '').slice(0, 90)
     ]);
-  slide.addTable(recientes.length ? recientes : [['','','Sin movimientos','','']], {
-    x: 0.55, y: 1.6, w: 12.2, h: 5.25,
+  slide.addTable(recientes.length ? recientes : [['','','Sin asientos','','','']], {
+    x: 0.45, y: 1.6, w: 12.4, h: 5.25,
     border: { type: 'solid', color: MARCA.niebla, pt: 1 },
     fill: MARCA.blanco,
     color: MARCA.tinta,
     fontFace: 'Arial',
-    fontSize: 8.5,
-    margin: 0.05,
-    rowH: 0.4,
-    colW: [0.7, 1.2, 2.55, 1.45, 6.3]
+    fontSize: 7.8,
+    margin: 0.04,
+    rowH: 0.46,
+    colW: [0.65, 1.05, 3.4, 1.25, 1.25, 4.8]
   });
   addPptFooter(slide, entidad, periodo, 6);
 
