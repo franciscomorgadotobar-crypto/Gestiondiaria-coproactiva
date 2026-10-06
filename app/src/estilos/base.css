@@ -2244,3 +2244,112 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     grid-template-columns: minmax(0, 2.2fr) 390px;
   }
 }
+
+
+/* Inicio Operación — ajuste de densidad y jerarquía en escritorio.
+ * El cuerpo es flex:1; al convertirlo en grid, align-content:stretch repartía
+ * el alto libre entre las filas y generaba grandes vacíos verticales. */
+@media (min-width: 900px) {
+  .inicio-pantalla {
+    --ancho-contenido: 1500px;
+  }
+
+  .inicio-pantalla > .encabezado {
+    padding-top: 18px;
+    padding-bottom: 16px;
+  }
+
+  .inicio-pantalla > .encabezado .h3 {
+    font-size: 20px;
+    line-height: 1.15;
+  }
+
+  .inicio-pantalla > .cuerpo {
+    padding-top: 22px;
+    padding-bottom: 40px;
+  }
+
+  .inicio-pantalla .inicio-cuerpo.con-mapa {
+    align-content: start;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 390px);
+    grid-template-areas:
+      "aviso aviso"
+      "tablero tablero"
+      "trabajo mapa";
+    column-gap: 20px;
+    row-gap: 18px;
+  }
+
+  .inicio-pantalla .inicio-cuerpo.con-mapa > .aviso {
+    margin-bottom: 0;
+  }
+
+  .inicio-pantalla .tablero {
+    gap: 10px;
+    margin: 0;
+  }
+
+  .inicio-pantalla .tablero > div {
+    min-height: 82px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 15px 17px;
+  }
+
+  .inicio-pantalla .tablero .n {
+    font-size: 27px;
+  }
+
+  .inicio-pantalla .tablero .r {
+    margin-top: 7px;
+    font-size: 9px;
+  }
+
+  .inicio-pantalla .inicio-trabajo {
+    min-width: 0;
+  }
+
+  .inicio-pantalla .inicio-trabajo > .grupo-titulo {
+    margin: 0 0 10px;
+    padding-bottom: 8px;
+  }
+
+  .inicio-pantalla .inicio-trabajo > .grupo-titulo .etiqueta-grupo {
+    font-size: 10px;
+    letter-spacing: .16em;
+  }
+
+  .inicio-pantalla .cabecera-trabajador {
+    min-height: 52px;
+    margin-bottom: 8px;
+    padding: 13px 16px;
+  }
+
+  .inicio-pantalla .grupo-trabajador > .tarjeta {
+    padding: 16px 18px !important;
+  }
+
+  .inicio-pantalla .tarjeta-mapa {
+    position: sticky;
+    top: 18px;
+    width: 100%;
+    margin: 0;
+  }
+
+  .inicio-pantalla .tarjeta-mapa .previo {
+    height: 215px;
+  }
+
+  .inicio-pantalla .tarjeta-mapa .pie-mapa {
+    min-height: 58px;
+    padding: 10px 12px;
+  }
+}
+
+@media (min-width: 1350px) {
+  .inicio-pantalla .inicio-cuerpo.con-mapa {
+    grid-template-columns: minmax(0, 1fr) 390px;
+  }
+}
