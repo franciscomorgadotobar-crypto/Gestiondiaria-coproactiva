@@ -861,10 +861,14 @@ export default function Contabilidad() {
   }, [vista, location.search]);
 
   useEffect(() => {
-    if (!mayorCuentaId && cuentas.length) {
-      setMayorCuentaId(cuentas.find(x => x.codigo === '1102')?.id ?? cuentas[0].id);
-    } else if (mayorCuentaId && !cuentas.some(x => x.id === mayorCuentaId && x.activa)) {
-      setMayorCuentaId(cuentas.find(x => x.activa)?.id ?? '');
+    const disponibles = cuentas.filter(x => x.activa && x.clase === 'movimiento' && x.imputable !== false);
+    const preferida = ['1.1.01.002','1.1.02','1102']
+      .map(codigo => disponibles.find(x => x.codigo === codigo))
+      .find(Boolean);
+    if (!mayorCuentaId && disponibles.length) {
+      setMayorCuentaId(preferida?.id ?? disponibles[0].id);
+    } else if (mayorCuentaId && !disponibles.some(x => x.id === mayorCuentaId)) {
+      setMayorCuentaId(preferida?.id ?? disponibles[0]?.id ?? '');
     }
   }, [cuentas, mayorCuentaId]);
 
@@ -1830,7 +1834,7 @@ export default function Contabilidad() {
                   <label className="campo contabilidad-mayor-cuenta">
                     <span className="etiqueta-campo">Cuenta</span>
                     <select value={mayorCuentaId} onChange={e => setMayorCuentaId(e.target.value)}>
-                      {cuentas.filter(x => x.activa).map(c => (
+                      {cuentas.filter(x => x.activa && x.clase === 'movimiento' && x.imputable !== false).map(c => (
                         <option key={c.id} value={c.id}>{c.codigo} · {c.cuenta}</option>
                       ))}
                     </select>
