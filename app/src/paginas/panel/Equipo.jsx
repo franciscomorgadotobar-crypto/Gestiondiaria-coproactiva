@@ -65,7 +65,7 @@ export default function Equipo() {
   async function cargar() {
     const [p, c, a] = await Promise.all([
       supabase.from('perfiles').select('id, nombre, email, rol, activo, ultimo_acceso').order('nombre'),
-      supabase.from('comunidades').select('id, nombre').order('nombre'),
+      supabase.from('comunidades').select('id, nombre').neq('estado', 'terminado').order('nombre'),
       supabase.from('perfil_comunidades').select('perfil_id, comunidad_id')
     ]);
     if (p.error) return setError(p.error.message);
