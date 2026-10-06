@@ -1158,10 +1158,13 @@ export default function Contabilidad() {
     setExportando(true);
     setError(null);
     try {
+      const centroCostoNombre = centroReporteId
+        ? (centrosCosto.find(x => x.id === centroReporteId)?.nombre || '')
+        : '';
       if (tipo === 'pdf') {
-        descargarPDF({ entidad, desde, hasta, balance, cuentas, eerrDetalle, diario, sinClasificar });
+        descargarPDF({ entidad, desde, hasta, balance, cuentas, eerrDetalle, diario, sinClasificar, centroCostoNombre });
       } else {
-        await descargarPPT({ entidad, desde, hasta, balance, cuentas, eerrDetalle, diario, sinClasificar });
+        await descargarPPT({ entidad, desde, hasta, balance, cuentas, eerrDetalle, diario, sinClasificar, centroCostoNombre });
       }
     } catch (e) {
       setError(e?.message || 'No se pudo generar el archivo.');
