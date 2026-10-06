@@ -212,6 +212,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     .map(id => opcionesOperacion.find(x => x.id === id))
     .filter(Boolean);
   const menuMasOperacion = opcionesOperacion.filter(x => !barraIds.slice(0, 4).includes(x.id));
+  const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
 
   function itemMovilActivo(item) {
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
@@ -341,7 +342,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                     className={'nav-movil-item' + (masAbierto ? ' activo' : '')}
                     onClick={() => setMasAbierto(v => !v)}
                     aria-expanded={masAbierto}>
-              <IconoMovil tipo="mas" />
+              <span className="nav-movil-icono-wrap">
+                <IconoMovil tipo="mas" />
+                {alertasEnMas > 0 && (
+                  <span className="nav-movil-badge">{alertasEnMas > 99 ? '99+' : alertasEnMas}</span>
+                )}
+              </span>
               <span>Más</span>
             </button>
           </nav>
@@ -357,7 +363,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 <div className="menu-mas-enlaces">
                   {menuMasOperacion.map(item => (
                     <button key={item.id} type="button" onClick={() => ejecutarItemMovil(item)}>
-                      {item.etiqueta}
+                      <span>
+                        {item.etiqueta}
+                        {item.badge > 0 ? ` (${item.badge})` : ''}
+                      </span>
                       <span>›</span>
                     </button>
                   ))}
