@@ -5,7 +5,6 @@ import Ingreso from './paginas/Ingreso';
 import Clave from './paginas/Clave';
 import Inicio from './paginas/panel/Inicio';
 import Plantillas from './paginas/panel/Plantillas';
-import Levantamientos from './paginas/panel/Levantamientos';
 import Bitacora from './paginas/panel/Bitacora';
 import EditorPlantilla from './paginas/panel/Plantilla';
 import Programar from './paginas/panel/Programar';
@@ -137,7 +136,6 @@ export default function App() {
       <Route path="/ayuda" element={<Interna><Ayuda /></Interna>} />
       <Route path="/ayuda/practica-levantamiento" element={<Interna><PracticaLevantamiento /></Interna>} />
       <Route path="/configuracion" element={<Interna><Configuracion /></Interna>} />
-      <Route path="/levantamientos" element={<Interna><Levantamientos /></Interna>} />
       <Route path="/bitacora" element={<Interna><Bitacora /></Interna>} />
       <Route path="/bitacora/nueva" element={<Interna><Bitacora /></Interna>} />
       <Route path="/bitacora/:id" element={<Interna><Bitacora /></Interna>} />
