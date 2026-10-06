@@ -757,6 +757,7 @@ export default function Contabilidad() {
   const [cuentas, setCuentas] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [asientos, setAsientos] = useState([]);
+  const [centrosCosto, setCentrosCosto] = useState([]);
   const [balance, setBalance] = useState([]);
   const [diario, setDiario] = useState([]);
   const [eerrDetalle, setEerrDetalle] = useState([]);
@@ -771,6 +772,7 @@ export default function Contabilidad() {
   const [hasta, setHasta] = useState('');
   const [reporte, setReporte] = useState('eerr');
   const [mayorCuentaId, setMayorCuentaId] = useState('');
+  const [centroReporteId, setCentroReporteId] = useState('');
   const [busquedaAsiento, setBusquedaAsiento] = useState('');
   const [busquedaCuenta, setBusquedaCuenta] = useState('');
 
@@ -778,6 +780,7 @@ export default function Contabilidad() {
   const [asientoPorAnular, setAsientoPorAnular] = useState(null);
   const [cuentaEditando, setCuentaEditando] = useState(null);
   const [cuentaDesactivar, setCuentaDesactivar] = useState(null);
+  const [cuentaEliminar, setCuentaEliminar] = useState(null);
   const [nuevaEntidad, setNuevaEntidad] = useState(false);
   const [entidadEditando, setEntidadEditando] = useState(null);
   const [entidadEliminar, setEntidadEliminar] = useState(null);
@@ -849,19 +852,24 @@ export default function Contabilidad() {
 
   async function cargarEntidad(id) {
     setError(null);
-    const [rc, ra] = await Promise.all([
+    const [rc, ra, rcc] = await Promise.all([
       supabase.from('contabilidad_cuentas')
         .select('*').eq('entidad_id', id).order('codigo'),
       supabase.from('contabilidad_asientos')
-        .select('id,numero,fecha,glosa,estado,origen,referencia,proveedor_id,creado_en,motivo_anulacion,contabilidad_asiento_lineas(id,orden,debe,haber,glosa,cuenta_id,contabilidad_cuentas(codigo,cuenta))')
+        .select('id,numero,fecha,glosa,estado,origen,referencia,proveedor_id,creado_en,motivo_anulacion,contabilidad_asiento_lineas(id,orden,debe,haber,glosa,cuenta_id,centro_costo_id,contabilidad_cuentas(codigo,cuenta),contabilidad_centros_costo(codigo,nombre))')
         .eq('entidad_id', id)
         .order('fecha', { ascending: false })
         .order('numero', { ascending: false })
-        .limit(250)
+        .limit(250),
+      supabase.from('contabilidad_centros_costo')
+        .select('*').eq('entidad_id', id).order('codigo')
     ]);
 
     if (rc.error) setError(rc.error.message);
     else setCuentas(rc.data ?? []);
+
+    if (rcc.error) setError(rcc.error.message);
+    else setCentrosCosto(rcc.data ?? []);
 
     if (ra.error) setError(ra.error.message);
     else {
@@ -878,12 +886,17 @@ export default function Contabilidad() {
     if (!id) return;
     setCargandoReportes(true);
     setError(null);
-    const args = { p_entidad_id: id, p_desde: d || null, p_hasta: h || null };
+    const args = {
+      p_entidad_id: id,
+      p_desde: d || null,
+      p_hasta: h || null,
+      p_centro_costo_id: centroReporteId || null
+    };
     const [rd, rb, re, rs] = await Promise.all([
-      supabase.rpc('contabilidad_libro_diario', args),
-      supabase.rpc('contabilidad_balance', args),
-      supabase.rpc('contabilidad_eerr_detalle', args),
-      supabase.rpc('contabilidad_eerr_sin_clasificar', args)
+      supabase.rpc('contabilidad_libro_diario_v2', args),
+      supabase.rpc('contabilidad_balance_v2', args),
+      supabase.rpc('contabilidad_eerr_detalle_v2', args),
+      supabase.rpc('contabilidad_eerr_sin_clasificar_v2', args)
     ]);
 
     const fallo = [rd, rb, re, rs].find(x => x.error);
