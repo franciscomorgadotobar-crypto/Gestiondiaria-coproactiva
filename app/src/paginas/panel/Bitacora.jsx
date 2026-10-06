@@ -45,6 +45,7 @@ function Listado() {
   const [comunidadId, setComunidadId] = useState('');
   const [tipo, setTipo] = useState('');
   const [nivel, setNivel] = useState('');
+  const [estado, setEstado] = useState('');
   const [periodo, setPeriodo] = useState('');
 
   useEffect(() => {
@@ -66,9 +67,10 @@ function Listado() {
   const conteos = useMemo(() => {
     const xs = registros ?? [];
     return {
-      urgente: xs.filter(x => x.nivel === 'urgente').length,
-      atencion: xs.filter(x => x.nivel === 'atencion').length,
-      registro: xs.filter(x => x.nivel === 'registro').length
+      urgente: xs.filter(x => x.nivel === 'urgente' && x.estado !== 'finalizada').length,
+      atencion: xs.filter(x => x.nivel === 'atencion' && x.estado !== 'finalizada').length,
+      registro: xs.filter(x => x.nivel === 'registro').length,
+      finalizada: xs.filter(x => ['atencion','urgente'].includes(x.nivel) && x.estado === 'finalizada').length
     };
   }, [registros]);
 
@@ -84,14 +86,15 @@ function Listado() {
       if (comunidadId && r.comunidad_id !== comunidadId) return false;
       if (tipo && r.tipo_codigo !== tipo) return false;
       if (nivel && r.nivel !== nivel) return false;
+      if (estado && r.estado !== estado) return false;
       if (limite && new Date(r.registrado_en).getTime() < limite) return false;
       if (!q) return true;
       return [
-        r.titulo, r.descripcion, r.comunidad_nombre,
-        r.tipo_nombre, r.tipo_otro, r.registrado_por_nombre
+        r.correlativo, r.titulo, r.descripcion, r.comunidad_nombre,
+        r.tipo_nombre, r.tipo_otro, r.registrado_por_nombre, r.finalizado_por_nombre
       ].some(v => String(v ?? '').toLowerCase().includes(q));
     });
-  }, [registros, buscar, comunidadId, tipo, nivel, periodo]);
+  }, [registros, buscar, comunidadId, tipo, nivel, estado, periodo]);
 
   return (
     <div className="pantalla bitacora-pantalla">
@@ -117,13 +120,14 @@ function Listado() {
           <div className="urgente"><strong>{conteos.urgente}</strong><span>Urgentes</span></div>
           <div className="atencion"><strong>{conteos.atencion}</strong><span>Requieren atención</span></div>
           <div className="registro"><strong>{conteos.registro}</strong><span>Registros</span></div>
+          <div className="finalizada"><strong>{conteos.finalizada}</strong><span>Finalizadas</span></div>
         </section>
 
         <section className="tarjeta bitacora-filtros">
           <label className="campo bitacora-buscar">
             <span className="etiqueta-campo">Buscar</span>
             <input value={buscar} onChange={e => setBuscar(e.target.value)}
-                   placeholder="Título, descripción o comunidad…" />
+                   placeholder="Correlativo, título, descripción o comunidad…" />
           </label>
 
           <label className="campo">
@@ -153,6 +157,15 @@ function Listado() {
           </label>
 
           <label className="campo">
+            <span className="etiqueta-campo">Estado</span>
+            <select value={estado} onChange={e => setEstado(e.target.value)}>
+              <option value="">Todos los estados</option>
+              <option value="abierta">Pendiente</option>
+              <option value="finalizada">Finalizada</option>
+            </select>
+          </label>
+
+          <label className="campo">
             <span className="etiqueta-campo">Fecha</span>
             <select value={periodo} onChange={e => setPeriodo(e.target.value)}>
               <option value="">Todas</option>
@@ -177,9 +190,14 @@ function Listado() {
           {filtrados.map(r => {
             const n = NIVEL[r.nivel] ?? NIVEL.registro;
             return (
-              <Link key={r.id} to={`/bitacora/${r.id}`} className={'tarjeta bitacora-card ' + n.clase}>
+              <Link key={r.id} to={`/bitacora/${r.id}`}
+                    className={'tarjeta bitacora-card ' + n.clase + (r.estado === 'finalizada' ? ' finalizada' : '')}>
                 <div className="bitacora-card-superior">
-                  <span className={'bitacora-nivel ' + n.clase}>{n.texto}</span>
+                  <div className="bitacora-card-etiquetas">
+                    <span className="bitacora-correlativo">{r.correlativo}</span>
+                    <span className={'bitacora-nivel ' + n.clase}>{n.texto}</span>
+                    {r.estado === 'finalizada' && <span className="bitacora-estado-finalizada">Finalizada</span>}
+                  </div>
                   <time>{fechaHora(r.registrado_en)}</time>
                 </div>
                 <h3>{r.titulo}</h3>
@@ -188,6 +206,7 @@ function Listado() {
                   <span>{nombreTipo(r)}</span>
                   <span>{r.registrado_por_nombre}</span>
                   {r.adjuntos > 0 && <span>{r.adjuntos} adjunto{r.adjuntos === 1 ? '' : 's'}</span>}
+                  {r.estado === 'finalizada' && r.finalizado_por_nombre && <span>Finalizada por {r.finalizado_por_nombre}</span>}
                 </div>
               </Link>
             );
