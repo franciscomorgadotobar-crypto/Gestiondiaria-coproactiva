@@ -12,6 +12,21 @@ export function ProveedorSesion({ children }) {
   const [perfil, setPerfil] = useState(null);
   const [cargando, setCargando] = useState(true);
 
+  async function cargarPerfil(userId) {
+    if (!userId) {
+      setPerfil(null);
+      return null;
+    }
+    const { data, error } = await supabase
+      .from('perfiles')
+      .select('id, nombre, email, telefono, rol, activo, bottom_nav')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) console.error('No se pudo cargar el perfil:', error.message);
+    setPerfil(data ?? null);
+    return data ?? null;
+  }
+
   useEffect(() => {
     let vigente = true;
 
@@ -33,13 +48,8 @@ export function ProveedorSesion({ children }) {
         setCargando(false);
         return;
       }
-      const { data, error } = await supabase
-        .from('perfiles')
-        .select('id, nombre, email, rol, activo')
-        .eq('id', s.user.id)
-        .maybeSingle();
+      const data = await cargarPerfil(s.user.id);
       if (!vigente) return;
-      if (error) console.error('No se pudo cargar el perfil:', error.message);
       setPerfil(data ?? null);
       setCargando(false);
     }
@@ -56,6 +66,7 @@ export function ProveedorSesion({ children }) {
     cargando,
     rol: perfil?.rol ?? null,
     esAdmin: perfil?.rol === 'superadmin' || perfil?.rol === 'admin',
+    recargarPerfil: () => cargarPerfil(sesion?.user?.id),
     salir: () => supabase.auth.signOut()
   };
 
