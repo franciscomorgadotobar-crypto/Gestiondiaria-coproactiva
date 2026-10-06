@@ -368,7 +368,7 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
           <div>
             <h3 className="h3">Líneas del asiento</h3>
             <p className="micro apagado" style={{ margin: '3px 0 0' }}>
-              Cada línea lleva importe solo en Debe o solo en Haber.
+              Cada línea lleva importe solo en Debe o solo en Haber. El detalle es opcional; si la cuenta lo exige, selecciona un centro de costo.
             </p>
           </div>
           <button type="button" className="boton boton-secundario" onClick={agregarLinea}>+ Línea</button>
@@ -401,6 +401,23 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
                        value={linea.haber} onChange={e => cambiarLinea(linea.key, 'haber', e.target.value)}
                        placeholder="0" />
               </label>
+              {usaCentrosCosto && (() => {
+                const cuentaSeleccionada = cuentas.find(c => c.id === linea.cuenta_id);
+                const requiere = Boolean(cuentaSeleccionada?.requiere_centro_costo
+                  && ['4','5'].includes(String(cuentaSeleccionada?.codigo || '')[0]));
+                return (
+                  <label className="campo contabilidad-linea-centro">
+                    <span className="etiqueta-campo">Centro de costo{requiere ? ' *' : ''}</span>
+                    <select value={linea.centro_costo_id || ''}
+                            onChange={e => cambiarLinea(linea.key, 'centro_costo_id', e.target.value)}>
+                      <option value="">General / Sin asignar</option>
+                      {centros.filter(x => x.activa).map(cc => (
+                        <option key={cc.id} value={cc.id}>{cc.codigo} · {cc.nombre}</option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })()}
               <label className="campo contabilidad-linea-glosa">
                 <span className="etiqueta-campo">Detalle</span>
                 <input value={linea.glosa} onChange={e => cambiarLinea(linea.key, 'glosa', e.target.value)}
@@ -831,8 +848,9 @@ export default function Contabilidad() {
       return;
     }
     localStorage.setItem('coproactiva:contabilidad-entidad', entidadId);
+    setCentroReporteId('');
     cargarEntidad(entidadId);
-    cargarReportes(entidadId, desde, hasta);
+    cargarReportes(entidadId, desde, hasta, '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entidadId]);
 
@@ -882,7 +900,7 @@ export default function Contabilidad() {
     }
   }
 
-  async function cargarReportes(id = entidadId, d = desde, h = hasta) {
+  async function cargarReportes(id = entidadId, d = desde, h = hasta, centro = centroReporteId) {
     if (!id) return;
     setCargandoReportes(true);
     setError(null);
@@ -890,7 +908,7 @@ export default function Contabilidad() {
       p_entidad_id: id,
       p_desde: d || null,
       p_hasta: h || null,
-      p_centro_costo_id: centroReporteId || null
+      p_centro_costo_id: centro || null
     };
     const [rd, rb, re, rs] = await Promise.all([
       supabase.rpc('contabilidad_libro_diario_v2', args),
@@ -1135,8 +1153,10 @@ export default function Contabilidad() {
     <div className="pantalla contabilidad-pantalla">
       {editorAbierto && (
         <EditorAsiento
-          cuentas={cuentas.filter(x => x.activa)}
+          cuentas={cuentas.filter(x => x.activa && x.clase === 'movimiento' && x.imputable !== false)}
           proveedores={proveedores}
+          centros={centrosCosto}
+          usaCentrosCosto={Boolean(entidad?.usa_centros_costo)}
           guardando={guardando}
           onGuardar={guardarAsiento}
           onCancelar={cerrarEditor}
