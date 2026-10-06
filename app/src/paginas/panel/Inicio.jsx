@@ -230,21 +230,6 @@ export default function Inicio() {
           </Link>
         </div>
 
-        <aside className="inicio-guia-registro">
-          <span className="inicio-guia-registro-icono" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M9 18h6M10 22h4M8.4 15.6C6.9 14.5 6 12.8 6 11a6 6 0 1 1 12 0c0 1.8-.9 3.5-2.4 4.6-.7.5-1.1 1.2-1.1 2H9.5c0-.8-.4-1.5-1.1-2Z" />
-            </svg>
-          </span>
-          <div>
-            <strong>¿Cuál usar?</strong>
-            <p>
-              Usa <b>Levantamiento</b> para inspecciones estructuradas con plantilla.
-              Usa <b>Bitácora</b> para registrar novedades u observaciones rápidas.
-            </p>
-          </div>
-        </aside>
-
         <div className="inicio-trabajo">
         <div className="grupo-titulo" id="por-hacer" data-tutorial="inicio-por-hacer">
           <span className="etiqueta-grupo">Por hacer</span>
