@@ -34,7 +34,7 @@ export default function Bitacora() {
 
 function Listado() {
   const navegar = useNavigate();
-  useVolverGlobal(() => navegar('/levantamientos'));
+  useVolverGlobal(() => navegar('/inicio'));
 
   const [registros, setRegistros] = useState(null);
   const [comunidades, setComunidades] = useState([]);
@@ -97,8 +97,8 @@ function Listado() {
     <div className="pantalla bitacora-pantalla">
       <header className="encabezado">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
-          <button className="boton boton-texto bitacora-volver" onClick={() => navegar('/levantamientos')}>
-            ‹ Levantamientos
+          <button className="boton boton-texto bitacora-volver" onClick={() => navegar('/inicio')}>
+            ‹ Inicio
           </button>
         </div>
         <div className="bitacora-cabecera">
