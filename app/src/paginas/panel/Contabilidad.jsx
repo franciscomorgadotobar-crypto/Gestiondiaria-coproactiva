@@ -1561,6 +1561,18 @@ export default function Contabilidad() {
 
         {!cargando && entidad && vista === 'plan' && (
           <>
+            {entidad.plan_origen === 'pendiente' && (
+              <div className="aviso aviso-alerta contabilidad-plan-pendiente">
+                <div>
+                  <strong>Esta entidad todavía no tiene un plan de cuentas configurado.</strong>
+                  <p className="micro" style={{ margin: '4px 0 0' }}>
+                    Elige una plantilla, importa un plan existente o comienza desde cero.
+                  </p>
+                </div>
+                <Link to="/contabilidad/configuracion" className="boton boton-secundario">Configurar plan</Link>
+              </div>
+            )}
+
             <div className="contabilidad-toolbar">
               <label className="campo crece">
                 <span className="etiqueta-campo">Buscar cuenta</span>
@@ -1568,42 +1580,98 @@ export default function Contabilidad() {
                        placeholder="Código, cuenta, tipo o grupo"
                        onChange={e => setBusquedaCuenta(e.target.value)} />
               </label>
-              <button type="button" className="boton boton-movil"
-                      onClick={() => setCuentaEditando({ tipo_contable: 'gasto', eerr_seccion: '' })}>
-                + Nueva cuenta
-              </button>
+              <div className="fila" style={{ gap: 8 }}>
+                <Link to="/contabilidad/configuracion" className="boton boton-secundario">Configuración</Link>
+                <button type="button" className="boton boton-movil"
+                        disabled={entidad.plan_origen === 'pendiente'}
+                        onClick={() => setCuentaEditando({
+                          parent_id: '',
+                          tipo_contable: 'gasto',
+                          eerr_seccion: '',
+                          requiere_centro_costo: false
+                        })}>
+                  + Nueva cuenta
+                </button>
+              </div>
             </div>
+
+            {tieneMovimientosEntidad && (
+              <div className="aviso contabilidad-plan-protegido">
+                <strong>Plan protegido por historial.</strong> Puedes renombrar cuentas, crear subcuentas inferiores,
+                configurar la exigencia de centro de costo y desactivar cuentas sin movimientos en el ejercicio actual.
+                No puedes reemplazar el plan ni eliminar cuentas.
+              </div>
+            )}
 
             <div className="tabla-responsive">
               <table className="tabla contabilidad-plan-tabla">
                 <thead>
                   <tr>
-                    <th>Código</th><th>Cuenta</th><th>Tipo</th><th>Grupo</th><th>EERR</th><th>Estado</th><th />
+                    <th>Código</th><th>Cuenta</th><th>Nivel</th><th>Tipo</th><th>Grupo</th>
+                    <th>Centro costo</th><th>Estado</th><th />
                   </tr>
                 </thead>
                 <tbody>
-                  {cuentasVisibles.map(c => (
-                    <tr key={c.id} className={!c.activa ? 'inactiva' : ''}>
-                      <td><strong>{c.codigo}</strong></td>
-                      <td>{c.cuenta}</td>
-                      <td>{etiquetaTipo(c.tipo_contable, c.naturaleza)}</td>
-                      <td>{c.grupo}</td>
-                      <td>{EERR_SECCIONES.find(x => x[0] === (c.eerr_seccion ?? ''))?.[1] ?? 'Sin clasificación'}</td>
-                      <td>{c.activa ? <span className="chip chip-cumple">Activa</span> : <span className="chip">Inactiva</span>}</td>
+                  {cuentasVisibles.map(cuenta => (
+                    <tr key={cuenta.id} className={!cuenta.activa ? 'inactiva' : (cuenta.imputable === false ? 'agrupadora' : '')}>
+                      <td><strong>{cuenta.codigo}</strong></td>
                       <td>
-                        <div className="fila" style={{ gap: 5 }}>
-                          <button type="button" className="boton boton-texto" onClick={() => setCuentaEditando(c)}>Editar</button>
-                          {c.activa && (
-                            <button type="button" className="boton boton-texto" onClick={() => setCuentaDesactivar(c)}>Desactivar</button>
+                        <span className="contabilidad-cuenta-jerarquia"
+                              style={{ paddingLeft: Math.max(0, Number(cuenta.nivel || 1) - 1) * 12 }}>
+                          {cuenta.cuenta}
+                        </span>
+                        {cuenta.imputable === false && <span className="chip contabilidad-chip-agrupadora">Agrupadora</span>}
+                      </td>
+                      <td>{cuenta.nivel}</td>
+                      <td>{etiquetaTipo(cuenta.tipo_contable, cuenta.naturaleza)}</td>
+                      <td>{cuenta.grupo || '—'}</td>
+                      <td>
+                        {['4','5'].includes(String(cuenta.codigo || '')[0])
+                          ? (cuenta.requiere_centro_costo ? <span className="chip chip-cumple">Requerido</span> : <span className="chip">Opcional</span>)
+                          : <span className="micro apagado">No aplica</span>}
+                      </td>
+                      <td>{cuenta.activa ? <span className="chip chip-cumple">Activa</span> : <span className="chip">Inactiva</span>}</td>
+                      <td>
+                        <div className="fila contabilidad-plan-acciones" style={{ gap: 5 }}>
+                          <button type="button" className="boton boton-texto" onClick={() => setCuentaEditando(cuenta)}>Editar</button>
+                          {cuenta.activa ? (
+                            <button type="button" className="boton boton-texto"
+                                    onClick={() => setCuentaDesactivar(cuenta)}>Desactivar</button>
+                          ) : (
+                            <button type="button" className="boton boton-texto"
+                                    onClick={() => activarCuenta(cuenta)}>Activar</button>
+                          )}
+                          {!tieneMovimientosEntidad && (
+                            <button type="button" className="boton boton-texto boton-peligro"
+                                    onClick={() => setCuentaEliminar(cuenta)}>Eliminar</button>
                           )}
                         </div>
                       </td>
                     </tr>
                   ))}
+                  {!cuentasVisibles.length && (
+                    <tr><td colSpan="8"><p className="vacio">No hay cuentas para mostrar.</p></td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </>
+        )}
+
+        {!cargando && entidad && vista === 'configuracion' && (
+          <ContabilidadConfiguracion
+            entidad={entidad}
+            cuentas={cuentas}
+            asientos={asientos}
+            centros={centrosCosto}
+            onError={setError}
+            onAviso={setAviso}
+            onRecargar={async () => {
+              await recargarEntidades(entidadId);
+              await cargarEntidad(entidadId);
+              await cargarReportes(entidadId, desde, hasta, centroReporteId);
+            }}
+          />
         )}
 
         {!cargando && entidad && vista === 'reportes' && (
