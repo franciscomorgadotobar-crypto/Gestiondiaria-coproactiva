@@ -165,7 +165,7 @@ export default function Inicio() {
               {hoy.charAt(0).toUpperCase() + hoy.slice(1)}
             </p>
           </div>
-          <Campana pendientes={misPendientes} miId={perfil?.id} />
+          <Campana miId={perfil?.id} />
           <button className="boton boton-texto" onClick={salir}>Salir</button>
         </div>
       </header>
