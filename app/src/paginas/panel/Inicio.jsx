@@ -199,40 +199,22 @@ export default function Inicio() {
           </div>
         )}
 
-        {puedeConfigurar && (
-          // En escritorio esto se oculta: son los mismos accesos que ya
-          // están en la barra lateral, y repetirlos como botones acá arriba
-          // solo le resta espacio a lo que importa —el trabajo del día—.
-          <div className="accesos-inicio">
-            <Link to="/nuevo" className="acceso acceso-principal">
-              <span>Nuevo levantamiento</span>
-              <span aria-hidden="true">+</span>
-            </Link>
+        <div className="accesos-inicio">
+          <Link to="/levantamientos" className="acceso acceso-principal">
+            <span>Levantamientos</span>
+            <span aria-hidden="true">›</span>
+          </Link>
 
-            <Link to="/plantillas" className="acceso">
-              <span>Plantillas</span>
-              <span aria-hidden="true">›</span>
-            </Link>
+          <Link to="/comunidades" className="acceso">
+            <span>Comunidades</span>
+            <span aria-hidden="true">›</span>
+          </Link>
 
-            {/* Página aparte y no una sección más: consultar el historial de
-                una comunidad es una pregunta distinta a la del día a día que
-                resuelve el resto del inicio. */}
-            <Link to="/comunidades" className="acceso">
-              <span>Comunidades</span>
-              <span aria-hidden="true">›</span>
-            </Link>
-
-            <Link to="/mantenciones" className="acceso">
-              <span>Mantenciones</span>
-              <span aria-hidden="true">›</span>
-            </Link>
-
-            {/* Configuración no va acá: ya es su propia tarjeta en la capa de
-                entrada, al mismo nivel que CRM y Operación. Repetirla adentro
-                de Operación la volvería a mezclar con esa área en vez de
-                dejarla aparte. Se llega con "Cambiar de área". */}
-          </div>
-        )}
+          <Link to="/mantenciones" className="acceso">
+            <span>Mantenciones</span>
+            <span aria-hidden="true">›</span>
+          </Link>
+        </div>
 
         <div className="inicio-trabajo">
         <div className="grupo-titulo" id="por-hacer" data-tutorial="inicio-por-hacer">
