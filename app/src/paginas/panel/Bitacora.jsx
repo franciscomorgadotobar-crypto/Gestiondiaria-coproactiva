@@ -462,34 +462,69 @@ function NuevaEntrada() {
 function Detalle({ id }) {
   const navegar = useNavigate();
   const location = useLocation();
+  const { perfil } = useSesion();
   useVolverGlobal(() => navegar('/bitacora'));
 
   const [registro, setRegistro] = useState(null);
   const [adjuntos, setAdjuntos] = useState([]);
   const [error, setError] = useState(null);
   const [aviso, setAviso] = useState(location.state?.aviso ?? null);
-  const [tipoAviso] = useState(location.state?.tipoAviso ?? 'ok');
+  const [tipoAviso, setTipoAviso] = useState(location.state?.tipoAviso ?? 'ok');
+  const [cierreAbierto, setCierreAbierto] = useState(false);
+  const [cierreObservacion, setCierreObservacion] = useState('');
+  const [finalizando, setFinalizando] = useState(false);
+
+  async function cargarRegistro() {
+    const [r, a] = await Promise.all([
+      supabase.rpc('bitacora_listar'),
+      supabase.from('bitacora_adjuntos').select('*').eq('bitacora_id', id).order('creado_en')
+    ]);
+    if (r.error) {
+      setError(r.error.message);
+      return null;
+    }
+    if (a.error) {
+      setError(a.error.message);
+      return null;
+    }
+    const encontrado = (r.data ?? []).find(x => x.id === id);
+    if (!encontrado) {
+      setError('Este registro no existe o no tienes acceso.');
+      return null;
+    }
+    setRegistro(encontrado);
+
+    const conUrl = await Promise.all((a.data ?? []).map(async archivo => {
+      const { data } = await supabase.storage.from('bitacora')
+        .createSignedUrl(archivo.storage_path, 60 * 20);
+      return { ...archivo, url: data?.signedUrl ?? null };
+    }));
+    setAdjuntos(conUrl);
+    return encontrado;
+  }
 
   useEffect(() => {
-    (async () => {
-      const [r, a] = await Promise.all([
-        supabase.rpc('bitacora_listar'),
-        supabase.from('bitacora_adjuntos').select('*').eq('bitacora_id', id).order('creado_en')
-      ]);
-      if (r.error) return setError(r.error.message);
-      if (a.error) return setError(a.error.message);
-      const encontrado = (r.data ?? []).find(x => x.id === id);
-      if (!encontrado) return setError('Este registro no existe o no tienes acceso.');
-      setRegistro(encontrado);
-
-      const conUrl = await Promise.all((a.data ?? []).map(async archivo => {
-        const { data } = await supabase.storage.from('bitacora')
-          .createSignedUrl(archivo.storage_path, 60 * 20);
-        return { ...archivo, url: data?.signedUrl ?? null };
-      }));
-      setAdjuntos(conUrl);
-    })();
+    cargarRegistro();
   }, [id]);
+
+  async function finalizarIncidencia() {
+    if (!registro || !['atencion','urgente'].includes(registro.nivel) || registro.estado === 'finalizada') return;
+    setFinalizando(true);
+    setError(null);
+    const { error } = await supabase.rpc('bitacora_finalizar', {
+      p_bitacora_id: registro.id,
+      p_observacion: cierreObservacion.trim() || null
+    });
+    setFinalizando(false);
+    if (error) return setError(error.message);
+
+    await cargarRegistro();
+    setCierreAbierto(false);
+    setCierreObservacion('');
+    setTipoAviso('ok');
+    setAviso('Incidencia finalizada correctamente.');
+    window.dispatchEvent(new CustomEvent('coproactiva:notificaciones-cambio'));
+  }
 
   if (error && !registro) {
     return (
@@ -503,6 +538,9 @@ function Detalle({ id }) {
   if (!registro) return <p className="cargando">Cargando…</p>;
 
   const n = NIVEL[registro.nivel] ?? NIVEL.registro;
+  const puedeFinalizar = ['superadmin','admin'].includes(perfil?.rol)
+    && ['atencion','urgente'].includes(registro.nivel)
+    && registro.estado !== 'finalizada';
 
   return (
     <div className="pantalla bitacora-pantalla">
@@ -526,18 +564,77 @@ function Detalle({ id }) {
 
         <div className="bitacora-detalle-titulo">
           <div>
-            <span className={'bitacora-nivel ' + n.clase}>{n.texto}</span>
+            <div className="bitacora-card-etiquetas">
+              <span className="bitacora-correlativo">{registro.correlativo}</span>
+              <span className={'bitacora-nivel ' + n.clase}>{n.texto}</span>
+              {registro.estado === 'finalizada' && <span className="bitacora-estado-finalizada">Finalizada</span>}
+            </div>
             <h2>{registro.titulo}</h2>
           </div>
           <time>{fechaHora(registro.registrado_en)}</time>
         </div>
 
         <section className="tarjeta bitacora-detalle-datos">
+          <div><span>Correlativo</span><strong>{registro.correlativo}</strong></div>
           <div><span>Comunidad</span><strong>{registro.comunidad_nombre}</strong></div>
           <div><span>Tipo</span><strong>{nombreTipo(registro)}</strong></div>
           <div><span>Registrado por</span><strong>{registro.registrado_por_nombre}</strong></div>
           <div><span>Nivel de atención</span><strong>{n.texto}</strong></div>
+          {['atencion','urgente'].includes(registro.nivel) && (
+            <div><span>Estado</span><strong>{registro.estado === 'finalizada' ? 'Finalizada' : 'Pendiente de atención'}</strong></div>
+          )}
         </section>
+
+        {puedeFinalizar && (
+          <section className="tarjeta bitacora-cierre-incidencia">
+            {!cierreAbierto ? (
+              <>
+                <div>
+                  <strong>Esta incidencia requiere atención.</strong>
+                  <p>Cuando la gestión esté resuelta, puedes marcarla como finalizada.</p>
+                </div>
+                <button type="button" className="boton" onClick={() => setCierreAbierto(true)}>
+                  Dar por finalizada
+                </button>
+              </>
+            ) : (
+              <div className="bitacora-cierre-form">
+                <div>
+                  <strong>Finalizar incidencia</strong>
+                  <p>La observación de cierre es opcional y quedará registrada como trazabilidad.</p>
+                </div>
+                <label className="campo">
+                  <span className="etiqueta-campo">Observación de cierre <span className="apagado">(opcional)</span></span>
+                  <textarea rows={3} value={cierreObservacion}
+                            onChange={e => setCierreObservacion(e.target.value)}
+                            placeholder="Ej.: Se coordinó reparación y el problema quedó resuelto." />
+                </label>
+                <div className="fila-botones">
+                  <button type="button" className="boton boton-secundario" disabled={finalizando}
+                          onClick={() => { setCierreAbierto(false); setCierreObservacion(''); }}>
+                    Cancelar
+                  </button>
+                  <button type="button" className="boton" disabled={finalizando} onClick={finalizarIncidencia}>
+                    {finalizando ? 'Finalizando…' : 'Confirmar finalización'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {registro.estado === 'finalizada' && ['atencion','urgente'].includes(registro.nivel) && (
+          <section className="tarjeta bitacora-cierre-finalizado">
+            <div className="bitacora-cierre-finalizado-cabecera">
+              <span className="bitacora-estado-finalizada">Finalizada</span>
+              <strong>{fechaHora(registro.finalizado_en)}</strong>
+            </div>
+            <div className="bitacora-detalle-datos">
+              <div><span>Finalizada por</span><strong>{registro.finalizado_por_nombre || 'Administrador'}</strong></div>
+              <div><span>Observación de cierre</span><strong>{registro.cierre_observacion || 'Sin observación de cierre.'}</strong></div>
+            </div>
+          </section>
+        )}
 
         <section className="bitacora-detalle-seccion">
           <h3>Descripción</h3>
