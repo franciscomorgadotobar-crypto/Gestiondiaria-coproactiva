@@ -54,6 +54,7 @@ export default function Notificaciones() {
     } else {
       setMantenciones(xs => (xs ?? []).map(x => x.id === id ? { ...x, leida: true } : x));
     }
+    window.dispatchEvent(new CustomEvent('coproactiva:notificaciones-cambio'));
   }
 
   const todas = [
