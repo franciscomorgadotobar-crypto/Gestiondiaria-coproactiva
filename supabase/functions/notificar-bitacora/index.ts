@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
 
   const { data: registro, error } = await admin
     .from('bitacora_registros')
-    .select('id, comunidad_id, tipo_codigo, tipo_otro, nivel, titulo, descripcion, registrado_por, registrado_en, correo_enviado_en')
+    .select('id, correlativo, comunidad_id, tipo_codigo, tipo_otro, nivel, titulo, descripcion, registrado_por, registrado_en, correo_enviado_en')
     .eq('id', bitacoraId)
     .maybeSingle();
 
@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\x20-\x7E]/g, '');
-  const asunto = limpiarAsunto(`${urgente ? '[URGENTE] ' : ''}Bitacora - ${nombreComunidad} - ${registro.titulo}`);
+  const asunto = limpiarAsunto(`${urgente ? '[URGENTE] ' : ''}Bitacora ${registro.correlativo || ''} - ${nombreComunidad} - ${registro.titulo}`);
   const enlace = `${URL_APP.replace(/\/$/, '')}/bitacora/${registro.id}`;
 
   const sinAcentos = (s: unknown) => String(s ?? '')
@@ -100,6 +100,7 @@ Deno.serve(async (req) => {
 
   const texto = [
     urgente ? 'REQUIERE ATENCION URGENTE' : 'REQUIERE ATENCION',
+    'Correlativo: ' + sinAcentos(registro.correlativo || ''),
     '',
     sinAcentos(registro.titulo),
     sinAcentos(nombreComunidad),
