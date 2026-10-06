@@ -27,7 +27,7 @@ export function useVolverGlobal(handler, activo = true) {
  * No depende del historial del navegador: retrocede por niveles funcionales
  * y el último nivel para usuarios con selector es siempre Selección de área.
  */
-export function volverPorJerarquia(navegar, pathname) {
+export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
   const ruta = String(pathname || '/').replace(/\/+$/, '') || '/';
 
   // Tercer nivel → listado/módulo.
@@ -64,6 +64,7 @@ export function volverPorJerarquia(navegar, pathname) {
     '/contabilidad',
     '/configuracion'
   ].includes(ruta)) {
+    if (!puedeCambiarArea) return;
     limpiarArea();
     return navegar('/', { replace: true });
   }
