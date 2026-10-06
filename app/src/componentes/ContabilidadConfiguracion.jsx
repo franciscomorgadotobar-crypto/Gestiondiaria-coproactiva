@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import './ContabilidadConfiguracion.css';
 
 function origenTexto(entidad, plantilla) {
   if (!entidad) return 'Sin configurar';
