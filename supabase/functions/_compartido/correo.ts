@@ -106,6 +106,7 @@ export async function enviarTextoPlano(para: string, asunto: string, texto: stri
   if (!hayCorreo()) return { enviado: false, motivo: 'SMTP sin configurar' };
 
   const cliente = new SMTPClient({
+    debug: { encodeLB: true },
     connection: {
       hostname: SERVIDOR,
       port: PUERTO,
