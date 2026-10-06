@@ -1521,3 +1521,56 @@
     grid-column: 2 / -1;
   }
 }
+
+.contabilidad-diario-agrupado td {
+  vertical-align: top;
+}
+.contabilidad-diario-agrupado td:nth-child(3),
+.contabilidad-diario-agrupado td:nth-child(6) {
+  white-space: normal;
+}
+.contabilidad-diario-cuentas {
+  display: grid;
+  gap: 5px;
+  min-width: 330px;
+}
+.contabilidad-diario-cuentas > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+.contabilidad-diario-cuentas > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.contabilidad-diario-cuentas > div > span:first-child {
+  white-space: normal;
+}
+.contabilidad-diario-cuentas-movil {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0;
+}
+.contabilidad-diario-cuentas-movil > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--borde-suave);
+}
+.contabilidad-diario-cuentas-movil > div > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.contabilidad-diario-cuentas-movil > div > div > span {
+  color: var(--texto-apagado);
+  font-size: 11px;
+}
+.contabilidad-diario-cuentas-movil > div > .numero {
+  flex: none;
+  font-size: 11px;
+}
