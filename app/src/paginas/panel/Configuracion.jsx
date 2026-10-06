@@ -28,12 +28,17 @@ export default function Configuracion() {
         </div>
         <h1 className="h3">Configuración</h1>
         <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-          Equipo y accesos de clientes.
+          Cuenta personal, equipo y accesos de clientes.
         </p>
       </header>
 
       <div className="cuerpo">
         <div className="rejilla">
+          <Link to="/mi-cuenta" className="tarjeta tarjeta-enlace">
+            <span className="seleccion-area-etiqueta">Personal</span>
+            <h2 className="h4">Mi cuenta</h2>
+            <p className="chico apagado">Nombre, teléfono y accesos de la barra inferior.</p>
+          </Link>
           {esAdministracion && (
             <Link to="/equipo" className="tarjeta tarjeta-enlace">
               <span className="seleccion-area-etiqueta">Equipo</span>
