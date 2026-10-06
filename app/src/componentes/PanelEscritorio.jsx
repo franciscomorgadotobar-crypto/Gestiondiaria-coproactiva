@@ -16,6 +16,14 @@ function activaPropiedades(pathname) {
   return activa(pathname, '/propiedades') && !activa(pathname, '/propiedades/nueva');
 }
 
+function activaLevantamientos(pathname) {
+  return activa(pathname, '/levantamientos')
+    || activa(pathname, '/nuevo')
+    || activa(pathname, '/control')
+    || activa(pathname, '/plantillas')
+    || activa(pathname, '/bitacora');
+}
+
 /* Recarga completa en vez de navegar: "Cambiar de área" puede apretarse
  * estando ya en "/" (cuando el área es 'operacion', Entrada muestra Inicio
  * ahí mismo), y navegar a la misma ruta en la que ya se está no vuelve a
@@ -117,8 +125,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       ]
     : [
         { ruta: '/inicio', etiqueta: 'Inicio', mostrar: true },
-        { ruta: '/nuevo', etiqueta: 'Nuevo levantamiento', mostrar: puedeConfigurar },
-        { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
+        { ruta: '/levantamientos', etiqueta: 'Levantamientos', mostrar: true, activo: activaLevantamientos },
         { ruta: '/comunidades', etiqueta: 'Comunidades', mostrar: true },
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true }
