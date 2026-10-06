@@ -975,40 +975,61 @@ export default function Contabilidad() {
   }
 
   async function guardarCuenta(valores) {
-    const codigo = valores.codigo.trim();
-    const tipoFormulario = valores.tipo_contable;
-    const tipo = tipoFormulario === 'activo_contra' ? 'activo' : tipoFormulario;
-    const naturaleza = tipoFormulario === 'activo_contra'
-      ? 'acreedora'
-      : naturalezaDesdeTipo(tipo, codigo);
-    const payload = {
-      entidad_id: entidadId,
-      codigo,
-      cuenta: valores.cuenta.trim(),
-      clase: 'movimiento',
-      tipo_contable: tipo,
-      grupo: valores.grupo.trim() || 'Sin grupo',
-      naturaleza,
-      clasificacion_balance: clasificacionDesdeCodigo(codigo),
-      eerr_seccion: valores.eerr_seccion || null,
-      eerr_orden: valores.eerr_seccion ? Number(valores.eerr_orden || 999) : null,
-      activa: true,
-      editado_en: new Date().toISOString()
-    };
+    const editando = cuentaEditando?.id ? cuentaEditando : null;
+    const tieneMovimientos = asientos.length > 0;
+    const requiereCentro = valores.requiere_centro_costo === 'si';
 
     setGuardando(true);
     setError(null);
-    const q = cuentaEditando?.id
-      ? supabase.from('contabilidad_cuentas').update(payload).eq('id', cuentaEditando.id)
-      : supabase.from('contabilidad_cuentas').insert(payload);
-    const { error } = await q;
+
+    let query;
+    if (editando && tieneMovimientos) {
+      query = supabase.from('contabilidad_cuentas')
+        .update({
+          cuenta: valores.cuenta.trim(),
+          requiere_centro_costo: requiereCentro,
+          editado_en: new Date().toISOString()
+        })
+        .eq('id', editando.id);
+    } else {
+      const parent = cuentas.find(x => x.id === (valores.parent_id || ''));
+      const codigo = valores.codigo.trim();
+      const tipoFormulario = parent ? parent.tipo_contable : valores.tipo_contable;
+      const tipo = tipoFormulario === 'activo_contra' ? 'activo' : tipoFormulario;
+      const naturaleza = parent?.naturaleza || (tipoFormulario === 'activo_contra'
+        ? 'acreedora'
+        : naturalezaDesdeTipo(tipo, codigo));
+      const payload = {
+        entidad_id: entidadId,
+        parent_id: parent?.id || null,
+        codigo,
+        cuenta: valores.cuenta.trim(),
+        clase: 'movimiento',
+        tipo_contable: parent?.tipo_contable || tipo,
+        grupo: parent?.grupo || valores.grupo?.trim() || 'Sin grupo',
+        naturaleza,
+        clasificacion_balance: parent?.clasificacion_balance || clasificacionDesdeCodigo(codigo),
+        eerr_seccion: parent?.eerr_seccion || valores.eerr_seccion || null,
+        eerr_orden: parent?.eerr_orden || (valores.eerr_seccion ? Number(valores.eerr_orden || 999) : null),
+        nivel: parent ? Number(parent.nivel || 1) + 1 : Math.min(5, Math.max(1, codigo.split('.').length)),
+        imputable: true,
+        requiere_centro_costo: requiereCentro,
+        activa: editando ? editando.activa : true,
+        editado_en: new Date().toISOString()
+      };
+      query = editando
+        ? supabase.from('contabilidad_cuentas').update(payload).eq('id', editando.id)
+        : supabase.from('contabilidad_cuentas').insert(payload);
+    }
+
+    const { error } = await query;
     setGuardando(false);
     if (error) return setError(error.message);
 
     setCuentaEditando(null);
-    setAviso(cuentaEditando?.id ? 'Cuenta actualizada.' : 'Cuenta creada.');
+    setAviso(editando ? 'Cuenta actualizada.' : 'Cuenta creada.');
     await cargarEntidad(entidadId);
-    await cargarReportes(entidadId, desde, hasta);
+    await cargarReportes(entidadId, desde, hasta, centroReporteId);
   }
 
   async function desactivarCuenta() {
@@ -1022,6 +1043,31 @@ export default function Contabilidad() {
     setGuardando(false);
     if (error) return setError(error.message);
     setAviso('Cuenta desactivada. Los movimientos históricos se conservan.');
+    await cargarEntidad(entidadId);
+  }
+
+  async function activarCuenta(cuenta) {
+    setGuardando(true);
+    setError(null);
+    const { error } = await supabase.from('contabilidad_cuentas')
+      .update({ activa: true, editado_en: new Date().toISOString() })
+      .eq('id', cuenta.id);
+    setGuardando(false);
+    if (error) return setError(error.message);
+    setAviso('Cuenta activada.');
+    await cargarEntidad(entidadId);
+  }
+
+  async function eliminarCuenta() {
+    const cuenta = cuentaEliminar;
+    setCuentaEliminar(null);
+    if (!cuenta) return;
+    setGuardando(true);
+    setError(null);
+    const { error } = await supabase.rpc('contabilidad_eliminar_cuenta', { p_cuenta: cuenta.id });
+    setGuardando(false);
+    if (error) return setError(error.message);
+    setAviso('Cuenta eliminada.');
     await cargarEntidad(entidadId);
   }
 
@@ -1123,6 +1169,7 @@ export default function Contabilidad() {
   if (cargandoSesion) return <div className="pantalla"><p className="cargando">Cargando…</p></div>;
   if (!puedeGestionar) return <Navigate to="/inicio" replace />;
 
+  const tieneMovimientosEntidad = asientos.length > 0;
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
   const pasivoPatrimonio = tb.pasivo + eerr.utilidad;
