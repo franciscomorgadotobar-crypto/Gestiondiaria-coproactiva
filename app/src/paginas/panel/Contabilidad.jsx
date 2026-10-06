@@ -754,6 +754,7 @@ function ListaMovimientosMovil({ filas }) {
           <div className="contabilidad-reporte-card-grid">
             {Number(x.debe) !== 0 && <div><span>Debe</span><strong>{moneda(x.debe)}</strong></div>}
             {Number(x.haber) !== 0 && <div><span>Haber</span><strong>{moneda(x.haber)}</strong></div>}
+            {x.centro_costo && <div><span>Centro de costo</span><strong>{x.centro_costo}</strong></div>}
           </div>
           {(x.glosa_linea || x.glosa) && <p className="micro contabilidad-reporte-card-glosa">{x.glosa_linea || x.glosa}</p>}
         </article>
