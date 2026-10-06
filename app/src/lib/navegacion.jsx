@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { limpiarArea } from './area';
 
 /*
  * Las pantallas con lógica especial al salir (cambios sin guardar, origen
@@ -18,4 +19,55 @@ export function useVolverGlobal(handler, activo = true) {
     window.addEventListener('coproactiva:volver', escuchar);
     return () => window.removeEventListener('coproactiva:volver', escuchar);
   }, [activo]);
+}
+
+
+/*
+ * Navegación jerárquica del botón Volver de la barra móvil.
+ * No depende del historial del navegador: retrocede por niveles funcionales
+ * y el último nivel para usuarios con selector es siempre Selección de área.
+ */
+export function volverPorJerarquia(navegar, pathname) {
+  const ruta = String(pathname || '/').replace(/\/+$/, '') || '/';
+
+  // Tercer nivel → listado/módulo.
+  if (/^\/comunidades\/[^/]+$/.test(ruta)) return navegar('/comunidades');
+  if (/^\/plantillas\/[^/]+$/.test(ruta)) return navegar('/plantillas');
+  if (/^\/propiedades\/[^/]+$/.test(ruta)) return navegar('/propiedades');
+  if (/^\/proveedores\/[^/]+$/.test(ruta)) return navegar('/proveedores');
+  if (/^\/contabilidad\/[^/]+$/.test(ruta)) return navegar('/contabilidad');
+  if (/^\/ayuda\/[^/]+$/.test(ruta)) return navegar('/ayuda');
+
+  // Configuración tiene un nivel propio antes del selector.
+  if (ruta === '/equipo' || ruta === '/clientes') return navegar('/configuracion');
+
+  // Operación: módulos → inicio del área.
+  if ([
+    '/plantillas',
+    '/comunidades',
+    '/mantenciones',
+    '/mapa',
+    '/ayuda',
+    '/nuevo'
+  ].includes(ruta)) return navegar('/inicio');
+
+  // Edición de un control vuelve a su control.
+  const editarControl = ruta.match(/^\/control\/([^/]+)\/editar$/);
+  if (editarControl) return navegar('/control/' + editarControl[1]);
+
+  // Homes de área/configuración → selector de área.
+  if ([
+    '/inicio',
+    '/pipeline',
+    '/propiedades',
+    '/proveedores',
+    '/contabilidad',
+    '/configuracion'
+  ].includes(ruta)) {
+    limpiarArea();
+    return navegar('/', { replace: true });
+  }
+
+  // Rutas no catalogadas: conserva un fallback razonable.
+  navegar(-1);
 }
