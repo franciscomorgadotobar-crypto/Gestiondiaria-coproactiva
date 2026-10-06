@@ -100,6 +100,37 @@ export async function enviarSimple(para: string, asunto: string, html: string) {
   return resultado;
 }
 
+/* Alertas operativas: mensaje deliberadamente simple para evitar cualquier
+ * interpretación multipart/quoted-printable defectuosa en Gmail móvil. */
+export async function enviarTextoPlano(para: string, asunto: string, texto: string) {
+  if (!hayCorreo()) return { enviado: false, motivo: 'SMTP sin configurar' };
+
+  const cliente = new SMTPClient({
+    connection: {
+      hostname: SERVIDOR,
+      port: PUERTO,
+      tls: PUERTO === 465,
+      auth: { username: REMITENTE, password: CLAVE.replace(/\s+/g, '') }
+    }
+  });
+
+  let resultado: { enviado: boolean; motivo?: string };
+  try {
+    await cliente.send({
+      from: `CoproActiva <${REMITENTE}>`,
+      to: para,
+      subject: asunto,
+      content: texto
+    });
+    resultado = { enviado: true };
+  } catch (e) {
+    resultado = { enviado: false, motivo: e instanceof Error ? e.message : String(e) };
+  }
+
+  try { await cliente.close(); } catch { /* el runtime libera la conexión */ }
+  return resultado;
+}
+
 const ALCANCE: Record<string, string> = {
   terreno: 'Verás los levantamientos que se te asignen en las comunidades donde trabajas.',
   jefatura: 'Verás las comunidades asignadas, el embudo comercial, y podrás corregir levantamientos del equipo.',
