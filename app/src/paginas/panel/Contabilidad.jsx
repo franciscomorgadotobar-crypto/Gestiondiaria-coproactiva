@@ -1691,12 +1691,23 @@ export default function Contabilidad() {
                 <span className="etiqueta-campo">Hasta</span>
                 <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} />
               </label>
+              {entidad.usa_centros_costo && (
+                <label className="campo">
+                  <span className="etiqueta-campo">Centro de costo</span>
+                  <select value={centroReporteId} onChange={e => setCentroReporteId(e.target.value)}>
+                    <option value="">Todos los centros</option>
+                    {centrosCosto.filter(x => x.activa).map(cc => (
+                      <option key={cc.id} value={cc.id}>{cc.codigo} · {cc.nombre}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <button type="button" className="boton boton-secundario" disabled={cargandoReportes}
-                      onClick={() => cargarReportes(entidadId, desde, hasta)}>
-                {cargandoReportes ? 'Calculando…' : 'Aplicar período'}
+                      onClick={() => cargarReportes(entidadId, desde, hasta, centroReporteId)}>
+                {cargandoReportes ? 'Calculando…' : 'Aplicar filtros'}
               </button>
               <button type="button" className="boton boton-texto"
-                      onClick={() => { setDesde(''); setHasta(''); cargarReportes(entidadId, '', ''); }}>
+                      onClick={() => { setDesde(''); setHasta(''); setCentroReporteId(''); cargarReportes(entidadId, '', '', ''); }}>
                 Ver todo
               </button>
             </section>
@@ -1740,7 +1751,10 @@ export default function Contabilidad() {
               </div>
             </div>
 
-            <p className="micro apagado contabilidad-periodo-actual">{textoPeriodo(desde, hasta)}</p>
+            <p className="micro apagado contabilidad-periodo-actual">
+              {textoPeriodo(desde, hasta)}
+              {centroReporteId && ' · Centro de costo: ' + (centrosCosto.find(x => x.id === centroReporteId)?.nombre || '')}
+            </p>
 
             {cargandoReportes && <p className="cargando">Calculando reporte…</p>}
 
@@ -1784,12 +1798,13 @@ export default function Contabilidad() {
                   <div className="tabla-responsive">
                     <table className="tabla contabilidad-diario-tabla contabilidad-tabla-reporte">
                       <thead>
-                        <tr><th>N° Asiento</th><th>Fecha</th><th>Código</th><th>Cuenta</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr>
+                        <tr><th>N° Asiento</th><th>Fecha</th><th>Código</th><th>Cuenta</th><th>Centro de costo</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr>
                       </thead>
                       <tbody>
                         {diario.map((x, i) => (
                           <tr key={x.asiento_id + '-' + x.cuenta_id + '-' + i}>
                             <td>{x.numero}</td><td>{fechaCL(x.fecha)}</td><td>{x.codigo}</td><td>{x.cuenta}</td>
+                            <td>{x.centro_costo || 'General / Sin asignar'}</td>
                             <td className="numero">{Number(x.debe) ? moneda(x.debe) : ''}</td>
                             <td className="numero">{Number(x.haber) ? moneda(x.haber) : ''}</td>
                             <td>{x.glosa_linea || x.glosa}</td>
