@@ -244,12 +244,6 @@ function ListadoPropiedades() {
               <a href={SITIO} target="_blank" rel="noopener noreferrer">coproactiva.cl/propiedades</a>.
             </p>
           </div>
-          <Link
-            to={`/propiedades/nueva${operacion === 'venta' ? '?operacion=venta' : ''}`}
-            className="boton propiedades-nueva"
-          >
-            + Nueva propiedad
-          </Link>
         </div>
       </header>
 
