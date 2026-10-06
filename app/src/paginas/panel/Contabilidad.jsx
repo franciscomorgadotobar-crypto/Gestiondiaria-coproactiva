@@ -87,6 +87,71 @@ function monto(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function agruparAsientosDiario(filas = []) {
+  const mapa = new Map();
+  for (const x of filas) {
+    const clave = x.asiento_id || [x.numero, x.fecha, x.glosa].join('|');
+    if (!mapa.has(clave)) {
+      mapa.set(clave, {
+        asiento_id: x.asiento_id,
+        numero: x.numero,
+        fecha: x.fecha,
+        glosa: x.glosa || '',
+        referencia: x.referencia || '',
+        lineas: [],
+        debe: 0,
+        haber: 0
+      });
+    }
+    const asiento = mapa.get(clave);
+    asiento.lineas.push(x);
+    asiento.debe += Number(x.debe || 0);
+    asiento.haber += Number(x.haber || 0);
+  }
+  return [...mapa.values()];
+}
+
+function ListaAsientosDiarioMovil({ asientos }) {
+  return (
+    <div className="contabilidad-movimientos-movil contabilidad-solo-movil">
+      {asientos.map(a => (
+        <article className="tarjeta contabilidad-reporte-card" key={a.asiento_id || a.numero}>
+          <div className="contabilidad-reporte-card-cabecera">
+            <div>
+              <span className="micro apagado">{fechaCL(a.fecha)}</span>
+              <strong>Asiento N° {a.numero}</strong>
+            </div>
+          </div>
+
+          <div className="contabilidad-diario-cuentas-movil">
+            {a.lineas.map((l, i) => (
+              <div key={(l.cuenta_id || '') + '-' + i}>
+                <div>
+                  <strong>{[l.codigo, l.cuenta].filter(Boolean).join(' · ')}</strong>
+                  {l.centro_costo && l.centro_costo !== 'General / Sin asignar' && (
+                    <span>Centro de costo: {l.centro_costo}</span>
+                  )}
+                </div>
+                <span className="numero">
+                  {Number(l.debe || 0) ? 'Debe ' + moneda(l.debe) : 'Haber ' + moneda(l.haber)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="contabilidad-reporte-card-grid">
+            <div><span>Debe</span><strong>{moneda(a.debe)}</strong></div>
+            <div><span>Haber</span><strong>{moneda(a.haber)}</strong></div>
+          </div>
+
+          {a.glosa && <p className="micro contabilidad-reporte-card-glosa">{a.glosa}</p>}
+        </article>
+      ))}
+      {!asientos.length && <p className="vacio">No hay asientos para el período seleccionado.</p>}
+    </div>
+  );
+}
+
 function clasificacionDesdeCodigo(codigo) {
   const inicial = String(codigo || '').trim()[0];
   if (inicial === '1') return 'activo';
@@ -1178,6 +1243,7 @@ export default function Contabilidad() {
   if (!puedeGestionar) return <Navigate to="/inicio" replace />;
 
   const tieneMovimientosEntidad = asientos.length > 0;
+  const diarioAgrupado = useMemo(() => agruparAsientosDiario(diario), [diario]);
   const eerr = armarEstadoResultados(eerrDetalle);
   const tb = totalesBalance(balance);
   const pasivoPatrimonio = tb.pasivo + eerr.utilidad;
@@ -1807,39 +1873,56 @@ export default function Contabilidad() {
                 <div className="contabilidad-reporte-intro">
                   <div>
                     <h3 className="h3">Libro Diario</h3>
-                    <p className="micro apagado">Movimientos contables ordenados cronológicamente por asiento.</p>
+                    <p className="micro apagado">Asientos contables ordenados cronológicamente, con todas sus cuentas relacionadas.</p>
                   </div>
                 </div>
 
                 <div className="contabilidad-reporte-resumen">
-                  <div><span>Movimientos</span><strong>{diario.length}</strong></div>
+                  <div><span>Asientos</span><strong>{diarioAgrupado.length}</strong></div>
                   <div><span>Debe</span><strong>{moneda(diario.reduce((s, x) => s + Number(x.debe || 0), 0))}</strong></div>
                   <div><span>Haber</span><strong>{moneda(diario.reduce((s, x) => s + Number(x.haber || 0), 0))}</strong></div>
                   <div><span>Estado</span><strong>{Math.abs(diario.reduce((s, x) => s + Number(x.debe || 0) - Number(x.haber || 0), 0)) < 0.005 ? 'Cuadrado' : 'Revisar'}</strong></div>
                 </div>
 
-                <ListaMovimientosMovil filas={diario} />
+                <ListaAsientosDiarioMovil asientos={diarioAgrupado} />
 
                 <section className="contabilidad-reporte-panel contabilidad-solo-escritorio">
                   <div className="contabilidad-reporte-panel-cabecera">
                     <div>
-                      <h4>Detalle de movimientos</h4>
-                      <p>Asientos y líneas contables del período seleccionado.</p>
+                      <h4>Detalle por asiento</h4>
+                      <p>Una fila por asiento, con sus cuentas involucradas y la glosa registrada una sola vez.</p>
                     </div>
                   </div>
                   <div className="tabla-responsive">
-                    <table className="tabla contabilidad-diario-tabla contabilidad-tabla-reporte">
+                    <table className="tabla contabilidad-diario-tabla contabilidad-tabla-reporte contabilidad-diario-agrupado">
                       <thead>
-                        <tr><th>N° Asiento</th><th>Fecha</th><th>Código</th><th>Cuenta</th><th>Centro de costo</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr>
+                        <tr><th>N° Asiento</th><th>Fecha</th><th>Cuentas involucradas</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr>
                       </thead>
                       <tbody>
-                        {diario.map((x, i) => (
-                          <tr key={x.asiento_id + '-' + x.cuenta_id + '-' + i}>
-                            <td>{x.numero}</td><td>{fechaCL(x.fecha)}</td><td>{x.codigo}</td><td>{x.cuenta}</td>
-                            <td>{x.centro_costo || 'General / Sin asignar'}</td>
-                            <td className="numero">{Number(x.debe) ? moneda(x.debe) : ''}</td>
-                            <td className="numero">{Number(x.haber) ? moneda(x.haber) : ''}</td>
-                            <td>{x.glosa_linea || x.glosa}</td>
+                        {diarioAgrupado.map(a => (
+                          <tr key={a.asiento_id || a.numero}>
+                            <td><strong>{a.numero}</strong></td>
+                            <td>{fechaCL(a.fecha)}</td>
+                            <td>
+                              <div className="contabilidad-diario-cuentas">
+                                {a.lineas.map((l, i) => (
+                                  <div key={(l.cuenta_id || '') + '-' + i}>
+                                    <span>
+                                      <strong>{l.codigo}</strong> · {l.cuenta}
+                                      {l.centro_costo && l.centro_costo !== 'General / Sin asignar'
+                                        ? ' · CC: ' + l.centro_costo
+                                        : ''}
+                                    </span>
+                                    <span className="numero">
+                                      {Number(l.debe || 0) ? 'Debe ' + moneda(l.debe) : 'Haber ' + moneda(l.haber)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="numero">{moneda(a.debe)}</td>
+                            <td className="numero">{moneda(a.haber)}</td>
+                            <td>{a.glosa || 'Sin glosa'}</td>
                           </tr>
                         ))}
                       </tbody>
