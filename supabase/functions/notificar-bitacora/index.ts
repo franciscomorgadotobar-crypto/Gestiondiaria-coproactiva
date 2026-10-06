@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { enviarSimple } from '../_compartido/correo.ts';
+import { enviarTextoPlano } from '../_compartido/correo.ts';
 
 const URL_PROYECTO = Deno.env.get('SUPABASE_URL')!;
 const CLAVE_ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -90,43 +90,26 @@ Deno.serve(async (req) => {
   const asunto = limpiarAsunto(`${urgente ? '[URGENTE] ' : ''}Bitacora · ${nombreComunidad} · ${registro.titulo}`);
   const enlace = `${URL_APP.replace(/\/$/, '')}/bitacora/${registro.id}`;
 
+  const sinAcentos = (s: unknown) => String(s ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E\n\r]/g, '');
+
   const texto = [
-    urgente ? 'REQUIERE ATENCIÓN URGENTE' : 'REQUIERE ATENCIÓN',
+    urgente ? 'REQUIERE ATENCION URGENTE' : 'REQUIERE ATENCION',
     '',
-    registro.titulo,
-    nombreComunidad,
-    `Tipo: ${nombreTipo}`,
-    `Registrado por: ${autor?.nombre ?? 'Usuario CoproActiva'}`,
-    `Fecha: ${new Date(registro.registrado_en).toLocaleString('es-CL')}`,
+    sinAcentos(registro.titulo),
+    sinAcentos(nombreComunidad),
+    'Tipo: ' + sinAcentos(nombreTipo),
+    'Registrado por: ' + sinAcentos(autor?.nombre ?? 'Usuario CoproActiva'),
+    'Fecha: ' + sinAcentos(new Date(registro.registrado_en).toLocaleString('es-CL')),
     '',
-    registro.descripcion,
+    sinAcentos(registro.descripcion),
     '',
-    `Ver registro: ${enlace}`
+    'Ver registro: ' + enlace
   ].join('\n');
 
-  const html = `<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;background:#f7f4f0;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#2b3138">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border:1px solid #e3ded7">
-      <tr><td style="padding:24px 26px">
-        <div style="display:inline-block;padding:7px 10px;background:${urgente ? '#b42318' : '#c96f16'};color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">
-          ${escapar(nivelTexto(registro.nivel))}
-        </div>
-        <h1 style="font-size:22px;line-height:1.25;margin:18px 0 6px">${escapar(registro.titulo)}</h1>
-        <p style="margin:0 0 20px;color:#66717c;font-size:14px">${escapar(nombreComunidad)}</p>
-        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px">
-          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#7a838c">Tipo</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600">${escapar(nombreTipo)}</td></tr>
-          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#7a838c">Registrado por</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600">${escapar(autor?.nombre ?? 'Usuario CoproActiva')}</td></tr>
-        </table>
-        <p style="margin:20px 0;font-size:14px;line-height:1.6">${escapar(registro.descripcion)}</p>
-        <a href="${escapar(enlace)}" style="display:inline-block;background:#2b3138;color:#fff;text-decoration:none;padding:13px 18px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Ver registro en CoproActiva</a>
-      </td></tr>
-    </table>
-  </td></tr></table>
-</body></html>`;
-
-  const correo = await enviarSimple('contacto@coproactiva.cl', asunto, html);
+  const correo = await enviarTextoPlano('contacto@coproactiva.cl', asunto, texto);
   if (!correo.enviado) {
     return responder({ error: correo.motivo ?? 'No se pudo enviar el correo' }, 502);
   }
