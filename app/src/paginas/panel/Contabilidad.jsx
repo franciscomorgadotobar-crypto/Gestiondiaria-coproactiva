@@ -1231,24 +1231,54 @@ export default function Contabilidad() {
       {cuentaEditando && (
         <DialogoCampos
           titulo={cuentaEditando.id ? 'Editar cuenta' : 'Nueva cuenta'}
-          mensaje="El plan puede adaptarse por entidad. Solo las cuentas activas se pueden usar en nuevos asientos."
-          campos={[
-            { id: 'codigo', label: 'Código', valor: cuentaEditando.codigo ?? '', obligatorio: true },
-            { id: 'cuenta', label: 'Cuenta', valor: cuentaEditando.cuenta ?? '', obligatorio: true },
-            {
-              id: 'tipo_contable', label: 'Tipo', valor: tipoCuentaFormulario(cuentaEditando),
-              obligatorio: true, opciones: TIPOS_CUENTA_FORM
-            },
-            { id: 'grupo', label: 'Grupo', valor: cuentaEditando.grupo ?? '', obligatorio: true },
-            {
-              id: 'eerr_seccion', label: 'Estado de Resultados', valor: cuentaEditando.eerr_seccion ?? '',
-              opciones: EERR_SECCIONES
-            },
-            {
-              id: 'eerr_orden', label: 'Orden dentro del EERR', tipo: 'number',
-              valor: cuentaEditando.eerr_orden ?? ''
-            }
-          ]}
+          mensaje={tieneMovimientosEntidad
+            ? 'El historial está protegido. Solo puedes cambiar el nombre y si la cuenta exige centro de costo.'
+            : 'Puedes organizar el plan por niveles. Las cuentas con subcuentas pasan a ser agrupadoras y dejan de aceptar movimientos.'}
+          campos={cuentaEditando.id && tieneMovimientosEntidad
+            ? [
+                { id: 'cuenta', label: 'Cuenta', valor: cuentaEditando.cuenta ?? '', obligatorio: true },
+                {
+                  id: 'requiere_centro_costo',
+                  label: 'Centro de costo',
+                  valor: cuentaEditando.requiere_centro_costo ? 'si' : 'no',
+                  opciones: [['no','No requerido'],['si','Requerido para nuevos movimientos']]
+                }
+              ]
+            : [
+                {
+                  id: 'parent_id',
+                  label: 'Cuenta agrupadora',
+                  valor: cuentaEditando.parent_id ?? '',
+                  opciones: [
+                    ['','Sin cuenta agrupadora'],
+                    ...cuentas
+                      .filter(x => x.id !== cuentaEditando.id && x.activa && Number(x.nivel || 1) < 5)
+                      .map(x => [x.id, x.codigo + ' · ' + x.cuenta])
+                  ],
+                  ayuda: 'Si eliges una agrupadora, el código debe depender de ella y se crea en el nivel siguiente.'
+                },
+                { id: 'codigo', label: 'Código', valor: cuentaEditando.codigo ?? '', obligatorio: true, ayuda: 'Los modelos base usan X.X.XX.XXX y permiten un quinto nivel .XXX.' },
+                { id: 'cuenta', label: 'Cuenta', valor: cuentaEditando.cuenta ?? '', obligatorio: true },
+                {
+                  id: 'tipo_contable', label: 'Tipo', valor: tipoCuentaFormulario(cuentaEditando),
+                  obligatorio: true, opciones: TIPOS_CUENTA_FORM
+                },
+                { id: 'grupo', label: 'Grupo', valor: cuentaEditando.grupo ?? '', obligatorio: true },
+                {
+                  id: 'eerr_seccion', label: 'Estado de Resultados', valor: cuentaEditando.eerr_seccion ?? '',
+                  opciones: EERR_SECCIONES
+                },
+                {
+                  id: 'eerr_orden', label: 'Orden dentro del EERR', tipo: 'number',
+                  valor: cuentaEditando.eerr_orden ?? ''
+                },
+                {
+                  id: 'requiere_centro_costo',
+                  label: 'Centro de costo',
+                  valor: cuentaEditando.requiere_centro_costo ? 'si' : 'no',
+                  opciones: [['no','No requerido'],['si','Requerido si la entidad usa centros de costo']]
+                }
+              ]}
           textoConfirmar={cuentaEditando.id ? 'Guardar cambios' : 'Crear cuenta'}
           onConfirmar={guardarCuenta}
           onCancelar={() => setCuentaEditando(null)}
@@ -1263,6 +1293,17 @@ export default function Contabilidad() {
           textoCancelar="Cancelar"
           onConfirmar={desactivarCuenta}
           onCancelar={() => setCuentaDesactivar(null)}
+        />
+      )}
+
+      {cuentaEliminar && (
+        <Confirmar
+          titulo="Eliminar cuenta"
+          mensaje={`“${cuentaEliminar.codigo} · ${cuentaEliminar.cuenta}” se eliminará del plan. Esta acción solo está disponible antes del primer movimiento contable.`}
+          textoConfirmar="Eliminar"
+          textoCancelar="Cancelar"
+          onConfirmar={eliminarCuenta}
+          onCancelar={() => setCuentaEliminar(null)}
         />
       )}
 
