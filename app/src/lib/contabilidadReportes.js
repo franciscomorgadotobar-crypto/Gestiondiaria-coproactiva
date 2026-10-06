@@ -162,7 +162,8 @@ export function armarBalanceGeneral(balance = [], cuentas = [], resultado = 0) {
   // 3104 es la cuenta nominal "Resultado ejercicio". Para el Balance General
   // usamos el resultado calculado del período, evitando duplicarlo si luego se
   // contabiliza un asiento de cierre contra esa cuenta.
-  const patrimonio = filas.filter(x => x.tipo === 'patrimonio' && String(x.codigo) !== '3104');
+  const codigosResultado = new Set(['3104','3.1.04','3.1.04.001']);
+  const patrimonio = filas.filter(x => x.tipo === 'patrimonio' && !codigosResultado.has(String(x.codigo)));
   const resultadoFila = {
     cuenta_id: 'resultado-ejercicio',
     codigo: '',
