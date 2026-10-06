@@ -4,6 +4,7 @@ import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
 import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
+import { volverPorJerarquia } from '../lib/navegacion';
 
 function activa(pathname, ruta) {
   return pathname === ruta || pathname.startsWith(ruta + '/');
@@ -127,7 +128,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   function volverGlobal() {
     const evento = new CustomEvent('coproactiva:volver', { cancelable: true });
     window.dispatchEvent(evento);
-    if (!evento.defaultPrevented) navegar(-1);
+    if (!evento.defaultPrevented) volverPorJerarquia(navegar, pathname);
   }
 
   const tutorialContextual =
