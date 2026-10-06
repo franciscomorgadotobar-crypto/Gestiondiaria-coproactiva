@@ -45,6 +45,8 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
   // Operación: módulos → inicio del área.
   if ([
     '/bitacora',
+    '/notificaciones',
+    '/mi-cuenta',
     '/plantillas',
     '/comunidades',
     '/mantenciones',
