@@ -1925,13 +1925,33 @@ export default function Contabilidad() {
                 <div key={e.id}
                      className={'tarjeta contabilidad-entidad-card ' + (e.id === entidadId ? 'activa' : '')}>
                   <button type="button" className="contabilidad-entidad-contenido"
-                          onClick={() => { setEntidadId(e.id); navegar('/contabilidad'); }}>
+                          onClick={() => {
+                            setEntidadId(e.id);
+                            navegar(e.plan_origen === 'pendiente' ? '/contabilidad/configuracion' : '/contabilidad');
+                          }}>
                     <span className="micro apagado">{e.tipo === 'comunidad' ? 'Comunidad' : e.tipo === 'empresa' ? 'Empresa' : 'Otra entidad'}</span>
                     <strong>{e.nombre}</strong>
                     <span>{e.rut || 'Sin RUT informado'}</span>
                     <span className="micro apagado">Moneda: {e.moneda}</span>
+                    <span className={'chip ' + (e.plan_origen === 'pendiente' ? 'chip-alerta' : 'chip-cumple')}>
+                      {e.plan_origen === 'pendiente'
+                        ? 'Plan pendiente'
+                        : e.plan_origen === 'plantilla'
+                        ? 'Plan predefinido'
+                        : e.plan_origen === 'personalizada'
+                        ? 'Plantilla personalizada'
+                        : e.plan_origen === 'manual'
+                        ? 'Plan manual'
+                        : 'Plan importado / histórico'}
+                    </span>
                   </button>
                   <div className="contabilidad-entidad-acciones">
+                    {e.plan_origen === 'pendiente' && (
+                      <button type="button" className="boton boton-texto"
+                              onClick={() => { setEntidadId(e.id); navegar('/contabilidad/configuracion'); }}>
+                        Configurar plan
+                      </button>
+                    )}
                     {e.comunidad_id && (
                       <Link className="boton boton-texto" to={`/comunidades/${e.comunidad_id}`}>
                         Ver comunidad
