@@ -1691,7 +1691,7 @@ export default function Contabilidad() {
                 <span className="etiqueta-campo">Hasta</span>
                 <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} />
               </label>
-              {entidad.usa_centros_costo && (
+              {centrosCosto.length > 0 && (
                 <label className="campo">
                   <span className="etiqueta-campo">Centro de costo</span>
                   <select value={centroReporteId} onChange={e => setCentroReporteId(e.target.value)}>
