@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
+import { inicioSegunArea } from '../../lib/area';
 import './MiCuenta.css';
 
 const DEFAULT_NAV = ['inicio', 'comunidades', 'levantamientos', 'notificaciones'];
@@ -32,7 +33,7 @@ function etiquetaRol(rol) {
 export default function MiCuenta() {
   const navegar = useNavigate();
   const { perfil, recargarPerfil } = useSesion();
-  useVolverGlobal(() => navegar('/inicio'));
+  useVolverGlobal(() => navegar(inicioSegunArea()));
 
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -113,8 +114,8 @@ export default function MiCuenta() {
       <header className="encabezado">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/inicio')}>
-            ‹ Inicio
+                  onClick={() => navegar(inicioSegunArea())}>
+            ‹ Volver
           </button>
         </div>
         <h1 className="h3">Mi cuenta</h1>
