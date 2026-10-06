@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { enviar } from '../_compartido/correo.ts';
+import { enviarSimple } from '../_compartido/correo.ts';
 
 const URL_PROYECTO = Deno.env.get('SUPABASE_URL')!;
 const CLAVE_ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -86,7 +86,8 @@ Deno.serve(async (req) => {
     ? (registro.tipo_otro || 'Otro')
     : (tipo?.nombre ?? registro.tipo_codigo);
   const urgente = registro.nivel === 'urgente';
-  const asunto = `${urgente ? '[URGENTE] ' : ''}Bitácora · ${nombreComunidad} · ${registro.titulo}`;
+  const limpiarAsunto = (s: string) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const asunto = limpiarAsunto(`${urgente ? '[URGENTE] ' : ''}Bitacora · ${nombreComunidad} · ${registro.titulo}`);
   const enlace = `${URL_APP.replace(/\/$/, '')}/bitacora/${registro.id}`;
 
   const texto = [
@@ -125,7 +126,7 @@ Deno.serve(async (req) => {
   </td></tr></table>
 </body></html>`;
 
-  const correo = await enviar('contacto@coproactiva.cl', asunto, html, texto);
+  const correo = await enviarSimple('contacto@coproactiva.cl', asunto, html);
   if (!correo.enviado) {
     return responder({ error: correo.motivo ?? 'No se pudo enviar el correo' }, 502);
   }
