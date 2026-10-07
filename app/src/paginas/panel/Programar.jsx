@@ -274,7 +274,7 @@ export default function Programar() {
 
   const enviado = control?.estado === 'enviado';
   return (
-    <div className="pantalla pantalla-angosta">
+    <div className="pantalla pantalla-angosta programar-pantalla">
       {pedirMotivoReapertura && (
         <DialogoCampos
           titulo="Reabrir levantamiento"
@@ -300,6 +300,11 @@ export default function Programar() {
           </button>
         </div>
         <h1 className="h3">{editando ? 'Editar levantamiento' : 'Nuevo levantamiento'}</h1>
+        <p className="chico apagado programar-bajada">
+          {editando
+            ? 'Ajusta responsable, fecha o período sin alterar la pauta ya creada.'
+            : 'Define destino, pauta, responsable y fecha para iniciar una revisión estructurada.'}
+        </p>
       </header>
       <div className="cuerpo">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
@@ -317,7 +322,16 @@ export default function Programar() {
           </div>
         )}
 
-        <div className="formulario-grid">
+        <section className="tarjeta programar-card">
+          <div className="programar-card-cabecera">
+            <div>
+              <span className="micro apagado">Datos del levantamiento</span>
+              <h2 className="h4">Programación</h2>
+            </div>
+            {!editando && <span className="chip chip-tipo">Nueva revisión</span>}
+          </div>
+
+          <div className="formulario-grid programar-grid">
         <div className="campo ancho-total">
           <label className="etiqueta-campo" htmlFor="destino">A quién corresponde</label>
           <select id="destino" value={datos.destino}
@@ -396,12 +410,18 @@ export default function Programar() {
           <input id="periodo" type="text" value={datos.periodo} placeholder="Septiembre 2026"
                  onChange={e => setDatos({ ...datos, periodo: e.target.value })} />
         </div>
-        </div>
+          </div>
 
-        <button className="boton boton-movil boton-ancho" style={{ marginTop: 8 }}
-                onClick={guardar} disabled={guardando}>
-          {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear levantamiento'}
-        </button>
+          <div className="programar-acciones">
+            <button type="button" className="boton boton-secundario"
+                    onClick={volver} disabled={guardando}>
+              Cancelar
+            </button>
+            <button className="boton boton-movil" onClick={guardar} disabled={guardando}>
+              {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear levantamiento'}
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );
