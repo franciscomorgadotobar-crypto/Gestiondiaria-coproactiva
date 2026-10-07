@@ -303,7 +303,7 @@ export default function Programar() {
         <p className="chico apagado programar-bajada">
           {editando
             ? 'Ajusta responsable, fecha o período sin alterar la pauta ya creada.'
-            : 'Define destino, pauta, responsable y fecha para iniciar una revisión estructurada.'}
+            : 'Programa una revisión para una comunidad o prospecto.'}
         </p>
       </header>
       <div className="cuerpo">
