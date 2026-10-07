@@ -233,3 +233,63 @@
     align-self: flex-start;
   }
 }
+
+
+/* Homogeneización web de Plantillas */
+@media (min-width: 900px) {
+  .plantillas-pantalla {
+    --ancho-contenido: 1280px;
+  }
+
+  .plantillas-encabezado {
+    padding-bottom: 18px;
+  }
+
+  .plantillas-grid {
+    gap: 14px;
+  }
+
+  .plantilla-card {
+    min-height: 272px;
+  }
+
+  .plantilla-card-meta {
+    min-height: 44px;
+    padding: 11px 14px;
+  }
+
+  .plantilla-card-contenido {
+    padding: 16px 16px 14px;
+  }
+
+  .plantilla-card-titulo {
+    font-size: 16px;
+    line-height: 1.28;
+  }
+
+  .plantilla-card-descripcion {
+    min-height: 56px;
+    margin-top: 8px;
+  }
+
+  .plantilla-card-footer {
+    min-height: 64px;
+    padding: 10px 12px;
+  }
+
+  .plantilla-card-acciones {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+
+  .plantilla-card-acciones .boton {
+    min-height: 36px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .plantilla-card-eliminar {
+    align-self: stretch;
+    min-height: 36px;
+    padding: 0 9px;
+  }
+}
