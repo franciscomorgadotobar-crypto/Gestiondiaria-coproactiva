@@ -17,8 +17,8 @@
 .mantenciones-kpis button {
   appearance: none;
   border: 1px solid var(--borde);
-  background: var(--blanco);
-  border-radius: var(--radio);
+  background: var(--tarjeta);
+  border-radius: var(--radio-tarjeta);
   padding: 16px;
   text-align: left;
   cursor: pointer;
