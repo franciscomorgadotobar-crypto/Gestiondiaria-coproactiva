@@ -105,11 +105,16 @@ export default function ContabilidadConfiguracion({
   asientos,
   centros,
   onRecargar,
+  onVerPlan,
   onError,
   onAviso
 }) {
   const archivoRef = useRef(null);
   const [plantillas, setPlantillas] = useState([]);
+  const [plantillaPrevia, setPlantillaPrevia] = useState(null);
+  const [cuentasPrevias, setCuentasPrevias] = useState([]);
+  const [cargandoPrevia, setCargandoPrevia] = useState(false);
+  const [errorPrevia, setErrorPrevia] = useState(null);
   const [aplicando, setAplicando] = useState(false);
   const [nombrePlantilla, setNombrePlantilla] = useState('');
   const [centroEditando, setCentroEditando] = useState(null);
@@ -127,6 +132,8 @@ export default function ContabilidadConfiguracion({
 
   useEffect(() => {
     let vigente = true;
+    setPlantillaPrevia(null);
+    setPlantillas([]);
     supabase.from('contabilidad_plan_plantillas')
       .select('*')
       .eq('activa', true)
@@ -140,17 +147,50 @@ export default function ContabilidadConfiguracion({
     return () => { vigente = false; };
   }, [entidad?.id]);
 
+  useEffect(() => {
+    let vigente = true;
+    setCuentasPrevias([]);
+    setErrorPrevia(null);
+    if (!plantillaPrevia) {
+      setCargandoPrevia(false);
+      return;
+    }
+    setCargandoPrevia(true);
+    supabase.from('contabilidad_plan_plantilla_cuentas')
+      .select('codigo,cuenta,nivel,imputable')
+      .eq('plantilla_id', plantillaPrevia.id)
+      .order('codigo')
+      .then(({ data, error }) => {
+        if (!vigente) return;
+        setCargandoPrevia(false);
+        if (error) setErrorPrevia(error.message);
+        else setCuentasPrevias(data ?? []);
+      })
+      .catch(error => {
+        if (!vigente) return;
+        setCargandoPrevia(false);
+        setErrorPrevia(error.message);
+      });
+    return () => { vigente = false; };
+  }, [plantillaPrevia]);
+
   async function aplicarPlantilla(id) {
     if (!entidad || tieneMovimientos || aplicando) return;
+    if (cuentas.length && !window.confirm('Se reemplazará el plan actual por una copia editable de esta plantilla. ¿Continuar?')) return;
     setAplicando(true);
-    const { error } = await supabase.rpc('contabilidad_aplicar_plantilla', {
-      p_entidad: entidad.id,
-      p_plantilla: id
-    });
-    setAplicando(false);
-    if (error) return onError?.(error.message);
-    onAviso?.('Plan de cuentas aplicado correctamente.');
-    await onRecargar?.();
+    try {
+      const { error } = await supabase.rpc('contabilidad_aplicar_plantilla', {
+        p_entidad: entidad.id,
+        p_plantilla: id
+      });
+      if (error) throw error;
+      await onRecargar?.();
+      onAviso?.('Plan aplicado. Puedes editar sus cuentas en Plan de cuentas.');
+    } catch (error) {
+      onError?.(error.message);
+    } finally {
+      setAplicando(false);
+    }
   }
 
   async function crearVacio() {
@@ -270,7 +310,8 @@ export default function ContabilidadConfiguracion({
           <>
             <div className="contabilidad-config-subtitulo">
               <h3>Elegir origen del plan</h3>
-              <p>Puedes cambiar de alternativa mientras la entidad no tenga movimientos.</p>
+              <p>Las plantillas son una referencia: se copian a la entidad y puedes editar sus cuentas en Plan de cuentas.
+                Puedes cambiar de alternativa mientras la entidad no tenga movimientos.</p>
             </div>
 
             <div className="contabilidad-plantillas-grid">
@@ -278,6 +319,12 @@ export default function ContabilidadConfiguracion({
                 <article key={p.id} className={'tarjeta contabilidad-plantilla-plan ' + (entidad.plan_plantilla_id === p.id ? 'activa' : '')}>
                   <span className="micro apagado">{p.origen === 'sistema' ? 'Plantilla predefinida' : 'Plantilla personalizada'}</span>
                   <strong>{p.nombre}</strong>
+                  <button type="button" className="boton boton-texto" disabled={aplicando}
+                          aria-expanded={plantillaPrevia?.id === p.id}
+                          aria-controls="contabilidad-vista-previa"
+                          onClick={() => setPlantillaPrevia(plantillaPrevia?.id === p.id ? null : p)}>
+                    {plantillaPrevia?.id === p.id ? 'Ocultar plan' : 'Ver plan de cuentas'}
+                  </button>
                   <button type="button" className="boton boton-secundario" disabled={aplicando}
                           onClick={() => aplicarPlantilla(p.id)}>
                     {entidad.plan_plantilla_id === p.id ? 'Volver a aplicar' : 'Usar esta plantilla'}
@@ -285,6 +332,44 @@ export default function ContabilidadConfiguracion({
                 </article>
               ))}
             </div>
+
+            {plantillaPrevia && (
+              <section id="contabilidad-vista-previa" className="tarjeta contabilidad-vista-previa" aria-live="polite">
+                <h3>{plantillaPrevia.nombre}</h3>
+                <p className="micro apagado">Vista previa de la referencia. Al asignarla, tendrás una copia editable para {entidad.nombre}.</p>
+                {cargandoPrevia ? <p>Cargando plan de cuentas…</p> : errorPrevia ? (
+                  <div role="alert">
+                    <p>{errorPrevia}</p>
+                    <button type="button" className="boton boton-secundario"
+                            onClick={() => setPlantillaPrevia({ ...plantillaPrevia })}>Reintentar</button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="micro">{cuentasPrevias.filter(c => c.imputable).length} cuentas de movimiento.</p>
+                    <div className="tabla-responsive contabilidad-vista-previa-tabla">
+                      <table className="tabla">
+                        <thead><tr><th>Código</th><th>Cuenta</th><th>Uso</th></tr></thead>
+                        <tbody>
+                          {cuentasPrevias.map(c => (
+                            <tr key={c.codigo} className={!c.imputable ? 'agrupadora' : ''}>
+                              <td>{c.codigo}</td>
+                              <td><span style={{ paddingLeft: Math.max(0, c.nivel - 1) * 12 }}>{c.cuenta}</span></td>
+                              <td>{c.imputable ? 'Movimiento' : 'Agrupadora'}</td>
+                            </tr>
+                          ))}
+                          {!cuentasPrevias.length && <tr><td colSpan="3">Esta plantilla no tiene cuentas.</td></tr>}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button type="button" className="boton boton-secundario"
+                            disabled={aplicando || !cuentasPrevias.length}
+                            onClick={() => aplicarPlantilla(plantillaPrevia.id)}>
+                      {aplicando ? 'Asignando…' : 'Asignar este plan a la entidad'}
+                    </button>
+                  </>
+                )}
+              </section>
+            )}
 
             <div className="contabilidad-origen-alternativas">
               <div className="tarjeta">
@@ -306,6 +391,9 @@ export default function ContabilidadConfiguracion({
 
         {cuentas.length > 0 && (
           <div className="contabilidad-guardar-plantilla">
+            <button type="button" className="boton boton-secundario" disabled={aplicando} onClick={onVerPlan}>
+              Ver y editar cuentas
+            </button>
             <label className="campo crece">
               <span className="etiqueta-campo">Guardar plan actual como plantilla personalizada</span>
               <input value={nombrePlantilla} onChange={e => setNombrePlantilla(e.target.value)}

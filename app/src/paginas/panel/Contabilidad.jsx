@@ -1069,12 +1069,13 @@ export default function Contabilidad() {
       const naturaleza = parent?.naturaleza || (tipoFormulario === 'activo_contra'
         ? 'acreedora'
         : naturalezaDesdeTipo(tipo, codigo));
+      const agrupadora = editando && cuentas.some(c => c.parent_id === editando.id);
       const payload = {
         entidad_id: entidadId,
         parent_id: parent?.id || null,
         codigo,
         cuenta: valores.cuenta.trim(),
-        clase: 'movimiento',
+        clase: agrupadora || editando?.imputable === false ? 'titulo' : 'movimiento',
         tipo_contable: parent?.tipo_contable || tipo,
         grupo: parent?.grupo || valores.grupo?.trim() || 'Sin grupo',
         naturaleza,
@@ -1082,7 +1083,7 @@ export default function Contabilidad() {
         eerr_seccion: parent?.eerr_seccion || valores.eerr_seccion || null,
         eerr_orden: parent?.eerr_orden || (valores.eerr_seccion ? Number(valores.eerr_orden || 999) : null),
         nivel: parent ? Number(parent.nivel || 1) + 1 : Math.min(5, Math.max(1, codigo.split('.').length)),
-        imputable: true,
+        imputable: agrupadora ? false : (editando?.imputable ?? true),
         requiere_centro_costo: requiereCentro,
         activa: editando ? editando.activa : true,
         editado_en: new Date().toISOString()
@@ -1762,6 +1763,7 @@ export default function Contabilidad() {
             cuentas={cuentas}
             asientos={asientos}
             centros={centrosCosto}
+            onVerPlan={() => navegar('/contabilidad/plan')}
             onError={setError}
             onAviso={setAviso}
             onRecargar={async () => {
