@@ -99,7 +99,7 @@ export default function Plantillas() {
   }
 
   return (
-    <div className="pantalla">
+    <div className="pantalla plantillas-pantalla">
       {dialogoNombre && (
         <DialogoCampos
           titulo={dialogoNombre.tipo === 'crear' ? 'Nueva plantilla' : 'Duplicar plantilla'}
