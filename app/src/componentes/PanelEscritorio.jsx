@@ -230,11 +230,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   return (
     <div className="layout-escritorio">
       <nav className="barra-lateral" aria-label="Navegación">
-        <Link to={inicio} className="marca-lateral">
-          <span className="marca-lateral-simbolo">
-            <img src={import.meta.env.BASE_URL + 'logo-coproactiva.svg'} alt="" />
-          </span>
-          <span className="marca-lateral-nombre">CoproActiva</span>
+        <Link to={inicio} className="marca-lateral" aria-label="CoproActiva">
+          <img src={import.meta.env.BASE_URL + 'logo-coproactiva.svg'} alt="CoproActiva" />
         </Link>
         <div className="enlaces-lateral">
           {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
