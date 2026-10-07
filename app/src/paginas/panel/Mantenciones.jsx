@@ -149,11 +149,7 @@ export default function Mantenciones() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filas, buscar, filtro, hoy, limite30]);
 
-  const filtros = [
-    ['vencidas', 'Vencidas', conteos.vencidas],
-    ['proximas', 'Próximas', conteos.proximas],
-    ['sin_agendar', 'Sin agendar', conteos.sin_agendar],
-    ['programadas', 'Programadas', conteos.programadas],
+  const filtrosSecundarios = [
     ['realizadas', 'Realizadas', conteos.realizadas],
     ['todas', 'Todas', conteos.todas]
   ];
@@ -181,7 +177,7 @@ export default function Mantenciones() {
   }
 
   return (
-    <div className="pantalla">
+    <div className="pantalla mantenciones-pantalla">
       {porEliminar && (
         <Confirmar
           titulo="Eliminar mantención"
@@ -231,39 +227,54 @@ export default function Mantenciones() {
           </button>
         </section>
 
-        <div className="mantenciones-busqueda">
-          <label className="campo">
-            <span className="etiqueta-campo">Buscar</span>
-            <input
-              type="search"
-              value={buscar}
-              placeholder="Comunidad, activo, trabajo o proveedor"
-              onChange={e => setBuscar(e.target.value)}
-            />
-          </label>
-        </div>
+        <section className="tarjeta mantenciones-herramientas">
+          <div className="mantenciones-busqueda">
+            <label className="campo">
+              <span className="etiqueta-campo">Buscar</span>
+              <input
+                type="search"
+                value={buscar}
+                placeholder="Comunidad, activo, trabajo o proveedor"
+                onChange={e => setBuscar(e.target.value)}
+              />
+            </label>
+          </div>
 
-        <div className="pestanas mantenciones-filtros" role="tablist" aria-label="Estado de mantenciones">
-          {filtros.map(([id, texto, cantidad]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={filtro === id}
-              className={filtro === id ? 'activo' : ''}
-              onClick={() => setFiltro(id)}
-            >
-              {texto} <span>{cantidad}</span>
-            </button>
-          ))}
-        </div>
+          <div className="mantenciones-vistas-secundarias">
+            <span className="micro apagado">Otras vistas</span>
+            <div className="pestanas mantenciones-filtros" role="tablist" aria-label="Otras vistas de mantenciones">
+              {filtrosSecundarios.map(([id, texto, cantidad]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={filtro === id}
+                  className={filtro === id ? 'activo' : ''}
+                  onClick={() => setFiltro(id)}
+                >
+                  {texto} <span>{cantidad}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {filas === null && !error && <p className="cargando">Cargando mantenciones…</p>}
 
         {filas && visibles.length === 0 && (
-          <div className="mantenciones-vacio">
+          <div className="tarjeta mantenciones-vacio">
+            <span className="mantenciones-vacio-icono" aria-hidden="true">✓</span>
             <strong>No hay mantenciones en esta vista.</strong>
-            <p className="chico apagado">Cambia el filtro o revisa los planes dentro de cada comunidad.</p>
+            <p className="chico apagado">
+              {filtro === 'vencidas'
+                ? 'No existen mantenciones vencidas. Puedes revisar las próximas o todas.'
+                : 'Cambia la vista o revisa los planes dentro de cada comunidad.'}
+            </p>
+            {filtro !== 'todas' && (
+              <button type="button" className="boton boton-secundario" onClick={() => setFiltro('todas')}>
+                Ver todas
+              </button>
+            )}
           </div>
         )}
 
