@@ -577,3 +577,54 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+
+/* Homogeneización web de Bitácora */
+@media (min-width: 900px) {
+  .bitacora-pantalla {
+    max-width: none;
+    --ancho-contenido: 1280px;
+  }
+
+  .bitacora-cuerpo {
+    gap: 16px;
+  }
+
+  .bitacora-kpis {
+    gap: 10px;
+  }
+
+  .bitacora-kpis > div {
+    min-height: 88px;
+    align-content: center;
+    padding: 15px 16px 15px 19px;
+  }
+
+  .bitacora-kpis strong {
+    font-size: 25px;
+  }
+
+  .bitacora-filtros {
+    grid-template-columns: minmax(260px,2fr) repeat(5,minmax(120px,1fr));
+    gap: 9px;
+    padding: 14px 16px 16px;
+  }
+
+  .bitacora-lista {
+    gap: 10px;
+  }
+
+  .bitacora-card {
+    min-height: 126px;
+    padding: 15px 18px 16px 20px;
+  }
+
+  .bitacora-card h3 {
+    margin-top: 11px;
+    font-size: 16px;
+  }
+
+  .bitacora-card-meta {
+    margin-top: 11px;
+  }
+}
