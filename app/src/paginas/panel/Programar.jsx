@@ -300,11 +300,6 @@ export default function Programar() {
           </button>
         </div>
         <h1 className="h3">{editando ? 'Editar levantamiento' : 'Nuevo levantamiento'}</h1>
-        <p className="chico apagado programar-bajada">
-          {editando
-            ? 'Ajusta responsable, fecha o período sin alterar la pauta ya creada.'
-            : 'Programa una revisión para una comunidad o prospecto.'}
-        </p>
       </header>
       <div className="cuerpo">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
