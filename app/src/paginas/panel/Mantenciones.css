@@ -318,3 +318,75 @@
     justify-items: start;
   }
 }
+
+
+/* Ajuste de densidad y eliminación del espacio artificial del grid en desktop. */
+@media (min-width: 900px) {
+  .mantenciones-pantalla > .mantenciones-cuerpo {
+    flex: 0 0 auto;
+    min-height: 0;
+    align-content: start;
+    grid-auto-rows: max-content;
+    gap: 12px;
+    padding-top: 18px;
+  }
+
+  .mantenciones-kpis {
+    gap: 8px;
+  }
+
+  .mantenciones-kpis button {
+    min-height: 76px;
+    padding: 12px 14px;
+  }
+
+  .mantenciones-kpis button.activo::after {
+    top: 9px;
+    right: 10px;
+    font-size: 7.5px;
+  }
+
+  .mantenciones-kpis strong {
+    font-size: 22px;
+  }
+
+  .mantenciones-kpis span {
+    margin-top: 5px;
+    font-size: 9px;
+  }
+
+  .mantenciones-herramientas {
+    min-height: 0;
+    padding: 10px 12px;
+  }
+
+  .mantenciones-herramientas .campo input {
+    min-height: 38px;
+  }
+
+  .mantenciones-vistas-secundarias {
+    gap: 3px;
+  }
+
+  .mantenciones-filtros button {
+    min-height: 32px;
+    padding: 0 11px;
+  }
+
+  .mantenciones-vacio {
+    min-height: 138px;
+    gap: 6px;
+    padding: 20px;
+  }
+
+  .mantenciones-vacio-icono {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+
+  .mantenciones-vacio .boton {
+    min-height: 34px;
+    margin-top: 2px;
+  }
+}
