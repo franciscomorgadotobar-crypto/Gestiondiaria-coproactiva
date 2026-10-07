@@ -54,24 +54,35 @@ export default function Mantenciones() {
   const [aviso, setAviso] = useState(null);
   const [porEliminar, setPorEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
+  const [abriendoFormulario,setAbriendoFormulario] = useState(null);
 
   useEffect(() => {
     let vigente = true;
     setError(null);
 
-    supabase.rpc('mantenimiento_resumen_global')
-      .then(({ data, error }) => {
+    Promise.all([supabase.rpc('mantenimiento_resumen_global'),supabase.from('mantenimiento_actividades').select('id,plantilla_id').eq('activa',true)])
+      .then(([{ data, error },formularios]) => {
         if (!vigente) return;
         if (error) {
           setError(error.message);
           setFilas([]);
           return;
         }
-        setFilas(data ?? []);
+        if(formularios.error) setError(formularios.error.message);
+        const mapa=new Map((formularios.data??[]).map(x=>[x.id,x.plantilla_id]));
+        setFilas((data ?? []).map(x=>({...x,plantilla_id:mapa.get(x.actividad_id)??null})));
       });
 
     return () => { vigente = false; };
   }, []);
+
+  async function abrirFormulario(fila) {
+    setAbriendoFormulario(fila.actividad_id);setError(null);
+    const {data,error}=await supabase.rpc('mantenimiento_abrir_formulario',{p_actividad_id:fila.actividad_id,p_agendamiento_id:fila.agendamiento_id||null});
+    setAbriendoFormulario(null);
+    if(error)return setError(error.message);
+    navegar(`/control/${data}`);
+  }
 
   const hoy = fechaISOChile();
   const limite30 = sumarDiasISO(hoy, 30);
@@ -316,6 +327,7 @@ export default function Mantenciones() {
                 </div>
 
                 <div className="mantencion-global-acciones">
+                  {puedeGestionar && x.plantilla_id && <button className="boton boton-secundario" disabled={Boolean(abriendoFormulario)} onClick={()=>abrirFormulario(x)}>{abriendoFormulario===x.actividad_id?'Abriendo…':'Abrir formulario'}</button>}
                   <Link to={'/comunidades/' + x.comunidad_id + '?seccion=agenda'} className="boton boton-secundario">
                     Abrir comunidad
                   </Link>
@@ -350,3 +362,4 @@ export default function Mantenciones() {
     </div>
   );
 }
+

@@ -465,6 +465,7 @@ function DetalleComunidad({ id }) {
   const [controles, setControles] = useState([]);
   const [activos, setActivos] = useState([]);
   const [actividades, setActividades] = useState([]);
+  const [formularios, setFormularios] = useState([]);
   const [agenda, setAgenda] = useState([]);
   const [ejecuciones, setEjecuciones] = useState([]);
   const [equipo, setEquipo] = useState([]);
@@ -487,7 +488,7 @@ function DetalleComunidad({ id }) {
     nombre: '', categoria: '', ubicacion: '', marca: '', modelo: '', serie: '', estado: 'operativo', proveedor_id: ''
   });
   const [nuevaActividad, setNuevaActividad] = useState({
-    activo_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor_id: '', evidencias: ''
+    activo_id: '', plantilla_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor_id: '', evidencias: ''
   });
   const [nuevoAgendamiento, setNuevoAgendamiento] = useState({
     actividad_id: '', programado_para: '', responsable_id: ''
@@ -501,7 +502,7 @@ function DetalleComunidad({ id }) {
   async function cargar() {
     setCargando(true);
     setError(null);
-    const [rc, rl, ra, rp, rag, rx, re, rr, rn, rprov, rdoc] = await Promise.all([
+    const [rc, rl, ra, rp, rag, rx, re, rr, rn, rprov, rdoc, rform] = await Promise.all([
       supabase.from('comunidades').select('id, nombre, rut, estado, comuna, direccion, latitud, longitud').eq('id', id).maybeSingle(),
       supabase.from('controles_con_avance')
         .select('id, comunidad_id, estado, enviado_en, programado_para, creado_en, checkin_en, responsable_id, responsable_nombre, plantilla_nombre, items_criticos, periodo')
@@ -526,10 +527,11 @@ function DetalleComunidad({ id }) {
         ? supabase.rpc('proveedores_para_operacion')
         : Promise.resolve({ data: [], error: null }),
       supabase.from('mantenimiento_documentos')
-        .select('*').eq('comunidad_id', id).order('creado_en', { ascending: false })
+        .select('*').eq('comunidad_id', id).order('creado_en', { ascending: false }),
+      supabase.from('plantillas_control').select('id,nombre,codigo,activa,comunidad_id').order('nombre')
     ]);
 
-    const fallo = [rc, rl, ra, rp, rag, rx, re, rr, rn, rprov, rdoc].find(r => r.error);
+    const fallo = [rc, rl, ra, rp, rag, rx, re, rr, rn, rprov, rdoc, rform].find(r => r.error);
     if (fallo?.error) setError(fallo.error.message);
     if (rc.data) {
       setComunidad(rc.data);
@@ -543,6 +545,7 @@ function DetalleComunidad({ id }) {
     setControles(rl.data ?? []);
     setActivos(ra.data ?? []);
     setActividades(rp.data ?? []);
+    setFormularios(rform.data ?? []);
     setAgenda(rag.data ?? []);
     setEjecuciones(rx.data ?? []);
     setEquipo(re.data ?? []);
@@ -671,6 +674,25 @@ function DetalleComunidad({ id }) {
     setNuevoActivo({ nombre: '', categoria: '', ubicacion: '', marca: '', modelo: '', serie: '', estado: 'operativo', proveedor_id: '' });
   }
 
+  const formulariosDisponibles = formularios.filter(p => p.activa && p.codigo !== 'diagnostico_comercial' && (!p.comunidad_id || p.comunidad_id === id));
+  const formularioPorId = new Map(formularios.map(p => [p.id, p]));
+
+  async function asignarFormulario(actividad, plantillaId) {
+    setGuardando(true); setError(null);
+    const {data,error} = await supabase.from('mantenimiento_actividades').update({plantilla_id: plantillaId || null}).eq('id',actividad.id).eq('comunidad_id',id).select().single();
+    setGuardando(false);
+    if (error) return setError(error.message);
+    setActividades(xs => xs.map(x => x.id === data.id ? data : x));
+  }
+
+  async function abrirFormulario(actividadId, agendamientoId = null) {
+    setGuardando(true); setError(null);
+    const {data,error} = await supabase.rpc('mantenimiento_abrir_formulario',{p_actividad_id: actividadId,p_agendamiento_id:agendamientoId});
+    setGuardando(false);
+    if(error) return setError(error.message);
+    navegar(`/control/${data}`);
+  }
+
   async function guardarActividad() {
     if (!nuevaActividad.activo_id || !nuevaActividad.trabajo.trim()) {
       return setError('Elige un activo e indica el trabajo de mantención.');
@@ -692,6 +714,7 @@ function DetalleComunidad({ id }) {
     const { data, error } = await supabase.from('mantenimiento_actividades').insert({
       comunidad_id: id,
       activo_id: nuevaActividad.activo_id,
+      plantilla_id: nuevaActividad.plantilla_id || null,
       trabajo: nuevaActividad.trabajo.trim(),
       frecuencia_unidad: nuevaActividad.frecuencia_unidad,
       frecuencia_valor: nuevaActividad.frecuencia_unidad === 'unica' ? null : Number(nuevaActividad.frecuencia_valor),
@@ -707,7 +730,7 @@ function DetalleComunidad({ id }) {
     setGuardando(false);
     if (error) return setError(error.message);
     setActividades(xs => [...xs, data]);
-    setNuevaActividad({ activo_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor_id: '', evidencias: '' });
+    setNuevaActividad({ activo_id: '', plantilla_id: '', trabajo: '', frecuencia_unidad: '', frecuencia_valor: '', fecha_inicio: '', limite_tipo: 'fin_periodo', dia_limite: '', proxima_exigible: '', responsable_id: '', proveedor_id: '', evidencias: '' });
   }
 
   async function eliminarActividadMantencion() {
@@ -1195,6 +1218,15 @@ function DetalleComunidad({ id }) {
                   )}
                   <p className="micro apagado" style={{ margin: '6px 0 0' }}>Las sugerencias solo completan el trabajo. La frecuencia siempre debe validarse antes de guardar.</p>
                 </div>
+                <div className="campo">
+                  <label className="etiqueta-campo" htmlFor="mantenimiento-formulario">Formulario</label>
+                  <select id="mantenimiento-formulario" value={nuevaActividad.plantilla_id} onChange={e => setNuevaActividad(x => ({...x,plantilla_id:e.target.value,trabajo:x.trabajo || formularioPorId.get(e.target.value)?.nombre || ''}))}>
+                    <option value="">Sin formulario</option>
+                    {formulariosDisponibles.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                  </select>
+                  <p className="micro apagado" style={{margin:'6px 0 0'}}>Selecciona un formulario de Plantillas para completar esta mantención.</p>
+                  {formulariosDisponibles.length === 0 && <Link to="/plantillas">Crear o activar un formulario</Link>}
+                </div>
                 <Campo label="Trabajo" valor={nuevaActividad.trabajo} onChange={v => setNuevaActividad(x => ({ ...x, trabajo: v }))} />
                 <div className="comunidad-subgrid">
                   <div className="campo">
@@ -1306,8 +1338,17 @@ function DetalleComunidad({ id }) {
                   {a.evidencias_requeridas?.length > 0 && (
                     <p className="micro apagado" style={{ margin: '5px 0 0' }}>Evidencias: {a.evidencias_requeridas.join(', ')}</p>
                   )}
+                  {puedeGestionar ? <div className="campo" style={{marginTop:12}}>
+                    <label className="etiqueta-campo" htmlFor={`formulario-${a.id}`}>Formulario</label>
+                    <select id={`formulario-${a.id}`} value={a.plantilla_id || ''} disabled={guardando} onChange={e => asignarFormulario(a,e.target.value)}>
+                      <option value="">Sin formulario</option>
+                      {a.plantilla_id && !formulariosDisponibles.some(p=>p.id===a.plantilla_id) && <option value={a.plantilla_id} disabled>{formularioPorId.get(a.plantilla_id)?.nombre || 'Formulario no disponible'} (archivado)</option>}
+                      {formulariosDisponibles.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+                    </select>
+                  </div> : a.plantilla_id && <p className="micro apagado">Formulario: {formularioPorId.get(a.plantilla_id)?.nombre || 'Asignado'}</p>}
                   {puedeGestionar && (
                     <div className="comunidad-acciones" style={{ marginTop: 8 }}>
+                      {a.plantilla_id && <button className="boton boton-secundario" disabled={guardando} onClick={()=>abrirFormulario(a.id,agenda.find(g=>g.actividad_id===a.id && ['agendada','en_curso'].includes(g.estado))?.id || null)}>Abrir formulario</button>}
                       <button
                         type="button"
                         className="boton boton-texto peligro"
@@ -1417,6 +1458,7 @@ function DetalleComunidad({ id }) {
                   )}
                   {puedeGestionar && !['completada', 'cancelada'].includes(item.estado) && (
                     <div className="comunidad-acciones">
+                      {actividad?.plantilla_id && <button className="boton boton-secundario" disabled={guardando} onClick={()=>abrirFormulario(actividad.id,item.id)}>Abrir formulario</button>}
                       <button className="boton boton-texto" onClick={() => reprogramar(item)}>Reprogramar</button>
                       <button className="boton boton-texto" onClick={() => registrarEjecucion(item)} disabled={guardando}>Registrar ejecución</button>
                     </div>
@@ -1612,3 +1654,4 @@ function Check({ texto, marcado, onChange }) {
     </label>
   );
 }
+
