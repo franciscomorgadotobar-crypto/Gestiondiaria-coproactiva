@@ -2702,3 +2702,52 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     --margen-escritorio: 44px;
   }
 }
+
+
+/* Nuevo / editar levantamiento */
+.programar-bajada {
+  margin: 4px 0 0;
+}
+.programar-card {
+  padding: 18px;
+}
+.programar-card-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+.programar-card-cabecera .h4 {
+  margin: 3px 0 0;
+}
+.programar-grid {
+  row-gap: 4px;
+}
+.programar-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1px solid var(--borde-suave);
+}
+@media (min-width: 900px) {
+  .programar-card {
+    padding: 22px 24px;
+  }
+  .programar-acciones .boton {
+    min-width: 170px;
+  }
+}
+@media (max-width: 620px) {
+  .programar-card {
+    padding: 14px;
+  }
+  .programar-acciones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
