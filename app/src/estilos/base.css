@@ -2751,3 +2751,22 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     grid-template-columns: 1fr 1fr;
   }
 }
+
+@media (min-width: 900px) {
+  .marca-lateral {
+    justify-content: flex-start;
+  }
+
+  .marca-lateral img {
+    width: 148px;
+    height: auto;
+    max-height: 34px;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  .marca-lateral-simbolo,
+  .marca-lateral-nombre {
+    display: none;
+  }
+}
