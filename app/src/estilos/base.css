@@ -2377,3 +2377,328 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     align-self: start;
   }
 }
+
+
+/* ========================================================================
+   Sistema visual web — homogeneización transversal
+   Mantiene la experiencia móvil existente y normaliza desktop: marca,
+   navegación, encabezados, controles, tarjetas, densidad y estados vacíos.
+   ======================================================================== */
+
+@media (min-width: 900px) {
+  :root {
+    --ancho-contenido: 1280px;
+    --margen-escritorio: 34px;
+  }
+
+  .layout-escritorio {
+    background: var(--fondo-app);
+  }
+
+  .barra-lateral {
+    position: sticky;
+    top: 0;
+    width: 248px;
+    height: 100vh;
+    padding: 0 14px 16px;
+    overflow-y: auto;
+    border-right-color: #d8d2ca;
+    box-shadow: 1px 0 0 rgba(43,49,56,.02);
+  }
+
+  .marca-lateral {
+    min-height: 78px;
+    margin: 0 -14px 14px;
+    padding: 0 18px;
+    gap: 11px;
+    border-bottom: 1px solid var(--borde-suave);
+  }
+
+  .marca-lateral-simbolo {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: none;
+    place-items: center;
+  }
+
+  .marca-lateral img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+  }
+
+  .marca-lateral-nombre,
+  .marca-lateral span.marca-lateral-nombre {
+    font: 650 16px/1 var(--fuente-display);
+    letter-spacing: .015em;
+    color: var(--texto-titulo);
+  }
+
+  .enlaces-lateral {
+    gap: 3px;
+  }
+
+  .etiqueta-lateral {
+    margin: 4px 10px 7px;
+    color: var(--texto-tenue);
+    font: 700 9px/1.2 var(--fuente-display);
+    letter-spacing: .13em;
+  }
+
+  .enlace-lateral {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    padding: 9px 11px;
+    border-radius: 3px;
+    font: 600 12px/1.25 var(--fuente-cuerpo);
+    transition: background .14s ease, color .14s ease, transform .14s ease;
+  }
+
+  .enlace-lateral:hover {
+    background: var(--papel);
+    transform: translateX(1px);
+  }
+
+  .enlace-lateral.activo {
+    box-shadow: inset 3px 0 0 var(--naranja);
+  }
+
+  .usuario-lateral {
+    display: grid;
+    gap: 11px;
+    padding: 14px 4px 0;
+  }
+
+  .usuario-lateral-identidad {
+    display: grid;
+    grid-template-columns: 34px minmax(0,1fr);
+    gap: 9px;
+    align-items: center;
+  }
+
+  .usuario-lateral-avatar {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid var(--borde);
+    border-radius: 50%;
+    background: var(--papel);
+    color: var(--texto-titulo);
+    font: 700 12px/1 var(--fuente-display);
+  }
+
+  .usuario-lateral-datos {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .usuario-lateral-datos strong {
+    overflow: hidden;
+    color: var(--texto-titulo);
+    font: 600 11.5px/1.25 var(--fuente-display);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .usuario-lateral-datos small {
+    color: var(--texto-tenue);
+    font-size: 10.5px;
+    line-height: 1.2;
+  }
+
+  .usuario-lateral-acciones {
+    display: grid;
+    gap: 1px;
+  }
+
+  .usuario-lateral-acciones > a,
+  .usuario-lateral-acciones > button {
+    width: 100%;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    padding: 4px 7px;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--naranja);
+    font: 650 9.5px/1.2 var(--fuente-display);
+    letter-spacing: .1em;
+    text-align: left;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .usuario-lateral-acciones > a:hover,
+  .usuario-lateral-acciones > button:hover {
+    background: var(--papel);
+    color: var(--texto-titulo);
+  }
+
+  .usuario-lateral-acciones > .usuario-lateral-salir {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--borde-suave);
+    border-radius: 0;
+    color: var(--critico-texto);
+  }
+
+  /* Contenedor de página único en todo el panel. */
+  .pantalla {
+    --ancho-contenido: 1280px;
+  }
+
+  .pantalla-angosta {
+    --ancho-contenido: 860px;
+  }
+
+  .pantalla > .encabezado,
+  .pantalla > .cuerpo {
+    --lado: max(var(--margen-escritorio), calc((100% - var(--ancho-contenido)) / 2));
+    padding-left: var(--lado);
+    padding-right: var(--lado);
+  }
+
+  .pantalla > .encabezado {
+    min-height: 106px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 20px;
+    padding-bottom: 18px;
+  }
+
+  .pantalla > .cuerpo {
+    padding-top: 24px;
+    padding-bottom: 52px;
+  }
+
+  .encabezado .navegacion-interna {
+    margin-bottom: 7px !important;
+  }
+
+  .encabezado .navegacion-interna .boton,
+  .encabezado .navegacion-interna > a {
+    min-height: 24px;
+    padding: 0 !important;
+    color: var(--naranja);
+    font: 650 9.5px/1 var(--fuente-display);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .encabezado .h3 {
+    font-size: 21px;
+    line-height: 1.2;
+    letter-spacing: -.015em;
+  }
+
+  .encabezado .chico.apagado {
+    max-width: 780px;
+    margin-top: 4px !important;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  /* Controles con una sola métrica visual. */
+  .boton {
+    min-height: 40px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    font-size: 10px;
+    letter-spacing: .105em;
+    transition: border-color .14s ease, background .14s ease, color .14s ease, transform .14s ease;
+  }
+
+  .boton:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .boton.boton-texto {
+    min-height: 30px;
+  }
+
+  .campo input,
+  .campo select,
+  .campo textarea {
+    border-radius: 2px;
+  }
+
+  .campo input,
+  .campo select {
+    min-height: 42px;
+  }
+
+  .etiqueta-campo {
+    margin-bottom: 6px;
+    color: var(--texto-tenue);
+    font-size: 9px;
+    letter-spacing: .12em;
+  }
+
+  /* Tarjetas y paneles: misma superficie en todas las áreas. */
+  .tarjeta {
+    border-color: #d8d2ca;
+    border-radius: 3px;
+    box-shadow: 0 1px 0 rgba(43,49,56,.025);
+  }
+
+  a.tarjeta:hover,
+  .tarjeta-enlace:hover {
+    box-shadow: 0 3px 12px rgba(43,49,56,.055);
+  }
+
+  .aviso {
+    border-radius: 3px;
+  }
+
+  .vacio,
+  .cargando {
+    min-height: 140px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    padding: 28px;
+    border: 1px dashed var(--borde);
+    background: rgba(255,255,255,.28);
+  }
+
+  /* Los títulos de bloque mantienen una misma relación con el contenido. */
+  .h4 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 15px;
+  }
+
+  .pestanas {
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+
+  .pestanas button {
+    min-height: 36px;
+    padding: 0 13px;
+  }
+
+  /* Inicio conserva su ancho de dashboard. */
+  .inicio-pantalla {
+    --ancho-contenido: 1400px;
+  }
+
+  .inicio-pantalla > .encabezado {
+    min-height: 96px;
+  }
+}
+
+@media (min-width: 1500px) {
+  :root {
+    --margen-escritorio: 44px;
+  }
+}
