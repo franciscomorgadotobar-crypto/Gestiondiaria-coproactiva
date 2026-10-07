@@ -231,8 +231,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     <div className="layout-escritorio">
       <nav className="barra-lateral" aria-label="Navegación">
         <Link to={inicio} className="marca-lateral">
-          <img src={import.meta.env.BASE_URL + 'logo-coproactiva.svg'} alt="" />
-          <span>CoproActiva</span>
+          <span className="marca-lateral-simbolo">
+            <img src={import.meta.env.BASE_URL + 'logo-coproactiva.svg'} alt="" />
+          </span>
+          <span className="marca-lateral-nombre">CoproActiva</span>
         </Link>
         <div className="enlaces-lateral">
           {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
@@ -246,41 +248,41 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
         <div className="crece" />
         <div className="usuario-lateral">
-          <span className="micro apagado" style={{ display: 'block', marginBottom: 3 }}>
-            {perfil?.nombre}
-          </span>
-          {esCliente && (
-            <span className="micro apagado" style={{ display: 'block', marginBottom: 6 }}>
-              Cliente
+          <div className="usuario-lateral-identidad">
+            <span className="usuario-lateral-avatar" aria-hidden="true">
+              {(perfil?.nombre || 'U').trim().charAt(0).toUpperCase()}
             </span>
-          )}
-          {!esCliente && (
-            <Link to="/mi-cuenta" className="boton boton-texto"
-                  style={{ padding: 0, display: 'block', marginBottom: 6 }}>
-              Mi cuenta
-            </Link>
-          )}
-          {puedeConfigurar && (
-            <button type="button" className="boton boton-texto" style={{ padding: 0, display: 'block', marginBottom: 6 }}
-                    onClick={cambiarArea}>
-              Cambiar de área
-            </button>
-          )}
-          {!esCliente && tutorialContextual && (
-            <button
-              type="button"
-              className="ayuda-contextual-escritorio"
-              data-tutorial="ayuda-menu"
-              aria-label="Abrir tutorial de esta pantalla"
-              title="Tutorial de esta pantalla"
-              onClick={() => iniciar(tutorialContextual, { continuar: false })}
-            >
-              ? Tutorial
-            </button>
-          )}
-          <button type="button" className="boton boton-texto" style={{ padding: 0 }} onClick={salir}>
-            Salir
-          </button>
+            <span className="usuario-lateral-datos">
+              <strong>{perfil?.nombre || 'Usuario'}</strong>
+              <small>
+                {esCliente ? 'Cliente'
+                  : perfil?.rol === 'superadmin' ? 'Superadministrador'
+                  : perfil?.rol === 'admin' ? 'Administrador'
+                  : perfil?.rol === 'jefatura' ? 'Jefatura'
+                  : perfil?.rol === 'terreno' ? 'Terreno'
+                  : perfil?.rol || ''}
+              </small>
+            </span>
+          </div>
+          <div className="usuario-lateral-acciones">
+            {!esCliente && <Link to="/mi-cuenta">Mi cuenta</Link>}
+            {puedeConfigurar && (
+              <button type="button" onClick={cambiarArea}>Cambiar de área</button>
+            )}
+            {!esCliente && tutorialContextual && (
+              <button
+                type="button"
+                className="ayuda-contextual-escritorio"
+                data-tutorial="ayuda-menu"
+                aria-label="Abrir tutorial de esta pantalla"
+                title="Tutorial de esta pantalla"
+                onClick={() => iniciar(tutorialContextual, { continuar: false })}
+              >
+                Tutorial
+              </button>
+            )}
+            <button type="button" className="usuario-lateral-salir" onClick={salir}>Salir</button>
+          </div>
         </div>
       </nav>
 
