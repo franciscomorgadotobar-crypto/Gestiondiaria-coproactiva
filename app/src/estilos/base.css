@@ -2819,3 +2819,29 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     box-shadow: inset 3px 0 0 var(--naranja);
   }
 }
+
+
+/* Los estados vacíos aparecen también dentro de tablas y componentes chicos.
+ * Evitamos convertir todos esos usos en una tarjeta grande; el tratamiento
+ * amplio queda reservado a vacíos de nivel de página. */
+@media (min-width: 900px) {
+  .vacio,
+  .cargando {
+    min-height: 0;
+    display: block;
+    padding: 34px 16px;
+    border: 0;
+    background: transparent;
+    text-align: center;
+  }
+
+  .pantalla > .cuerpo > .vacio,
+  .pantalla > .cuerpo > .cargando {
+    min-height: 150px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    border: 1px dashed var(--borde);
+    background: rgba(255,255,255,.28);
+  }
+}
