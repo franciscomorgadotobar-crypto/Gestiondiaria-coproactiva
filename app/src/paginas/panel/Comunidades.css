@@ -268,3 +268,62 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Ajuste de densidad: en desktop .cuerpo hereda flex:1; al ser grid estiraba
+   las filas para llenar la ventana. Los bloques deben medir solo su contenido. */
+@media (min-width: 900px) {
+  .comunidades-pantalla > .comunidades-cuerpo {
+    flex: 0 0 auto;
+    min-height: 0;
+    align-content: start;
+    grid-auto-rows: max-content;
+    gap: 12px;
+    padding-top: 18px;
+  }
+
+  .comunidades-kpis {
+    gap: 8px;
+  }
+
+  .comunidades-kpis > div {
+    min-height: 72px;
+    align-content: center;
+    padding: 12px 14px;
+  }
+
+  .comunidades-kpis strong {
+    font-size: 22px;
+  }
+
+  .comunidades-kpis span {
+    margin-top: 2px;
+    font-size: 8.5px;
+  }
+
+  .comunidades-herramientas {
+    min-height: 0;
+    padding: 10px 12px;
+  }
+
+  .comunidades-herramientas .campo input {
+    min-height: 38px;
+  }
+
+  .comunidad-card {
+    min-height: 132px;
+  }
+
+  .comunidad-card-cabecera {
+    padding: 11px 13px 10px;
+  }
+
+  .comunidad-card-datos {
+    padding: 10px 13px;
+  }
+
+  .comunidad-card-pie {
+    min-height: 40px;
+    padding: 7px 10px 7px 13px;
+  }
+}
