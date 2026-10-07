@@ -262,8 +262,19 @@ function ListadoComunidades() {
     );
   }, [comunidades, buscar]);
 
+  const resumenComunidades = useMemo(() => {
+    const xs = comunidades ?? [];
+    const conUbicacion = xs.filter(c => c.latitud != null && c.longitud != null).length;
+    return {
+      total: xs.length,
+      conUbicacion,
+      sinUbicacion: xs.length - conUbicacion,
+      alertas: alertas.length
+    };
+  }, [comunidades, alertas]);
+
   return (
-    <div className="pantalla">
+    <div className="pantalla comunidades-pantalla">
       <header className="encabezado">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
@@ -285,8 +296,19 @@ function ListadoComunidades() {
         </div>
       </header>
 
-      <div className="cuerpo">
+      <div className="cuerpo comunidades-cuerpo">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
+
+        {comunidades !== null && (
+          <section className="comunidades-kpis" aria-label="Resumen de comunidades">
+            <div><strong>{resumenComunidades.total}</strong><span>Comunidades</span></div>
+            <div><strong>{resumenComunidades.conUbicacion}</strong><span>Con ubicación</span></div>
+            <div><strong>{resumenComunidades.sinUbicacion}</strong><span>Sin ubicación</span></div>
+            <div className={resumenComunidades.alertas > 0 ? 'alerta' : ''}>
+              <strong>{resumenComunidades.alertas}</strong><span>Alertas pendientes</span>
+            </div>
+          </section>
+        )}
 
         {nueva && (
           <div className="comunidad-form">
@@ -357,6 +379,7 @@ function ListadoComunidades() {
           </section>
         )}
 
+        <section className="tarjeta comunidades-herramientas">
         <div className="campo comunidades-buscador">
           <label className="etiqueta-campo" htmlFor="buscar-comunidad">Buscar comunidad</label>
           <input
@@ -367,24 +390,56 @@ function ListadoComunidades() {
             onChange={e => setBuscar(e.target.value)}
           />
         </div>
+        {comunidades && (
+          <p className="micro apagado comunidades-resultados">
+            {buscar.trim()
+              ? `${visibles.length} de ${comunidades.length} comunidades`
+              : `${comunidades.length} comunidades registradas`}
+          </p>
+        )}
+        </section>
 
         {comunidades === null && !error && <p className="cargando">Cargando…</p>}
-        {comunidades?.length === 0 && <p className="vacio">No hay comunidades registradas todavía.</p>}
+        {comunidades?.length === 0 && (
+          <div className="tarjeta comunidades-vacio">
+            <strong>Todavía no hay comunidades registradas.</strong>
+            <p className="chico apagado">Crea la primera comunidad o conviértela desde un prospecto ganado en el CRM.</p>
+            {puedeCrear && !nueva && (
+              <button type="button" className="boton" onClick={() => setNueva(COMUNIDAD_VACIA)}>
+                Nueva comunidad
+              </button>
+            )}
+          </div>
+        )}
         {comunidades && comunidades.length > 0 && visibles.length === 0 && (
           <p className="vacio">No hay comunidades que coincidan con la búsqueda.</p>
         )}
 
         <div className="comunidades-lista">
           {visibles.map(c => (
-            <Link key={c.id} to={`/comunidades/${c.id}`} className="tarjeta comunidad-card" style={{ padding: 16 }}>
-              <div className="fila">
-                <strong className="crece">{c.nombre}</strong>
-                <span aria-hidden="true">›</span>
+            <Link key={c.id} to={`/comunidades/${c.id}`} className="tarjeta comunidad-card">
+              <div className="comunidad-card-cabecera">
+                <div>
+                  <span className="micro apagado">Comunidad</span>
+                  <strong>{c.nombre}</strong>
+                </div>
+                <span className="comunidad-card-flecha" aria-hidden="true">›</span>
               </div>
-              <div className="comunidad-meta micro apagado">
-                {c.comuna && <span>{c.comuna}</span>}
-                {c.direccion && <span>{c.direccion}</span>}
-                {c.latitud != null && c.longitud != null && <span>Ubicación registrada</span>}
+              <div className="comunidad-card-datos">
+                <div>
+                  <span>Comuna</span>
+                  <strong>{c.comuna || 'Sin informar'}</strong>
+                </div>
+                <div>
+                  <span>Dirección</span>
+                  <strong>{c.direccion || 'Sin informar'}</strong>
+                </div>
+              </div>
+              <div className="comunidad-card-pie">
+                <span className={'chip ' + (c.latitud != null && c.longitud != null ? 'chip-cumple' : 'chip-pendiente')}>
+                  {c.latitud != null && c.longitud != null ? 'Ubicación registrada' : 'Ubicación pendiente'}
+                </span>
+                <span>Abrir comunidad</span>
               </div>
             </Link>
           ))}
