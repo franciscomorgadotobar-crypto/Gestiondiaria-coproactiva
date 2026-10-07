@@ -2770,3 +2770,52 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     display: none;
   }
 }
+
+
+/* KPI y trabajo diario del Home: mismo lenguaje que Bitácora/Comunidades. */
+@media (min-width: 900px) {
+  .inicio-pantalla .tablero > div {
+    position: relative;
+    min-height: 88px;
+    padding: 16px 18px;
+    border-top-width: 1px;
+    overflow: hidden;
+  }
+
+  .inicio-pantalla .tablero > div::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--pizarra);
+  }
+
+  .inicio-pantalla .tablero > div.ok::before {
+    background: var(--ok-texto);
+  }
+
+  .inicio-pantalla .tablero > div.alerta::before {
+    background: var(--naranja);
+  }
+
+  .inicio-pantalla .tablero > div.critico::before {
+    background: var(--critico-texto);
+  }
+
+  .inicio-pantalla .tarjeta-mapa {
+    border-radius: 3px;
+  }
+
+  .inicio-pantalla .grupo-titulo {
+    border-bottom-color: #d8d2ca;
+  }
+
+  .inicio-pantalla .cabecera-trabajador {
+    border-radius: 3px;
+    background: var(--tarjeta);
+  }
+
+  .inicio-pantalla .cabecera-trabajador.abierta {
+    box-shadow: inset 3px 0 0 var(--naranja);
+  }
+}
