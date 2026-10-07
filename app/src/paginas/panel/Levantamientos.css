@@ -125,3 +125,33 @@
     font-size: 21px;
   }
 }
+
+
+@media (min-width: 900px) {
+  .levantamientos-pantalla {
+    max-width: none;
+    --ancho-contenido: 1120px;
+  }
+
+  .levantamientos-cuerpo {
+    gap: 16px;
+  }
+
+  .levantamientos-opciones {
+    gap: 14px;
+  }
+
+  .levantamientos-opcion {
+    min-height: 205px;
+    padding: 20px;
+  }
+
+  .levantamientos-opcion-texto strong {
+    font-size: 16px;
+  }
+
+  .levantamientos-guia {
+    padding: 18px 20px;
+    border-radius: 3px;
+  }
+}
