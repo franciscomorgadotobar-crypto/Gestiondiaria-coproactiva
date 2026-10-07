@@ -7,7 +7,6 @@ const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const USUARIO = Deno.env.get('SMTP_USUARIO') ?? 'contacto@coproactiva.cl';
 const CLAVE = (Deno.env.get('SMTP_CLAVE') ?? '').replace(/\s+/g, '');
-const BUCKET = 'proveedores-correo';
 
 const ESPECIALIDADES: Array<[string, RegExp]> = [
   ['Ascensores', /\bascensor(?:es)?\b|\belevador(?:es)?\b/i],
@@ -262,14 +261,6 @@ async function abrirImap() {
   return { client, lock, mailbox: allMail.path };
 }
 
-async function guardarArchivo(admin: any, path: string, bytes: Uint8Array, mime: string) {
-  const { error } = await admin.storage.from(BUCKET).upload(path, bytes, {
-    contentType: mime || 'application/octet-stream',
-    upsert: true
-  });
-  if (error) throw error;
-}
-
 async function procesarMensaje(admin: any, proveedor: any, msg: any, uidValidity: string) {
   if (!msg?.source) return { nuevo: 0, actualizado: 0, adjuntos: 0 };
 
@@ -286,52 +277,20 @@ async function procesarMensaje(admin: any, proveedor: any, msg: any, uidValidity
   const rfcId = parsed.messageId || null;
   const gmailId = String(msg.emailId || rfcId || ('imap:' + uidValidity + ':' + msg.uid));
 
-  const { data: ya } = await admin.from('proveedor_correos')
+  let { data: ya, error: lookupError } = await admin.from('proveedor_correos')
     .select('id').eq('gmail_message_id', gmailId).maybeSingle();
-
-  const base = proveedor.id + '/' + segmento(gmailId);
-  let storagePathEml: string | null = null;
-  const guardados: any[] = [];
-  let adjuntosGuardados = 0;
-
-  if (!ya) {
-    storagePathEml = base + '/correo.eml';
-    try {
-      await guardarArchivo(admin, storagePathEml, raw, 'message/rfc822');
-    } catch (e) {
-      console.error('No se pudo guardar EML', gmailId, e);
-      storagePathEml = null;
-    }
-
-    let indice = 0;
-    for (const a of parsed.attachments ?? []) {
-      if (a.related || a.disposition === 'inline') continue;
-      indice++;
-      const contenido = a.content instanceof Uint8Array
-        ? a.content
-        : new Uint8Array(a.content as ArrayBuffer);
-      const nombre = a.filename || ('adjunto-' + indice);
-      const meta: any = {
-        filename: nombre,
-        mime_type: a.mimeType || 'application/octet-stream',
-        bytes: contenido.byteLength,
-        storage_path: null
-      };
-      if (contenido.byteLength <= 35 * 1024 * 1024) {
-        const path = base + '/adjuntos/' + String(indice).padStart(2,'0') + '-' + segmento(nombre);
-        try {
-          await guardarArchivo(admin, path, contenido, meta.mime_type);
-          meta.storage_path = path;
-          adjuntosGuardados++;
-        } catch (e) {
-          meta.error = e instanceof Error ? e.message : String(e);
-        }
-      } else {
-        meta.error = 'Adjunto mayor al límite de 35 MB';
-      }
-      guardados.push(meta);
-    }
+  if (lookupError) throw lookupError;
+  if (!ya && rfcId) {
+    const previous = await admin.from('proveedor_correos').select('id').eq('rfc_message_id',rfcId).limit(1).maybeSingle();
+    if (previous.error) throw previous.error;
+    ya = previous.data;
   }
+
+  // Metadata only: never upload MIME source or attachments to Supabase.
+  const guardados = (parsed.attachments ?? []).filter((a: any) => !a.related && a.disposition !== 'inline')
+    .map((a: any) => ({ filename: a.filename || 'adjunto', mime_type: a.mimeType || 'application/octet-stream', disponible_en: 'gmail' }));
+  const storagePathEml = null;
+  const adjuntosGuardados = 0;
 
   const fechaCorreo = parsed.date
     ? new Date(parsed.date).toISOString()
@@ -340,14 +299,15 @@ async function procesarMensaje(admin: any, proveedor: any, msg: any, uidValidity
       : new Date().toISOString();
 
   const cuerpo = texto.slice(0, 200000);
-  const html = parsed.html ? String(parsed.html).slice(0, 500000) : null;
+  const html = null; // Avoid persisting embedded inline attachments.
   const snippet = cuerpo.replace(/\s+/g, ' ').slice(0, 300);
 
   if (!ya) {
     const fila = {
-      proveedor_id: proveedor.id,
+      proveedor_id: proveedor?.id ?? null,
+      clasificacion: proveedor?.id ? 'proveedor' : null,
       gmail_message_id: gmailId,
-      gmail_thread_id: proveedor.gmail_thread_id || (msg.threadId ? String(msg.threadId) : null),
+      gmail_thread_id: proveedor?.gmail_thread_id || (msg.threadId ? String(msg.threadId) : null),
       remitente_nombre: remitente.nombre,
       remitente_email: remitente.email,
       asunto: parsed.subject || msg.envelope?.subject || null,
@@ -366,6 +326,8 @@ async function procesarMensaje(admin: any, proveedor: any, msg: any, uidValidity
     const { error } = await admin.from('proveedor_correos').insert(fila);
     if (error) throw error;
   }
+
+  if (!proveedor) return { nuevo: ya ? 0 : 1, actualizado: 0, adjuntos: 0 };
 
   const especialidades = unico([...(proveedor.especialidades ?? []), ...datos.especialidades]);
   const palabras = unico([...(proveedor.palabras_clave ?? []), ...datos.palabras_clave]);
@@ -435,6 +397,7 @@ async function sincronizarProveedor(admin: any, client: any, proveedor: any, uid
     source: true,
     envelope: true,
     internalDate: true,
+    emailId: true,
     threadId: true
   }, { uid: true });
 
@@ -454,67 +417,37 @@ async function sincronizarProveedor(admin: any, client: any, proveedor: any, uid
   return { correos, adjuntos, error: null };
 }
 
-async function sincronizarRecientes(admin: any, client: any, proveedores: any[], uidValidity: string) {
-  const mapa = new Map<string, any>();
-  for (const p of proveedores) {
-    if (p.email) mapa.set(String(p.email).toLowerCase(), p);
-    for (const c of p.contactos ?? []) if (c?.email) mapa.set(String(c.email).toLowerCase(), p);
-  }
-  if (!mapa.size) return { correos: 0, adjuntos: 0, proveedores: 0 };
-
-  const uids: any = await client.search({
-    gmraw: 'newer_than:7d -from:' + USUARIO
-  }, { uid: true }) || [];
+async function sincronizarRecientes(admin: any, client: any, _proveedores: any[], uidValidity: string) {
+  // Every new inbound email is staged for manual classification, not guessed.
+  const { data: cursor, error: cursorError } = await admin.from('proveedor_sync_estado').select('correo_cursor_uid,correo_uid_validity').eq('clave','gmail_proveedores').single();
+  if (cursorError) throw cursorError;
+  const last = cursor?.correo_uid_validity === uidValidity ? Number(cursor.correo_cursor_uid || 0) : 0;
+  const search = last ? { uid: String(last+1)+':*', not: { from: USUARIO } } : { gmraw: 'newer_than:7d -from:' + USUARIO };
+  const found: any = await client.search(search,{uid:true}) || [];
+  const uids = (Array.isArray(found) ? found : []).filter((uid:number)=>uid>last).sort((a:number,b:number)=>a-b).slice(0,100);
   if (!Array.isArray(uids) || !uids.length) return { correos: 0, adjuntos: 0, proveedores: 0 };
-
-  const metadatos = await client.fetchAll(uids.slice(-250), {
-    envelope: true,
-    internalDate: true,
-    threadId: true,
-    emailId: true
-  }, { uid: true });
-
-  const idsGmail = metadatos.map((m: any) => m.emailId ? String(m.emailId) : null).filter(Boolean);
-  const existentes = new Set<string>();
-  for (let i = 0; i < idsGmail.length; i += 100) {
-    const { data } = await admin.from('proveedor_correos')
-      .select('gmail_message_id')
-      .in('gmail_message_id', idsGmail.slice(i, i + 100));
-    for (const x of data ?? []) existentes.add(String(x.gmail_message_id));
+  const metas = await client.fetchAll(uids, { envelope: true, emailId: true }, { uid: true });
+  const ids = metas.map((m: any) => String(m.emailId || '')).filter(Boolean);
+  const known = new Set();
+  for (let i=0; i<ids.length; i+=100) {
+    const { data, error } = await admin.from('proveedor_correos').select('gmail_message_id').in('gmail_message_id',ids.slice(i,i+100));
+    if (error) throw error;
+    for (const row of data ?? []) known.add(row.gmail_message_id);
   }
-
-  const porProveedor = new Map<string, { proveedor: any; uids: number[] }>();
-  for (const m of metadatos) {
-    if (m.emailId && existentes.has(String(m.emailId))) continue;
-    const desde = correoDe(m.envelope?.from).email;
-    const p = desde ? mapa.get(desde) : null;
-    if (!p) continue;
-    const actual = porProveedor.get(p.id) ?? { proveedor: p, uids: [] };
-    actual.uids.push(m.uid);
-    porProveedor.set(p.id, actual);
+  const pending=metas.filter((m: any)=>!m.emailId || !known.has(String(m.emailId))).map((m:any)=>m.uid).slice(0,40);
+  if (!pending.length) {
+    await admin.from('proveedor_sync_estado').update({correo_cursor_uid:uids.at(-1),correo_uid_validity:uidValidity}).eq('clave','gmail_proveedores');
+    return { correos: 0, adjuntos: 0, proveedores: 0 };
   }
-
-  let correos = 0;
-  let adjuntos = 0;
-  let actualizados = 0;
-  for (const item of porProveedor.values()) {
-    const mensajes = await client.fetchAll(item.uids, {
-      source: true,
-      envelope: true,
-      internalDate: true,
-      threadId: true
-    }, { uid: true });
-    let tocado = false;
-    for (const msg of mensajes) {
-      const r = await procesarMensaje(admin, item.proveedor, msg, uidValidity);
-      correos += r.nuevo;
-      adjuntos += r.adjuntos;
-      tocado = tocado || r.nuevo > 0;
-    }
-    if (tocado) actualizados++;
-  }
-
-  return { correos, adjuntos, proveedores: actualizados };
+  const messages=await client.fetchAll(pending,{source:true,envelope:true,internalDate:true,threadId:true,emailId:true},{uid:true});
+  let correos=0;
+  const processed = new Set<number>(metas.filter((m:any)=>m.emailId&&known.has(String(m.emailId))).map((m:any)=>m.uid));
+  for (const msg of messages) {correos+=(await procesarMensaje(admin,null,msg,uidValidity)).nuevo;processed.add(msg.uid);}
+  let advanced=last;
+  for (const uid of uids) {if (!processed.has(uid))break;advanced=uid;}
+  const {error:advanceError}=await admin.from('proveedor_sync_estado').update({correo_cursor_uid:advanced,correo_uid_validity:uidValidity}).eq('clave','gmail_proveedores');
+  if(advanceError)throw advanceError;
+  return { correos, adjuntos: 0, proveedores: 0 };
 }
 
 Deno.serve(async (req) => {
@@ -564,12 +497,9 @@ Deno.serve(async (req) => {
   }
 
   const inicio = new Date().toISOString();
-  await admin.from('proveedor_sync_estado').update({
-    ultima_revision: inicio,
-    en_ejecucion_desde: inicio,
-    ultimo_error: null,
-    editado_en: inicio
-  }).eq('clave', 'gmail_proveedores');
+  const {data:claimed,error:claimError}=await admin.rpc('proveedor_correo_sync_claim');
+  if(claimError)return responder({error:'No se pudo reservar la sincronización'},500);
+  if(!claimed)return responder({ok:true,omitida:true,motivo:'Ya hay una sincronización en curso'},202);
 
   let imap: any = null;
   try {
@@ -656,3 +586,4 @@ Deno.serve(async (req) => {
     return responder({ ok: false, error }, 500);
   }
 });
+

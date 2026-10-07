@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { limpiarArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
+import './WhatsApp.css';
 
 const MOTIVOS_LISTA_NEGRA = [
   'Mala experiencia',
@@ -437,7 +438,7 @@ export default function Proveedores() {
         <div className="proveedores-intro">
           <h1 className="h3">Proveedores</h1>
           <p className="chico apagado proveedores-descripcion">
-            Repositorio de proveedores alimentado automáticamente desde Gmail y también de forma manual.
+            Proveedores registrados por administración a partir de presentaciones de servicios y contactos.
           </p>
         </div>
         <div className="acciones-proveedores-cabecera">
@@ -456,6 +457,7 @@ export default function Proveedores() {
       </header>
 
       <div className="cuerpo">
+        <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link></nav>
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && (
           <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>
@@ -679,6 +681,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
       </header>
 
       <div className="cuerpo">
+        <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link></nav>
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>{aviso}<button className="boton boton-texto" onClick={onCerrarAviso}>Cerrar</button></div>}
 
@@ -978,3 +981,4 @@ function FormularioBlacklist({ proveedor, onCancelar, onGuardar }) {
 function Modal({ children }) {
   return <div className="proveedor-modal-fondo" role="dialog" aria-modal="true">{children}</div>;
 }
+

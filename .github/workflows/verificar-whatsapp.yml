@@ -1,0 +1,15 @@
+name: Verificar recepción WhatsApp
+on:
+  push:
+    branches: [claude/figma-coproactiva-interface-9y82xq]
+  pull_request:
+jobs:
+  flujos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Flujos, firma y fallas de entrega (sin mensajes reales)
+        run: node --test supabase/tests/whatsapp-*.test.mjs

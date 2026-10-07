@@ -26,7 +26,7 @@ export default function SeleccionArea() {
     guardarArea(area);
     // Nunca "/": esta pantalla ya está montada ahí, y navegar a la misma
     // ruta en la que se está no vuelve a renderizar nada en React Router.
-    const destino = { crm: '/pipeline', propiedades: '/propiedades', proveedores: '/proveedores', contabilidad: '/contabilidad' }[area] ?? '/inicio';
+    const destino = { crm: '/pipeline', propiedades: '/propiedades', proveedores: '/proveedores', contabilidad: '/contabilidad', whatsapp: '/whatsapp' }[area] ?? '/inicio';
     navegar(destino, { replace: true });
   }
 
@@ -81,6 +81,14 @@ export default function SeleccionArea() {
           )}
 
           {puedeConfigurar && (
+            <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => elegir('whatsapp')}>
+              <span className="seleccion-area-etiqueta">WhatsApp</span>
+              <h2 className="h4" style={{ margin: '6px 0 4px' }}>Recepción y atención</h2>
+              <p className="chico apagado" style={{ margin: 0 }}>Solicitudes, cotizaciones y conversaciones con administración.</p>
+            </button>
+          )}
+
+          {puedeConfigurar && (
             <button type="button" className="tarjeta seleccion-area-opcion" onClick={() => elegir('contabilidad')}>
               <span className="seleccion-area-etiqueta">Contabilidad</span>
               <h2 className="h4" style={{ margin: '6px 0 4px' }}>Gestión contable</h2>
@@ -113,3 +121,4 @@ export default function SeleccionArea() {
     </div>
   );
 }
+

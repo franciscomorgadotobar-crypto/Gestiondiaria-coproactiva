@@ -1,0 +1,11 @@
+[functions.whatsapp-webhook]
+# Authentication is Meta HMAC over the raw body, plus receiving phone ID.
+verify_jwt = false
+
+[functions.whatsapp-worker]
+# Custom authentication: Vault cron token or Auth.getUser + active administrator.
+verify_jwt = false
+
+[functions.sincronizar-proveedores-gmail]
+# Existing custom Auth / Vault authentication retained.
+verify_jwt = false

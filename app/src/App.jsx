@@ -31,6 +31,8 @@ const PortalCliente = lazy(() => import('./paginas/cliente/PortalCliente'));
 // Propiedades es de administración: quien va a terreno con el teléfono no
 // tiene por qué descargarla.
 const Propiedades = lazy(() => import('./paginas/propiedades/Propiedades'));
+const WhatsApp = lazy(() => import('./paginas/panel/WhatsApp'));
+const ProveedoresRecepcion = lazy(() => import('./paginas/panel/ProveedoresRecepcion'));
 const Contabilidad = lazy(() => import('./paginas/panel/Contabilidad'));
 // Importar plantillas desde Excel es de oficina; el lector de Excel, además,
 // se carga recién al usarlo (ver lib/excelPlantillas.js).
@@ -84,6 +86,7 @@ function Entrada() {
   if (area === 'crm') return <Navigate to="/pipeline" replace />;
   if (area === 'propiedades') return <Navigate to="/propiedades" replace />;
   if (area === 'proveedores') return <Navigate to="/proveedores" replace />;
+  if (area === 'whatsapp' && ['superadmin','admin'].includes(perfil?.rol)) return <Navigate to="/whatsapp" replace />;
   if (area === 'contabilidad' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/contabilidad" replace />;
   if (area === 'operacion') return <PanelEscritorio><Inicio /></PanelEscritorio>;
   return <SeleccionArea />;
@@ -175,6 +178,10 @@ export default function App() {
         </Interna>
       } />
       <Route path="/proveedores" element={<Interna><Proveedores /></Interna>} />
+      <Route path="/proveedores/postulantes" element={<Interna><Suspense fallback={<p className="cargando">Cargando…</p>}><ProveedoresRecepcion vista="postulantes" /></Suspense></Interna>} />
+      <Route path="/proveedores/correos" element={<Interna><Suspense fallback={<p className="cargando">Cargando…</p>}><ProveedoresRecepcion vista="correos" /></Suspense></Interna>} />
+      <Route path="/whatsapp" element={<Interna><Suspense fallback={<p className="cargando">Cargando…</p>}><WhatsApp /></Suspense></Interna>} />
+      <Route path="/whatsapp/:vista" element={<Interna><Suspense fallback={<p className="cargando">Cargando…</p>}><WhatsApp /></Suspense></Interna>} />
       <Route path="/proveedores/:id" element={<Interna><Proveedores /></Interna>} />
 
       <Route path="/contabilidad" element={
@@ -195,3 +202,4 @@ export default function App() {
     </Routes>
   );
 }
+

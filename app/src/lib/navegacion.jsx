@@ -36,6 +36,7 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
   if (/^\/bitacora\/[^/]+$/.test(ruta)) return navegar('/bitacora');
   if (/^\/propiedades\/[^/]+$/.test(ruta)) return navegar('/propiedades');
   if (/^\/proveedores\/[^/]+$/.test(ruta)) return navegar('/proveedores');
+  if (/^\/whatsapp\/[^/]+$/.test(ruta)) return navegar('/whatsapp');
   if (/^\/contabilidad\/[^/]+$/.test(ruta)) return navegar('/contabilidad');
   if (/^\/ayuda\/[^/]+$/.test(ruta)) return navegar('/ayuda');
 
@@ -66,7 +67,8 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
     '/propiedades',
     '/proveedores',
     '/contabilidad',
-    '/configuracion'
+    '/configuracion',
+    '/whatsapp'
   ].includes(ruta)) {
     if (!puedeCambiarArea) return;
     limpiarArea();
@@ -76,3 +78,4 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
   // Rutas no catalogadas: conserva un fallback razonable.
   navegar(-1);
 }
+
