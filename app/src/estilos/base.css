@@ -3532,3 +3532,39 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     flex: 1;
   }
 }
+
+
+/* Evaluación por criterio (levantamientos): legible en teléfono y escritorio. */
+.criterios-inspeccion { display: grid; gap: 12px; margin-top: 16px; }
+.criterio-inspeccion {
+  padding: 14px; border: 1px solid var(--borde, #ddd7cf);
+  background: #faf9f7; border-radius: 5px;
+}
+.criterio-inspeccion-titulo { display: block; margin-bottom: 10px; font-size: .95rem; line-height: 1.45; }
+.criterio-opciones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.criterio-opcion {
+  border: 1px solid #d5d1cc; background: #fff; color: #2b3138; min-height: 44px;
+  font: 600 12px/1.4 var(--fuente-cuerpo); padding: 8px 6px; border-radius: 4px; cursor: pointer;
+}
+.criterio-opcion[aria-pressed="true"] { border-color: #ba813f; outline: 1px solid #ba813f; background: #fff5e8; }
+.criterio-opcion[aria-pressed="true"]:first-child { background: #edf7ee; color: #236a3a; border-color: #439a63; outline-color: #439a63; }
+.criterio-opcion[aria-pressed="true"]:nth-child(2) { background: #fff0ed; color: #9a3a2c; border-color: #cf6655; outline-color: #cf6655; }
+.criterio-opcion[aria-pressed="true"]:nth-child(3) { background: #fff7df; color: #805916; border-color: #c99b31; outline-color: #c99b31; }
+.criterio-opcion:focus-visible { outline: 2px solid #d5863b; outline-offset: 2px; }
+.criterio-comentario { margin-top: 12px; }
+.criterio-inspeccion .fotos-punto { margin-top: 10px; }
+@media (max-width: 700px) {
+  .criterio-inspeccion { padding: 12px; }
+  .criterio-opciones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .criterio-opcion { font-size: 12px; min-height: 48px; }
+}
+/* En escritorio el menú lateral ya contiene las cuatro secciones. Evitar doble navegación. */
+@media (min-width: 900px) {
+  .proveedores-subnav { display: none; }
+}
+/* Controles consistentes y sin desbordamiento en Proveedores. */
+.acciones-proveedores-cabecera { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.proveedores-subnav a[aria-current="page"] { font-weight: 700; color: var(--texto-titulo); border-bottom: 2px solid var(--naranja); }
+@media (max-width: 700px) {
+  .acciones-proveedores-cabecera .boton { flex: 1 1 auto; min-width: 0; }
+}
