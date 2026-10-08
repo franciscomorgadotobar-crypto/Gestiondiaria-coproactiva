@@ -13,8 +13,7 @@ export default function ProveedoresNavegacion() {
   return (
     <nav className="proveedores-subnav" aria-label="Secciones de proveedores">
       {SECCIONES.map(([ruta, titulo, exacta]) => (
-        <NavLink key={ruta} to={ruta} end={exacta}
-          aria-current={({ isActive }) => isActive ? 'page' : undefined}>
+        <NavLink key={ruta} to={ruta} end={exacta}>
           {titulo}
         </NavLink>
       ))}
