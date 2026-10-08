@@ -259,6 +259,9 @@ function candidatoProveedorClaro(correo: any) {
   const email = String(correo?.remitente_email || '').toLowerCase();
   if (!dominioCorporativo(email)) return false;
   if (!especialidades.length) return false;
+  // Las respuestas de clientes/prospectos pueden contener palabras como
+  // "cotización" o rubros dentro del hilo; nunca las promovemos solas.
+  if (/^\s*(?:re|fw|fwd)\s*:/i.test(asunto)) return false;
   if (!/(?:presentaci[oó]n|propuesta|servicios|cotizaci[oó]n|presupuesto|oferta comercial)/i.test(asunto)) return false;
   if (/(?:google|facebook|buffer|semrush|read ai|mail delivery|dmarc)/i.test(asunto + ' ' + email)) return false;
   return true;
