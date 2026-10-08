@@ -227,6 +227,151 @@ function fechaMasNueva(a: string | null, b: string | null) {
   return new Date(a) >= new Date(b) ? a : b;
 }
 
+function dominioCorporativo(email: string | null) {
+  const e = String(email || '').trim().toLowerCase();
+  const [local, dominio] = e.split('@');
+  if (!local || !dominio) return null;
+  if (/^(?:no-?reply|notifications?|mailer-daemon|postmaster|dmarc|support)$/i.test(local)) return null;
+  if (/^(?:gmail|googlemail|hotmail|outlook|live|yahoo|icloud|me)\./i.test(dominio)) return null;
+  return dominio;
+}
+
+function empresaDesdeCorreo(asunto: string | null, email: string | null) {
+  const a = String(asunto || '').trim();
+  const m = a.match(/(?:presentaci[oó]n|propuesta|servicios|cotizaci[oó]n|presupuesto|oferta)\s+(?:de\s+)?([^|–—-]{2,55})/i);
+  if (m?.[1]) {
+    const candidata = m[1].trim().replace(/\s{2,}/g, ' ');
+    if (candidata.length >= 2 && candidata.length <= 55) return candidata;
+  }
+  const dominio = dominioCorporativo(email);
+  if (!dominio) return null;
+  const base = dominio.replace(/^www\./,'').split('.')[0] || dominio;
+  return base
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, s => s.toUpperCase())
+    .trim();
+}
+
+function candidatoProveedorClaro(correo: any) {
+  const datos = correo?.datos_extraidos || {};
+  const especialidades = Array.isArray(datos.especialidades) ? datos.especialidades : [];
+  const asunto = String(correo?.asunto || '');
+  const email = String(correo?.remitente_email || '').toLowerCase();
+  if (!dominioCorporativo(email)) return false;
+  if (!especialidades.length) return false;
+  if (!/(?:presentaci[oó]n|propuesta|servicios|cotizaci[oó]n|presupuesto|oferta comercial)/i.test(asunto)) return false;
+  if (/(?:google|facebook|buffer|semrush|read ai|mail delivery|dmarc)/i.test(asunto + ' ' + email)) return false;
+  return true;
+}
+
+async function promoverPendientes(admin: any) {
+  const desde = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const [{ data: pendientes, error: ePendientes }, { data: proveedores, error: eProveedores }] = await Promise.all([
+    admin.from('proveedor_correos')
+      .select('id,gmail_message_id,gmail_thread_id,remitente_nombre,remitente_email,asunto,fecha_correo,datos_extraidos')
+      .is('clasificacion', null)
+      .gte('fecha_correo', desde)
+      .order('fecha_correo', { ascending: false })
+      .limit(80),
+    admin.from('proveedores').select('*')
+  ]);
+  if (ePendientes) throw ePendientes;
+  if (eProveedores) throw eProveedores;
+
+  const lista = proveedores ?? [];
+  let nuevos = 0;
+  let vinculados = 0;
+
+  for (const correo of pendientes ?? []) {
+    const email = String(correo.remitente_email || '').trim().toLowerCase();
+    if (!email) continue;
+
+    let proveedor = lista.find((p: any) => {
+      if (String(p.email || '').trim().toLowerCase() === email) return true;
+      return (Array.isArray(p.contactos) ? p.contactos : [])
+        .some((x: any) => String(x?.email || '').trim().toLowerCase() === email);
+    });
+
+    if (!proveedor && candidatoProveedorClaro(correo)) {
+      const datos = correo.datos_extraidos || {};
+      const empresa = empresaDesdeCorreo(correo.asunto, email);
+      if (empresa) {
+        const payload: any = {
+          empresa,
+          contacto_nombre: correo.remitente_nombre || null,
+          email,
+          telefono: Array.isArray(datos.telefonos) ? (datos.telefonos[0] || null) : null,
+          sitio_web: datos.sitio_web || null,
+          direccion: datos.direccion || null,
+          rubro: Array.isArray(datos.especialidades) ? (datos.especialidades[0] || null) : null,
+          servicios: Array.isArray(datos.especialidades) && datos.especialidades.length
+            ? datos.especialidades.join(', ') : null,
+          regiones: Array.isArray(datos.regiones) ? datos.regiones : [],
+          especialidades: Array.isArray(datos.especialidades) ? datos.especialidades : [],
+          palabras_clave: Array.isArray(datos.palabras_clave) ? datos.palabras_clave : [],
+          contactos: Array.isArray(datos.contactos) ? datos.contactos : [],
+          certificaciones: Array.isArray(datos.certificaciones) ? datos.certificaciones : [],
+          marcas: Array.isArray(datos.marcas) ? datos.marcas : [],
+          condiciones_comerciales: datos.condiciones_comerciales || null,
+          estado: 'nuevo',
+          origen: 'correo',
+          gmail_thread_id: correo.gmail_thread_id || null,
+          gmail_ultimo_mensaje_id: correo.gmail_message_id || null,
+          gmail_asunto_ultimo: correo.asunto || null,
+          gmail_ultima_sincronizacion: new Date().toISOString(),
+          fecha_contacto: correo.fecha_correo || new Date().toISOString()
+        };
+        const creado = await admin.from('proveedores').insert(payload).select('*').single();
+        if (!creado.error && creado.data) {
+          proveedor = creado.data;
+          lista.push(proveedor);
+          nuevos++;
+        }
+      }
+    }
+
+    if (!proveedor) continue;
+
+    const datos = correo.datos_extraidos || {};
+    const cambios: any = {
+      fecha_contacto: fechaMasNueva(proveedor.fecha_contacto, correo.fecha_correo),
+      gmail_ultimo_mensaje_id: correo.gmail_message_id || proveedor.gmail_ultimo_mensaje_id,
+      gmail_asunto_ultimo: correo.asunto || proveedor.gmail_asunto_ultimo,
+      gmail_ultima_sincronizacion: new Date().toISOString(),
+      gmail_thread_id: proveedor.gmail_thread_id || correo.gmail_thread_id || null,
+      contacto_nombre: proveedor.contacto_nombre || correo.remitente_nombre || null,
+      telefono: proveedor.telefono || (Array.isArray(datos.telefonos) ? datos.telefonos[0] : null) || null,
+      sitio_web: proveedor.sitio_web || datos.sitio_web || null,
+      direccion: proveedor.direccion || datos.direccion || null,
+      especialidades: unico([...(proveedor.especialidades ?? []), ...(datos.especialidades ?? [])]),
+      palabras_clave: unico([...(proveedor.palabras_clave ?? []), ...(datos.palabras_clave ?? [])]),
+      regiones: unico([...(proveedor.regiones ?? []), ...(datos.regiones ?? [])]),
+      contactos: unirContactos(proveedor.contactos ?? [], datos.contactos ?? []),
+      certificaciones: unico([...(proveedor.certificaciones ?? []), ...(datos.certificaciones ?? [])]),
+      origen: 'correo'
+    };
+    if (!proveedor.rubro && datos.especialidades?.[0]) cambios.rubro = datos.especialidades[0];
+    if (!proveedor.servicios && datos.especialidades?.length) cambios.servicios = datos.especialidades.join(', ');
+
+    await admin.from('proveedores').update(cambios).eq('id', proveedor.id);
+    Object.assign(proveedor, cambios);
+
+    const clasificado = await admin.from('proveedor_correos').update({
+      clasificacion: 'proveedor',
+      proveedor_id: proveedor.id,
+      clasificado_en: new Date().toISOString()
+    }).eq('id', correo.id);
+    if (!clasificado.error) vinculados++;
+  }
+
+  const { count: porClasificar } = await admin.from('proveedor_correos')
+    .select('id', { count: 'exact', head: true })
+    .is('clasificacion', null)
+    .gte('fecha_correo', desde);
+
+  return { nuevos, vinculados, porClasificar: porClasificar ?? 0 };
+}
+
 function threadDecimal(threadHex: string) {
   const limpio = threadHex.trim().replace(/^0x/i, '');
   return BigInt('0x' + limpio).toString(10);
@@ -542,6 +687,13 @@ Deno.serve(async (req) => {
     await imap.client.logout();
     imap = null;
 
+    // Vincula automáticamente remitentes ya conocidos y crea solo candidatos
+    // de proveedor con señal fuerte (correo corporativo + asunto comercial +
+    // especialidad reconocible). El resto permanece visible en "Correos".
+    const promocion = cuerpo.solo_backfill
+      ? { nuevos: 0, vinculados: 0, porClasificar: 0 }
+      : await promoverPendientes(admin);
+
     const { count: faltan } = await admin.from('proveedores')
       .select('id', { count: 'exact', head: true })
       .not('gmail_thread_id', 'is', null)
@@ -569,6 +721,9 @@ Deno.serve(async (req) => {
       correos_nuevos: correos,
       adjuntos_guardados: adjuntos,
       proveedores_actualizados: actualizados,
+      proveedores_nuevos_automaticos: promocion.nuevos,
+      correos_vinculados_automaticos: promocion.vinculados,
+      correos_por_clasificar: promocion.porClasificar,
       errores
     });
   } catch (e) {
