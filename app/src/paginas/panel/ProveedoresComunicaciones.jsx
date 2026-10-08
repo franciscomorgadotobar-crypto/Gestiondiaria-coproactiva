@@ -85,7 +85,7 @@ export default function ProveedoresComunicaciones() {
       </header>
 
       <div className="cuerpo">
-        <nav className="wa-tabs" aria-label="Proveedores">
+        <nav className="proveedores-subnav" aria-label="Proveedores">
           <Link to="/proveedores">Proveedores</Link>
           <Link to="/proveedores/postulantes">Postulantes</Link>
           <Link to="/proveedores/correos">Correos</Link>
