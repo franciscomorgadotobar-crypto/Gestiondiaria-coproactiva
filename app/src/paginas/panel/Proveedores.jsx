@@ -82,6 +82,7 @@ export default function Proveedores() {
   const [correos, setCorreos] = useState([]);
   const [cargandoCorreos, setCargandoCorreos] = useState(false);
   const [syncEstado, setSyncEstado] = useState(null);
+  const [correosPendientes, setCorreosPendientes] = useState(0);
   const [seleccionIds, setSeleccionIds] = useState([]);
   const [comunicacion, setComunicacion] = useState(null);
   const [enviandoComunicacion, setEnviandoComunicacion] = useState(false);
@@ -428,12 +429,20 @@ export default function Proveedores() {
     await cargar({ mostrarResultado: true });
     const partes = [];
     if (data.correos_nuevos) partes.push(`${data.correos_nuevos} correo${data.correos_nuevos === 1 ? '' : 's'} nuevo${data.correos_nuevos === 1 ? '' : 's'}`);
+    if (data.proveedores_nuevos_automaticos) partes.push(`${data.proveedores_nuevos_automaticos} proveedor${data.proveedores_nuevos_automaticos === 1 ? '' : 'es'} nuevo${data.proveedores_nuevos_automaticos === 1 ? '' : 's'} detectado${data.proveedores_nuevos_automaticos === 1 ? '' : 's'}`);
+    if (data.correos_vinculados_automaticos) partes.push(`${data.correos_vinculados_automaticos} correo${data.correos_vinculados_automaticos === 1 ? '' : 's'} vinculado${data.correos_vinculados_automaticos === 1 ? '' : 's'} a proveedores`);
     if (data.adjuntos_guardados) partes.push(`${data.adjuntos_guardados} adjunto${data.adjuntos_guardados === 1 ? '' : 's'} guardado${data.adjuntos_guardados === 1 ? '' : 's'}`);
     if (data.proveedores_actualizados) partes.push(`${data.proveedores_actualizados} proveedor${data.proveedores_actualizados === 1 ? '' : 'es'} actualizado${data.proveedores_actualizados === 1 ? '' : 's'}`);
+    if (Number.isFinite(data.correos_por_clasificar) && data.correos_por_clasificar > 0) {
+      partes.push(`${data.correos_por_clasificar} correo${data.correos_por_clasificar === 1 ? '' : 's'} pendiente${data.correos_por_clasificar === 1 ? '' : 's'} de clasificar`);
+      setCorreosPendientes(data.correos_por_clasificar);
+    } else {
+      setCorreosPendientes(0);
+    }
     if (Number.isFinite(data.faltan_backfill) && data.faltan_backfill > 0) {
       partes.push(`${data.faltan_backfill} proveedor${data.faltan_backfill === 1 ? '' : 'es'} pendiente${data.faltan_backfill === 1 ? '' : 's'} de reprocesar`);
     }
-    setAviso(partes.length ? 'Gmail actualizado: ' + partes.join(' · ') + '.' : 'Gmail revisado. No había información nueva.');
+    setAviso(partes.length ? 'Gmail actualizado: ' + partes.join(' · ') + '.' : 'Gmail revisado. Todo está al día.');
     setSincronizando(false);
   }
 
@@ -535,8 +544,13 @@ export default function Proveedores() {
         <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && (
-          <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>
-            {aviso}
+          <div className="aviso aviso-ok proveedores-aviso-sync" style={{ marginBottom: 12 }}>
+            <span className="crece">{aviso}</span>
+            {correosPendientes > 0 && (
+              <button className="boton boton-secundario" onClick={() => navegar('/proveedores/correos')}>
+                Revisar correos
+              </button>
+            )}
             <button className="boton boton-texto" onClick={() => setAviso(null)}>Cerrar</button>
           </div>
         )}
