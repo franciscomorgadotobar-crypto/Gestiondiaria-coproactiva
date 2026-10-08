@@ -45,6 +45,21 @@ function fechaHora(valor) {
   });
 }
 
+function emailProveedor(p) {
+  const principal = String(p?.email ?? '').trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(principal)) return principal;
+  const alternativo = (Array.isArray(p?.contactos) ? p.contactos : [])
+    .find(x => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(x?.email ?? '').trim()))?.email;
+  return alternativo ? String(alternativo).trim() : '';
+}
+
+function saludoProveedor(p) {
+  const nombre = String(p?.contacto_nombre ?? '').trim().split(/\s+/)[0];
+  if (nombre) return `Hola ${nombre},`;
+  if (p?.empresa) return `Hola, equipo de ${p.empresa},`;
+  return 'Estimados,';
+}
+
 export default function Proveedores() {
   const { perfil } = useSesion();
   const { id } = useParams();
@@ -67,6 +82,10 @@ export default function Proveedores() {
   const [correos, setCorreos] = useState([]);
   const [cargandoCorreos, setCargandoCorreos] = useState(false);
   const [syncEstado, setSyncEstado] = useState(null);
+  const [seleccionIds, setSeleccionIds] = useState([]);
+  const [comunicacion, setComunicacion] = useState(null);
+  const [enviandoComunicacion, setEnviandoComunicacion] = useState(false);
+  const [resultadoComunicacion, setResultadoComunicacion] = useState(null);
 
   const puedeGestionar = ['superadmin', 'admin'].includes(perfil?.rol);
   const puedeEliminar = perfil?.rol === 'superadmin';
@@ -227,6 +246,59 @@ export default function Proveedores() {
     });
     return lista;
   }, [proveedores, busqueda, rubro, comuna, origen, mostrarListaNegra, orden]);
+
+  const seleccionados = useMemo(() => new Set(seleccionIds), [seleccionIds]);
+  const seleccionablesFiltrados = useMemo(
+    () => listaFiltrada.filter(p => !p.lista_negra),
+    [listaFiltrada]
+  );
+  const seleccionablesTodos = useMemo(
+    () => (proveedores ?? []).filter(p => !p.lista_negra),
+    [proveedores]
+  );
+
+  function alternarSeleccion(idProveedor) {
+    setSeleccionIds(xs => xs.includes(idProveedor)
+      ? xs.filter(id => id !== idProveedor)
+      : [...xs, idProveedor]);
+  }
+
+  function seleccionarFiltrados() {
+    setSeleccionIds(seleccionablesFiltrados.map(p => p.id));
+  }
+
+  function abrirComunicacion(alcance = null) {
+    const sugerido = alcance || (seleccionIds.length ? 'seleccionados' : 'filtrados');
+    setComunicacion({ alcance: sugerido });
+    setResultadoComunicacion(null);
+  }
+
+  async function enviarComunicacion(datos) {
+    setEnviandoComunicacion(true);
+    setError(null);
+    setResultadoComunicacion(null);
+
+    const { data, error: e } = await supabase.functions.invoke('enviar-comunicacion-proveedores', {
+      body: datos
+    });
+
+    setEnviandoComunicacion(false);
+    if (e || !data?.ok) {
+      setError(data?.error || e?.message || 'No se pudo enviar la comunicación.');
+      return false;
+    }
+
+    setResultadoComunicacion(data);
+    setComunicacion(null);
+    setSeleccionIds([]);
+    setAviso(
+      `Comunicación enviada: ${data.enviados} correo${data.enviados === 1 ? '' : 's'} enviado${data.enviados === 1 ? '' : 's'}`
+      + (data.omitidos ? ` · ${data.omitidos} omitido${data.omitidos === 1 ? '' : 's'}` : '')
+      + (data.fallidos ? ` · ${data.fallidos} con error` : '')
+      + '.'
+    );
+    return true;
+  }
 
   function limpiarFiltros() {
     setRubro('');
@@ -442,7 +514,10 @@ export default function Proveedores() {
           </p>
         </div>
         <div className="acciones-proveedores-cabecera">
-          <button type="button" className="boton" onClick={() => setFormulario({})}>
+          <button type="button" className="boton" onClick={() => abrirComunicacion()}>
+            Comunicación
+          </button>
+          <button type="button" className="boton boton-secundario" onClick={() => setFormulario({})}>
             + Agregar proveedor
           </button>
           <button type="button" className="boton boton-secundario"
@@ -457,7 +532,7 @@ export default function Proveedores() {
       </header>
 
       <div className="cuerpo">
-        <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link></nav>
+        <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && (
           <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>
@@ -530,8 +605,27 @@ export default function Proveedores() {
         )}
 
         <div className="fila proveedores-resultado-cabecera">
-          <span className="micro crece">{listaFiltrada.length} proveedor{listaFiltrada.length === 1 ? '' : 'es'}</span>
-          <label className="micro">
+          <div className="proveedores-seleccion-resumen crece">
+            <span className="micro">{listaFiltrada.length} proveedor{listaFiltrada.length === 1 ? '' : 'es'}</span>
+            <span className="micro apagado">{seleccionIds.length} seleccionado{seleccionIds.length === 1 ? '' : 's'}</span>
+          </div>
+          <div className="proveedores-seleccion-acciones">
+            <button type="button" className="boton boton-texto" disabled={!seleccionablesFiltrados.length}
+                    onClick={seleccionarFiltrados}>
+              Seleccionar filtrados
+            </button>
+            {seleccionIds.length > 0 && (
+              <>
+                <button type="button" className="boton boton-texto" onClick={() => setSeleccionIds([])}>
+                  Limpiar selección
+                </button>
+                <button type="button" className="boton" onClick={() => abrirComunicacion('seleccionados')}>
+                  Comunicación ({seleccionIds.length})
+                </button>
+              </>
+            )}
+          </div>
+          <label className="micro proveedores-orden">
             Ordenar por{' '}
             <select value={orden} onChange={e => setOrden(e.target.value)} className="select-inline">
               <option value="reciente">Más reciente</option>
@@ -549,6 +643,8 @@ export default function Proveedores() {
         <div className="proveedores-lista-movil">
           {listaFiltrada.map(p => (
             <TarjetaProveedor key={p.id} p={p}
+              seleccionado={seleccionados.has(p.id)}
+              onSeleccionar={() => alternarSeleccion(p.id)}
               onAbrir={() => navegar('/proveedores/' + p.id)}
               onContacto={canal => abrirContacto(p, canal)} />
           ))}
@@ -558,6 +654,12 @@ export default function Proveedores() {
           <table className="proveedores-tabla">
             <thead>
               <tr>
+                <th className="proveedores-check-col">
+                  <input type="checkbox"
+                    aria-label="Seleccionar proveedores filtrados"
+                    checked={seleccionablesFiltrados.length > 0 && seleccionablesFiltrados.every(p => seleccionados.has(p.id))}
+                    onChange={e => e.target.checked ? seleccionarFiltrados() : setSeleccionIds([])} />
+                </th>
                 <th>Empresa / Contacto</th>
                 <th>Especialidad / Servicios</th>
                 <th>Cobertura</th>
@@ -567,7 +669,15 @@ export default function Proveedores() {
             </thead>
             <tbody>
               {listaFiltrada.map(p => (
-                <tr key={p.id} onClick={() => navegar('/proveedores/' + p.id)}>
+                <tr key={p.id} className={seleccionados.has(p.id) ? 'seleccionado' : ''}
+                    onClick={() => navegar('/proveedores/' + p.id)}>
+                  <td className="proveedores-check-col" onClick={e => e.stopPropagation()}>
+                    <input type="checkbox"
+                      aria-label={`Seleccionar ${p.empresa}`}
+                      disabled={p.lista_negra}
+                      checked={seleccionados.has(p.id)}
+                      onChange={() => alternarSeleccion(p.id)} />
+                  </td>
                   <td>
                     <strong>{p.empresa}</strong>
                     <span>{p.contacto_nombre || 'Sin contacto'}</span>
@@ -593,6 +703,27 @@ export default function Proveedores() {
           </table>
         </div>
       </div>
+
+      {comunicacion && (
+        <Modal>
+          <ComunicacionProveedores
+            perfil={perfil}
+            proveedores={proveedores ?? []}
+            filtrados={listaFiltrada}
+            seleccionIds={seleccionIds}
+            alcanceInicial={comunicacion.alcance}
+            filtros={{
+              busqueda: busqueda || null,
+              rubro: rubro || null,
+              comuna: comuna || null,
+              origen: origen || null
+            }}
+            enviando={enviandoComunicacion}
+            onCancelar={() => setComunicacion(null)}
+            onEnviar={enviarComunicacion}
+          />
+        </Modal>
+      )}
 
       {formulario && (
         <Modal>
@@ -624,9 +755,14 @@ export default function Proveedores() {
   );
 }
 
-function TarjetaProveedor({ p, onAbrir, onContacto }) {
+function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto }) {
   return (
-    <article className="tarjeta proveedor-tarjeta">
+    <article className={'tarjeta proveedor-tarjeta' + (seleccionado ? ' seleccionado' : '')}>
+      <label className="proveedor-tarjeta-seleccion" onClick={e => e.stopPropagation()}>
+        <input type="checkbox" disabled={p.lista_negra} checked={seleccionado}
+               onChange={onSeleccionar} />
+        <span>Seleccionar</span>
+      </label>
       <button type="button" className="proveedor-tarjeta-principal" onClick={onAbrir}>
         <span className="crece proveedor-tarjeta-contenido">
           <strong>{p.empresa}</strong>
@@ -681,7 +817,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
       </header>
 
       <div className="cuerpo">
-        <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link></nav>
+        <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>{aviso}<button className="boton boton-texto" onClick={onCerrarAviso}>Cerrar</button></div>}
 
