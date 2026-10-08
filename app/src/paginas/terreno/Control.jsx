@@ -505,6 +505,15 @@ export default function Levantamiento() {
   // -------------------------------------------------------------- Informe
 
   async function verInforme() {
+    // Se abre inmediatamente desde el clic; si se espera al servidor,
+    // Android y los navegadores de escritorio bloquean la ventana emergente.
+    const ventanaInforme = window.open('', '_blank');
+    if (!ventanaInforme) {
+      setError('El navegador bloqueó el informe. Autoriza ventanas emergentes para este sitio.');
+      return;
+    }
+    ventanaInforme.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"></head><body><p>Preparando informe…</p></body></html>');
+    ventanaInforme.document.close();
     // Para informes históricos no dependemos solo de la copia local del
     // teléfono: una versión antigua podía tener respuestas/fotos pero no el
     // campo `ayuda`. Si hay conexión, recuperamos la descripción vigente de
@@ -564,7 +573,7 @@ export default function Levantamiento() {
           rut: f.firmante_rut
         }))
     });
-    if (!imprimirInforme(html)) {
+    if (!imprimirInforme(html, ventanaInforme)) {
       setError('El navegador bloqueó la ventana del informe. Permite las ventanas emergentes para este sitio.');
     }
   }
