@@ -100,6 +100,59 @@ export async function enviarSimple(para: string, asunto: string, html: string) {
   return resultado;
 }
 
+export async function enviarLote(mensajes: Array<{
+  para: string;
+  asunto: string;
+  html: string;
+  texto: string;
+}>) {
+  if (!hayCorreo()) {
+    return mensajes.map(() => ({ enviado: false, motivo: 'SMTP sin configurar' }));
+  }
+
+  const cliente = new SMTPClient({
+    connection: {
+      hostname: SERVIDOR,
+      port: PUERTO,
+      tls: PUERTO === 465,
+      auth: { username: REMITENTE, password: CLAVE.replace(/\s+/g, '') }
+    }
+  });
+
+  const resultados: Array<{ enviado: boolean; motivo?: string }> = [];
+  try {
+    for (const mensaje of mensajes) {
+      try {
+        await cliente.send({
+          from: `CoproActiva <${REMITENTE}>`,
+          to: mensaje.para,
+          subject: mensaje.asunto,
+          content: mensaje.texto,
+          html: mensaje.html,
+          attachments: [{
+            contentType: 'image/png',
+            filename: 'coproactiva.png',
+            encoding: 'base64',
+            content: LOGO_PNG,
+            contentID: 'logo'
+          }]
+        });
+        resultados.push({ enviado: true });
+      } catch (e) {
+        resultados.push({
+          enviado: false,
+          motivo: e instanceof Error ? e.message : String(e)
+        });
+      }
+    }
+  } finally {
+    try { await cliente.close(); } catch { /* el runtime libera la conexión */ }
+  }
+
+  return resultados;
+}
+
+
 /* Alertas operativas: mensaje deliberadamente simple para evitar cualquier
  * interpretación multipart/quoted-printable defectuosa en Gmail móvil. */
 export async function enviarTextoPlano(para: string, asunto: string, texto: string) {
