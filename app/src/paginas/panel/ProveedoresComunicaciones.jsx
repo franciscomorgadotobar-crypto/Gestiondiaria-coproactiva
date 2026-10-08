@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
 import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
 import './WhatsApp.css';
@@ -85,12 +86,7 @@ export default function ProveedoresComunicaciones() {
       </header>
 
       <div className="cuerpo">
-        <nav className="proveedores-subnav" aria-label="Proveedores">
-          <Link to="/proveedores">Proveedores</Link>
-          <Link to="/proveedores/postulantes">Postulantes</Link>
-          <Link to="/proveedores/correos">Correos</Link>
-          <Link to="/proveedores/comunicaciones">Comunicaciones</Link>
-        </nav>
+        <ProveedoresNavegacion />
 
         {error && <div className="aviso aviso-critico">{error}</div>}
 
