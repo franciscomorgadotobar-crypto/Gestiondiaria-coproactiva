@@ -524,7 +524,7 @@ export default function Proveedores() {
         </div>
         <div className="acciones-proveedores-cabecera">
           <button type="button" className="boton" onClick={() => abrirComunicacion()}>
-            Comunicación
+            Nueva comunicación
           </button>
           <button type="button" className="boton boton-secundario" onClick={() => setFormulario({})}>
             + Agregar proveedor
