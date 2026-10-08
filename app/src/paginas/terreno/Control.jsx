@@ -519,6 +519,7 @@ export default function Levantamiento() {
     // campo `ayuda`. Si hay conexión, recuperamos la descripción vigente de
     // cada punto directamente desde Supabase antes de construir el informe.
     let ayudaPorId = new Map();
+    let descripcionPorGrupo = new Map();
     if (hayConexion()) {
       const { data: descripciones, error: errorDescripciones } = await supabase
         .from('control_items')
@@ -528,6 +529,18 @@ export default function Levantamiento() {
       if (!errorDescripciones) {
         ayudaPorId = new Map(
           (descripciones ?? []).map(x => [x.id, x.ayuda])
+        );
+      }
+      // Los controles anteriores no guardaban descripción propia de categoría:
+      // recuperarla de la plantilla, manteniendo inalteradas las evaluaciones.
+      const { data: origen } = await supabase.from('controles')
+        .select('plantilla_id').eq('id', id).maybeSingle();
+      if (origen?.plantilla_id) {
+        const { data: grupos } = await supabase.from('plantilla_items')
+          .select('grupo, config').eq('plantilla_id', origen.plantilla_id);
+        descripcionPorGrupo = new Map(
+          (grupos ?? []).filter(x => x.config?.descripcion_categoria)
+            .map(x => [x.grupo, x.config.descripcion_categoria])
         );
       }
     }
@@ -544,7 +557,7 @@ export default function Levantamiento() {
       logo: import.meta.env.BASE_URL + 'logo-coproactiva.svg',
       categorias: categorias.map(c => ({
         nombre: c.nombre,
-        descripcion: c.items.find(i => i.config?.descripcion_categoria)?.config?.descripcion_categoria ?? '',
+        descripcion: c.items.find(i => i.config?.descripcion_categoria)?.config?.descripcion_categoria ?? descripcionPorGrupo.get(c.nombre) ?? '',
         items: c.items.map(i => ({
           texto: i.texto,
           descripcion: ayudaPorId.get(i.id) ?? i.ayuda ?? null,
