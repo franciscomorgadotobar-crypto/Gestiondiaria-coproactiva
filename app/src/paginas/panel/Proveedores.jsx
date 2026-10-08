@@ -541,7 +541,7 @@ export default function Proveedores() {
       </header>
 
       <div className="cuerpo">
-        <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
+        <nav className="proveedores-subnav" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && (
           <div className="aviso aviso-ok proveedores-aviso-sync" style={{ marginBottom: 12 }}>
@@ -831,7 +831,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
       </header>
 
       <div className="cuerpo">
-        <nav className="wa-tabs" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
+        <nav className="proveedores-subnav" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>{aviso}<button className="boton boton-texto" onClick={onCerrarAviso}>Cerrar</button></div>}
 
