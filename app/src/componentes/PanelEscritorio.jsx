@@ -138,9 +138,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       ]
     : enProveedores
     ? [
-        { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: true, activo: p => !['/proveedores/postulantes','/proveedores/correos'].includes(p) },
+        { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: true, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
         { ruta: '/proveedores/postulantes', etiqueta: 'Postulantes', mostrar: true },
-        { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: true }
+        { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: true },
+        { ruta: '/proveedores/comunicaciones', etiqueta: 'Comunicaciones', mostrar: true }
       ]
     : enPropiedades
     ? [
