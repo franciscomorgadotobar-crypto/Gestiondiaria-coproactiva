@@ -3234,3 +3234,301 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     width: 100%;
   }
 }
+
+
+/* =========================================================
+   Proveedores — homologación de Proveedores/Postulantes/Correos/Comunicaciones
+   ========================================================= */
+
+.proveedores-subnav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+}
+.proveedores-subnav a {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--borde);
+  color: var(--naranja);
+  font: 600 10px/1 var(--fuente-display);
+  letter-spacing: .04em;
+  text-decoration: none;
+}
+.proveedores-subnav a:hover {
+  border-color: var(--borde);
+  background: var(--tarjeta);
+}
+
+.proveedores-recepcion-cuerpo {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.proveedores-recepcion-kpis {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 8px;
+}
+.proveedores-recepcion-kpis > div {
+  position: relative;
+  min-height: 72px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--borde);
+  background: var(--tarjeta);
+}
+.proveedores-recepcion-kpis > div::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--pizarra);
+}
+.proveedores-recepcion-kpis strong {
+  color: var(--texto-titulo);
+  font: 700 22px/1 var(--fuente-display);
+}
+.proveedores-recepcion-kpis span {
+  color: var(--texto-apagado);
+  font: 650 8.5px/1.2 var(--fuente-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.proveedores-recepcion-toolbar {
+  min-height: 0;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+}
+.proveedores-recepcion-toolbar .campo {
+  width: min(620px,100%);
+  margin: 0;
+}
+.proveedores-recepcion-toolbar .campo select,
+.proveedores-recepcion-toolbar .campo input {
+  min-height: 38px;
+}
+.proveedores-recepcion-toolbar > p {
+  margin: 0 0 5px;
+  white-space: nowrap;
+}
+
+.proveedores-correo-layout {
+  display: grid;
+  grid-template-columns: minmax(300px,.75fr) minmax(0,1.75fr);
+  gap: 10px;
+  align-items: start;
+}
+.proveedores-correo-lista,
+.proveedores-correo-detalle {
+  padding: 0;
+  overflow: hidden;
+}
+.proveedores-correo-lista-titulo {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 13px;
+  border-bottom: 1px solid var(--borde);
+  background: var(--papel);
+}
+.proveedores-correo-lista-titulo strong {
+  color: var(--texto-titulo);
+  font: 650 12px/1 var(--fuente-display);
+}
+.proveedores-correo-scroll {
+  max-height: 560px;
+  overflow-y: auto;
+}
+.proveedores-correo-item {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 11px 13px;
+  border: 0;
+  border-bottom: 1px solid var(--borde-suave);
+  background: var(--tarjeta);
+  color: var(--texto-cuerpo);
+  text-align: left;
+  cursor: pointer;
+}
+.proveedores-correo-item:hover,
+.proveedores-correo-item.selected {
+  background: var(--hover);
+}
+.proveedores-correo-item.selected {
+  box-shadow: inset 3px 0 0 var(--naranja);
+}
+.proveedores-correo-item:last-child { border-bottom: 0; }
+.proveedores-correo-item strong {
+  color: var(--texto-titulo);
+  font: 650 12px/1.25 var(--fuente-display);
+}
+.proveedores-correo-item span {
+  color: var(--texto-apagado);
+  font-size: 11px;
+}
+.proveedores-correo-item small {
+  color: var(--texto-tenue);
+  font-size: 9.5px;
+}
+.proveedores-correo-detalle-cabecera {
+  min-height: 78px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--borde);
+  background: var(--papel);
+}
+.proveedores-correo-detalle-cabecera .h4 {
+  margin: 4px 0;
+  font-size: 15px;
+}
+.proveedores-correo-detalle-cabecera p { margin: 0; }
+.proveedores-correo-contenido {
+  padding: 14px 16px;
+  border-top: 0;
+}
+.proveedores-correo-contenido .wa-email-body {
+  max-height: 260px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 2px;
+  background: var(--papel);
+}
+.proveedores-correo-links {
+  margin-top: 10px;
+}
+.proveedores-correo-links a {
+  color: var(--naranja);
+  font: 600 10.5px/1.3 var(--fuente-display);
+}
+.proveedores-clasificacion {
+  padding: 15px 16px 16px;
+  border-top: 1px solid var(--borde);
+  background: #fbfaf8;
+}
+.proveedores-clasificacion .h4 {
+  margin: 0 0 10px;
+}
+.proveedores-clasificacion-acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.proveedores-correo-placeholder {
+  min-height: 300px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.proveedores-correo-placeholder p {
+  margin: 4px 0 0;
+}
+
+.proveedores-postulante-form {
+  padding: 0;
+  overflow: hidden;
+}
+.proveedores-postulante-form-cabecera {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--borde);
+  background: var(--papel);
+}
+.proveedores-postulante-form-cabecera .h4 {
+  margin: 4px 0 0;
+}
+.proveedores-postulante-form > .formulario-grid {
+  padding: 16px;
+}
+.proveedores-postulante-form-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--borde);
+}
+.proveedores-postulante-historial {
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--borde);
+}
+.proveedores-postulante-historial .h4 {
+  margin: 0 0 10px;
+}
+.proveedores-postulante-correo {
+  padding: 11px 0;
+  border-top: 1px solid var(--borde-suave);
+}
+.proveedores-postulante-correo:first-of-type { border-top: 0; }
+.proveedores-postulantes-tabla {
+  padding: 0;
+  overflow: hidden;
+}
+.proveedores-postulantes-tabla .tabla {
+  min-width: 860px;
+}
+.proveedores-postulante-nombre {
+  min-height: 0 !important;
+  padding: 0 !important;
+  color: var(--naranja) !important;
+  font-size: 10px !important;
+}
+.proveedores-postulantes-buscar {
+  flex: 1;
+}
+
+@media (min-width: 900px) {
+  .proveedores-recepcion-pantalla {
+    --ancho-contenido: 1280px;
+  }
+  .proveedores-recepcion-pantalla > .cuerpo {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding-top: 18px;
+  }
+  .proveedores-subnav {
+    margin-bottom: 2px;
+  }
+}
+
+@media (max-width: 899px) {
+  .proveedores-recepcion-kpis {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  .proveedores-recepcion-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .proveedores-recepcion-toolbar > p {
+    margin: 0;
+  }
+  .proveedores-correo-layout {
+    grid-template-columns: 1fr;
+  }
+  .proveedores-correo-scroll {
+    max-height: 300px;
+  }
+  .proveedores-correo-placeholder {
+    min-height: 180px;
+  }
+  .proveedores-clasificacion-acciones .boton,
+  .proveedores-postulante-form-acciones .boton {
+    flex: 1;
+  }
+}
