@@ -493,7 +493,25 @@ export default function Levantamiento() {
 
   // -------------------------------------------------------------- Informe
 
-  function verInforme() {
+  async function verInforme() {
+    // Para informes históricos no dependemos solo de la copia local del
+    // teléfono: una versión antigua podía tener respuestas/fotos pero no el
+    // campo `ayuda`. Si hay conexión, recuperamos la descripción vigente de
+    // cada punto directamente desde Supabase antes de construir el informe.
+    let ayudaPorId = new Map();
+    if (hayConexion()) {
+      const { data: descripciones, error: errorDescripciones } = await supabase
+        .from('control_items')
+        .select('id, ayuda')
+        .eq('control_id', id);
+
+      if (!errorDescripciones) {
+        ayudaPorId = new Map(
+          (descripciones ?? []).map(x => [x.id, x.ayuda])
+        );
+      }
+    }
+
     const html = informeHtml({
       comunidad: {
         nombre: control.destino_nombre ?? 'Sin identificar',
@@ -508,7 +526,7 @@ export default function Levantamiento() {
         nombre: c.nombre,
         items: c.items.map(i => ({
           texto: i.texto,
-          descripcion: i.ayuda,
+          descripcion: ayudaPorId.get(i.id) ?? i.ayuda ?? null,
           estado: i.estado,
           nota: i.nota,
           tipo_ingreso: i.tipo_ingreso,
