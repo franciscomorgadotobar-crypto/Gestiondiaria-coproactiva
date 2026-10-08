@@ -123,7 +123,29 @@ export async function fusionarItems(controlId, delServidor) {
   const tx = db.transaction(ALMACENES.items, 'readwrite');
   for (const item of delServidor) {
     const local = pendientes.get(item.id);
-    await tx.store.put(local ?? { ...item, control_id: controlId, pendiente: false });
+
+    /* La estructura de la pauta (texto, ayuda/descripcion, tipo, config,
+     * obligatoriedad, etc.) siempre viene del servidor. Solo conservamos del
+     * teléfono los campos que el usuario puede haber cambiado sin subir.
+     *
+     * Antes se guardaba el objeto local completo cuando estaba pendiente. Un
+     * levantamiento creado con una versión antigua de la app podía conservar
+     * respuestas y fotos correctamente, pero perder campos incorporados luego,
+     * como `ayuda`. El informe entonces no tenía de dónde sacar la descripción
+     * aun cuando Supabase sí la tenía. */
+    const combinado = local
+      ? {
+          ...item,
+          control_id: controlId,
+          estado: local.estado,
+          nota: local.nota,
+          respuesta: local.respuesta,
+          evaluado_en: local.evaluado_en,
+          pendiente: true
+        }
+      : { ...item, control_id: controlId, pendiente: false };
+
+    await tx.store.put(combinado);
   }
   await tx.done;
 }
