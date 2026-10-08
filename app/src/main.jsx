@@ -19,6 +19,34 @@ const raiz = import.meta.env.BASE_URL.replace(/\/$/, '');
  * tenga que acordarse de abrir esa pantalla. */
 iniciarSincronizacion();
 
+/* La PWA precarga el bundle para trabajar sin señal. Cuando se publica una
+ * versión nueva, Workbox puede activar el service worker nuevo mientras la
+ * pestaña abierta sigue ejecutando el JavaScript anterior. Eso hacía que una
+ * función recién publicada —por ejemplo el nuevo formato de informes— pareciera
+ * no existir hasta hacer un hard refresh manual.
+ *
+ * Forzamos una comprobación al abrir la app y recargamos una sola vez cuando el
+ * nuevo service worker toma control. Así el usuario no tiene que limpiar caché
+ * ni adivinar si está viendo una versión antigua. */
+if ('serviceWorker' in navigator) {
+  let recargandoPorActualizacion = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (recargandoPorActualizacion) return;
+    recargandoPorActualizacion = true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load', async () => {
+    try {
+      const registro = await navigator.serviceWorker.ready;
+      await registro.update();
+    } catch {
+      // La app sigue operativa aunque no se pueda comprobar la actualización.
+    }
+  });
+}
+
 createRoot(document.getElementById('raiz')).render(
   <StrictMode>
     <BrowserRouter basename={raiz}>
