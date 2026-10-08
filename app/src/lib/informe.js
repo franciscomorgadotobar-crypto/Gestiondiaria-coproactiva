@@ -173,6 +173,23 @@ function valorRespondido(item) {
   }
 }
 
+function descripcionPunto(item) {
+  const lineas = String(item.descripcion ?? '')
+    .split(/\r?\n/)
+    .map(x => x.trim())
+    .filter(Boolean);
+
+  if (!lineas.length) return '';
+
+  return `
+    <div class="descripcion-punto">
+      <p class="descripcion-etiqueta">Descripción del punto</p>
+      <ul>
+        ${lineas.map(linea => `<li>${escapar(linea)}</li>`).join('')}
+      </ul>
+    </div>`;
+}
+
 function bloqueItem(item, numero) {
   // Solo los puntos de tipo estado llevan el sello de conforme/observación:
   // en una lectura de medidor ese sello no significa nada.
@@ -192,6 +209,7 @@ function bloqueItem(item, numero) {
           ${item.tipo_ingreso === 'foto' && cantidadFotos
             ? `<span class="cuenta-fotos">${cantidadFotos} foto${cantidadFotos === 1 ? '' : 's'}</span>` : ''}
         </header>
+        ${descripcionPunto(item)}
         ${valorRespondido(item)}
         ${item.nota ? `<p class="nota"><strong>${
           item.tipo_ingreso === 'opciones' ? 'Comentario'
@@ -242,7 +260,7 @@ function bloqueAtencion(categorias) {
  * @param {object} datos
  * @param {object} datos.comunidad  nombre, direccion, comuna
  * @param {object} datos.control    periodo, estado, plantilla_nombre, checkin_en, checkin_precision, enviado_en, responsable
- * @param {Array}  datos.categorias [{ nombre, items: [{ texto, estado, nota, tipo_ingreso, config, respuesta, fotos }] }]
+ * @param {Array}  datos.categorias [{ nombre, items: [{ texto, descripcion, estado, nota, tipo_ingreso, config, respuesta, fotos }] }]
  * @param {string} [datos.logo]     data URI o URL del logotipo
  */
 export function informeHtml(datos) {
@@ -406,6 +424,29 @@ export function informeHtml(datos) {
     min-width: 6mm; flex: none;
   }
   .item header + * { margin-top: 2mm; }
+
+  .descripcion-punto {
+    margin-top: 2.2mm; padding: 2.3mm 3mm;
+    background: #fbfaf8; border: 0.3mm solid var(--niebla); border-radius: 1mm;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  .descripcion-etiqueta {
+    font: 600 6.2pt 'Montserrat', sans-serif;
+    letter-spacing: .11em; text-transform: uppercase;
+    color: var(--tenue); margin-bottom: 1.3mm;
+  }
+  .descripcion-punto ul {
+    margin: 0; padding: 0; list-style: none;
+    display: grid; gap: 1mm;
+  }
+  .descripcion-punto li {
+    position: relative; padding-left: 4.2mm;
+    font-size: 8.7pt; line-height: 1.45; color: var(--pizarra);
+  }
+  .descripcion-punto li::before {
+    content: '•'; position: absolute; left: 1mm; top: 0;
+    color: var(--naranja); font-weight: 700;
+  }
 
   .estado {
     font: 600 6.5pt 'Montserrat', sans-serif; letter-spacing: .1em; text-transform: uppercase;
