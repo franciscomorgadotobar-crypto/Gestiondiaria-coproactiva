@@ -620,7 +620,7 @@ export default function Proveedores() {
                   Limpiar selección
                 </button>
                 <button type="button" className="boton" onClick={() => abrirComunicacion('seleccionados')}>
-                  Comunicación ({seleccionIds.length})
+                  Crear comunicación ({seleccionIds.length})
                 </button>
               </>
             )}
