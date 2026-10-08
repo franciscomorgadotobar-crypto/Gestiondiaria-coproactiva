@@ -2845,3 +2845,374 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     background: rgba(255,255,255,.28);
   }
 }
+
+
+/* ======================================================== Comunicaciones proveedores */
+.proveedores-seleccion-resumen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.proveedores-seleccion-acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.proveedores-orden { white-space: nowrap; }
+.proveedores-check-col {
+  width: 38px;
+  text-align: center !important;
+}
+.proveedores-check-col input,
+.proveedor-tarjeta-seleccion input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--naranja);
+}
+.proveedores-tabla tbody tr.seleccionado {
+  background: #fff8ef;
+}
+.proveedor-tarjeta.seleccionado {
+  border-color: var(--naranja);
+  box-shadow: inset 3px 0 0 var(--naranja);
+}
+.proveedor-tarjeta-seleccion {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--borde-suave);
+  background: var(--papel);
+  color: var(--texto-apagado);
+  font: 600 10px/1 var(--fuente-display);
+}
+
+.proveedor-comunicacion-modal {
+  width: min(900px, 100%);
+  padding: 22px;
+}
+.comunicacion-cabecera {
+  padding-right: 42px;
+  margin-bottom: 18px;
+}
+.comunicacion-cabecera .h3 {
+  margin: 3px 0 5px;
+}
+.comunicacion-cabecera p {
+  margin: 0;
+}
+.comunicacion-alcance,
+.comunicacion-editor,
+.comunicacion-vista-previa {
+  padding: 16px 0;
+  border-top: 1px solid var(--borde-suave);
+}
+.comunicacion-alcance-opciones {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.comunicacion-alcance-opciones button {
+  display: grid;
+  gap: 4px;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
+  background: var(--tarjeta);
+  color: var(--texto-cuerpo);
+  text-align: left;
+  cursor: pointer;
+}
+.comunicacion-alcance-opciones button.activo {
+  border-color: var(--naranja);
+  box-shadow: inset 0 0 0 1px var(--naranja);
+  background: #fff8ef;
+}
+.comunicacion-alcance-opciones button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+.comunicacion-alcance-opciones strong {
+  font: 700 20px/1 var(--fuente-display);
+  color: var(--texto-titulo);
+}
+.comunicacion-alcance-opciones span {
+  font: 600 10px/1.2 var(--fuente-display);
+  color: var(--texto-apagado);
+}
+.comunicacion-resumen-destinatarios {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 1px;
+  margin-top: 10px;
+  border: 1px solid var(--borde-suave);
+  background: var(--borde-suave);
+}
+.comunicacion-resumen-destinatarios > div {
+  padding: 9px 10px;
+  background: var(--papel);
+}
+.comunicacion-resumen-destinatarios strong,
+.comunicacion-resumen-destinatarios span {
+  display: block;
+}
+.comunicacion-resumen-destinatarios strong {
+  color: var(--texto-titulo);
+  font-size: 14px;
+}
+.comunicacion-resumen-destinatarios span {
+  margin-top: 2px;
+  color: var(--texto-tenue);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.comunicacion-nota { margin: 8px 0 0; }
+.comunicacion-editor {
+  display: grid;
+  gap: 11px;
+}
+.comunicacion-editor .campo {
+  margin: 0;
+}
+.comunicacion-editor textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+.comunicacion-ayuda {
+  padding: 10px 12px;
+  border: 1px solid var(--borde-suave);
+  background: var(--papel);
+}
+.comunicacion-ayuda strong {
+  color: var(--texto-titulo);
+  font-size: 12px;
+}
+.comunicacion-ayuda p {
+  margin: 3px 0 0;
+  color: var(--texto-apagado);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.comunicacion-telefono {
+  margin: 0;
+}
+.comunicacion-vista-previa > .tarjeta {
+  padding: 16px;
+  background: #fff;
+}
+.comunicacion-vista-previa > .tarjeta > strong {
+  color: var(--texto-titulo);
+  font-size: 13px;
+}
+.comunicacion-vista-previa > .tarjeta > p {
+  min-height: 42px;
+  margin: 12px 0 18px;
+  white-space: pre-wrap;
+  color: var(--texto-cuerpo);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.comunicacion-firma {
+  display: grid;
+  gap: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borde-suave);
+  color: var(--texto-apagado);
+  font-size: 11.5px;
+}
+.comunicacion-firma strong {
+  color: var(--texto-titulo);
+}
+.comunicacion-confirmacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--borde);
+}
+.comunicacion-confirmacion > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+.comunicacion-confirmacion > div:first-child strong {
+  color: var(--texto-titulo);
+  font-size: 13px;
+}
+.comunicacion-confirmacion > div:first-child span {
+  color: var(--texto-apagado);
+  font-size: 11px;
+}
+
+/* Historial */
+.comunicaciones-vacio {
+  display: grid;
+  gap: 6px;
+  padding: 24px;
+}
+.comunicaciones-vacio p { margin: 0; }
+.comunicaciones-layout {
+  display: grid;
+  grid-template-columns: minmax(300px,.8fr) minmax(0,1.7fr);
+  gap: 12px;
+  align-items: start;
+}
+.comunicaciones-listado,
+.comunicaciones-detalle {
+  padding: 0;
+  overflow: hidden;
+}
+.comunicaciones-listado-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--borde);
+  background: var(--papel);
+}
+.comunicacion-fila {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--borde-suave);
+  background: var(--tarjeta);
+  color: var(--texto-cuerpo);
+  text-align: left;
+  cursor: pointer;
+}
+.comunicacion-fila:hover,
+.comunicacion-fila.activa {
+  background: var(--hover);
+}
+.comunicacion-fila.activa {
+  box-shadow: inset 3px 0 0 var(--naranja);
+}
+.comunicacion-fila:last-child { border-bottom: 0; }
+.comunicacion-fila-fecha {
+  color: var(--texto-tenue);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.comunicacion-fila strong {
+  color: var(--texto-titulo);
+  font-size: 12.5px;
+}
+.comunicacion-fila > span:not(.comunicacion-fila-fecha),
+.comunicacion-fila small {
+  color: var(--texto-apagado);
+  font-size: 10.5px;
+}
+.comunicaciones-placeholder {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.comunicaciones-placeholder p { margin: 4px 0 0; }
+.comunicaciones-detalle-cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border-bottom: 1px solid var(--borde);
+  background: var(--papel);
+}
+.comunicaciones-detalle-cabecera .h4 {
+  margin: 4px 0;
+}
+.comunicaciones-detalle-cabecera p { margin: 0; }
+.comunicaciones-mensaje {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+.comunicaciones-mensaje p {
+  margin: 7px 0 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+.comunicaciones-resumen {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  border-bottom: 1px solid var(--borde);
+}
+.comunicaciones-resumen > div {
+  padding: 12px 14px;
+  border-right: 1px solid var(--borde-suave);
+}
+.comunicaciones-resumen > div:last-child { border-right: 0; }
+.comunicaciones-resumen strong,
+.comunicaciones-resumen span { display: block; }
+.comunicaciones-resumen strong {
+  color: var(--texto-titulo);
+  font-size: 17px;
+}
+.comunicaciones-resumen span {
+  margin-top: 2px;
+  color: var(--texto-tenue);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+.comunicaciones-destinatarios {
+  width: 100%;
+}
+.comunicaciones-destinatarios td small {
+  display: block;
+  max-width: 220px;
+  margin-top: 4px;
+  color: var(--critico-texto);
+  font-size: 9.5px;
+}
+
+@media (max-width: 899px) {
+  .proveedores-resultado-cabecera {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .proveedores-seleccion-acciones {
+    width: 100%;
+  }
+  .proveedores-seleccion-acciones .boton {
+    flex: 1;
+  }
+  .proveedores-orden { width: 100%; }
+  .proveedor-comunicacion-modal { padding: 16px; }
+  .comunicacion-alcance-opciones {
+    grid-template-columns: 1fr;
+  }
+  .comunicacion-confirmacion {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .comunicacion-confirmacion .fila-botones {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .comunicaciones-layout {
+    grid-template-columns: 1fr;
+  }
+  .comunicaciones-listado {
+    max-height: 320px;
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 900px) {
+  .proveedor-comunicacion-modal {
+    max-height: calc(100vh - 40px);
+  }
+}
