@@ -83,6 +83,7 @@ async function subirFoto(foto) {
     comunidad_id: foto.comunidad_id ?? null,
     control_id: foto.control_id,
     control_item_id: foto.control_item_id,
+    criterio_id: foto.criterio_id ?? null,
     storage_path: ruta,
     clase: foto.clase ?? 'foto',
     firmante_nombre: foto.firmante_nombre ?? null,
