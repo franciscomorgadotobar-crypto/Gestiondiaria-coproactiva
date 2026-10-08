@@ -21,6 +21,9 @@ jobs:
       - name: Instalar dependencias
         working-directory: app
         run: npm install
+      - name: Probar criterios y compatibilidad histórica
+        working-directory: app
+        run: node --test pruebas/criterios.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
