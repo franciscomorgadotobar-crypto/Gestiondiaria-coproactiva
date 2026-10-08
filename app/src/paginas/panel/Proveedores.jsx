@@ -1081,6 +1081,163 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
   );
 }
 
+function ComunicacionProveedores({
+  perfil,
+  proveedores,
+  filtrados,
+  seleccionIds,
+  alcanceInicial,
+  filtros,
+  enviando,
+  onCancelar,
+  onEnviar
+}) {
+  const [alcance, setAlcance] = useState(alcanceInicial || 'filtrados');
+  const [asunto, setAsunto] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [incluirTelefono, setIncluirTelefono] = useState(Boolean(perfil?.telefono));
+  const seleccion = useMemo(() => new Set(seleccionIds), [seleccionIds]);
+
+  const candidatos = useMemo(() => {
+    if (alcance === 'todos') return proveedores;
+    if (alcance === 'seleccionados') return proveedores.filter(p => seleccion.has(p.id));
+    return filtrados;
+  }, [alcance, proveedores, filtrados, seleccion]);
+
+  const resumen = useMemo(() => {
+    const listaNegra = candidatos.filter(p => p.lista_negra).length;
+    const sinCorreo = candidatos.filter(p => !p.lista_negra && !emailProveedor(p)).length;
+    const enviables = candidatos.filter(p => !p.lista_negra && emailProveedor(p));
+    return { listaNegra, sinCorreo, enviables, total: candidatos.length };
+  }, [candidatos]);
+
+  const ejemplo = resumen.enviables[0] || candidatos[0] || null;
+  const puedeEnviar = asunto.trim() && mensaje.trim() && resumen.enviables.length > 0 && !enviando;
+
+  async function confirmar() {
+    if (!puedeEnviar) return;
+    await onEnviar({
+      proveedor_ids: candidatos.map(p => p.id),
+      alcance,
+      filtros: alcance === 'filtrados' ? filtros : {},
+      asunto: asunto.trim(),
+      mensaje: mensaje.trim(),
+      incluir_telefono: incluirTelefono
+    });
+  }
+
+  return (
+    <div className="proveedor-modal proveedor-comunicacion-modal">
+      <button className="modal-cerrar" onClick={onCancelar} aria-label="Cerrar">×</button>
+
+      <div className="comunicacion-cabecera">
+        <div>
+          <span className="micro apagado">Proveedores</span>
+          <h2 className="h3">Nueva comunicación</h2>
+          <p className="chico apagado">
+            Se enviará un correo individual a cada proveedor y el envío quedará registrado.
+          </p>
+        </div>
+      </div>
+
+      <section className="comunicacion-alcance">
+        <span className="etiqueta-campo">Destinatarios</span>
+        <div className="comunicacion-alcance-opciones">
+          <button type="button" className={alcance === 'seleccionados' ? 'activo' : ''}
+                  disabled={!seleccionIds.length}
+                  onClick={() => setAlcance('seleccionados')}>
+            <strong>{seleccionIds.length}</strong>
+            <span>Seleccionados</span>
+          </button>
+          <button type="button" className={alcance === 'filtrados' ? 'activo' : ''}
+                  onClick={() => setAlcance('filtrados')}>
+            <strong>{filtrados.length}</strong>
+            <span>Filtrados</span>
+          </button>
+          <button type="button" className={alcance === 'todos' ? 'activo' : ''}
+                  onClick={() => setAlcance('todos')}>
+            <strong>{proveedores.length}</strong>
+            <span>Todos</span>
+          </button>
+        </div>
+
+        <div className="comunicacion-resumen-destinatarios">
+          <div><strong>{resumen.enviables.length}</strong><span>Con correo</span></div>
+          <div><strong>{resumen.sinCorreo}</strong><span>Sin correo</span></div>
+          <div><strong>{resumen.listaNegra}</strong><span>Lista negra</span></div>
+        </div>
+        {resumen.listaNegra > 0 && (
+          <p className="micro apagado comunicacion-nota">
+            Los proveedores en lista negra se registran como omitidos y nunca reciben la comunicación.
+          </p>
+        )}
+      </section>
+
+      <section className="comunicacion-editor">
+        <label className="campo">
+          <span className="etiqueta-campo">Asunto</span>
+          <input value={asunto} maxLength={200}
+                 onChange={e => setAsunto(e.target.value)}
+                 placeholder="Ej.: Solicitud de disponibilidad para mantención" />
+        </label>
+
+        <label className="campo">
+          <span className="etiqueta-campo">Mensaje</span>
+          <textarea rows={8} value={mensaje}
+                    onChange={e => setMensaje(e.target.value)}
+                    placeholder="Escribe la comunicación general. El saludo y la firma se agregan automáticamente." />
+        </label>
+
+        <div className="comunicacion-ayuda">
+          <strong>Personalización automática</strong>
+          <p>
+            Si existe contacto, el correo comienza por su nombre. Si no, utiliza el nombre de la empresa.
+            La firma identifica al usuario que realiza el envío.
+          </p>
+        </div>
+
+        {perfil?.telefono && (
+          <label className="marca comunicacion-telefono">
+            <input type="checkbox" checked={incluirTelefono}
+                   onChange={e => setIncluirTelefono(e.target.checked)} />
+            <span>Incluir mi teléfono en la firma</span>
+          </label>
+        )}
+      </section>
+
+      <section className="comunicacion-vista-previa">
+        <span className="etiqueta-campo">Vista previa</span>
+        <div className="tarjeta">
+          <strong>{ejemplo ? saludoProveedor(ejemplo) : 'Estimados,'}</strong>
+          <p>{mensaje.trim() || 'Tu mensaje aparecerá aquí.'}</p>
+          <div className="comunicacion-firma">
+            <span>Saludos,</span>
+            <strong>{perfil?.nombre || 'Equipo CoproActiva'}</strong>
+            <span>CoproActiva Administración SpA</span>
+            {incluirTelefono && perfil?.telefono && <span>{perfil.telefono}</span>}
+            <span>contacto@coproactiva.cl</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="comunicacion-confirmacion">
+        <div>
+          <strong>{resumen.enviables.length} destinatario{resumen.enviables.length === 1 ? '' : 's'} efectivo{resumen.enviables.length === 1 ? '' : 's'}</strong>
+          <span>Cada proveedor recibe un correo independiente.</span>
+        </div>
+        <div className="fila-botones">
+          <button type="button" className="boton boton-secundario" disabled={enviando} onClick={onCancelar}>
+            Cancelar
+          </button>
+          <button type="button" className="boton" disabled={!puedeEnviar} onClick={confirmar}>
+            {enviando ? 'Enviando…' : `Enviar ${resumen.enviables.length} correo${resumen.enviables.length === 1 ? '' : 's'}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FormularioBlacklist({ proveedor, onCancelar, onGuardar }) {
   const [motivo, setMotivo] = useState('');
   const [detalle, setDetalle] = useState('');
