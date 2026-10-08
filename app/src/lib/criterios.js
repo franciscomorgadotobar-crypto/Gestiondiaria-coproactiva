@@ -19,7 +19,7 @@ export function evidenciaDeCriterio(config, opcion) {
   return typeof definida === 'object' ? definida.evidencia ?? 'ninguna' : 'ninguna';
 }
 
-export function pendienteCriterio(item, fotos = []) {
+export function pendienteCriterio(item, tieneFoto = () => false) {
   const criterios = criteriosDe(item.config);
   if (!criterios.length || item.respuesta?.opcion) return false; // formato histórico
   return criterios.some(c => {
@@ -27,7 +27,6 @@ export function pendienteCriterio(item, fotos = []) {
     if (!valor?.opcion) return true;
     const evidencia = evidenciaDeCriterio(item.config, valor.opcion);
     if (evidencia !== 'ninguna' && !String(valor.comentario ?? '').trim()) return true;
-    return evidencia === 'comentario_foto'
-      && !fotos.some(f => String(f.criterio_id ?? '') === c.id);
+    return evidencia === 'comentario_foto' && !tieneFoto(c.id);
   });
 }
