@@ -6,6 +6,7 @@ import DialogoCampos from '../../componentes/DialogoCampos';
 import { NIVELES_EVIDENCIA, normalizarOpcion, nivelPosible } from '../../lib/opciones';
 import { nuevoId } from '../../lib/local';
 import { TIPOS, ORIGENES_FOTO } from '../../lib/tiposDePunto';
+import { criteriosDe } from '../../lib/criterios';
 import { useVolverGlobal } from '../../lib/navegacion';
 import { descargarGuiaPlantilla } from '../../lib/plantillasPDF';
 
@@ -65,6 +66,7 @@ function problemaDe(item) {
   if (item.tipo_ingreso === 'opciones') {
     const opciones = opcionesLimpias(item);
     if (!opciones.length) return 'Agrega al menos una opción.';
+    if (Array.isArray(item.config?.criterios) && criteriosDe(item.config).length === 0) return 'Agrega al menos un criterio de evaluación.';
     // El levantamiento guarda el texto de la opción elegida: dos opciones con
     // el mismo texto no se podrían distinguir después.
     const vistas = new Set();
@@ -234,9 +236,15 @@ export default function EditorPlantilla() {
 
   function agregarPunto(cat) {
     const orden = Math.max(-1, ...cat.items.map(x => x.orden ?? 0)) + 1;
-    const nuevo = puntoNuevo({ grupo: cat.nombre, orden_grupo: cat.orden, orden });
+    const nuevo = puntoNuevo({ grupo: cat.nombre, orden_grupo: cat.orden, orden, config: { descripcion_categoria: cat.items[0]?.config?.descripcion_categoria ?? '' } });
     setItems(xs => [...xs, nuevo]);
     mostrar(nuevo.id);
+  }
+
+  function cambiarDescripcionCategoria(nombre, descripcion) {
+    setItems(xs => xs.map(x => x.grupo === nombre
+      ? { ...x, config: { ...(x.config ?? {}), descripcion_categoria: descripcion } }
+      : x));
   }
 
   function agregarCategoria() {
@@ -479,6 +487,13 @@ export default function EditorPlantilla() {
                       disabled={i === categorias.length - 1} onClick={() => moverCategoria(cat, 1)}>↓</button>
             </div>
 
+            <div className="campo" style={{ margin: '10px 8px 12px' }}>
+              <label className="etiqueta-campo">Descripción de la categoría (visible en el informe)</label>
+              <textarea rows={2} value={cat.items[0]?.config?.descripcion_categoria ?? ''}
+                placeholder="Describe qué se revisa en esta categoría"
+                onChange={e => cambiarDescripcionCategoria(cat.nombre, e.target.value)} />
+            </div>
+
             {cat.items.map(item => (
               <ItemPlantilla
                 key={item.id}
@@ -587,7 +602,7 @@ function ItemPlantilla({
           <select value={item.tipo_ingreso}
                   onChange={e => {
                     onCambiar('tipo_ingreso', e.target.value);
-                    onCambiar('config', {});
+                    onCambiar('config', { descripcion_categoria: cfg.descripcion_categoria ?? '' });
                   }}>
             {TIPOS.map(([valor, etiqueta]) => (
               <option key={valor} value={valor}>{etiqueta}</option>
@@ -599,6 +614,34 @@ function ItemPlantilla({
         {item.tipo_ingreso === 'opciones' && (
           <EditorOpciones opciones={cfg.opciones ?? []} conFoto={cfg.origen !== 'ninguna'}
                           onCambiar={opciones => onCambiarConfig('opciones', opciones)} />
+        )}
+
+        {item.tipo_ingreso === 'opciones' && (
+          <div className="campo">
+            <label className="marca">
+              <input type="checkbox" checked={Array.isArray(cfg.criterios)}
+                onChange={e => onCambiarConfig('criterios', e.target.checked
+                  ? (String(item.ayuda ?? '').split(/\r?\n/).map(x => x.trim()).filter(Boolean)
+                      .map(texto => ({ id: nuevoId(), texto })))
+                  : undefined)} />
+              <span>Evaluar cada condición por separado</span>
+            </label>
+            {Array.isArray(cfg.criterios) && (
+              <>
+                <label className="etiqueta-campo">Criterios (uno por línea)</label>
+                <textarea rows={Math.max(3, criteriosDe(cfg).length)}
+                  value={(cfg.criterios ?? []).map(c => c.texto).join('\n')}
+                  placeholder="Cada línea tendrá sus propias opciones, comentario y fotografía"
+                  onChange={e => {
+                    const anteriores = cfg.criterios ?? [];
+                    const nuevos = e.target.value.split('\n').map((texto, i) => ({
+                      id: anteriores[i]?.id ?? nuevoId(), texto
+                    }));
+                    onCambiarConfig('criterios', nuevos);
+                  }} />
+              </>
+            )}
+          </div>
         )}
 
         {(item.tipo_ingreso === 'seleccion' || item.tipo_ingreso === 'checklist') && (

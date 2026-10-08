@@ -1,0 +1,29 @@
+name: Validar correcciones CoproActiva
+on:
+  pull_request:
+    branches:
+      - claude/figma-coproactiva-interface-9y82xq
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Instalar dependencias
+        working-directory: app
+        run: npm install
+      - name: Probar criterios y compatibilidad histórica
+        working-directory: app
+        run: node --test pruebas/criterios.test.js
+      - name: Compilar aplicación React / Vite
+        working-directory: app
+        run: npm run build

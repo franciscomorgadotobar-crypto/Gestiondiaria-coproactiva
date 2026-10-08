@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
 import { useSesion } from '../../lib/sesion';
 import './WhatsApp.css';
 
@@ -15,17 +16,6 @@ const STATES = [
 ];
 
 const date = v => v ? new Date(v).toLocaleDateString('es-CL') : '—';
-
-function SubnavProveedores() {
-  return (
-    <nav className="proveedores-subnav" aria-label="Proveedores">
-      <Link to="/proveedores">Proveedores</Link>
-      <Link to="/proveedores/postulantes">Postulantes</Link>
-      <Link to="/proveedores/correos">Correos</Link>
-      <Link to="/proveedores/comunicaciones">Comunicaciones</Link>
-    </nav>
-  );
-}
 
 export default function ProveedoresRecepcion({ vista }) {
   const { perfil } = useSesion();
@@ -212,7 +202,7 @@ function Recepcion({ vista }) {
         </header>
 
         <div className="cuerpo proveedores-recepcion-cuerpo">
-          <SubnavProveedores />
+          <ProveedoresNavegacion />
           {error && <div className="aviso aviso-critico" role="alert">{error}</div>}
 
           <section className="proveedores-recepcion-kpis">
@@ -390,7 +380,7 @@ function Recepcion({ vista }) {
       </header>
 
       <div className="cuerpo proveedores-recepcion-cuerpo">
-        <SubnavProveedores />
+        <ProveedoresNavegacion />
         {error && <div className="aviso aviso-critico" role="alert">{error}</div>}
 
         <section className="proveedores-recepcion-kpis">

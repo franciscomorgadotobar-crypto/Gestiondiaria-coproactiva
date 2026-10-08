@@ -12,6 +12,7 @@ import {
   leerFotosDeControl, guardarFoto, borrarFoto, encolar
 } from '../../lib/local';
 import { opcionesDe, nivelPosible } from '../../lib/opciones';
+import { criteriosDe, OPCIONES_CRITERIO, evidenciaDeCriterio, pendienteCriterio } from '../../lib/criterios';
 import { useVolverGlobal } from '../../lib/navegacion';
 import DialogoCampos from '../../componentes/DialogoCampos';
 
@@ -37,6 +38,9 @@ function respondido(i, tieneFoto) {
   if (i.tipo_ingreso === 'foto') return tieneFoto(i.id);
   if (!i.tipo_ingreso || i.tipo_ingreso === 'estado') return i.estado !== 'sin_evaluar';
   if (i.tipo_ingreso === 'opciones') {
+    if (criteriosDe(i.config).length && !i.respuesta?.opcion) {
+      return !pendienteCriterio(i, criterioId => tieneFoto(i.id, criterioId));
+    }
     return Boolean(i.respuesta?.opcion) && !evidenciaPendiente(i, tieneFoto);
   }
   return i.respuesta != null;
@@ -56,6 +60,10 @@ function evidenciaElegida(i) {
  * punto no cuenta como respondido y el levantamiento no se envía, aunque el
  * punto sea opcional: la respuesta ya se dio y sin su respaldo no vale. */
 function evidenciaPendiente(i, tieneFoto) {
+  if (criteriosDe(i.config).length && !i.respuesta?.opcion) {
+    const tieneRespuestas = Object.values(i.respuesta?.criterios ?? {}).some(x => x?.opcion);
+    return tieneRespuestas && pendienteCriterio(i, criterioId => tieneFoto(i.id, criterioId));
+  }
   const evidencia = evidenciaElegida(i);
   if (evidencia === 'ninguna') return false;
   const sinComentario = !(i.nota ?? '').trim();
@@ -121,7 +129,7 @@ export default function Levantamiento() {
           .order('pausado_en', { ascending: false }),
         supabase
           .from('adjuntos')
-          .select('id, control_item_id, clase, storage_path, firmante_nombre, firmante_rut, descripcion, orden, tomada_en')
+          .select('id, control_item_id, criterio_id, clase, storage_path, firmante_nombre, firmante_rut, descripcion, orden, tomada_en')
           .eq('control_id', id)
       ]);
       if (!vigente) return;
@@ -158,6 +166,7 @@ export default function Levantamiento() {
             id: a.id,
             control_id: id,
             control_item_id: a.control_item_id,
+            criterio_id: a.criterio_id ?? null,
             clase: a.clase,
             url: porRuta.get(a.storage_path),
             descripcion: a.descripcion,
@@ -190,7 +199,8 @@ export default function Levantamiento() {
    * `respuesta` como los demás tipos, es la fotografía misma. Sin esto, un
    * punto foto se contaba como evaluado por el solo hecho de existir, aunque
    * nadie hubiera tomado la foto. */
-  const tieneFoto = itemId => fotosDe(itemId).length > 0;
+  const tieneFoto = (itemId, criterioId = null) => fotosDe(itemId)
+    .some(f => criterioId == null || String(f.criterio_id ?? '') === String(criterioId));
 
   /* El recorrido tiene una secuencia —se entra por el acceso y se termina en la
    * azotea— y el orden de las categorías la refleja.
@@ -412,7 +422,7 @@ export default function Levantamiento() {
    * La foto se guarda de inmediato y las coordenadas se agregan después. Al
    * revés —esperando primero al GPS— la interfaz queda muda varios segundos
    * después de disparar la cámara, y da la impresión de que no guardó. */
-  async function agregarFotos(item, archivos) {
+  async function agregarFotos(item, archivos, criterioId = null) {
     if (!archivos.length) return;
     const yaHay = fotosDe(item.id).length;
     const nuevas = [];
@@ -433,6 +443,7 @@ export default function Levantamiento() {
         id: nuevoId(),
         control_id: id,
         control_item_id: item.id,
+        criterio_id: criterioId,
         comunidad_id: control.comunidad_id,
         clase: 'foto',
         blob,
@@ -494,11 +505,21 @@ export default function Levantamiento() {
   // -------------------------------------------------------------- Informe
 
   async function verInforme() {
+    // Se abre inmediatamente desde el clic; si se espera al servidor,
+    // Android y los navegadores de escritorio bloquean la ventana emergente.
+    const ventanaInforme = window.open('', '_blank');
+    if (!ventanaInforme) {
+      setError('El navegador bloqueó el informe. Autoriza ventanas emergentes para este sitio.');
+      return;
+    }
+    ventanaInforme.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"></head><body><p>Preparando informe…</p></body></html>');
+    ventanaInforme.document.close();
     // Para informes históricos no dependemos solo de la copia local del
     // teléfono: una versión antigua podía tener respuestas/fotos pero no el
     // campo `ayuda`. Si hay conexión, recuperamos la descripción vigente de
     // cada punto directamente desde Supabase antes de construir el informe.
     let ayudaPorId = new Map();
+    let descripcionPorGrupo = new Map();
     if (hayConexion()) {
       const { data: descripciones, error: errorDescripciones } = await supabase
         .from('control_items')
@@ -508,6 +529,18 @@ export default function Levantamiento() {
       if (!errorDescripciones) {
         ayudaPorId = new Map(
           (descripciones ?? []).map(x => [x.id, x.ayuda])
+        );
+      }
+      // Los controles anteriores no guardaban descripción propia de categoría:
+      // recuperarla de la plantilla, manteniendo inalteradas las evaluaciones.
+      const { data: origen } = await supabase.from('controles')
+        .select('plantilla_id').eq('id', id).maybeSingle();
+      if (origen?.plantilla_id) {
+        const { data: grupos } = await supabase.from('plantilla_items')
+          .select('grupo, config').eq('plantilla_id', origen.plantilla_id);
+        descripcionPorGrupo = new Map(
+          (grupos ?? []).filter(x => x.config?.descripcion_categoria)
+            .map(x => [x.grupo, x.config.descripcion_categoria])
         );
       }
     }
@@ -524,6 +557,7 @@ export default function Levantamiento() {
       logo: import.meta.env.BASE_URL + 'logo-coproactiva.svg',
       categorias: categorias.map(c => ({
         nombre: c.nombre,
+        descripcion: c.items.find(i => i.config?.descripcion_categoria)?.config?.descripcion_categoria ?? descripcionPorGrupo.get(c.nombre) ?? '',
         items: c.items.map(i => ({
           texto: i.texto,
           descripcion: ayudaPorId.get(i.id) ?? i.ayuda ?? null,
@@ -533,6 +567,7 @@ export default function Levantamiento() {
           config: i.config,
           respuesta: i.respuesta,
           fotos: fotosDe(i.id).map(f => ({
+            criterio_id: f.criterio_id ?? null,
             url: f.blob ? URL.createObjectURL(f.blob) : f.url,
             descripcion: f.descripcion
           }))
@@ -551,7 +586,7 @@ export default function Levantamiento() {
           rut: f.firmante_rut
         }))
     });
-    if (!imprimirInforme(html)) {
+    if (!imprimirInforme(html, ventanaInforme)) {
       setError('El navegador bloqueó la ventana del informe. Permite las ventanas emergentes para este sitio.');
     }
   }
@@ -948,12 +983,79 @@ function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, o
       <p style={{ margin: item.ayuda ? '0 0 4px' : '0 0 12px' }}>{item.texto}</p>
       {item.ayuda && <p className="chico apagado ayuda-punto">{item.ayuda}</p>}
 
-      <CampoPunto
-        item={item}
-        cerrado={cerrado}
-        onEstado={valor => onMarcar(item, valor)}
-        onRespuesta={respuesta => onRespuesta(item, respuesta)}
-      />
+      {criteriosDe(item.config).length && !item.respuesta?.opcion ? (
+        <div className="criterios-inspeccion">
+          {criteriosDe(item.config).map((criterio, idx) => {
+            const valor = item.respuesta?.criterios?.[criterio.id] ?? {};
+            const nivel = evidenciaDeCriterio(item.config, valor.opcion);
+            const evidenciaFotos = fotos.filter(f => String(f.criterio_id ?? '') === criterio.id);
+            const actualizar = cambio => onRespuesta(item, {
+              ...item.respuesta,
+              criterios: {
+                ...(item.respuesta?.criterios ?? {}),
+                [criterio.id]: { ...valor, ...cambio }
+              }
+            });
+            return (
+              <section key={criterio.id} className="criterio-inspeccion">
+                <strong className="criterio-inspeccion-titulo">{idx + 1}. {criterio.texto}</strong>
+                <div className="criterio-opciones" role="group" aria-label={'Evaluación: ' + criterio.texto}>
+                  {OPCIONES_CRITERIO.map(opcion => (
+                    <button type="button" key={opcion} disabled={cerrado}
+                      aria-pressed={valor.opcion === opcion}
+                      className={'criterio-opcion ' + (valor.opcion === opcion ? 'seleccionada' : '')}
+                      onClick={() => actualizar({ opcion: valor.opcion === opcion ? null : opcion })}>
+                      <span aria-hidden="true">{valor.opcion === opcion ? '☑' : '☐'}</span> {opcion}
+                    </button>
+                  ))}
+                </div>
+                {valor.opcion && nivel !== 'ninguna' && (
+                  <div className="campo criterio-comentario">
+                    <label className="etiqueta-campo">Comentario requerido</label>
+                    <textarea key={criterio.id + '-' + valor.opcion} rows={2}
+                      defaultValue={valor.comentario ?? ''} disabled={cerrado}
+                      placeholder="Describe la observación o incumplimiento"
+                      onBlur={e => actualizar({ comentario: e.target.value })} />
+                  </div>
+                )}
+                {evidenciaFotos.length > 0 && (
+                  <div className="fotos-punto">
+                    {evidenciaFotos.map(f => (
+                      <figure key={f.id}>
+                        <img src={f.blob ? URL.createObjectURL(f.blob) : f.url} alt={f.descripcion || 'Fotografía del criterio'} />
+                        <input type="text" defaultValue={f.descripcion ?? ''} disabled={cerrado}
+                          placeholder="Pie de foto" onBlur={e => onDescribir(f, e.target.value)} />
+                        {!cerrado && <button type="button" className="quitar"
+                          aria-label="Quitar foto" onClick={() => onQuitar(f)}>×</button>}
+                      </figure>
+                    ))}
+                  </div>
+                )}
+                {!cerrado && valor.opcion && origen !== 'ninguna' && (
+                  <div className="fotos-punto">
+                    {origen !== 'galeria' && <BotonFoto camara etiqueta="Cámara"
+                      onArchivos={archivos => onFotos(item, archivos, criterio.id)} />}
+                    {origen !== 'camara' && <BotonFoto etiqueta="Galería"
+                      onArchivos={archivos => onFotos(item, archivos, criterio.id)} />}
+                  </div>
+                )}
+                {valor.opcion && nivel !== 'ninguna' && !cerrado && (
+                  <p className="micro exige-foto">
+                    {nivel === 'comentario_foto' ? 'Requiere comentario y fotografía.' : 'Requiere comentario.'}
+                  </p>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        <CampoPunto
+          item={item}
+          cerrado={cerrado}
+          onEstado={valor => onMarcar(item, valor)}
+          onRespuesta={respuesta => onRespuesta(item, respuesta)}
+        />
+      )}
 
       {/* La nota aparece solo cuando hay algo que explicar: un "conforme" no
           necesita justificación, una observación sí. */}
@@ -992,7 +1094,7 @@ function Punto({ item, fotos, cerrado, onMarcar, onNota, onRespuesta, onFotos, o
       {/* La plantilla puede decidir que este punto no lleva fotografía. Sin
           esto, el botón de agregar aparecía igual en todos los puntos, sin
           forma de quitarlo donde no correspondía. */}
-      {origen !== 'ninguna' && (
+      {origen !== 'ninguna' && !(criteriosDe(item.config).length && !item.respuesta?.opcion) && (
         <div className="fotos-punto">
           {fotos.map(f => (
             <figure key={f.id}>

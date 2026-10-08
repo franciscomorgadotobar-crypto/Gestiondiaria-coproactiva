@@ -1,3 +1,5 @@
+import { criteriosDe } from './criterios';
+
 /* Plantilla del informe de levantamiento.
  *
  * Una sola plantilla para los dos destinos. En el teléfono se abre en una
@@ -76,8 +78,14 @@ function respondido(item) {
     case 'texto':     return Boolean(r?.texto?.trim());
     case 'numero':    return r?.numero != null;
     case 'escala':    return r?.valor != null;
-    case 'seleccion':
-    case 'opciones':  return Boolean(r?.opcion);
+    case 'seleccion': return Boolean(r?.opcion);
+    case 'opciones': {
+      const criterios = criteriosDe(item.config);
+      if (criterios.length && !r?.opcion) {
+        return criterios.every(c => Boolean(r?.criterios?.[c.id]?.opcion));
+      }
+      return Boolean(r?.opcion);
+    }
     case 'checklist': return r != null;
     case 'firma':     return Boolean(r?.firmada);
     default:          return Boolean(item.estado) && item.estado !== 'sin_evaluar';
@@ -142,6 +150,7 @@ function valorRespondido(item) {
 
     case 'seleccion':
     case 'opciones':
+      if (item.tipo_ingreso === 'opciones' && criteriosDe(item.config).length && !r?.opcion) return '';
       return r?.opcion
         ? `<p class="opcion">${escapar(r.opcion)}</p>`
         : sinRespuesta('Sin respuesta');
@@ -190,6 +199,24 @@ function descripcionPunto(item) {
     </div>`;
 }
 
+function bloqueCriterios(item) {
+  const criterios = criteriosDe(item.config);
+  if (!criterios.length || item.respuesta?.opcion) return '';
+  return `<div class="resultados-criterios">${criterios.map((criterio, indice) => {
+    const respuesta = item.respuesta?.criterios?.[criterio.id] ?? {};
+    const fotos = (item.fotos ?? []).filter(f => String(f.criterio_id ?? '') === criterio.id);
+    const opcion = respuesta.opcion ?? 'Sin evaluar';
+    const clase = opcion === 'Cumple' ? 'e-cumple'
+      : opcion === 'No cumple' ? 'e-critico'
+      : opcion === 'Cumple con observaciones' ? 'e-obs' : 'e-nulo';
+    return `<section class="resultado-criterio">
+      <div class="resultado-criterio-cab"><strong>${indice + 1}. ${escapar(criterio.texto)}</strong><span class="estado ${clase}">${escapar(opcion)}</span></div>
+      ${respuesta.comentario ? `<p class="nota"><strong>Comentario:</strong> ${escapar(respuesta.comentario)}</p>` : ''}
+      ${grillaFotos(fotos)}
+    </section>`;
+  }).join('')}</div>`;
+}
+
 function bloqueItem(item, numero) {
   // Solo los puntos de tipo estado llevan el sello de conforme/observación:
   // en una lectura de medidor ese sello no significa nada.
@@ -210,12 +237,15 @@ function bloqueItem(item, numero) {
             ? `<span class="cuenta-fotos">${cantidadFotos} foto${cantidadFotos === 1 ? '' : 's'}</span>` : ''}
         </header>
         ${descripcionPunto(item)}
+        ${bloqueCriterios(item)}
         ${valorRespondido(item)}
         ${item.nota ? `<p class="nota"><strong>${
           item.tipo_ingreso === 'opciones' ? 'Comentario'
           : !esEstado(item) ? 'Nota' : item.estado === 'critico' ? 'Hallazgo' : 'Observación'}:</strong> ${escapar(item.nota)}</p>` : ''}
       </div>
-      ${grillaFotos(item.fotos)}
+      ${criteriosDe(item.config).length && !item.respuesta?.opcion
+        ? grillaFotos((item.fotos ?? []).filter(f => !f.criterio_id))
+        : grillaFotos(item.fotos)}
     </article>`;
 }
 
@@ -224,6 +254,7 @@ function bloqueCategoria(categoria, i) {
   return `
     <section class="categoria">
       <h2><span>${escapar(categoria.nombre)}</span><span class="avance">${respondidos} de ${categoria.items.length} respondidos</span></h2>
+      ${categoria.descripcion ? `<p class="descripcion-categoria">${escapar(categoria.descripcion)}</p>` : ''}
       ${categoria.items.map((item, j) => bloqueItem(item, `${i + 1}.${j + 1}`)).join('')}
     </section>`;
 }
@@ -425,6 +456,12 @@ export function informeHtml(datos) {
   }
   .item header + * { margin-top: 2mm; }
 
+  .descripcion-categoria { padding: 2.6mm 3mm; background: #f7f4f0; color: var(--pizarra); font-size: 9pt; line-height: 1.5; margin: 0 0 3mm; border-radius: 1mm; }
+  .resultados-criterios { display: grid; gap: 2mm; margin-top: 2.5mm; }
+  .resultado-criterio { padding: 2.2mm 2.5mm; border: .25mm solid var(--borde); border-radius: 1mm; break-inside: avoid; }
+  .resultado-criterio-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 2mm; font-size: 8.5pt; line-height: 1.5; }
+  .resultado-criterio-cab strong { font-weight: 600; }
+  .resultado-criterio .fotos { margin-top: 2mm; }
   .descripcion-punto {
     margin-top: 2.2mm; padding: 2.3mm 3mm;
     background: #fbfaf8; border: 0.3mm solid var(--niebla); border-radius: 1mm;
@@ -619,13 +656,14 @@ export function informeHtml(datos) {
 /* Abre el informe en una ventana nueva y lanza el diálogo de impresión, donde
  * el sistema ofrece "Guardar como PDF". Funciona sin señal porque las imágenes
  * salen de los blobs locales. */
-export function imprimirInforme(html) {
-  const ventana = window.open('', '_blank');
+export function imprimirInforme(html, ventanaExistente = null) {
+  const ventana = ventanaExistente ?? window.open('', '_blank');
   if (!ventana) return false;   // el navegador bloqueó la ventana emergente
 
   // La ventana nueva no tiene dirección propia: sin <base>, las rutas del
   // logotipo y de las tipografías no se resolvían y el logo salía roto.
   const base = `<base href="${window.location.origin}${import.meta.env.BASE_URL}">`;
+  ventana.document.open();
   ventana.document.write(html.replace('<head>', `<head>${base}`));
   ventana.document.close();
 

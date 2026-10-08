@@ -5,6 +5,7 @@ import { useSesion } from '../../lib/sesion';
 import { limpiarArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
+import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
 import './WhatsApp.css';
 
 const MOTIVOS_LISTA_NEGRA = [
@@ -530,18 +531,22 @@ export default function Proveedores() {
             + Agregar proveedor
           </button>
           <button type="button" className="boton boton-secundario"
-                  disabled={sincronizando}
-                  onClick={sincronizarGmail}>
-            {sincronizando ? 'Actualizando…' : '↻ Actualizar ahora'}
+                  disabled={sincronizando} onClick={() => cargar({ mostrarResultado: true })}>
+            {sincronizando ? 'Actualizando…' : 'Actualizar datos'}
+          </button>
+          <button type="button" className="boton boton-secundario"
+                  disabled={sincronizando} onClick={sincronizarGmail}>
+            Sincronizar Gmail
           </button>
         </div>
         <p className="micro apagado proveedores-ultima">
           Gmail automático · Última sincronización: {syncEstado?.ultimo_exito ? fechaHora(syncEstado.ultimo_exito) : 'pendiente'}
         </p>
+        {syncEstado?.ultimo_error && <p className="micro aviso-critico" role="alert">Último error de Gmail: {syncEstado.ultimo_error}</p>}
       </header>
 
       <div className="cuerpo">
-        <nav className="proveedores-subnav" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
+        <ProveedoresNavegacion />
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && (
           <div className="aviso aviso-ok proveedores-aviso-sync" style={{ marginBottom: 12 }}>
@@ -831,7 +836,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
       </header>
 
       <div className="cuerpo">
-        <nav className="proveedores-subnav" aria-label="Proveedores"><Link to="/proveedores">Proveedores</Link><Link to="/proveedores/postulantes">Postulantes</Link><Link to="/proveedores/correos">Correos</Link><Link to="/proveedores/comunicaciones">Comunicaciones</Link></nav>
+        <ProveedoresNavegacion />
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>{aviso}<button className="boton boton-texto" onClick={onCerrarAviso}>Cerrar</button></div>}
 
