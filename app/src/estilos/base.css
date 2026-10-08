@@ -3216,3 +3216,21 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     max-height: calc(100vh - 40px);
   }
 }
+
+.proveedores-aviso-sync {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.proveedores-aviso-sync > .crece {
+  min-width: 0;
+}
+@media (max-width: 700px) {
+  .proveedores-aviso-sync {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .proveedores-aviso-sync .boton {
+    width: 100%;
+  }
+}
