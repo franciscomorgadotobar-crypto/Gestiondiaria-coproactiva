@@ -508,6 +508,7 @@ export default function Levantamiento() {
         nombre: c.nombre,
         items: c.items.map(i => ({
           texto: i.texto,
+          descripcion: i.ayuda,
           estado: i.estado,
           nota: i.nota,
           tipo_ingreso: i.tipo_ingreso,
