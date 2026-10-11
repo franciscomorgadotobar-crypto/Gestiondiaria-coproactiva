@@ -90,3 +90,8 @@
   .seo-grafico { padding: 12px; }
   .seo-linea { height: 110px; }
 }
+
+.seo-pasos { padding-left: 22px; margin: 8px 0 16px; line-height: 1.6; }
+.seo-pasos li { padding: 6px 0; font-size: .9rem; }
+.seo-pasos a { color: #9b572c; text-decoration: underline; }
+.seo-pasos code { font-size: .83rem; overflow-wrap: anywhere; }
