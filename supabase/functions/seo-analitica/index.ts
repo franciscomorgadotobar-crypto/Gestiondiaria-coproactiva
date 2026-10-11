@@ -251,6 +251,65 @@ async function pagespeed(ruta: string, device: string) {
   };
 }
 
+
+/* Señales técnicas visibles del sitio, no confundir con etiquetas publicadas o
+ * eventos recibidos por Google Analytics (requieren Preview / DebugView). */
+async function auditoriaTagManager() {
+  const [home, js, formularios] = await Promise.all([
+    siteFetch('/'), siteFetch('/assets/site-common.20260831.js'), siteFetch('/assets/lead-form.js')
+  ]);
+  const html = home.tipo.includes('text/html') ? home.content : '';
+  const ids = [...new Set([...html.matchAll(/\bGTM-[A-Z0-9]{5,}\b/g)].map(x => x[0]))];
+  const jsContent = js.status === 200 ? js.content : '';
+  const formContent = formularios.status === 200 ? formularios.content : '';
+  return {
+    fecha: new Date().toISOString(),
+    sitioHttp: home.status, codigoGtm: ids.length > 0, contenedores: ids,
+    dataLayer: /(?:window\.)?dataLayer/.test(html + jsContent),
+    consentimiento: /gtag\(\s*['"]consent['"]\s*,\s*['"]default['"]/.test(html),
+    eventoLeadEnCodigo: /generate_lead/.test(jsContent) && /coproactivaTrackLead/.test(formContent),
+    eventoLeadRecibidoEnGA4: null,
+    notas: [
+      'Código instalado no significa que las etiquetas estén publicadas ni disparen correctamente.',
+      'Confirma el contenedor en Tag Assistant Preview y el evento generate_lead en GA4 DebugView.'
+    ]
+  };
+}
+async function paginasDeConsulta(consulta: string, dias: number) {
+  if (!consulta || consulta.length > 150) throw new Error('Consulta no válida.');
+  if (!email || !privateKey) throw new Error('La cuenta Google no está configurada.');
+  const token = await googleToken();
+  const siteUrl = 'https://www.googleapis.com/webmasters/v3/sites/' +
+    encodeURIComponent(gscSite) + '/searchAnalytics/query';
+  const r = await googlePost(siteUrl, {
+    startDate: daysBefore(dias + 2), endDate: daysBefore(3),
+    dimensions: ['page'], rowLimit: 25, dataState: 'final',
+    dimensionFilterGroups: [{ filters: [{
+      dimension: 'query', operator: 'equals', expression: consulta
+    }] }]
+  }, token);
+  const paginas = (r.rows || []).map((x: any) => {
+    try {
+      const u = new URL(String(x.keys?.[0] || ''));
+      if (!['www.coproactiva.cl', 'coproactiva.cl'].includes(u.hostname) ||
+          u.protocol !== 'https:') return null;
+      const ruta = rutaSegura(u.pathname);
+      if (!ruta) return null;
+      return {
+        ruta, url: ORIGIN + ruta,
+        clics: Number(x.clicks || 0), impresiones: Number(x.impressions || 0),
+        ctr: Number(x.ctr || 0), posicion: Number(x.position || 0)
+      };
+    } catch { return null; }
+  }).filter(Boolean);
+  return {
+    consulta, paginas,
+    explicacion: paginas.length
+      ? 'Páginas asociadas a esta consulta según Search Console, ordenadas según la respuesta de Google.'
+      : 'Search Console no entregó páginas para esta consulta. Elige una página del sitio y valida su pertinencia antes de redactar cambios.'
+  };
+}
+
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
     try {
@@ -271,6 +330,12 @@ export default {
       }
       const dias = [7, 28, 90].includes(Number(body.dias)) ? Number(body.dias) : 28;
       if (accion === 'resumen') return Response.json(await obtenerResumen(dias));
+      if (accion === 'tag-manager') return Response.json(await auditoriaTagManager());
+      if (accion === 'consulta-paginas') {
+        const consulta = String(body.consulta || '').trim();
+        if (!consulta || consulta.length > 150) return fail('Consulta no válida.', 400);
+        return Response.json(await paginasDeConsulta(consulta, dias));
+      }
       const ruta = rutaSegura(body.ruta || '/');
       if (!ruta) return fail('Selecciona una ruta válida del sitio.', 400);
       if (accion === 'auditoria') return Response.json(await auditoriaTecnica(ruta));
