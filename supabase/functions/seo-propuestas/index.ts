@@ -258,7 +258,7 @@ async function preparar(admin:any,p:any) {
     const {data,error}=await admin.from('seo_propuestas').update({
       estado:'preparada',rama_git:rama,pr_numero:req.number,pr_url:req.html_url,
       base_sha:head,repo_ruta:archivo,editada_en:new Date().toISOString()
-    }).eq('id',p.id).eq('estado','aprobada').select('*').single();
+    }).eq('id',p.id).in('estado',['aprobada','error_preparacion']).select('*').single();
     if(error)throw Error('PR creado, pero no se pudo registrar su preparación: '+req.html_url);
     return {propuesta:data,aviso:'Cambios preparados en un pull request sin integrar. El sitio público no ha sido modificado.'};
   }catch(error) {
@@ -267,7 +267,7 @@ async function preparar(admin:any,p:any) {
     // NO modificar estado publicada ni hacer merge desde aquí.
     await admin.from('seo_propuestas').update({
       estado:'error_preparacion',observaciones:info.slice(0,1200),editada_en:new Date().toISOString()
-    }).eq('id',p.id).eq('estado','aprobada');
+    }).eq('id',p.id).in('estado',['aprobada','error_preparacion']);
     return {propuesta:{...p,estado:'error_preparacion',observaciones:info},
       preparacionPendiente:true,aviso:'Aprobación registrada, pero la preparación no se completó: '+info};
   }
