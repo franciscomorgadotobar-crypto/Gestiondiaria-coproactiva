@@ -12,6 +12,11 @@ import { withSupabase } from 'npm:@supabase/server@1';
 const ORIGIN = 'https://www.coproactiva.cl';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const gtmPath = Deno.env.get('GTM_CONTAINER_PATH') || '';
+const gbpLocation = Deno.env.get('GBP_LOCATION_ID') || '';
+const gbpClientId = Deno.env.get('GBP_OAUTH_CLIENT_ID') || '';
+const gbpClientSecret = Deno.env.get('GBP_OAUTH_CLIENT_SECRET') || '';
+const gbpRefreshToken = Deno.env.get('GBP_OAUTH_REFRESH_TOKEN') || '';
+let gbpCache: { token: string; until: number } | null = null;
 const SCOPES = 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly' +
   (gtmPath ? ' https://www.googleapis.com/auth/tagmanager.readonly' : '');
 const email = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL') || '';
@@ -254,6 +259,132 @@ async function pagespeed(ruta: string, device: string) {
 }
 
 
+
+/** GA4 Realtime Data API: lecturas verdaderamente recientes, hasta últimos 30 minutos. */
+async function analyticsEnTiempoReal() {
+  if (!gaProperty || !email || !privateKey) return {
+    disponible: false, error: 'Autoriza la propiedad GA4 y las credenciales Google para consultar el tiempo real.'
+  };
+  try {
+    const token = await googleToken();
+    const endpoint = 'https://analyticsdata.googleapis.com/v1beta/properties/' + gaProperty + ':runRealtimeReport';
+    const [summary, events] = await Promise.all([
+      googlePost(endpoint, { metrics: [{name:'activeUsers'}, {name:'eventCount'}], minuteRanges: [{startMinutesAgo:29,endMinutesAgo:0}] }, token),
+      googlePost(endpoint, { dimensions:[{name:'eventName'}], metrics:[{name:'eventCount'}],
+        minuteRanges:[{startMinutesAgo:29,endMinutesAgo:0}], limit:30 }, token)
+    ]);
+    return {
+      disponible:true, ventanaMinutos:30, consultadoEn:new Date().toISOString(),
+      usuariosActivos: Number(summary.rows?.[0]?.metricValues?.[0]?.value || 0),
+      eventos: Number(summary.rows?.[0]?.metricValues?.[1]?.value || 0),
+      eventosPorNombre:(events.rows || []).map((row: any)=>({
+        nombre: String(row.dimensionValues?.[0]?.value || ''),
+        cantidad:Number(row.metricValues?.[0]?.value || 0)
+      }))
+    };
+  } catch (error) {
+    return { disponible:false, error: error instanceof Error ? error.message : 'GA4 tiempo real no disponible.' };
+  }
+}
+
+/** Google Business Profile sólo admite OAuth autorizado por el propietario de la ficha.
+ * No usar como sustituto un service account de GA4/Search Console. */
+async function tokenPerfilGoogle() {
+  if (!gbpClientId || !gbpClientSecret || !gbpRefreshToken || !gbpLocation)
+    throw new Error('Falta autorizar Google Business Profile: OAuth y GBP_LOCATION_ID.');
+  if (!/^(?:locations\/)?[0-9]+$/.test(gbpLocation)) throw new Error('GBP_LOCATION_ID no es un ID válido.');
+  if (gbpCache && gbpCache.until > Date.now() + 120000) return gbpCache.token;
+  const r = await fetch(GOOGLE_TOKEN_URL, {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({ client_id:gbpClientId, client_secret:gbpClientSecret,
+      refresh_token:gbpRefreshToken, grant_type:'refresh_token' }),
+    signal:AbortSignal.timeout(12000)
+  });
+  const json = await r.json().catch(()=>({}));
+  if(!r.ok || !json.access_token) throw new Error('La autorización de Business Profile fue rechazada (' + r.status + '). Reautoriza el acceso OAuth.');
+  gbpCache={token:json.access_token,until:Date.now()+(Number(json.expires_in)||3500)*1000};
+  return json.access_token;
+}
+async function googleRead(url:string, token:string) {
+  const response=await fetch(url,{
+    headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(20000)
+  });
+  if(!response.ok) {
+    const content=await response.json().catch(()=>({}));
+    const msg=String(content?.error?.message || response.statusText).slice(0,220);
+    throw new Error('Google Business Profile API ('+response.status+'): '+msg);
+  }
+  return response.json();
+}
+async function perfilEmpresa(dias:number) {
+  if(!gbpClientId || !gbpClientSecret || !gbpRefreshToken || !gbpLocation)
+    return { disponible:false, error:'Google Business Profile no está autorizado. Configura OAuth de la cuenta propietaria y el ID de la ubicación.' };
+  try {
+    const token=await tokenPerfilGoogle();
+    const location='locations/'+gbpLocation.replace(/^locations\//,'');
+    const start=daysBefore(dias), end=daysBefore(1);
+    const [yy,mm,dd]=start.split('-').map(Number),[y2,m2,d2]=end.split('-').map(Number);
+    const params=new URLSearchParams();
+    const METRICS=[
+      'BUSINESS_IMPRESSIONS_DESKTOP_MAPS','BUSINESS_IMPRESSIONS_MOBILE_MAPS',
+      'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH','BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+      'WEBSITE_CLICKS','CALL_CLICKS','BUSINESS_DIRECTION_REQUESTS'
+    ];
+    for(const metric of METRICS)params.append('dailyMetrics',metric);
+    const setDate=(prefix:string,y:number,m:number,d:number)=>{
+      params.set('dailyRange.'+prefix+'.year',String(y));
+      params.set('dailyRange.'+prefix+'.month',String(m));
+      params.set('dailyRange.'+prefix+'.day',String(d));
+    };
+    setDate('start_date',yy,mm,dd);setDate('end_date',y2,m2,d2);
+    const base='https://businessprofileperformance.googleapis.com/v1/'+location;
+    const monthParams=new URLSearchParams({
+      'monthlyRange.start_month.year':String(yy),
+      'monthlyRange.start_month.month':String(mm),
+      'monthlyRange.end_month.year':String(y2),
+      'monthlyRange.end_month.month':String(m2),
+      pageSize:'100'
+    });
+    const [daily,keywords]=await Promise.allSettled([
+      googleRead(base+':fetchMultiDailyMetricsTimeSeries?'+params,token),
+      googleRead(base+'/searchkeywords/impressions/monthly?'+monthParams,token)
+    ]);
+    if(daily.status==='rejected')throw daily.reason;
+    const byMetric:Record<string,{total:number;serie:Array<{fecha:string;valor:number}>}>={};
+    for(const series of daily.value.multiDailyMetricTimeSeries||[]) {
+      for(const metric of series.dailyMetricTimeSeries||[]) {
+        const name=String(metric.dailyMetric || '');
+        const serie=(metric.timeSeries?.datedValues || []).map((x:any)=>({
+          fecha: [x.date?.year, String(x.date?.month || 1).padStart(2,'0'),String(x.date?.day || 1).padStart(2,'0')].join('-'),
+          valor:Number(x.value || 0)
+        }));
+        byMetric[name]={total:serie.reduce((acc,row)=>acc+row.valor,0),serie};
+      }
+    }
+    const suma=(...keys:string[])=>keys.reduce((total,key)=>total+(byMetric[key]?.total||0),0);
+    return {
+      disponible:true, consultadoEn:new Date().toISOString(), inicio:start, fin:end,
+      ubicacion:location, metricas:byMetric,
+      resumen:{
+        impresionesBusqueda:suma('BUSINESS_IMPRESSIONS_DESKTOP_SEARCH','BUSINESS_IMPRESSIONS_MOBILE_SEARCH'),
+        impresionesMaps:suma('BUSINESS_IMPRESSIONS_DESKTOP_MAPS','BUSINESS_IMPRESSIONS_MOBILE_MAPS'),
+        clicsWeb:suma('WEBSITE_CLICKS'),clicsTelefono:suma('CALL_CLICKS'),
+        indicaciones:suma('BUSINESS_DIRECTION_REQUESTS')
+      },
+      palabras: keywords.status==='fulfilled'
+        ? (keywords.value.searchKeywordsCounts||[]).map((p:any)=>({
+            nombre:String(p.searchKeyword||''), impresiones: p.insightsValue?.value == null ? null : Number(p.insightsValue.value),
+            umbral: p.insightsValue?.threshold == null ? null : Number(p.insightsValue.threshold)
+          }))
+        : [],
+      errorPalabras:keywords.status==='rejected'?'Google no entregó palabras clave mensuales en esta consulta.':null,
+      nota:'Lectura directa de Business Profile Performance API. Google procesa estas métricas por día y búsquedas por mes; no son eventos segundo a segundo.'
+    };
+  } catch(error) {
+    return {disponible:false,error:error instanceof Error?error.message:'Sin acceso a Business Profile.'};
+  }
+}
+
 /* Opcional: leer la última versión PUBLICADA del contenedor mediante Tag Manager
  * API, una integración separada de la detección de su snippet público. */
 async function versionPublicadaGtm() {
@@ -360,11 +491,15 @@ export default {
           .order('periodo_fin', { ascending: false }).limit(60);
         return Response.json({ site: ORIGIN, google: Boolean(email && privateKey),
           ga4: Boolean(gaProperty), gsc: Boolean(gscSite),
-          pagespeed: true, historico: metricsError ? [] : data || [] });
+          pagespeed: true, gtmApiConfigurada: Boolean(gtmPath && email && privateKey),
+          businessProfileConfigurado: Boolean(gbpClientId && gbpClientSecret && gbpRefreshToken && gbpLocation),
+          historico: metricsError ? [] : data || [] });
       }
       const dias = [7, 28, 90].includes(Number(body.dias)) ? Number(body.dias) : 28;
       if (accion === 'resumen') return Response.json(await obtenerResumen(dias));
       if (accion === 'tag-manager') return Response.json(await auditoriaTagManager());
+      if (accion === 'ga4-tiempo-real') return Response.json(await analyticsEnTiempoReal());
+      if (accion === 'business-profile') return Response.json(await perfilEmpresa(dias));
       if (accion === 'consulta-paginas') {
         const consulta = String(body.consulta || '').trim();
         if (!consulta || consulta.length > 150) return fail('Consulta no válida.', 400);
