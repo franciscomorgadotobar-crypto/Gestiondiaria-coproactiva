@@ -12,7 +12,7 @@
 - Oportunidades heurísticas de consultas y observaciones técnicas. Sin cambios automáticos.
 - Históricos \`jarvis_metricas_web\` etiquetados y separados de datos en vivo.
 
-La aplicación **no inventa datos** ni utiliza informes antiguos como si fueran métricas actuales. Los totales de Search Console pueden exceder las tablas detalladas debido a la disponibilidad limitada de consultas.
+La aplicación **no inventa datos**, y la navegación principal no utiliza archivos históricos como fuentes actuales. Los servicios sin permisos informan conexión pendiente. Los totales de Search Console pueden exceder las tablas detalladas debido a la disponibilidad limitada de consultas.
 
 ## Configurar en Google Cloud (una sola vez)
 
@@ -30,8 +30,10 @@ La aplicación **no inventa datos** ni utiliza informes antiguos como si fueran 
    | \`GSC_SITE_URL\` | \`sc-domain:coproactiva.cl\` (predeterminado, cambiar si corresponde) |
    | \`PAGESPEED_API_KEY\` | Opcional, recomendada para consultas frecuentes |
 
-6. Desplegar \`supabase/functions/seo-analitica/index.ts\` con \`verify_jwt=true\` y luego ingresar a la pestaña **Conexiones**, pulsar **Actualizar**.
-7. Si la función devuelve 403, revisar el rol \`perfiles.rol\` y \`perfiles.activo\` del usuario autenticado. La validación ocurre en el servidor, no solo en React.
+6. Para **Tag Manager**, habilitar Tag Manager API y dar acceso de lectura del contenedor `GTM-MB2RCFR5` a la cuenta de servicio. Google permite buscar el path del contenedor por ID público; `GTM_CONTAINER_PATH` es opcional.
+7. Para **Google Business Profile**, habilitar Business Profile Performance API, configurar un cliente OAuth 2.0 y autorizar con la cuenta propietaria o administradora de la ficha usando el scope `https://www.googleapis.com/auth/business.manage`. El flujo de consentimiento debe generar el `refresh_token` de manera segura; nunca enviarlo por chat ni almacenarlo en el frontend. El ID de ubicación tiene que ser el ID de ficha real, no el identificador de Google Maps ni el enlace compartido. Google puede requerir autorización/cuota del proyecto para Business Profile.
+8. Desplegar \`supabase/functions/seo-analitica/index.ts\` con \`verify_jwt=true\` y luego ingresar a la pestaña **Conexiones**, pulsar **Actualizar**.
+9. Si la función devuelve 403, revisar el rol \`perfiles.rol\` y \`perfiles.activo\` del usuario autenticado. La validación ocurre en el servidor, no solo en React.
 
 ## Medición de contactos
 
@@ -51,9 +53,18 @@ Los datos recopilados con consentimiento denegado pueden diferir de otros sistem
 ## Pruebas de aceptación
 
 1. Usuario cliente, terreno o jefatura no puede entrar a \`/seo\` ni consultar API; admin y superadmin sí.
-2. Sin secretos, se visualizan estados **pendiente** e histórico disponible, no datos falsos ni pantalla en blanco.
+2. Sin secretos, se visualizan estados **pendiente**, no datos falsos ni pantalla en blanco.
 3. Auditoría de \`/\` y URL interna funciona; rutas externas son rechazadas por servidor.
 4. Con permisos Google, se ven Search Console + GA4 y 7/28/90 días; exportación CSV.
 5. Indexación y PageSpeed solo al pulsar botón; errores 403/429 de APIs se muestran como falla, no como “0”.
 6. Rutas y menú funcionan en escritorio y Android PWA.
 7. \`npm run build\` y pruebas previas pasan antes de integrar la rama al flujo de publicación.
+
+## Frecuencia y transparencia
+
+- Cada pulsación «Actualizar» consulta las APIs de Google directamente y adjunta fecha de consulta donde corresponda.
+- GA4 Realtime consulta una ventana móvil de los últimos 30 minutos y se vuelve a consultar cada 60 segundos en una pestaña visible. No simular usuarios activos a partir de sesiones históricas.
+- Search Console entrega datos finales después de su período propio de procesamiento; actualmente la consulta termina tres días antes del día actual.
+- Business Profile Performance devuelve datos diarios y búsquedas mensuales, aunque el acceso sea en línea. No anunciar que son contadores instantáneos.
+- Tag Manager API informa contenido de la versión publicada, no los disparos de etiquetas. Para eventos recibidos se utiliza Google Analytics.
+- El acceso a APIs depende de permisos de la cuenta y habilitación/cuotas en Google Cloud; sin autorización no es posible mostrar cifras verdaderas.

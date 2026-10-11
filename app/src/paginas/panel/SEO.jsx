@@ -11,10 +11,10 @@ const SECCIONES = [
   ['consultas', 'Búsquedas'],
   ['analytics', 'Analytics'],
   ['tagmanager', 'Tag Manager'],
+  ['business', 'Perfil de Empresa'],
   ['tecnico', 'SEO técnico'],
   ['velocidad', 'Velocidad'],
   ['oportunidades', 'Oportunidades'],
-  ['historico', 'Histórico'],
   ['conexiones', 'Conexiones']
 ];
 const numeral = n => Number(n ?? 0).toLocaleString('es-CL', { maximumFractionDigits: 0 });
@@ -114,6 +114,9 @@ function SEOInterno() {
   const [dispositivo, setDispositivo] = useState('mobile');
   const [tagManager, setTagManager] = useState(null);
   const [tagError, setTagError] = useState('');
+  const [perfilEmpresa, setPerfilEmpresa] = useState(null);
+  const [perfilError, setPerfilError] = useState('');
+  const [tiempoReal, setTiempoReal] = useState(null);
   const [auditoriaInicio, setAuditoriaInicio] = useState(null);
   const [accionSeleccionada, setAccionSeleccionada] = useState(null);
 
@@ -135,7 +138,8 @@ function SEOInterno() {
     try {
       const resultados = await Promise.allSettled([
         invocar('estado'), invocar('resumen', { dias }),
-        invocar('tag-manager'), invocar('auditoria', { ruta: '/' })
+        invocar('tag-manager'), invocar('auditoria', { ruta: '/' }),
+        invocar('business-profile', { dias }), invocar('ga4-tiempo-real')
       ]);
       if (resultados[0].status !== 'fulfilled') throw resultados[0].reason;
       if (resultados[1].status !== 'fulfilled') throw resultados[1].reason;
@@ -146,15 +150,24 @@ function SEOInterno() {
       } else setTagError('La verificación de Tag Manager no pudo completarse.');
       if (resultados[3].status === 'fulfilled') setAuditoriaInicio(resultados[3].value);
       else setAuditoriaInicio(null);
+      if (resultados[4].status === 'fulfilled') {
+        setPerfilEmpresa(resultados[4].value); setPerfilError('');
+      } else {
+        setPerfilEmpresa(null); setPerfilError('No se pudo consultar Google Business Profile.');
+      }
+      if (resultados[5].status === 'fulfilled') setTiempoReal(resultados[5].value);
+      else setTiempoReal({disponible:false, error:'No se pudo consultar GA4 en tiempo real.'});
       if (manual) {
         const sinConexion = [
           !resumen?.searchConsole?.disponible && 'Search Console',
-          !resumen?.analytics?.disponible && 'Analytics 4'
+          !resumen?.analytics?.disponible && 'Analytics 4',
+          !resultados[4]?.value?.disponible && 'Business Profile',
+          !resultados[2]?.value?.version?.conectado && 'Tag Manager API'
         ].filter(Boolean);
         const hora = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
         setAvisoActualizacion(sinConexion.length
           ? { tipo: 'pendiente', texto: 'Consulta realizada a las ' + hora + '. Sin conexión a ' +
-              sinConexion.join(' y ') + '. No hay datos nuevos que mostrar: utiliza «Configurar conexiones».' }
+              sinConexion.join(', ') + '. Las fuentes autorizadas se consultaron. Revisa «Conexiones» para completar las demás.' }
           : { tipo: 'correcto', texto: 'Datos de Google actualizados correctamente a las ' + hora + '.' });
       }
     } catch (err) {
@@ -164,6 +177,19 @@ function SEOInterno() {
   }, [dias, invocar]);
 
   useEffect(() => { recargar(false); }, [recargar]);
+
+  // Únicamente el endpoint de GA4 Realtime tiene sentido con actualización cada minuto.
+  // Search Console y Business Profile publican series procesadas con otro ritmo.
+  useEffect(() => {
+    if (!datos?.analytics?.disponible) return;
+    let activo = true;
+    const timer = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      invocar('ga4-tiempo-real').then(data => { if (activo) setTiempoReal(data); })
+        .catch(() => { if (activo) setTiempoReal({ disponible:false, error:'Sin lectura reciente de GA4.' }); });
+    }, 60000);
+    return () => { activo = false; clearInterval(timer); };
+  }, [datos?.analytics?.disponible, invocar]);
 
   async function ejecutar(accion) {
     setAccionActiva(accion); setError('');
@@ -193,6 +219,7 @@ function SEOInterno() {
   const sesionesOrganicas = ga?.canales?.find(c => c.clave?.toLowerCase() === 'organic search')?.valores?.[0];
   const eventoLeadGA4 = ga?.eventos?.find(e => e.clave === 'generate_lead');
   const leadsMedidos = eventoLeadGA4?.valores?.[1];
+  const perfilClicks = perfilEmpresa?.disponible ? perfilEmpresa.resumen?.clicsWeb : null;
   const variacionClics = sc?.disponible && sc?.anterior?.clics > 0
     ? ((sc.totales.clics - sc.anterior.clics) / sc.anterior.clics) * 100 : null;
   function abrirAccion(item) {
@@ -242,15 +269,19 @@ function SEOInterno() {
       {!estado && cargando && <p className="chico apagado">Cargando fuentes e indicadores…</p>}
 
       {vista === 'resumen' && <>
-        {!cargando && datos && (!sc?.disponible || !ga?.disponible) &&
+        {!cargando && datos && (!sc?.disponible || !ga?.disponible || !perfilEmpresa?.disponible || !tagManager?.version?.conectado) &&
           <div className="seo-aviso seo-aviso-pendiente">
-            <div><strong>Para mostrar estadísticas reales falta autorizar Google.</strong>
+            <div><strong>Para mostrar todos los datos oficiales faltan autorizar algunas fuentes Google.</strong>
               <p>«Actualizar» no conecta las cuentas. La autorización se configura una sola vez y luego podrás consultar las métricas.</p>
             </div>
             <button type="button" className="boton boton-secundario" onClick={() => setVista('conexiones')}>
               Configurar conexiones →
             </button>
           </div>}
+        {tiempoReal?.disponible && <div className="seo-aviso seo-aviso-correcto">
+          <span><strong>GA4 en tiempo real:</strong> {numeral(tiempoReal.usuariosActivos)} usuarios activos y {numeral(tiempoReal.eventos)} eventos durante los últimos 30 minutos.</span>
+          <button type="button" className="boton boton-secundario" onClick={() => setVista('analytics')}>Ver tiempo real →</button>
+        </div>}
         <section className="seo-centro-control" aria-label="Visión general">
           <div className="seo-titulo-seccion"><div>
             <h2 className="h4">Centro de control</h2>
@@ -276,8 +307,13 @@ function SEOInterno() {
               <small>Engagement: {ga?.disponible ? porcentaje(ga.totales?.engagement) : '—'} · Ver canales →</small>
             </button>
             <button type="button" className="seo-pulso" onClick={() => setVista('tagmanager')}>
-              <span>Google Tag Manager</span><strong>{tagManager?.codigoGtm ? 'Código detectado' : 'Sin confirmar'}</strong>
+              <span>Google Tag Manager</span><strong>{tagManager?.version?.conectado ? 'Versión ' + tagManager.version.versionPublicada : (tagManager?.codigoGtm ? 'Código detectado · API pendiente' : 'Sin confirmar')}</strong>
               <small>{tagManager?.contenedores?.join(', ') || 'Sin ID comprobado'} · Validar eventos →</small>
+            </button>
+            <button type="button" className="seo-pulso" onClick={() => setVista('business')}>
+              <span>Google Business Profile</span>
+              <strong>{perfilEmpresa?.disponible ? numeral(perfilClicks) + ' clics al sitio' : 'Sin conexión'}</strong>
+              <small>{perfilEmpresa?.disponible ? numeral(perfilEmpresa.resumen?.impresionesMaps) + ' impresiones en Maps' : 'Autorizar cuenta de la ficha'} · Ver perfil →</small>
             </button>
             <button type="button" className="seo-pulso" onClick={() => setVista('tecnico')}>
               <span>SEO técnico</span><strong>{auditoriaInicio ? 'HTTP ' + auditoriaInicio.status : 'Pendiente'}</strong>
@@ -296,6 +332,12 @@ function SEOInterno() {
           </div>
         </section>
         <div className="seo-integraciones">
+          <EstadoIntegracion nombre="Google Business Profile" disponible={!!perfilEmpresa?.disponible}
+            mensaje={perfilEmpresa?.error || 'Pendiente de autorización OAuth'} onClick={() => setVista('business')}
+            accion="Revisar métricas de Google Maps" />
+          <EstadoIntegracion nombre="Google Tag Manager API" disponible={!!tagManager?.version?.conectado}
+            mensaje={tagManager?.version?.detalle || 'Sin acceso a versión publicada'} onClick={() => setVista('tagmanager')}
+            accion="Revisar contenedor" />
           <EstadoIntegracion nombre="Google Search Console" disponible={!!sc?.disponible} mensaje={sc?.error}
             onClick={() => setVista('conexiones')} accion="Configurar Search Console" />
           <EstadoIntegracion nombre="Google Analytics 4" disponible={!!ga?.disponible} mensaje={ga?.error}
@@ -379,6 +421,22 @@ function SEOInterno() {
 
       {vista === 'analytics' && <section>
         <h2 className="h4">Audiencia y comportamiento · GA4</h2>
+        <div className="tarjeta seo-mini-card" style={{marginBottom:16}}>
+          <div className="seo-fila-separada">
+            <h3 className="h4" style={{margin:0}}>Actividad reciente · últimos 30 minutos</h3>
+            <span className="micro">{tiempoReal?.disponible ? new Date(tiempoReal.consultadoEn).toLocaleTimeString('es-CL') : 'Sin conexión'}</span>
+          </div>
+          {tiempoReal?.disponible ? <>
+            <div className="seo-kpis" style={{marginTop:15}}>
+              <KPI titulo="Usuarios activos recientes" valor={numeral(tiempoReal.usuariosActivos)} />
+              <KPI titulo="Eventos últimos 30 min" valor={numeral(tiempoReal.eventos)} />
+            </div>
+            <Tabla columnas={[{id:'nombre',etiqueta:'Evento'},{id:'cantidad',etiqueta:'Repeticiones',texto:numeral}]}
+              filas={tiempoReal.eventosPorNombre || []} archivo="coproactiva-ga4-tiempo-real.csv" />
+            <p className="micro">Consulta directa a Google Analytics Realtime API. Esta sección se refresca cada 60 segundos con la pestaña abierta.</p>
+          </> : <p className="chico apagado">{tiempoReal?.error || 'Requiere conexión GA4 autorizada.'}</p>}
+        </div>
+
         {!ga?.disponible ? <Vacio titulo="Falta conectar Google Analytics 4" descripcion={ga?.error || 'Sin datos.'} /> : <>
           <div className="seo-kpis">
             <KPI titulo="Usuarios" valor={numeral(ga.totales?.usuarios)} />
@@ -500,6 +558,63 @@ function SEOInterno() {
         </div>)}
       </section>}
 
+      {vista === 'business' && <section>
+        <div className="seo-titulo-seccion">
+          <div>
+            <h2 className="h4">Google Business Profile · métricas oficiales</h2>
+            <p className="chico apagado">Actividad de la ficha de Coproactiva en Google Maps y la Búsqueda. Consultado directamente con Business Profile Performance API.</p>
+          </div>
+          <a href="https://business.google.com/" target="_blank" rel="noopener noreferrer">Administrar perfil ↗</a>
+        </div>
+        {perfilError && <div className="seo-aviso seo-aviso-error">{perfilError}</div>}
+        {!perfilEmpresa?.disponible ? <div className="seo-vacio">
+          <strong>Google Business Profile pendiente de autorización</strong>
+          <p>{perfilEmpresa?.error || 'Aún no hay conexión autorizada con el perfil comercial.'}</p>
+          <button type="button" className="boton boton-secundario" style={{marginTop:12}} onClick={() => setVista('conexiones')}>
+            Ver instrucciones de conexión →
+          </button>
+        </div> : <>
+          <p className="micro">Última consulta: {new Date(perfilEmpresa.consultadoEn).toLocaleString('es-CL')} · datos diarios del {perfilEmpresa.inicio} al {perfilEmpresa.fin}</p>
+          <div className="seo-kpis">
+            <KPI titulo="Impresiones en Búsqueda" valor={numeral(perfilEmpresa.resumen?.impresionesBusqueda)} nota="Desktop y móvil" />
+            <KPI titulo="Impresiones en Google Maps" valor={numeral(perfilEmpresa.resumen?.impresionesMaps)} nota="Desktop y móvil" />
+            <KPI titulo="Clics hacia el sitio" valor={numeral(perfilEmpresa.resumen?.clicsWeb)} nota="Desde el perfil de empresa" />
+            <KPI titulo="Clics de llamada" valor={numeral(perfilEmpresa.resumen?.clicsTelefono)} nota="No necesariamente llamadas atendidas" />
+            <KPI titulo="Solicitudes de indicaciones" valor={numeral(perfilEmpresa.resumen?.indicaciones)} nota="Rutas solicitadas" />
+          </div>
+          <h3 className="seo-subtitulo">Indicadores por fecha</h3>
+          <Tabla columnas={[
+            {id:'fecha',etiqueta:'Día'},
+            {id:'busqueda',etiqueta:'Búsqueda',texto:numeral},
+            {id:'maps',etiqueta:'Maps',texto:numeral},
+            {id:'web',etiqueta:'Clics web',texto:numeral},
+            {id:'llamadas',etiqueta:'Clics de llamadas',texto:numeral},
+            {id:'direcciones',etiqueta:'Indicaciones',texto:numeral}
+          ]} filas={(() => {
+            const datos = perfilEmpresa.metricas || {};
+            const porFecha = {};
+            const cols = {
+              BUSINESS_IMPRESSIONS_DESKTOP_SEARCH:'busqueda', BUSINESS_IMPRESSIONS_MOBILE_SEARCH:'busqueda',
+              BUSINESS_IMPRESSIONS_DESKTOP_MAPS:'maps', BUSINESS_IMPRESSIONS_MOBILE_MAPS:'maps',
+              WEBSITE_CLICKS:'web', CALL_CLICKS:'llamadas', BUSINESS_DIRECTION_REQUESTS:'direcciones'
+            };
+            Object.entries(cols).forEach(([metric,col]) => (datos[metric]?.serie || []).forEach(p => {
+              if(!porFecha[p.fecha]) porFecha[p.fecha] = {fecha:p.fecha,busqueda:0,maps:0,web:0,llamadas:0,direcciones:0};
+              porFecha[p.fecha][col] += p.valor;
+            }));
+            return Object.values(porFecha).sort((a,b) => b.fecha.localeCompare(a.fecha));
+          })()} archivo="coproactiva-google-business-profile-diario.csv" />
+          <h3 className="seo-subtitulo">Palabras clave que encuentran el negocio</h3>
+          <p className="chico apagado">Google ofrece esta métrica agregada por mes, aunque se consulte al momento.</p>
+          <Tabla columnas={[
+            {id:'nombre',etiqueta:'Palabra de búsqueda'},
+            {id:'impresiones',etiqueta:'Impresiones',texto:(n,row) => n == null ? (row.umbral == null ? 'Sin dato' : 'Menos de ' + numeral(row.umbral)) : numeral(n)}
+          ]} filas={perfilEmpresa.palabras || []} archivo="coproactiva-google-business-profile-busquedas.csv" />
+          {perfilEmpresa.errorPalabras && <p className="micro">{perfilEmpresa.errorPalabras}</p>}
+          <p className="micro">{perfilEmpresa.nota}</p>
+        </>}
+      </section>}
+
       {vista === 'tagmanager' && <section>
         <h2 className="h4">Google Tag Manager · seguimiento y conversiones</h2>
         <p className="chico apagado">Se comprueba el código público del sitio. La configuración de etiquetas, activadores y versiones publicadas requiere acceso al contenedor de Google; detectar código no demuestra recepción de eventos.</p>
@@ -543,25 +658,20 @@ function SEOInterno() {
         </div>
       </section>}
 
-      {vista === 'historico' && <section>
-        <h2 className="h4">Antecedentes históricos</h2>
-        <p className="chico apagado">Informes almacenados en Coproactiva (Jarvis): Search Console, Semrush y Google Business Profile. No son una integración en tiempo real ni se mezclan con los indicadores de GA4.</p>
-        <Tabla columnas={[
-          {id:'fuente',etiqueta:'Fuente'}, {id:'metrica',etiqueta:'Indicador'},
-          {id:'valor',etiqueta:'Valor',texto:(n,row) => n == null ? (row.valor_texto || 'Sin valor numérico') : decimal(n, 2)},
-          {id:'periodo_inicio',etiqueta:'Inicio'}, {id:'periodo_fin',etiqueta:'Fin'}
-        ]} filas={estado?.historico || []} archivo="coproactiva-seo-historico.csv" />
-      </section>}
-
       {vista === 'conexiones' && <section>
         <h2 className="h4">Conexiones y fuentes de datos</h2>
         <div className="seo-integraciones">
           <EstadoIntegracion nombre="Search Console" disponible={!!sc?.disponible} mensaje={sc?.error} />
           <EstadoIntegracion nombre="Google Analytics 4" disponible={!!ga?.disponible} mensaje={ga?.error} />
-          <EstadoIntegracion nombre="Registros históricos" disponible={!!estado?.historico?.length} mensaje="Sin registros históricos disponibles" />
-          <EstadoIntegracion nombre="Tag Manager (código)" disponible={!!tagManager?.codigoGtm}
-            mensaje="No se pudo detectar el contenedor desde el sitio" onClick={() => setVista('tagmanager')}
-            accion="Revisar seguimiento" />
+          <EstadoIntegracion nombre="Google Business Profile" disponible={!!perfilEmpresa?.disponible}
+            mensaje={perfilEmpresa?.error || perfilError || 'Falta autorizar acceso OAuth del perfil'} onClick={() => setVista('business')}
+            accion="Ver panel del perfil" />
+          <EstadoIntegracion nombre="Tag Manager API" disponible={!!tagManager?.version?.conectado}
+            mensaje={tagManager?.version?.detalle || 'No hay acceso a la versión publicada'} onClick={() => setVista('tagmanager')}
+            accion="Revisar etiquetas publicadas" />
+          <EstadoIntegracion nombre="GA4 Realtime" disponible={!!tiempoReal?.disponible}
+            mensaje={tiempoReal?.error || 'Sin lectura reciente'} onClick={() => setVista('analytics')}
+            accion="Ver actividad de 30 minutos" />
         </div>
         <div className="tarjeta seo-mini-card">
           <h3 className="h4">Conectar con permisos de lectura</h3>
@@ -571,7 +681,8 @@ function SEOInterno() {
             <li>Agregar la misma cuenta como <strong>Viewer</strong> en la propiedad correspondiente de <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer">GA4 ↗</a>.</li>
             <li>En Supabase, configurar los secretos <code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code>GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY</code>, <code>GA4_PROPERTY_ID</code> y, de ser necesario, <code>GSC_SITE_URL</code>.</li>
             <li>Para leer versiones publicadas en GTM, autorizar la cuenta de servicio en Tag Manager (permiso de lectura), habilitar Tag Manager API y configurar el secreto <code>GTM_CONTAINER_PATH</code> (ejemplo: <code>accounts/123/containers/456</code>).</li>
-            <li>Seleccionar <strong>Actualizar</strong> para comprobar acceso y consultar datos reales.</li>
+            <li>Para Business Profile, habilitar la API Business Profile Performance y obtener autorización OAuth <code>business.manage</code> de la cuenta propietaria. En los secretos del servidor configurar <code>GBP_OAUTH_CLIENT_ID</code>, <code>GBP_OAUTH_CLIENT_SECRET</code>, <code>GBP_OAUTH_REFRESH_TOKEN</code> y <code>GBP_LOCATION_ID</code> (ID numérico real de la ficha). Si Google asigna cuota cero, solicitar acceso a esa API.</li>
+            <li>Seleccionar <strong>Actualizar</strong> para consultar las APIs y sus estados. GA4 Realtime se actualiza cada minuto cuando la pestaña está visible.</li>
           </ol>
           <p className="micro">Las credenciales privadas deben instalarse exclusivamente como secretos del servidor. Nunca pegarlas en este formulario, en GitHub ni en archivos VITE_*.</p>
         </div>
@@ -583,7 +694,7 @@ function SEOInterno() {
       </section>}
 
       <footer className="seo-pie">
-        <span>Fuente: Google APIs y registros históricos internos.</span>
+        <span>Fuentes activas: Google Analytics, Search Console, Tag Manager y Business Profile (según permisos concedidos). No se presentan datos archivados como si fueran actuales.</span>
         <a href={sitio} target="_blank" rel="noopener noreferrer">Abrir sitio web ↗</a>
       </footer>
     </div>
