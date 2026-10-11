@@ -191,6 +191,8 @@ function SEOInterno() {
     try { return new URL(u).pathname; } catch { return ''; }
   }).filter(Boolean), [auditoriaInicio]);
   const sesionesOrganicas = ga?.canales?.find(c => c.clave?.toLowerCase() === 'organic search')?.valores?.[0];
+  const eventoLeadGA4 = ga?.eventos?.find(e => e.clave === 'generate_lead');
+  const leadsMedidos = eventoLeadGA4?.valores?.[1];
   const variacionClics = sc?.disponible && sc?.anterior?.clics > 0
     ? ((sc.totales.clics - sc.anterior.clics) / sc.anterior.clics) * 100 : null;
   function abrirAccion(item) {
@@ -259,8 +261,8 @@ function SEOInterno() {
               nota={variacionClics === null ? 'Sin comparación disponible' : (variacionClics >= 0 ? '+' : '') + decimal(variacionClics) + '% vs período anterior'} />
             <KPI titulo="Sesiones Organic Search · GA4" valor={ga?.disponible ? numeral(sesionesOrganicas || 0) : '—'}
               nota="Sesiones atribuidas a búsqueda orgánica" />
-            <KPI titulo="Eventos clave · GA4" valor={ga?.disponible ? numeral(ga.totales?.eventosClave) : '—'}
-              nota="No equivale automáticamente a nuevos leads" />
+            <KPI titulo="Contactos generate_lead · GA4" valor={ga?.disponible && eventoLeadGA4 ? numeral(leadsMedidos) : '—'}
+              nota={eventoLeadGA4 ? 'Eventos clave generate_lead (no ventas)' : 'Evento no identificado; revisar GTM y GA4'} />
             <KPI titulo="Incidencias técnicas · portada" valor={auditoriaInicio ? numeral(auditoriaInicio.problemas?.length) : '—'}
               nota={auditoriaInicio ? 'Revisión HTML inicial · solo portada' : 'Auditoría pendiente'} />
           </div>
@@ -506,9 +508,21 @@ function SEOInterno() {
             nota={tagManager?.contenedores?.join(', ') || 'No identificado'} />
           <KPI titulo="Data Layer" valor={tagManager?.dataLayer ? 'Detectada' : 'Sin confirmar'} nota="Señal en código" />
           <KPI titulo="Consent Mode" valor={tagManager?.consentimiento ? 'Código detectado' : 'Sin confirmar'} nota="Confirmar señales en navegador" />
-          <KPI titulo="generate_lead" valor={tagManager?.eventoLeadEnCodigo ? 'Implementado' : 'Sin confirmar'} nota="Recepción en GA4 no verificada" />
+          <KPI titulo="generate_lead" valor={tagManager?.eventoLeadEnCodigo ? 'En código' : 'Sin confirmar'}
+            nota={eventoLeadGA4 ? 'GA4 recibió ' + numeral(eventoLeadGA4.valores?.[0]) + ' eventos en este período' : 'Recepción en GA4 no verificada'} />
         </div>
         {tagError && <div className="seo-aviso seo-aviso-pendiente">{tagError}</div>}
+        <div className="tarjeta seo-mini-card">
+          <h3 className="h4">Contenedor publicado · GTM API</h3>
+          {tagManager?.version?.conectado ? <>
+            <p><strong>Versión publicada: {tagManager.version.versionPublicada}</strong> · {tagManager.version.nombreVersion}.
+              {' '}{numeral(tagManager.version.cantidadEtiquetas)} etiquetas y {numeral(tagManager.version.cantidadActivadores)} activadores.</p>
+            <Tabla columnas={[{ id: 'nombre', etiqueta: 'Etiqueta publicada' }, { id: 'tipo', etiqueta: 'Tipo' }]}
+              filas={tagManager.version.etiquetas || []} archivo="coproactiva-gtm-etiquetas.csv" />
+            <p className="micro">{tagManager.version.nota}</p>
+          </> : <p className="chico apagado">{tagManager?.version?.detalle ||
+            'Para leer las etiquetas y versiones publicadas se necesita autorizar GTM_CONTAINER_PATH y permisos de solo lectura en Google Tag Manager.'}</p>}
+        </div>
         <div className="seo-dos-columnas">
           <div className="tarjeta seo-mini-card">
             <h3 className="h4">Qué está comprobado</h3>
@@ -556,6 +570,7 @@ function SEOInterno() {
             <li>Agregar el correo de esa cuenta como lector en <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer">Search Console ↗</a> para la propiedad <strong>coproactiva.cl</strong>.</li>
             <li>Agregar la misma cuenta como <strong>Viewer</strong> en la propiedad correspondiente de <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer">GA4 ↗</a>.</li>
             <li>En Supabase, configurar los secretos <code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code>GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY</code>, <code>GA4_PROPERTY_ID</code> y, de ser necesario, <code>GSC_SITE_URL</code>.</li>
+            <li>Para leer versiones publicadas en GTM, autorizar la cuenta de servicio en Tag Manager (permiso de lectura), habilitar Tag Manager API y configurar el secreto <code>GTM_CONTAINER_PATH</code> (ejemplo: <code>accounts/123/containers/456</code>).</li>
             <li>Seleccionar <strong>Actualizar</strong> para comprobar acceso y consultar datos reales.</li>
           </ol>
           <p className="micro">Las credenciales privadas deben instalarse exclusivamente como secretos del servidor. Nunca pegarlas en este formulario, en GitHub ni en archivos VITE_*.</p>
