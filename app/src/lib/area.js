@@ -7,7 +7,7 @@
  * no hereda el área de la anterior. La sesión avisa quién está conectado
  * (fijarUsuarioArea) antes de dibujar cualquier pantalla que la consulte. */
 const PREFIJO = 'coproactiva_area:';
-const AREAS = ['crm', 'operacion', 'propiedades', 'proveedores', 'contabilidad', 'whatsapp'];
+const AREAS = ['crm', 'operacion', 'propiedades', 'proveedores', 'contabilidad', 'whatsapp', 'seo'];
 let usuario = null;
 
 try { localStorage.removeItem('coproactiva_area'); } catch { /* clave antigua, sin dueño */ }
@@ -48,6 +48,7 @@ export function inicioSegunArea() {
   if (area === 'proveedores') return '/proveedores';
   if (area === 'whatsapp') return '/whatsapp';
   if (area === 'contabilidad') return '/contabilidad';
+  if (area === 'seo') return '/seo';
   return '/inicio';
 }
 

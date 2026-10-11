@@ -35,6 +35,7 @@ const WhatsApp = lazy(() => import('./paginas/panel/WhatsApp'));
 const ProveedoresRecepcion = lazy(() => import('./paginas/panel/ProveedoresRecepcion'));
 const ProveedoresComunicaciones = lazy(() => import('./paginas/panel/ProveedoresComunicaciones'));
 const Contabilidad = lazy(() => import('./paginas/panel/Contabilidad'));
+const SEO = lazy(() => import('./paginas/panel/SEO'));
 // Importar plantillas desde Excel es de oficina; el lector de Excel, además,
 // se carga recién al usarlo (ver lib/excelPlantillas.js).
 const ImportarPlantillas = lazy(() => import('./paginas/panel/ImportarPlantillas'));
@@ -89,6 +90,7 @@ function Entrada() {
   if (area === 'proveedores') return <Navigate to="/proveedores" replace />;
   if (area === 'whatsapp' && ['superadmin','admin'].includes(perfil?.rol)) return <Navigate to="/whatsapp" replace />;
   if (area === 'contabilidad' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/contabilidad" replace />;
+  if (area === 'seo' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/seo" replace />;
   if (area === 'operacion') return <PanelEscritorio><Inicio /></PanelEscritorio>;
   return <SeleccionArea />;
 }
@@ -185,6 +187,8 @@ export default function App() {
       <Route path="/whatsapp" element={<Interna><Suspense fallback={<p className="cargando">Cargando…</p>}><WhatsApp /></Suspense></Interna>} />
       <Route path="/whatsapp/:vista" element={<Interna><Suspense fallback={<p className="cargando">Cargando…</p>}><WhatsApp /></Suspense></Interna>} />
       <Route path="/proveedores/:id" element={<Interna><Proveedores /></Interna>} />
+
+      <Route path="/seo" element={<Interna><Suspense fallback={<p className="cargando">Cargando SEO…</p>}><SEO /></Suspense></Interna>} />
 
       <Route path="/contabilidad" element={
         <Interna>

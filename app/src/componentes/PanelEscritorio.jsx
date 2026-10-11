@@ -83,17 +83,18 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // enlaces no se repiten en las otras áreas: no son trabajo del día.
   const enConfiguracion = !esCliente && esAdministracion
     && ['/configuracion', '/equipo', '/clientes'].some(r => activa(pathname, r));
-  const enWhatsApp = !esCliente && esAdministracion && !enConfiguracion && (activa(pathname, '/whatsapp') || (areaGuardada() === 'whatsapp' && !['/proveedores','/contabilidad','/pipeline','/propiedades'].some(r => activa(pathname,r))));
-  const enContabilidad = !esCliente && esAdministracion && !enConfiguracion && !enWhatsApp
+  const enSEO = !esCliente && esAdministracion && !enConfiguracion && activa(pathname, '/seo');
+  const enWhatsApp = !esCliente && esAdministracion && !enConfiguracion && !enSEO && (activa(pathname, '/whatsapp') || (areaGuardada() === 'whatsapp' && !['/proveedores','/contabilidad','/pipeline','/propiedades'].some(r => activa(pathname,r))));
+  const enContabilidad = !esCliente && esAdministracion && !enConfiguracion && !enSEO && !enWhatsApp
     && (activa(pathname, '/contabilidad') || areaGuardada() === 'contabilidad');
-  const enProveedores = !esCliente && esAdministracion && !enConfiguracion && !enWhatsApp && !enContabilidad
+  const enProveedores = !esCliente && esAdministracion && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad
     && (activa(pathname, '/proveedores') || areaGuardada() === 'proveedores');
-  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion && !enWhatsApp && !enContabilidad && !enProveedores
+  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores
     && (activa(pathname, '/propiedades')
       || (areaGuardada() === 'propiedades' && !activa(pathname, '/pipeline')));
-  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enWhatsApp && !enContabilidad && !enProveedores && !enPropiedades
+  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores && !enPropiedades
     && (areaGuardada() === 'crm' || activa(pathname, '/pipeline'));
-  const enOperacion = !esCliente && !enConfiguracion && !enWhatsApp && !enContabilidad && !enProveedores && !enPropiedades && !enCRM;
+  const enOperacion = !esCliente && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores && !enPropiedades && !enCRM;
   const alertasTotales = alertasMantencion + alertasGenerales;
   const levantamientosActivo = pathname === '/nuevo'
     || pathname.startsWith('/control/')
@@ -101,6 +102,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   const nombreArea = esCliente ? null
     : enConfiguracion ? 'Configuración'
+    : enSEO ? 'SEO y Analítica'
     : enWhatsApp ? 'WhatsApp'
     : enContabilidad ? 'Contabilidad'
     : enProveedores ? 'Proveedores'
@@ -121,6 +123,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: true },
         { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
       ]
+    : enSEO
+    ? [{ ruta: '/seo', etiqueta: 'Dashboard SEO', mostrar: true }]
     : enWhatsApp
     ? [
         { ruta: '/whatsapp', etiqueta: 'Bandeja', mostrar: true, activo: p => p === '/whatsapp' },
