@@ -89,7 +89,7 @@ function estadosDisponibles(actual) {
     error_preparacion:'Aprobación guardada · error al preparar PR'
   }[actual.estado]||actual.estado;
 }
-export default function SEORecomendaciones({lista,invocar,dias,irVista}) {
+export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaPrioritaria}) {
   const [grupos,setGrupos]=useState([]);
   const [pendientes,setPendientes]=useState([]);
   const [cargando,setCargando]=useState(false);
@@ -122,7 +122,7 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista}) {
     setPuedePublicar(!!r.puedePublicar);
   }
   const consultas=useMemo(()=>lista.filter(x=>x.clase==='consulta').slice(0,12),[lista]);
-  const key=consultas.map(x=>x.id).join('|')+'|'+dias;
+  const key=consultas.map(x=>x.id).join('|')+'|'+dias+'|'+(consultaPrioritaria||'');
   useEffect(()=>{
     let active=true;
     const analizar=async()=>{
@@ -161,7 +161,7 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista}) {
           return calcularGrupo(items,ruta,audit);
         }));
         if(active){setGrupos(final.sort((a,b)=>(b.metricas?.impresiones||0)-(a.metricas?.impresiones||0)));
-          setPendientes(withoutPage);setSeleccion(prev=>final.some(x=>x.id===prev)?prev:final[0]?.id||'');}
+          setPendientes(withoutPage);setSeleccion(prev=>final.some(x=>x.id===prev)?prev:(final.find(x=>x.consultas?.some(q=>q.consulta===consultaPrioritaria))||final[0])?.id||'');}
       }catch(err){if(active)setError(err.message||'No se pudo completar el diagnóstico.');}
       finally{if(active)setCargando(false);}
     };
