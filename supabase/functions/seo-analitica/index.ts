@@ -119,7 +119,7 @@ async function analytics(token: string, dias: number) {
     query(['date'], ['sessions', 'totalUsers'], 100),
     query(['sessionDefaultChannelGroup'], ['sessions', 'totalUsers'], 20),
     query(['pagePath'], ['screenPageViews', 'totalUsers'], 75),
-    query(['eventName'], ['eventCount'], 35)
+    query(['eventName'], ['eventCount', 'keyEvents'], 35)
   ]);
   const m = (totales.rows || [])[0]?.metricValues || [];
   return {
