@@ -5,6 +5,7 @@
  * GitHub repo fijo por seguridad. verify_jwt=true, permisos en public.perfiles y RLS de tabla.
  */
 import { withSupabase } from 'npm:@supabase/server@1';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const OWNER = 'franciscomorgadotobar-crypto';
 const REPO = 'web-coproactiva';
@@ -104,7 +105,13 @@ export default {
         .eq('id',idUsuario||'').maybeSingle();
       if(perfilError || !perfil?.activo || !['admin','superadmin'].includes(perfil.rol))
         return mensaje('Solo administradores activos pueden acceder a propuestas SEO.',403);
-      const admin=ctx.supabaseAdmin;
+      const admin=ctx.supabaseAdmin || (
+        Deno.env.get('SUPABASE_URL') && Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+          ? createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+              auth:{persistSession:false,autoRefreshToken:false}
+            })
+          : null
+      );
       if(!admin)return mensaje('No se pudo abrir el almacenamiento protegido de propuestas.',503);
       const body=await req.json().catch(()=>({}));
       const accion=String(body.accion||'');
