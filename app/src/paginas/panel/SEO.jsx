@@ -229,6 +229,13 @@ function SEOInterno() {
   function irVista(vistaNueva, rutaNueva) {
     if (rutaNueva) setRuta(rutaNueva);
     setVista(vistaNueva);
+    requestAnimationFrame(() => {
+      const nav = document.getElementById('seo-navegacion');
+      nav?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      nav?.querySelector('[aria-selected="true"]')?.scrollIntoView({
+        behavior: 'smooth', block: 'nearest', inline: 'center'
+      });
+    });
   }
   useEffect(() => {
     if (vista === 'oportunidades' && accionSeleccionada) {
@@ -252,14 +259,14 @@ function SEOInterno() {
         <button className="boton boton-secundario" type="button" onClick={() => recargar(true)} disabled={cargando}>
           {cargando ? 'Consultando…' : 'Actualizar'}
         </button>
-        <button className="boton boton-texto seo-boton-configuracion" type="button" onClick={() => setVista('conexiones')}>
+        <button className="boton boton-texto seo-boton-configuracion" type="button" onClick={() => irVista('conexiones')}>
           <span aria-hidden="true">⚙</span> <span className="seo-ajustes-etiqueta">Configuración</span>
         </button>
       </div>
     </header>
 
     <div className="cuerpo seo-cuerpo">
-      <nav className="seo-pestanas" aria-label="Secciones SEO" role="tablist">{SECCIONES.map(([id, label]) =>
+      <nav id="seo-navegacion" className="seo-pestanas" aria-label="Secciones SEO" role="tablist">{SECCIONES.map(([id, label]) =>
         <button key={id} type="button" role="tab" aria-selected={vista === id}
           className={vista === id ? 'activo' : ''}
           onClick={e => {
@@ -281,7 +288,7 @@ function SEOInterno() {
         sc={sc} ga={ga} perfilEmpresa={perfilEmpresa} tiempoReal={tiempoReal}
         auditoriaInicio={auditoriaInicio} lista={lista} dias={dias}
         consultadoEn={estado?.consultadoEn}
-        onNavigate={setVista} onAnalyze={abrirAccion} />}
+        onNavigate={irVista} onAnalyze={abrirAccion} />}
 
       {vista === 'consultas' && <section>
         <h2 className="h4">Rendimiento en Google Search</h2>
@@ -552,7 +559,7 @@ function SEOInterno() {
           <div><h2 className="h4">Configuración de fuentes</h2>
             <p className="chico apagado">Permisos, integraciones y diagnóstico de conexiones. No afectan la visualización de las métricas ya disponibles.</p>
           </div>
-          <button type="button" className="boton boton-secundario" onClick={() => setVista('resumen')}>← Volver al dashboard</button>
+          <button type="button" className="boton boton-secundario" onClick={() => irVista('resumen')}>← Volver al dashboard</button>
         </div>
         <div className="seo-integraciones">
           <EstadoIntegracion nombre="Search Console" disponible={!!sc?.disponible} mensaje={sc?.error} />
