@@ -333,8 +333,8 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
           </>}
           {!!previo && <div className="seo-reco-flujo">
             <div className="seo-reco-pasos">
-              {['Diagnóstico','Propuesta','Revisión','Publicación'].map((x,j)=><div key={x} className={j<= (previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'actual':''}>
-                <span>{j<=(previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'✓':j+1}</span><small>{x}</small>
+              {['Diagnóstico','Propuesta','Revisión','Publicación'].map((x,j)=><div key={x} className={j <= (preparadoExterno ? 2 : previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'actual':''}>
+                <span>{j <= (preparadoExterno ? 2 : previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'✓':j+1}</span><small>{x}</small>
               </div>)}
             </div>
             <p><Icono name="shield"/>{preparadoExterno
