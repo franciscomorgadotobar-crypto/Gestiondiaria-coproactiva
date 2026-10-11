@@ -13,7 +13,7 @@ Se muestra la evidencia (consultas, impresiones, clics, CTR, posición), URL rea
 3. **Pedir ajuste / Descartar**: guarda la decisión y una observación opcional, sin tocar GitHub.
 4. **Revisión final**: revisar el PR y el contenido, sólo superadmin puede publicar.
 5. **Publicar**: exige escribir PUBLICAR, valida PR y comprobaciones de GitHub, integra en main, guarda SHA y fecha.
-6. **Seguimiento**: conserva métricas y fecha como línea base para análisis posterior a 7, 28 y 90 días. El seguimiento comparativo automático queda pendiente de una etapa adicional; no afirmar que ya entrega esas comparativas.
+6. **Seguimiento**: conserva fecha y métricas iniciales. Cuando el PR se integra, la ficha consulta directamente Search Console por la URL publicada para comparar períodos iguales (7, 28 y 90 días antes y después). Cada período indica si está completo o todavía faltan datos finalizados; no atribuye causalidad.
 
 «Integrado en GitHub» no garantiza que GitHub Pages ya haya desplegado el sitio. Aprobar nunca integra ni publica.
 
