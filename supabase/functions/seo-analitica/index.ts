@@ -384,6 +384,53 @@ async function perfilEmpresa(dias:number) {
   }
 }
 
+
+/** Seguimiento verificable por URL, comparando ventanas iguales de Search Console.
+ * Siempre usa datos finalizados de Google y nunca afirma comparativa si faltan días. */
+async function seguimientoPorPagina(ruta:string, fechaPublicacion:string) {
+  if(!email || !privateKey) return {disponible:false,error:'Search Console no está autorizado.'};
+  const fecha=fechaPublicacion.slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || Number.isNaN(Date.parse(fecha+'T00:00:00Z')))
+    throw Error('Fecha de publicación no válida.');
+  const base=Date.parse(fecha+'T00:00:00Z');
+  if(base > Date.now()+86400000 || base < Date.parse('2025-01-01T00:00:00Z'))
+    throw Error('Fecha de publicación fuera del período admitido.');
+  const iso=(ms:number) => new Date(ms).toISOString().slice(0,10);
+  const token=await googleToken();
+  const endpoint='https://www.googleapis.com/webmasters/v3/sites/'+encodeURIComponent(gscSite)+'/searchAnalytics/query';
+  const maxDate=daysBefore(3);
+  const reporte=async(inicio:string,fin:string) => {
+    if(fin<inicio)return {clicks:0,impresiones:0,ctr:0,posicion:0};
+    const data=await googlePost(endpoint,{
+      startDate:inicio,endDate:fin,dataState:'final',dimensions:[],rowLimit:1,
+      dimensionFilterGroups:[{filters:[{
+        dimension:'page',operator:'equals',expression:ORIGIN+ruta
+      }]}]
+    },token);
+    const r=data.rows?.[0]||{};
+    return {clicks:Number(r.clicks||0),impresiones:Number(r.impressions||0),
+      ctr:Number(r.ctr||0),posicion:Number(r.position||0)};
+  };
+  const periodos=await Promise.all([7,28,90].map(async dias=>{
+    const start=iso(base), finProgramado=iso(base+(dias-1)*86400000);
+    const fin=finProgramado<maxDate?finProgramado:maxDate;
+    const inicioPrevio=iso(base-dias*86400000),finPrevio=iso(base-86400000);
+    const previo=await reporte(inicioPrevio,finPrevio);
+    const posterior=await reporte(start,fin);
+    const diasFinalizados=fin>=start?Math.min(dias,Math.round((Date.parse(fin+'T00:00:00Z')-base)/86400000)+1):0;
+    const completo=diasFinalizados===dias;
+    return {dias,completo,diasFinalizados,desde:inicioPrevio,hastaPrevio:finPrevio,
+      inicioPosterior:start,finPosterior:fin>=start?fin:null,
+      anterior:previo,posterior:posterior,
+      cambioClics:completo && previo.clicks>0?100*(posterior.clicks-previo.clicks)/previo.clicks:null,
+      cambioImpresiones:completo && previo.impresiones>0?
+        100*(posterior.impresiones-previo.impresiones)/previo.impresiones:null
+    };
+  }));
+  return {disponible:true,url:ORIGIN+ruta,publicadoEn:fecha,consultadoEn:new Date().toISOString(),
+    periodos,nota:'Comparación URL por URL en Search Console, intervalos iguales antes y después de publicar. Los datos se finalizan con retraso. No prueba causalidad.'};
+}
+
 /* Opcional: leer la última versión PUBLICADA del contenedor mediante Tag Manager
  * API, una integración separada de la detección de su snippet público. */
 async function versionPublicadaGtm() {
@@ -506,6 +553,12 @@ export default {
       if (accion === 'resumen') return Response.json(await obtenerResumen(dias));
       if (accion === 'tag-manager') return Response.json(await auditoriaTagManager());
       if (accion === 'ga4-tiempo-real') return Response.json(await analyticsEnTiempoReal());
+      if (accion === 'seguimiento-seo') {
+        const ruta=rutaSegura(body.ruta || '/');
+        const fecha=String(body.publicadaEn || '');
+        if(!ruta || fecha.length>40)return fail('Ruta o fecha no válida.',400);
+        return Response.json(await seguimientoPorPagina(ruta,fecha));
+      }
       if (accion === 'business-profile') return Response.json(await perfilEmpresa(dias));
       if (accion === 'consulta-paginas') {
         const consulta = String(body.consulta || '').trim();
