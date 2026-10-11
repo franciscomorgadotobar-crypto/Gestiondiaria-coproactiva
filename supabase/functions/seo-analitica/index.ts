@@ -262,7 +262,7 @@ export default {
       const body = await req.json().catch(() => ({}));
       const accion = body.accion;
       if (accion === 'estado') {
-        const { data, error: metricsError } = await ctx.supabaseAdmin
+        const { data, error: metricsError } = await (ctx.supabaseAdmin || ctx.supabase)
           .from('jarvis_metricas_web').select('fuente,metrica,periodo_inicio,periodo_fin,valor,valor_texto')
           .order('periodo_fin', { ascending: false }).limit(60);
         return Response.json({ site: ORIGIN, google: Boolean(email && privateKey),
