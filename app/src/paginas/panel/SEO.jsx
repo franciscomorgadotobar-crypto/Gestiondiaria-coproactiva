@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { construirOportunidades } from '../../lib/seoOportunidades';
-import DetalleOportunidad from './DetalleOportunidad';
+import SEORecomendaciones from './SEORecomendaciones';
 import SEODashboard from './SEODashboard';
 import './SEO.css';
 
@@ -214,9 +214,6 @@ function SEOInterno() {
   }, [sc]);
   const lista = useMemo(() => construirOportunidades(sc, auditoriaInicio || auditoria, ga),
     [sc, auditoriaInicio, auditoria, ga]);
-  const rutasSitemap = useMemo(() => (auditoriaInicio?.sitemap?.urls || []).map(u => {
-    try { return new URL(u).pathname; } catch { return ''; }
-  }).filter(Boolean), [auditoriaInicio]);
   const sesionesOrganicas = ga?.canales?.find(c => c.clave?.toLowerCase() === 'organic search')?.valores?.[0];
   const eventoLeadGA4 = ga?.eventos?.find(e => e.clave === 'generate_lead');
   const leadsMedidos = eventoLeadGA4?.valores?.[1];
@@ -237,15 +234,6 @@ function SEOInterno() {
       });
     });
   }
-  useEffect(() => {
-    if (vista === 'oportunidades' && accionSeleccionada) {
-      const id = requestAnimationFrame(() => document.getElementById('seo-detalle-accion')?.scrollIntoView({
-        behavior: 'smooth', block: 'start'
-      }));
-      return () => cancelAnimationFrame(id);
-    }
-  }, [vista, accionSeleccionada?.id]);
-
   return <div className="pantalla seo-pantalla">
     <header className="encabezado seo-cabecera">
       <div><span className="seleccion-area-etiqueta">Marketing · posicionamiento orgánico</span>
@@ -429,30 +417,9 @@ function SEOInterno() {
         </> : <Vacio titulo="Medir experiencia de página" descripcion="PageSpeed evalúa rendimiento, SEO, accesibilidad y buenas prácticas del dispositivo seleccionado." />)}
       </section>}
 
-      {vista === 'oportunidades' && <section>
-        <h2 className="h4">Oportunidades priorizadas</h2>
-        <p className="chico apagado">Cada sugerencia muestra su origen, métricas y regla aplicada. «Analizar» identifica primero qué URL aparece en Google y lee su título, descripción y H1 actuales antes de sugerir un cambio.</p>
-        {accionSeleccionada && <DetalleOportunidad key={accionSeleccionada.id} item={accionSeleccionada}
-          invocar={invocar} dias={dias} rutasSitemap={rutasSitemap}
-          alCerrar={() => setAccionSeleccionada(null)} irVista={irVista} />}
-        <div className="seo-aviso">
-          <strong>Regla de oportunidad por consulta:</strong> al menos 30 impresiones, posición media de 4 a 20 y CTR inferior al 4%.
-          La prioridad Alta comienza en 100 impresiones. Son umbrales iniciales editables en el código; no justifican cambiar el texto por sí solos.
-        </div>
-        {lista.map(x => <div className="tarjeta seo-oportunidad" key={x.id}>
-          <div className="seo-fila-separada"><span className={'seo-prioridad ' + x.prioridad.toLowerCase()}>{x.prioridad}</span><span className="micro">{x.tipo} · {x.fuente}</span></div>
-          <h3>{x.titulo}</h3><p>{x.detalle}</p>
-          {x.metricas && <div className="seo-metricas-inline">
-            <span>{numeral(x.metricas.impresiones)} impresiones</span>
-            <span>{numeral(x.metricas.clicks)} clics</span>
-            <span>CTR {porcentaje(x.metricas.ctr)}</span>
-            <span>Posición {decimal(x.metricas.posicion)}</span>
-          </div>}
-          <button type="button" className="boton boton-secundario" onClick={() => abrirAccion(x)}>
-            Analizar · ver URL, texto actual y propuesta →
-          </button>
-        </div>)}
-      </section>}
+      {vista === 'oportunidades' && <SEORecomendaciones
+        lista={lista} invocar={invocar} dias={dias} irVista={irVista}
+        consultaPrioritaria={accionSeleccionada?.consulta || null} />}
 
       {vista === 'business' && <section>
         <div className="seo-titulo-seccion">
