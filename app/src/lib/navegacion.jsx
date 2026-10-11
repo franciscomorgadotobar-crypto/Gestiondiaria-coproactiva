@@ -67,6 +67,7 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
     '/propiedades',
     '/proveedores',
     '/contabilidad',
+    '/seo',
     '/configuracion',
     '/whatsapp'
   ].includes(ruta)) {
