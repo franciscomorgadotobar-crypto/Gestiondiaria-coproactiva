@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { propuestaEditorial } from '../../lib/seoOportunidades';
+import { PROPUESTAS_PREPARADAS_EXTERNAMENTE } from '../../lib/seoPreparacionesExternas';
 import './SEORecomendaciones.css';
 
 const n = v => Number(v ?? 0).toLocaleString('es-CL', { maximumFractionDigits: 0 });
@@ -136,6 +137,7 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
   const [decisiones,setDecisiones]=useState([]);
   const [cargandoDecision,setCargandoDecision]=useState('');
   const [mensaje,setMensaje]=useState('');
+  const [resultadoLocal,setResultadoLocal]=useState(null);
   const [modo,setModo]=useState('');
   const [comentario,setComentario]=useState('');
   const [confirmacion,setConfirmacion]=useState('');
@@ -212,8 +214,9 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
   const ultima=detalle && decisiones.find(p=>p.ruta===detalle.ruta &&
     ['aprobada','preparada','publicada','error_preparacion'].includes(p.estado));
   const previo=detalle && (ultima || decisiones.find(p=>p.ruta===detalle.ruta && p.consulta_principal===detalle.consultas[0]?.consulta));
+  const preparadoExterno=previo && !previo.pr_url ? PROPUESTAS_PREPARADAS_EXTERNAMENTE[previo.id] : null;
   function irDetalle(item) {
-    setSeleccion(item.id);setModo('');setComentario('');setMensaje('');setConfirmacion('');
+    setSeleccion(item.id);setModo('');setComentario('');setMensaje('');setResultadoLocal(null);setConfirmacion('');
   }
   function payload(item) {
     const propuesta=item.propuesta;
@@ -230,7 +233,7 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
   }
   async function decidir(accion) {
     if(!detalle)return;
-    setCargandoDecision(accion);setError('');setMensaje('');
+    setCargandoDecision(accion);setError('');setMensaje('');setResultadoLocal(null);
     try {
       let out;
       if(accion==='aprobar')out=await servicio('aprobar',{propuesta:payload(detalle)});
@@ -240,10 +243,21 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
       else if(accion==='preparar')out=await servicio('preparar',{id:previo.id});
       else if(accion==='publicar')out=await servicio('publicar',{id:previo.id,confirmacion});
       else throw Error('Acción desconocida.');
-      setMensaje(out.aviso||'La decisión quedó registrada correctamente.');
+      const respuesta = out?.aviso || 'La decisión quedó registrada correctamente.';
+      setMensaje(respuesta);
+      setResultadoLocal({
+        id: out?.propuesta?.id || previo?.id || '',
+        tipo: out?.preparacionPendiente ? 'pendiente' : 'correcto',
+        texto: respuesta,
+        url: out?.propuesta?.pr_url || ''
+      });
       setModo('');setComentario('');setConfirmacion('');
       await listar();
-    }catch(err){setError(err.message||'No se pudo guardar la decisión.');}
+    }catch(err){
+      const texto=err.message||'No se pudo guardar la decisión.';
+      setError(texto);
+      setResultadoLocal({id:previo?.id||'',tipo:'error',texto});
+    }
     finally{setCargandoDecision('');}
   }
   const editable=detalle?.auditoria?.status===200 && detalle?.propuesta && !detalle.propuesta.error &&
@@ -319,17 +333,47 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
           </>}
           {!!previo && <div className="seo-reco-flujo">
             <div className="seo-reco-pasos">
-              {['Diagnóstico','Propuesta','Revisión','Publicación'].map((x,j)=><div key={x} className={j<= (previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'actual':''}>
-                <span>{j<=(previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'✓':j+1}</span><small>{x}</small>
+              {['Diagnóstico','Propuesta','Revisión','Publicación'].map((x,j)=><div key={x} className={j <= (preparadoExterno ? 2 : previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'actual':''}>
+                <span>{j <= (preparadoExterno ? 2 : previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'✓':j+1}</span><small>{x}</small>
               </div>)}
             </div>
-            <p><Icono name="shield"/>{estadosDisponibles(previo)}</p>
+            <p><Icono name="shield"/>{preparadoExterno
+              ? 'Propuesta preparada como borrador externo · pendiente de revisión'
+              : estadosDisponibles(previo)}</p>
+            {resultadoLocal && (!resultadoLocal.id || resultadoLocal.id===previo.id) && <div
+              className={'seo-reco-respuesta seo-reco-respuesta-'+resultadoLocal.tipo}
+              role="status" aria-live="polite">
+              <strong>{resultadoLocal.tipo==='correcto'?'Acción completada':resultadoLocal.tipo==='pendiente'?'Preparación pendiente':'No se pudo completar'}</strong>
+              <p>{resultadoLocal.texto}</p>
+              {resultadoLocal.url && <a href={resultadoLocal.url} target="_blank" rel="noopener noreferrer">Abrir propuesta en GitHub ↗</a>}
+            </div>}
+            {preparadoExterno && <div className="seo-reco-respuesta seo-reco-respuesta-correcto">
+              <strong>Propuesta ya creada en GitHub</strong>
+              <p>PR #{preparadoExterno.numero}: {preparadoExterno.nota} Se creó con autorización externa; el registro interno todavía no está sincronizado con GitHub.</p>
+              <a href={preparadoExterno.url} target="_blank" rel="noopener noreferrer">
+                <Icono name="external"/> Revisar los cambios propuestos →
+              </a>
+            </div>}
             {previo.pr_url && <a href={previo.pr_url} target="_blank" rel="noopener noreferrer" className="seo-reco-linkgit">
               <Icono name="external"/> Abrir revisión de cambios en GitHub
             </a>}
-            {previo.estado==='aprobada' && <button type="button" className="boton boton-secundario"
-              disabled={!!cargandoDecision} onClick={()=>decidir('preparar')}>Preparar propuesta en GitHub</button>}
-            {previo.estado==='error_preparacion' && <p className="seo-reco-alerta">{previo.observaciones}</p>}
+            {previo.estado==='aprobada' && !preparadoExterno && <>
+              {!integracionGithub && <div className="seo-reco-respuesta seo-reco-respuesta-pendiente" role="status">
+                <strong>Falta autorizar GitHub en la aplicación</strong>
+                <p>La aprobación está guardada, pero la app no tiene permiso para crear ramas o solicitudes de cambio.
+                  Se debe configurar el secreto COPROACTIVA_GITHUB_TOKEN en Supabase. No es necesario volver a aprobar.</p>
+              </div>}
+              <button type="button" className="boton boton-secundario"
+                disabled={!!cargandoDecision || !integracionGithub}
+                onClick={()=>decidir('preparar')}>
+                {cargandoDecision==='preparar'?'Preparando propuesta…':integracionGithub?'Preparar propuesta en GitHub':'Preparación pendiente de conexión'}
+              </button>
+            </>}
+            {previo.estado==='error_preparacion' && <>
+              <p className="seo-reco-alerta">{previo.observaciones || 'La preparación falló.'}</p>
+              {integracionGithub && <button type="button" className="boton boton-secundario" disabled={!!cargandoDecision}
+                onClick={()=>decidir('preparar')}>{cargandoDecision==='preparar'?'Reintentando…':'Reintentar preparación'}</button>}
+            </>}
             {previo.estado==='preparada' && puedePublicar && <div className="seo-reco-confirmar">
               <p><strong>Confirmación final:</strong> primero revisa el PR en GitHub y sus validaciones. Si estás conforme, escribe PUBLICAR. Se integrará el cambio en main y el sitio lo desplegará después.</p>
               <label>Escribe PUBLICAR para confirmar <input value={confirmacion} onChange={e=>setConfirmacion(e.target.value)}

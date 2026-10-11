@@ -107,3 +107,20 @@
 .seo-reco-seguimiento-periodo>div{display:flex;flex-direction:column;gap:5px;font-size:.76rem}
 .seo-reco-cambio{font-size:.8rem;color:#a05b25}
 @media(max-width:730px){.seo-reco-seguimiento-grid{grid-template-columns:1fr}}
+
+/* Respuestas visibles exactamente donde el usuario pulsa Preparar. */
+.seo-reco-respuesta {
+  display:flex; flex-direction:column; gap:8px; border:1px solid var(--borde);
+  border-radius:8px; background:#fff; padding:14px; font-size:.85rem;
+}
+.seo-reco-respuesta strong { color:var(--texto-titulo); font-size:.87rem; }
+.seo-reco-respuesta p { margin:0; line-height:1.55; }
+.seo-reco-respuesta a {
+  display:flex; align-items:center; gap:7px; width:fit-content;
+  color:#965022; text-decoration:underline; font-weight:700; overflow-wrap:anywhere;
+}
+.seo-reco-respuesta a .seo-reco-icon { flex:none; width:26px; height:26px; background:transparent; }
+.seo-reco-respuesta-pendiente { background:#fff8ee; border-color:#e8ccaa; }
+.seo-reco-respuesta-correcto { background:#f1f8ef; border-color:#c7dcc2; }
+.seo-reco-respuesta-error { background:#fcf0ee; border-color:#e8c9c4; }
+.seo-reco-flujo > button:disabled { cursor:not-allowed; opacity:.65; }
