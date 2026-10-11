@@ -78,6 +78,44 @@ function calcularGrupo(items,ruta,auditoria) {
     motivo:propuesta?.motivo||'Se requieren datos de la página antes de proponer modificaciones.'
   };
 }
+function SeguimientoSeo({invocar,ruta,publicadaEn}) {
+  const [datos,setDatos]=useState(null);
+  const [error,setError]=useState('');
+  const [cargando,setCargando]=useState(false);
+  async function actualizar(){
+    setCargando(true);setError('');
+    try {
+      const r=await invocar('seguimiento-seo',{ruta,publicadaEn});
+      setDatos(r);
+    }catch(e){setError(e.message||'No se pudieron consultar los indicadores.');}
+    finally{setCargando(false);}
+  }
+  useEffect(()=>{if(publicadaEn)actualizar();},[ruta,publicadaEn,invocar]);
+  return <div className="seo-reco-seguimiento">
+    <div className="seo-reco-seguimiento-cabecera"><div><Icono name="chart"/>
+      <div><strong>Seguimiento de resultados</strong>
+        <small>Comparación antes y después de la publicación, por URL.</small></div>
+    </div><button type="button" onClick={actualizar} disabled={cargando} className="boton boton-secundario">
+      {cargando?'Consultando…':'Actualizar'}</button></div>
+    {error && <p className="seo-reco-alerta">{error}</p>}
+    {datos?.disponible && <>
+      <div className="seo-reco-seguimiento-grid">
+        {datos.periodos?.map(periodo=><div key={periodo.dias} className="seo-reco-seguimiento-periodo">
+          <strong>{periodo.dias} días</strong>
+          <small>{periodo.completo?'Período completo':periodo.diasFinalizados+' de '+periodo.dias+' días finalizados'}</small>
+          <div><span>Antes: {n(periodo.anterior?.clicks)} clics</span><span>Después: {n(periodo.posterior?.clicks)} clics</span></div>
+          <div><span>Impresiones antes: {n(periodo.anterior?.impresiones)}</span>
+            <span>Después: {n(periodo.posterior?.impresiones)}</span></div>
+          <strong className="seo-reco-cambio">
+            {periodo.cambioClics!=null?(periodo.cambioClics>0?'+':'')+decimal(periodo.cambioClics)+'% clics':'Comparación pendiente'}
+          </strong>
+        </div>)}
+      </div>
+      <p className="seo-reco-nota">{datos.nota} Última consulta: {new Date(datos.consultadoEn).toLocaleString('es-CL')}.</p>
+    </>}
+    {datos&&!datos.disponible && <p className="seo-reco-aviso">{datos.error||'Search Console no está disponible.'}</p>}
+  </div>;
+}
 function estadosDisponibles(actual) {
   if(!actual)return null;
   return {
@@ -300,7 +338,9 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
                 onClick={()=>decidir('publicar')}>Confirmar publicación en GitHub</button>
             </div>}
             {previo.estado==='preparada'&&!puedePublicar && <p className="seo-reco-aviso">La publicación requiere autorización de superadministrador.</p>}
-            {previo.estado==='publicada' && <p className="seo-reco-aviso">Registro inicial guardado para seguimiento a los 7, 28 y 90 días. Comprueba primero que GitHub Pages finalizó correctamente.</p>}
+            {previo.estado==='publicada' && <SeguimientoSeo invocar={invocar}
+              ruta={previo.ruta} publicadaEn={previo.publicada_en}/>}
+
           </div>}
           {editable && !yaDecidido && <>
             {modo && <div className="seo-reco-pedir-ajuste">
