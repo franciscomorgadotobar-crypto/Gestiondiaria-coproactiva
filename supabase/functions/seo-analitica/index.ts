@@ -11,7 +11,9 @@ import { withSupabase } from 'npm:@supabase/server@1';
 
 const ORIGIN = 'https://www.coproactiva.cl';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const SCOPES = 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly';
+const gtmPath = Deno.env.get('GTM_CONTAINER_PATH') || '';
+const SCOPES = 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly' +
+  (gtmPath ? ' https://www.googleapis.com/auth/tagmanager.readonly' : '');
 const email = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL') || '';
 const privateKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY') || '';
 const gaProperty = (Deno.env.get('GA4_PROPERTY_ID') || '').replace(/^properties\//, '');
@@ -117,7 +119,7 @@ async function analytics(token: string, dias: number) {
     query(['date'], ['sessions', 'totalUsers'], 100),
     query(['sessionDefaultChannelGroup'], ['sessions', 'totalUsers'], 20),
     query(['pagePath'], ['screenPageViews', 'totalUsers'], 75),
-    query(['eventName'], ['eventCount'], 35)
+    query(['eventName'], ['eventCount', 'keyEvents'], 35)
   ]);
   const m = (totales.rows || [])[0]?.metricValues || [];
   return {
@@ -251,6 +253,97 @@ async function pagespeed(ruta: string, device: string) {
   };
 }
 
+
+/* Opcional: leer la última versión PUBLICADA del contenedor mediante Tag Manager
+ * API, una integración separada de la detección de su snippet público. */
+async function versionPublicadaGtm() {
+  if (!gtmPath) return { conectado: false, detalle: 'Configura GTM_CONTAINER_PATH para validar etiquetas publicadas mediante Tag Manager API.' };
+  if (!/^accounts\/\d+\/containers\/\d+$/.test(gtmPath))
+    return { conectado: false, detalle: 'GTM_CONTAINER_PATH debe ser accounts/ID/containers/ID.' };
+  if (!email || !privateKey) return { conectado: false, detalle: 'Faltan las credenciales Google de solo lectura.' };
+  try {
+    const token = await googleToken();
+    const r = await fetch('https://tagmanager.googleapis.com/tagmanager/v2/' + gtmPath + '/versions:live', {
+      headers: { Authorization: 'Bearer ' + token },
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!r.ok) return { conectado: false, detalle: 'Tag Manager API respondió ' + r.status + '. Revisa acceso al contenedor.' };
+    const data = await r.json();
+    return {
+      conectado: true,
+      versionPublicada: String(data.containerVersionId || 'Sin versión'),
+      nombreVersion: String(data.name || 'Sin nombre').slice(0, 100),
+      cantidadEtiquetas: (data.tag || []).length,
+      cantidadActivadores: (data.trigger || []).length,
+      etiquetas: (data.tag || []).map((x: any) => ({
+        nombre: String(x.name || 'Sin nombre').slice(0, 100),
+        tipo: String(x.type || '').slice(0, 30)
+      })).slice(0, 70),
+      nota: 'Información de la versión publicada. No confirma disparos ni recepción real de cada etiqueta.'
+    };
+  } catch {
+    return { conectado: false, detalle: 'No fue posible consultar el contenedor publicado con la cuenta autorizada.' };
+  }
+}
+/* Señales técnicas visibles del sitio, no confundir con etiquetas publicadas o
+ * eventos recibidos por Google Analytics (requieren Preview / DebugView). */
+async function auditoriaTagManager() {
+  const [home, js, formularios, version] = await Promise.all([
+    siteFetch('/'), siteFetch('/assets/site-common.20260831.js'), siteFetch('/assets/lead-form.js'),
+    versionPublicadaGtm()
+  ]);
+  const html = home.tipo.includes('text/html') ? home.content : '';
+  const ids = [...new Set([...html.matchAll(/\bGTM-[A-Z0-9]{5,}\b/g)].map(x => x[0]))];
+  const jsContent = js.status === 200 ? js.content : '';
+  const formContent = formularios.status === 200 ? formularios.content : '';
+  return {
+    fecha: new Date().toISOString(),
+    version, sitioHttp: home.status, codigoGtm: ids.length > 0, contenedores: ids,
+    dataLayer: /(?:window\.)?dataLayer/.test(html + jsContent),
+    consentimiento: /gtag\(\s*['"]consent['"]\s*,\s*['"]default['"]/.test(html),
+    eventoLeadEnCodigo: /generate_lead/.test(jsContent) && /coproactivaTrackLead/.test(formContent),
+    eventoLeadRecibidoEnGA4: null,
+    notas: [
+      'Código instalado no significa que las etiquetas estén publicadas ni disparen correctamente.',
+      'Confirma el contenedor en Tag Assistant Preview y el evento generate_lead en GA4 DebugView.'
+    ]
+  };
+}
+async function paginasDeConsulta(consulta: string, dias: number) {
+  if (!consulta || consulta.length > 150) throw new Error('Consulta no válida.');
+  if (!email || !privateKey) throw new Error('La cuenta Google no está configurada.');
+  const token = await googleToken();
+  const siteUrl = 'https://www.googleapis.com/webmasters/v3/sites/' +
+    encodeURIComponent(gscSite) + '/searchAnalytics/query';
+  const r = await googlePost(siteUrl, {
+    startDate: daysBefore(dias + 2), endDate: daysBefore(3),
+    dimensions: ['page'], rowLimit: 25, dataState: 'final',
+    dimensionFilterGroups: [{ filters: [{
+      dimension: 'query', operator: 'equals', expression: consulta
+    }] }]
+  }, token);
+  const paginas = (r.rows || []).map((x: any) => {
+    try {
+      const u = new URL(String(x.keys?.[0] || ''));
+      if (!['www.coproactiva.cl', 'coproactiva.cl'].includes(u.hostname) ||
+          u.protocol !== 'https:') return null;
+      const ruta = rutaSegura(u.pathname);
+      if (!ruta) return null;
+      return {
+        ruta, url: ORIGIN + ruta,
+        clics: Number(x.clicks || 0), impresiones: Number(x.impressions || 0),
+        ctr: Number(x.ctr || 0), posicion: Number(x.position || 0)
+      };
+    } catch { return null; }
+  }).filter(Boolean);
+  return {
+    consulta, paginas,
+    explicacion: paginas.length
+      ? 'Páginas asociadas a esta consulta según Search Console, ordenadas según la respuesta de Google.'
+      : 'Search Console no entregó páginas para esta consulta. Elige una página del sitio y valida su pertinencia antes de redactar cambios.'
+  };
+}
+
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
     try {
@@ -271,6 +364,12 @@ export default {
       }
       const dias = [7, 28, 90].includes(Number(body.dias)) ? Number(body.dias) : 28;
       if (accion === 'resumen') return Response.json(await obtenerResumen(dias));
+      if (accion === 'tag-manager') return Response.json(await auditoriaTagManager());
+      if (accion === 'consulta-paginas') {
+        const consulta = String(body.consulta || '').trim();
+        if (!consulta || consulta.length > 150) return fail('Consulta no válida.', 400);
+        return Response.json(await paginasDeConsulta(consulta, dias));
+      }
       const ruta = rutaSegura(body.ruta || '/');
       if (!ruta) return fail('Selecciona una ruta válida del sitio.', 400);
       if (accion === 'auditoria') return Response.json(await auditoriaTecnica(ruta));

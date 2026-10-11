@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
+import { construirOportunidades } from '../../lib/seoOportunidades';
+import DetalleOportunidad from './DetalleOportunidad';
 import './SEO.css';
 
 const SECCIONES = [
   ['resumen', 'Resumen'],
   ['consultas', 'Búsquedas'],
   ['analytics', 'Analytics'],
+  ['tagmanager', 'Tag Manager'],
   ['tecnico', 'SEO técnico'],
   ['velocidad', 'Velocidad'],
   ['oportunidades', 'Oportunidades'],
@@ -95,34 +98,6 @@ function Barra({ titulo, valor, max, detalle }) {
   return <div className="seo-barra-item"><div className="seo-fila-separada"><span>{titulo}</span><strong>{detalle || numeral(valor)}</strong></div>
     <div className="seo-barra-fondo"><span style={{ width: (100 * Number(valor || 0) / Math.max(1, max)) + '%' }} /></div></div>;
 }
-function oportunidades(search, audit, analytics) {
-  const result = [];
-  const qs = search?.consultas || [];
-  for (const q of qs) {
-    if (q.impresiones >= 30 && q.posicion >= 4 && q.posicion <= 20 && q.ctr < 0.04) {
-      result.push({ prioridad: q.impresiones >= 100 ? 'Alta' : 'Media', tipo: 'Contenido / CTR',
-        titulo: 'Optimizar: ' + q.clave, detalle: 'Posición ' + decimal(q.posicion) + ', ' +
-          numeral(q.impresiones) + ' impresiones y CTR ' + porcentaje(q.ctr) +
-          '. Revisar título SEO, intención de búsqueda y contenido.' });
-    }
-  }
-  for (const item of (audit?.problemas || [])) {
-    result.push({ prioridad: item.nivel === 'alto' ? 'Alta' : 'Media',
-      tipo: 'SEO técnico', titulo: item.texto, detalle: 'URL auditada: ' + (audit?.url || sitio) });
-  }
-  const organic = analytics?.canales?.find(c => c.clave.toLowerCase() === 'organic search');
-  if (analytics?.disponible && !organic?.valores?.[0]) {
-    result.push({ prioridad: 'Media', tipo: 'Medición',
-      titulo: 'Revisar el tráfico orgánico en GA4',
-      detalle: 'No se encontraron sesiones del canal Organic Search en el período seleccionado. Validar etiquetado y propiedad.' });
-  }
-  if (!result.length && !search?.disponible && !audit) result.push({
-    prioridad: 'Pendiente', tipo: 'Conexión',
-    titulo: 'Conectar fuentes y realizar una auditoría',
-    detalle: 'Se necesitan datos verificables para detectar oportunidades concretas.'
-  });
-  return result.sort((a,b) => ({ Alta: 0, Media: 1, Pendiente: 2 }[a.prioridad] - { Alta: 0, Media: 1, Pendiente: 2 }[b.prioridad])).slice(0, 25);
-}
 function SEOInterno() {
   const [vista, setVista] = useState('resumen');
   const [dias, setDias] = useState(28);
@@ -137,6 +112,10 @@ function SEOInterno() {
   const [inspeccion, setInspeccion] = useState(null);
   const [velocidad, setVelocidad] = useState(null);
   const [dispositivo, setDispositivo] = useState('mobile');
+  const [tagManager, setTagManager] = useState(null);
+  const [tagError, setTagError] = useState('');
+  const [auditoriaInicio, setAuditoriaInicio] = useState(null);
+  const [accionSeleccionada, setAccionSeleccionada] = useState(null);
 
   const invocar = useCallback(async (accion, extras = {}) => {
     const { data, error: err } = await supabase.functions.invoke('seo-analitica', { body: { accion, ...extras } });
@@ -154,8 +133,19 @@ function SEOInterno() {
   const recargar = useCallback(async (manual = false) => {
     setCargando(true); setError(''); setAvisoActualizacion(null);
     try {
-      const [e, resumen] = await Promise.all([invocar('estado'), invocar('resumen', { dias })]);
+      const resultados = await Promise.allSettled([
+        invocar('estado'), invocar('resumen', { dias }),
+        invocar('tag-manager'), invocar('auditoria', { ruta: '/' })
+      ]);
+      if (resultados[0].status !== 'fulfilled') throw resultados[0].reason;
+      if (resultados[1].status !== 'fulfilled') throw resultados[1].reason;
+      const e = resultados[0].value, resumen = resultados[1].value;
       setEstado(e); setDatos(resumen);
+      if (resultados[2].status === 'fulfilled') {
+        setTagManager(resultados[2].value); setTagError('');
+      } else setTagError('La verificación de Tag Manager no pudo completarse.');
+      if (resultados[3].status === 'fulfilled') setAuditoriaInicio(resultados[3].value);
+      else setAuditoriaInicio(null);
       if (manual) {
         const sinConexion = [
           !resumen?.searchConsole?.disponible && 'Search Console',
@@ -195,7 +185,31 @@ function SEOInterno() {
     });
     return caminos.slice(0, 80);
   }, [sc]);
-  const lista = useMemo(() => oportunidades(sc, auditoria, ga), [sc, auditoria, ga]);
+  const lista = useMemo(() => construirOportunidades(sc, auditoriaInicio || auditoria, ga),
+    [sc, auditoriaInicio, auditoria, ga]);
+  const rutasSitemap = useMemo(() => (auditoriaInicio?.sitemap?.urls || []).map(u => {
+    try { return new URL(u).pathname; } catch { return ''; }
+  }).filter(Boolean), [auditoriaInicio]);
+  const sesionesOrganicas = ga?.canales?.find(c => c.clave?.toLowerCase() === 'organic search')?.valores?.[0];
+  const eventoLeadGA4 = ga?.eventos?.find(e => e.clave === 'generate_lead');
+  const leadsMedidos = eventoLeadGA4?.valores?.[1];
+  const variacionClics = sc?.disponible && sc?.anterior?.clics > 0
+    ? ((sc.totales.clics - sc.anterior.clics) / sc.anterior.clics) * 100 : null;
+  function abrirAccion(item) {
+    setAccionSeleccionada(item); setVista('oportunidades');
+  }
+  function irVista(vistaNueva, rutaNueva) {
+    if (rutaNueva) setRuta(rutaNueva);
+    setVista(vistaNueva);
+  }
+  useEffect(() => {
+    if (vista === 'oportunidades' && accionSeleccionada) {
+      const id = requestAnimationFrame(() => document.getElementById('seo-detalle-accion')?.scrollIntoView({
+        behavior: 'smooth', block: 'start'
+      }));
+      return () => cancelAnimationFrame(id);
+    }
+  }, [vista, accionSeleccionada?.id]);
 
   return <div className="pantalla seo-pantalla">
     <header className="encabezado seo-cabecera">
@@ -237,12 +251,57 @@ function SEOInterno() {
               Configurar conexiones →
             </button>
           </div>}
+        <section className="seo-centro-control" aria-label="Visión general">
+          <div className="seo-titulo-seccion"><div>
+            <h2 className="h4">Centro de control</h2>
+            <p className="chico apagado">Búsqueda → visitas → contactos y salud técnica. Cada dato indica su fuente.</p>
+          </div><span className="micro">{sc?.disponible ? sc.desde + ' al ' + sc.hasta : dias + ' días seleccionados'}</span></div>
+          <div className="seo-kpis">
+            <KPI titulo="Clics orgánicos · Search Console" valor={sc?.disponible ? numeral(sc.totales?.clics) : '—'}
+              nota={variacionClics === null ? 'Sin comparación disponible' : (variacionClics >= 0 ? '+' : '') + decimal(variacionClics) + '% vs período anterior'} />
+            <KPI titulo="Sesiones Organic Search · GA4" valor={ga?.disponible ? numeral(sesionesOrganicas || 0) : '—'}
+              nota="Sesiones atribuidas a búsqueda orgánica" />
+            <KPI titulo="Contactos generate_lead · GA4" valor={ga?.disponible && eventoLeadGA4 ? numeral(leadsMedidos) : '—'}
+              nota={eventoLeadGA4 ? 'Eventos clave generate_lead (no ventas)' : 'Evento no identificado; revisar GTM y GA4'} />
+            <KPI titulo="Incidencias técnicas · portada" valor={auditoriaInicio ? numeral(auditoriaInicio.problemas?.length) : '—'}
+              nota={auditoriaInicio ? 'Revisión HTML inicial · solo portada' : 'Auditoría pendiente'} />
+          </div>
+          <div className="seo-pulso-grid">
+            <button type="button" className="seo-pulso" onClick={() => setVista('consultas')}>
+              <span>Search Console</span><strong>{sc?.disponible ? porcentaje(sc.totales?.ctr) + ' CTR' : 'Sin conexión'}</strong>
+              <small>Posición media: {sc?.disponible ? decimal(sc.totales?.posicion) : '—'} · Ver búsquedas →</small>
+            </button>
+            <button type="button" className="seo-pulso" onClick={() => setVista('analytics')}>
+              <span>Google Analytics 4</span><strong>{ga?.disponible ? numeral(ga.totales?.sesiones) + ' sesiones' : 'Sin conexión'}</strong>
+              <small>Engagement: {ga?.disponible ? porcentaje(ga.totales?.engagement) : '—'} · Ver canales →</small>
+            </button>
+            <button type="button" className="seo-pulso" onClick={() => setVista('tagmanager')}>
+              <span>Google Tag Manager</span><strong>{tagManager?.codigoGtm ? 'Código detectado' : 'Sin confirmar'}</strong>
+              <small>{tagManager?.contenedores?.join(', ') || 'Sin ID comprobado'} · Validar eventos →</small>
+            </button>
+            <button type="button" className="seo-pulso" onClick={() => setVista('tecnico')}>
+              <span>SEO técnico</span><strong>{auditoriaInicio ? 'HTTP ' + auditoriaInicio.status : 'Pendiente'}</strong>
+              <small>{auditoriaInicio ? numeral(auditoriaInicio.sitemap?.urls?.length) + ' URLs en sitemap' : 'Sin auditoría'} · Examinar →</small>
+            </button>
+            <button type="button" className="seo-pulso" onClick={() => setVista('velocidad')}>
+              <span>PageSpeed Insights</span><strong>{velocidad ? velocidad.puntajes?.rendimiento + '/100' : 'Sin medición'}</strong>
+              <small>{velocidad ? 'Última medición en esta sesión' : 'Medición bajo demanda'} · Evaluar →</small>
+            </button>
+          </div>
+          <div className="seo-panel-criterio"><strong>¿Cómo interpretar el panel?</strong>
+            <p>{sc?.disponible && ga?.disponible
+              ? 'Search Console explica visibilidad y clics; GA4 explica sesiones y comportamiento. Sus cifras no tienen que coincidir.'
+              : 'Hay fuentes pendientes de autorizar. El análisis técnico es independiente y puede utilizarse sin conectar Analytics.'}
+              {' '}Tag Manager muestra comprobaciones de instalación, no la confirmación de eventos recibidos en GA4.</p>
+          </div>
+        </section>
         <div className="seo-integraciones">
           <EstadoIntegracion nombre="Google Search Console" disponible={!!sc?.disponible} mensaje={sc?.error}
             onClick={() => setVista('conexiones')} accion="Configurar Search Console" />
           <EstadoIntegracion nombre="Google Analytics 4" disponible={!!ga?.disponible} mensaje={ga?.error}
             onClick={() => setVista('conexiones')} accion="Configurar Analytics" />
-          <EstadoIntegracion nombre="Auditoría técnica" disponible={!!estado} mensaje="Requiere conexión a la función SEO"
+          <EstadoIntegracion nombre="Auditoría técnica" disponible={!!auditoriaInicio?.status}
+            mensaje={auditoriaInicio ? 'HTTP ' + auditoriaInicio.status : 'Sin comprobar'}
             onClick={() => setVista('tecnico')} accion="Abrir auditoría técnica" />
         </div>
         <section><div className="seo-titulo-seccion"><h2 className="h4">Búsqueda orgánica · Search Console</h2>
@@ -268,14 +327,27 @@ function SEOInterno() {
         </section>
         <section className="seo-dos-columnas">
           <div className="tarjeta seo-mini-card"><h2 className="h4">Acciones prioritarias</h2>
-            {lista.slice(0, 4).map((item,i) => <div className="seo-accion-mini" key={i}>
+            <p className="micro">Señales ordenadas por umbrales objetivos. Haz clic para consultar la URL y el texto real.</p>
+            {lista.slice(0, 4).map(item => <button type="button" className="seo-accion-mini seo-accion-clic" key={item.id}
+              onClick={() => abrirAccion(item)}>
               <span className={'seo-prioridad ' + item.prioridad.toLowerCase()}>{item.prioridad}</span>
-              <strong>{item.titulo}</strong></div>)}
-            <button className="boton boton-texto" onClick={() => setVista('oportunidades')}>Ver oportunidades →</button>
+              <strong>{item.titulo}</strong>
+              {item.metricas && <small>{numeral(item.metricas.impresiones)} impresiones · CTR {porcentaje(item.metricas.ctr)} · Pos. {decimal(item.metricas.posicion)}</small>}
+              <span className="seo-link-inline">Analizar la recomendación →</span>
+            </button>)}
+            <button type="button" className="boton boton-texto" onClick={() => setVista('oportunidades')}>Ver todas las oportunidades →</button>
           </div>
           <div className="tarjeta seo-mini-card"><h2 className="h4">Lectura ejecutiva</h2>
-            <p>Search Console mide apariciones y clics en resultados de Google. Analytics mide la navegación del sitio y sus eventos. No son métricas equivalentes.</p>
-            <p className="chico apagado">Las consultas de Search Console tienen retraso habitual de algunos días. Los reportes históricos de terceros se muestran aparte.</p>
+            <p><strong>Visibilidad:</strong> {sc?.disponible
+              ? numeral(sc.totales?.impresiones) + ' impresiones, ' + numeral(sc.totales?.clics) + ' clics y ' + porcentaje(sc.totales?.ctr) + ' de CTR en el período.'
+              : 'Falta información de Search Console.'}</p>
+            <p><strong>Conversión:</strong> {ga?.disponible
+              ? numeral(ga.totales?.eventosClave) + ' eventos clave en GA4. Confirmar cuáles corresponden a formularios.'
+              : 'Falta información de GA4.'}</p>
+            <p><strong>Medición:</strong> {tagManager?.codigoGtm
+              ? 'El código de Tag Manager está presente. Su publicación y el disparo real requieren validación con Tag Assistant.'
+              : 'La instalación de Tag Manager no se ha confirmado.'}</p>
+            <p className="chico apagado">Las prioridades son hipótesis basadas en señales de Google y auditorías, no resultados garantizados. No se editará el sitio automáticamente.</p>
           </div>
         </section>
       </>}
@@ -405,11 +477,70 @@ function SEOInterno() {
 
       {vista === 'oportunidades' && <section>
         <h2 className="h4">Oportunidades priorizadas</h2>
-        <p className="chico apagado">Reglas transparentes basadas en impresiones, CTR, posición y hallazgos técnicos. Son recomendaciones, no cambios automáticos al sitio.</p>
-        {lista.map((x,i) => <div className="tarjeta seo-oportunidad" key={i}>
-          <div className="seo-fila-separada"><span className={'seo-prioridad ' + x.prioridad.toLowerCase()}>{x.prioridad}</span><span className="micro">{x.tipo}</span></div>
+        <p className="chico apagado">Cada sugerencia muestra su origen, métricas y regla aplicada. «Analizar» identifica primero qué URL aparece en Google y lee su título, descripción y H1 actuales antes de sugerir un cambio.</p>
+        {accionSeleccionada && <DetalleOportunidad key={accionSeleccionada.id} item={accionSeleccionada}
+          invocar={invocar} dias={dias} rutasSitemap={rutasSitemap}
+          alCerrar={() => setAccionSeleccionada(null)} irVista={irVista} />}
+        <div className="seo-aviso">
+          <strong>Regla de oportunidad por consulta:</strong> al menos 30 impresiones, posición media de 4 a 20 y CTR inferior al 4%.
+          La prioridad Alta comienza en 100 impresiones. Son umbrales iniciales editables en el código; no justifican cambiar el texto por sí solos.
+        </div>
+        {lista.map(x => <div className="tarjeta seo-oportunidad" key={x.id}>
+          <div className="seo-fila-separada"><span className={'seo-prioridad ' + x.prioridad.toLowerCase()}>{x.prioridad}</span><span className="micro">{x.tipo} · {x.fuente}</span></div>
           <h3>{x.titulo}</h3><p>{x.detalle}</p>
+          {x.metricas && <div className="seo-metricas-inline">
+            <span>{numeral(x.metricas.impresiones)} impresiones</span>
+            <span>{numeral(x.metricas.clicks)} clics</span>
+            <span>CTR {porcentaje(x.metricas.ctr)}</span>
+            <span>Posición {decimal(x.metricas.posicion)}</span>
+          </div>}
+          <button type="button" className="boton boton-secundario" onClick={() => abrirAccion(x)}>
+            Analizar · ver URL, texto actual y propuesta →
+          </button>
         </div>)}
+      </section>}
+
+      {vista === 'tagmanager' && <section>
+        <h2 className="h4">Google Tag Manager · seguimiento y conversiones</h2>
+        <p className="chico apagado">Se comprueba el código público del sitio. La configuración de etiquetas, activadores y versiones publicadas requiere acceso al contenedor de Google; detectar código no demuestra recepción de eventos.</p>
+        <div className="seo-kpis">
+          <KPI titulo="Contenedor GTM" valor={tagManager?.codigoGtm ? 'Detectado' : 'Sin confirmar'}
+            nota={tagManager?.contenedores?.join(', ') || 'No identificado'} />
+          <KPI titulo="Data Layer" valor={tagManager?.dataLayer ? 'Detectada' : 'Sin confirmar'} nota="Señal en código" />
+          <KPI titulo="Consent Mode" valor={tagManager?.consentimiento ? 'Código detectado' : 'Sin confirmar'} nota="Confirmar señales en navegador" />
+          <KPI titulo="generate_lead" valor={tagManager?.eventoLeadEnCodigo ? 'En código' : 'Sin confirmar'}
+            nota={eventoLeadGA4 ? 'GA4 recibió ' + numeral(eventoLeadGA4.valores?.[0]) + ' eventos en este período' : 'Recepción en GA4 no verificada'} />
+        </div>
+        {tagError && <div className="seo-aviso seo-aviso-pendiente">{tagError}</div>}
+        <div className="tarjeta seo-mini-card">
+          <h3 className="h4">Contenedor publicado · GTM API</h3>
+          {tagManager?.version?.conectado ? <>
+            <p><strong>Versión publicada: {tagManager.version.versionPublicada}</strong> · {tagManager.version.nombreVersion}.
+              {' '}{numeral(tagManager.version.cantidadEtiquetas)} etiquetas y {numeral(tagManager.version.cantidadActivadores)} activadores.</p>
+            <Tabla columnas={[{ id: 'nombre', etiqueta: 'Etiqueta publicada' }, { id: 'tipo', etiqueta: 'Tipo' }]}
+              filas={tagManager.version.etiquetas || []} archivo="coproactiva-gtm-etiquetas.csv" />
+            <p className="micro">{tagManager.version.nota}</p>
+          </> : <p className="chico apagado">{tagManager?.version?.detalle ||
+            'Para leer las etiquetas y versiones publicadas se necesita autorizar GTM_CONTAINER_PATH y permisos de solo lectura en Google Tag Manager.'}</p>}
+        </div>
+        <div className="seo-dos-columnas">
+          <div className="tarjeta seo-mini-card">
+            <h3 className="h4">Qué está comprobado</h3>
+            <p>{tagManager?.codigoGtm ? 'El sitio incluye el contenedor ' + tagManager.contenedores.join(', ') + '.' : 'Todavía no se ha podido confirmar un contenedor GTM.'}</p>
+            <p>{tagManager?.eventoLeadEnCodigo
+              ? 'El código contiene generate_lead y la llamada del formulario tras una respuesta exitosa.'
+              : 'No se pudo comprobar el evento generate_lead en los recursos analizados.'}</p>
+            <p className="micro">Auditoría: {tagManager?.fecha ? new Date(tagManager.fecha).toLocaleString('es-CL') : 'Pendiente'}.</p>
+          </div>
+          <div className="tarjeta seo-mini-card">
+            <h3 className="h4">Qué falta verificar</h3>
+            <p>Activar <strong>Vista previa</strong> en GTM, enviar un formulario de prueba con autorización, comprobar el evento en Tag Assistant y luego en <strong>GA4 DebugView</strong>. Verificar que figure como evento clave solo si corresponde.</p>
+            <div className="seo-botones">
+              <a className="boton boton-secundario" href="https://tagmanager.google.com/" rel="noopener noreferrer" target="_blank">Abrir Tag Manager ↗</a>
+              <a className="boton boton-secundario" href="https://analytics.google.com/" rel="noopener noreferrer" target="_blank">Abrir Analytics ↗</a>
+            </div>
+          </div>
+        </div>
       </section>}
 
       {vista === 'historico' && <section>
@@ -428,6 +559,9 @@ function SEOInterno() {
           <EstadoIntegracion nombre="Search Console" disponible={!!sc?.disponible} mensaje={sc?.error} />
           <EstadoIntegracion nombre="Google Analytics 4" disponible={!!ga?.disponible} mensaje={ga?.error} />
           <EstadoIntegracion nombre="Registros históricos" disponible={!!estado?.historico?.length} mensaje="Sin registros históricos disponibles" />
+          <EstadoIntegracion nombre="Tag Manager (código)" disponible={!!tagManager?.codigoGtm}
+            mensaje="No se pudo detectar el contenedor desde el sitio" onClick={() => setVista('tagmanager')}
+            accion="Revisar seguimiento" />
         </div>
         <div className="tarjeta seo-mini-card">
           <h3 className="h4">Conectar con permisos de lectura</h3>
@@ -436,6 +570,7 @@ function SEOInterno() {
             <li>Agregar el correo de esa cuenta como lector en <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer">Search Console ↗</a> para la propiedad <strong>coproactiva.cl</strong>.</li>
             <li>Agregar la misma cuenta como <strong>Viewer</strong> en la propiedad correspondiente de <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer">GA4 ↗</a>.</li>
             <li>En Supabase, configurar los secretos <code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code>GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY</code>, <code>GA4_PROPERTY_ID</code> y, de ser necesario, <code>GSC_SITE_URL</code>.</li>
+            <li>Para leer versiones publicadas en GTM, autorizar la cuenta de servicio en Tag Manager (permiso de lectura), habilitar Tag Manager API y configurar el secreto <code>GTM_CONTAINER_PATH</code> (ejemplo: <code>accounts/123/containers/456</code>).</li>
             <li>Seleccionar <strong>Actualizar</strong> para comprobar acceso y consultar datos reales.</li>
           </ol>
           <p className="micro">Las credenciales privadas deben instalarse exclusivamente como secretos del servidor. Nunca pegarlas en este formulario, en GitHub ni en archivos VITE_*.</p>
