@@ -269,9 +269,9 @@ function SEOInterno() {
       {!estado && cargando && <p className="chico apagado">Cargando fuentes e indicadores…</p>}
 
       {vista === 'resumen' && <>
-        {!cargando && datos && (!sc?.disponible || !ga?.disponible) &&
+        {!cargando && datos && (!sc?.disponible || !ga?.disponible || !perfilEmpresa?.disponible || !tagManager?.version?.conectado) &&
           <div className="seo-aviso seo-aviso-pendiente">
-            <div><strong>Para mostrar estadísticas reales falta autorizar Google.</strong>
+            <div><strong>Para mostrar todos los datos oficiales faltan autorizar algunas fuentes Google.</strong>
               <p>«Actualizar» no conecta las cuentas. La autorización se configura una sola vez y luego podrás consultar las métricas.</p>
             </div>
             <button type="button" className="boton boton-secundario" onClick={() => setVista('conexiones')}>
@@ -307,8 +307,13 @@ function SEOInterno() {
               <small>Engagement: {ga?.disponible ? porcentaje(ga.totales?.engagement) : '—'} · Ver canales →</small>
             </button>
             <button type="button" className="seo-pulso" onClick={() => setVista('tagmanager')}>
-              <span>Google Tag Manager</span><strong>{tagManager?.codigoGtm ? 'Código detectado' : 'Sin confirmar'}</strong>
+              <span>Google Tag Manager</span><strong>{tagManager?.version?.conectado ? 'Versión ' + tagManager.version.versionPublicada : (tagManager?.codigoGtm ? 'Código detectado · API pendiente' : 'Sin confirmar')}</strong>
               <small>{tagManager?.contenedores?.join(', ') || 'Sin ID comprobado'} · Validar eventos →</small>
+            </button>
+            <button type="button" className="seo-pulso" onClick={() => setVista('business')}>
+              <span>Google Business Profile</span>
+              <strong>{perfilEmpresa?.disponible ? numeral(perfilClicks) + ' clics al sitio' : 'Sin conexión'}</strong>
+              <small>{perfilEmpresa?.disponible ? numeral(perfilEmpresa.resumen?.impresionesMaps) + ' impresiones en Maps' : 'Autorizar cuenta de la ficha'} · Ver perfil →</small>
             </button>
             <button type="button" className="seo-pulso" onClick={() => setVista('tecnico')}>
               <span>SEO técnico</span><strong>{auditoriaInicio ? 'HTTP ' + auditoriaInicio.status : 'Pendiente'}</strong>
@@ -327,6 +332,12 @@ function SEOInterno() {
           </div>
         </section>
         <div className="seo-integraciones">
+          <EstadoIntegracion nombre="Google Business Profile" disponible={!!perfilEmpresa?.disponible}
+            mensaje={perfilEmpresa?.error || 'Pendiente de autorización OAuth'} onClick={() => setVista('business')}
+            accion="Revisar métricas de Google Maps" />
+          <EstadoIntegracion nombre="Google Tag Manager API" disponible={!!tagManager?.version?.conectado}
+            mensaje={tagManager?.version?.detalle || 'Sin acceso a versión publicada'} onClick={() => setVista('tagmanager')}
+            accion="Revisar contenedor" />
           <EstadoIntegracion nombre="Google Search Console" disponible={!!sc?.disponible} mensaje={sc?.error}
             onClick={() => setVista('conexiones')} accion="Configurar Search Console" />
           <EstadoIntegracion nombre="Google Analytics 4" disponible={!!ga?.disponible} mensaje={ga?.error}
