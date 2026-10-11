@@ -26,11 +26,22 @@ function KPI({ titulo, valor, nota, advertencia = false }) {
     {nota && <span className="seo-kpi-nota">{nota}</span>}
   </div>;
 }
-function EstadoIntegracion({ nombre, disponible, mensaje }) {
-  return <div className={'seo-integracion ' + (disponible ? 'correcto' : 'pendiente')}>
+function EstadoIntegracion({ nombre, disponible, mensaje, onClick, accion }) {
+  const contenido = <>
     <span className={'seo-punto ' + (disponible ? 'correcto' : '')} aria-hidden="true" />
-    <div><strong>{nombre}</strong><small>{disponible ? 'Conectado' : (mensaje || 'Pendiente de conectar')}</small></div>
-  </div>;
+    <div className="seo-integracion-contenido">
+      <strong>{nombre}</strong>
+      <small>{disponible ? 'Conectado' : (mensaje || 'Pendiente de conectar')}</small>
+      {onClick && <span className="seo-integracion-accion-texto">{accion || 'Ver configuración'} →</span>}
+    </div>
+  </>;
+  const clase = 'seo-integracion ' + (disponible ? 'correcto' : 'pendiente');
+  return onClick
+    ? <button type="button" className={clase + ' seo-integracion-boton'} onClick={onClick}
+        aria-label={nombre + ': ' + (disponible ? 'conectado' : 'pendiente') + '. ' + (accion || 'Ver configuración')}>
+        {contenido}
+      </button>
+    : <div className={clase}>{contenido}</div>;
 }
 function Vacio({ titulo, descripcion }) {
   return <div className="seo-vacio"><strong>{titulo}</strong><p>{descripcion}</p></div>;
@@ -118,6 +129,7 @@ function SEOInterno() {
   const [estado, setEstado] = useState(null);
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState('');
+  const [avisoActualizacion, setAvisoActualizacion] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [accionActiva, setAccionActiva] = useState('');
   const [ruta, setRuta] = useState('/');
@@ -139,17 +151,29 @@ function SEOInterno() {
     return data;
   }, []);
 
-  const recargar = useCallback(async () => {
-    setCargando(true); setError('');
+  const recargar = useCallback(async (manual = false) => {
+    setCargando(true); setError(''); setAvisoActualizacion(null);
     try {
       const [e, resumen] = await Promise.all([invocar('estado'), invocar('resumen', { dias })]);
       setEstado(e); setDatos(resumen);
+      if (manual) {
+        const sinConexion = [
+          !resumen?.searchConsole?.disponible && 'Search Console',
+          !resumen?.analytics?.disponible && 'Analytics 4'
+        ].filter(Boolean);
+        const hora = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+        setAvisoActualizacion(sinConexion.length
+          ? { tipo: 'pendiente', texto: 'Consulta realizada a las ' + hora + '. Sin conexión a ' +
+              sinConexion.join(' y ') + '. No hay datos nuevos que mostrar: utiliza «Configurar conexiones».' }
+          : { tipo: 'correcto', texto: 'Datos de Google actualizados correctamente a las ' + hora + '.' });
+      }
     } catch (err) {
       setError(err.message || 'No fue posible recuperar las métricas.');
+      if (manual) setAvisoActualizacion({ tipo: 'error', texto: 'No se pudo actualizar. Revisa el detalle del error.' });
     } finally { setCargando(false); }
   }, [dias, invocar]);
 
-  useEffect(() => { recargar(); }, [recargar]);
+  useEffect(() => { recargar(false); }, [recargar]);
 
   async function ejecutar(accion) {
     setAccionActiva(accion); setError('');
@@ -183,7 +207,7 @@ function SEOInterno() {
         <select aria-label="Período de análisis" value={dias} onChange={e => setDias(Number(e.target.value))}>
           <option value={7}>7 días</option><option value={28}>28 días</option><option value={90}>90 días</option>
         </select>
-        <button className="boton boton-secundario" type="button" onClick={recargar} disabled={cargando}>
+        <button className="boton boton-secundario" type="button" onClick={() => recargar(true)} disabled={cargando}>
           {cargando ? 'Consultando…' : 'Actualizar'}
         </button>
       </div>
@@ -194,13 +218,32 @@ function SEOInterno() {
         <button key={id} type="button" className={vista === id ? 'activo' : ''} onClick={() => setVista(id)}>{label}</button>
       )}</nav>
       {!!error && <div className="aviso aviso-critico" role="alert">{error}</div>}
+      {avisoActualizacion && <div className={'seo-aviso seo-aviso-' + avisoActualizacion.tipo} role="status">
+        <span>{avisoActualizacion.texto}</span>
+        {avisoActualizacion.tipo === 'pendiente' &&
+          <button type="button" className="boton boton-secundario" onClick={() => setVista('conexiones')}>
+            Configurar conexiones →
+          </button>}
+      </div>}
       {!estado && cargando && <p className="chico apagado">Cargando fuentes e indicadores…</p>}
 
       {vista === 'resumen' && <>
+        {!cargando && datos && (!sc?.disponible || !ga?.disponible) &&
+          <div className="seo-aviso seo-aviso-pendiente">
+            <div><strong>Para mostrar estadísticas reales falta autorizar Google.</strong>
+              <p>«Actualizar» no conecta las cuentas. La autorización se configura una sola vez y luego podrás consultar las métricas.</p>
+            </div>
+            <button type="button" className="boton boton-secundario" onClick={() => setVista('conexiones')}>
+              Configurar conexiones →
+            </button>
+          </div>}
         <div className="seo-integraciones">
-          <EstadoIntegracion nombre="Google Search Console" disponible={!!sc?.disponible} mensaje={sc?.error} />
-          <EstadoIntegracion nombre="Google Analytics 4" disponible={!!ga?.disponible} mensaje={ga?.error} />
-          <EstadoIntegracion nombre="Auditoría técnica" disponible={!!estado} mensaje="Requiere conexión a la función SEO" />
+          <EstadoIntegracion nombre="Google Search Console" disponible={!!sc?.disponible} mensaje={sc?.error}
+            onClick={() => setVista('conexiones')} accion="Configurar Search Console" />
+          <EstadoIntegracion nombre="Google Analytics 4" disponible={!!ga?.disponible} mensaje={ga?.error}
+            onClick={() => setVista('conexiones')} accion="Configurar Analytics" />
+          <EstadoIntegracion nombre="Auditoría técnica" disponible={!!estado} mensaje="Requiere conexión a la función SEO"
+            onClick={() => setVista('tecnico')} accion="Abrir auditoría técnica" />
         </div>
         <section><div className="seo-titulo-seccion"><h2 className="h4">Búsqueda orgánica · Search Console</h2>
           <span className="micro">{sc?.disponible ? sc.desde + ' al ' + sc.hasta : 'Conexión pendiente'}</span></div>
