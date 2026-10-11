@@ -253,7 +253,7 @@ function SEOInterno() {
           {cargando ? 'Consultando…' : 'Actualizar'}
         </button>
         <button className="boton boton-texto seo-boton-configuracion" type="button" onClick={() => setVista('conexiones')}>
-          ⚙ Configuración
+          <span aria-hidden="true">⚙</span> <span className="seo-ajustes-etiqueta">Configuración</span>
         </button>
       </div>
     </header>
