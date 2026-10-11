@@ -11,7 +11,9 @@ import { withSupabase } from 'npm:@supabase/server@1';
 
 const ORIGIN = 'https://www.coproactiva.cl';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const SCOPES = 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly';
+const gtmPath = Deno.env.get('GTM_CONTAINER_PATH') || '';
+const SCOPES = 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly' +
+  (gtmPath ? ' https://www.googleapis.com/auth/tagmanager.readonly' : '');
 const email = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL') || '';
 const privateKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY') || '';
 const gaProperty = (Deno.env.get('GA4_PROPERTY_ID') || '').replace(/^properties\//, '');
@@ -252,11 +254,43 @@ async function pagespeed(ruta: string, device: string) {
 }
 
 
+/* Opcional: leer la última versión PUBLICADA del contenedor mediante Tag Manager
+ * API, una integración separada de la detección de su snippet público. */
+async function versionPublicadaGtm() {
+  if (!gtmPath) return { conectado: false, detalle: 'Configura GTM_CONTAINER_PATH para validar etiquetas publicadas mediante Tag Manager API.' };
+  if (!/^accounts\/\d+\/containers\/\d+$/.test(gtmPath))
+    return { conectado: false, detalle: 'GTM_CONTAINER_PATH debe ser accounts/ID/containers/ID.' };
+  if (!email || !privateKey) return { conectado: false, detalle: 'Faltan las credenciales Google de solo lectura.' };
+  try {
+    const token = await googleToken();
+    const r = await fetch('https://tagmanager.googleapis.com/tagmanager/v2/' + gtmPath + '/versions:live', {
+      headers: { Authorization: 'Bearer ' + token },
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!r.ok) return { conectado: false, detalle: 'Tag Manager API respondió ' + r.status + '. Revisa acceso al contenedor.' };
+    const data = await r.json();
+    return {
+      conectado: true,
+      versionPublicada: String(data.containerVersionId || 'Sin versión'),
+      nombreVersion: String(data.name || 'Sin nombre').slice(0, 100),
+      cantidadEtiquetas: (data.tag || []).length,
+      cantidadActivadores: (data.trigger || []).length,
+      etiquetas: (data.tag || []).map((x: any) => ({
+        nombre: String(x.name || 'Sin nombre').slice(0, 100),
+        tipo: String(x.type || '').slice(0, 30)
+      })).slice(0, 70),
+      nota: 'Información de la versión publicada. No confirma disparos ni recepción real de cada etiqueta.'
+    };
+  } catch {
+    return { conectado: false, detalle: 'No fue posible consultar el contenedor publicado con la cuenta autorizada.' };
+  }
+}
 /* Señales técnicas visibles del sitio, no confundir con etiquetas publicadas o
  * eventos recibidos por Google Analytics (requieren Preview / DebugView). */
 async function auditoriaTagManager() {
-  const [home, js, formularios] = await Promise.all([
-    siteFetch('/'), siteFetch('/assets/site-common.20260831.js'), siteFetch('/assets/lead-form.js')
+  const [home, js, formularios, version] = await Promise.all([
+    siteFetch('/'), siteFetch('/assets/site-common.20260831.js'), siteFetch('/assets/lead-form.js'),
+    versionPublicadaGtm()
   ]);
   const html = home.tipo.includes('text/html') ? home.content : '';
   const ids = [...new Set([...html.matchAll(/\bGTM-[A-Z0-9]{5,}\b/g)].map(x => x[0]))];
@@ -264,7 +298,7 @@ async function auditoriaTagManager() {
   const formContent = formularios.status === 200 ? formularios.content : '';
   return {
     fecha: new Date().toISOString(),
-    sitioHttp: home.status, codigoGtm: ids.length > 0, contenedores: ids,
+    version, sitioHttp: home.status, codigoGtm: ids.length > 0, contenedores: ids,
     dataLayer: /(?:window\.)?dataLayer/.test(html + jsContent),
     consentimiento: /gtag\(\s*['"]consent['"]\s*,\s*['"]default['"]/.test(html),
     eventoLeadEnCodigo: /generate_lead/.test(jsContent) && /coproactivaTrackLead/.test(formContent),
