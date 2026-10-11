@@ -17,8 +17,7 @@ const gbpClientId = Deno.env.get('GBP_OAUTH_CLIENT_ID') || '';
 const gbpClientSecret = Deno.env.get('GBP_OAUTH_CLIENT_SECRET') || '';
 const gbpRefreshToken = Deno.env.get('GBP_OAUTH_REFRESH_TOKEN') || '';
 let gbpCache: { token: string; until: number } | null = null;
-const SCOPES = 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly' +
-  (gtmPath ? ' https://www.googleapis.com/auth/tagmanager.readonly' : '');
+const SCOPES = 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly https://www.googleapis.com/auth/tagmanager.readonly';
 const email = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL') || '';
 const privateKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY') || '';
 const gaProperty = (Deno.env.get('GA4_PROPERTY_ID') || '').replace(/^properties\//, '');
@@ -388,13 +387,24 @@ async function perfilEmpresa(dias:number) {
 /* Opcional: leer la última versión PUBLICADA del contenedor mediante Tag Manager
  * API, una integración separada de la detección de su snippet público. */
 async function versionPublicadaGtm() {
-  if (!gtmPath) return { conectado: false, detalle: 'Configura GTM_CONTAINER_PATH para validar etiquetas publicadas mediante Tag Manager API.' };
-  if (!/^accounts\/\d+\/containers\/\d+$/.test(gtmPath))
+  if (gtmPath && !/^accounts\/\d+\/containers\/\d+$/.test(gtmPath))
     return { conectado: false, detalle: 'GTM_CONTAINER_PATH debe ser accounts/ID/containers/ID.' };
   if (!email || !privateKey) return { conectado: false, detalle: 'Faltan las credenciales Google de solo lectura.' };
   try {
     const token = await googleToken();
-    const r = await fetch('https://tagmanager.googleapis.com/tagmanager/v2/' + gtmPath + '/versions:live', {
+    let containerPath = gtmPath;
+    if (!containerPath) {
+      const lookup = await fetch('https://tagmanager.googleapis.com/tagmanager/v2/accounts/containers:lookup?tagId=GTM-MB2RCFR5', {
+        headers: { Authorization: 'Bearer ' + token },
+        signal: AbortSignal.timeout(12000)
+      });
+      if (!lookup.ok) return { conectado: false, detalle: 'La cuenta de servicio aún no tiene permiso de lectura del contenedor GTM-MB2RCFR5 (' + lookup.status + ').' };
+      const found = await lookup.json();
+      containerPath = String(found.path || '');
+      if (!/^accounts\/\d+\/containers\/\d+$/.test(containerPath))
+        return { conectado: false, detalle: 'Google no devolvió un contenedor GTM válido.' };
+    }
+    const r = await fetch('https://tagmanager.googleapis.com/tagmanager/v2/' + containerPath + '/versions:live', {
       headers: { Authorization: 'Bearer ' + token },
       signal: AbortSignal.timeout(12000)
     });
@@ -486,14 +496,11 @@ export default {
       const body = await req.json().catch(() => ({}));
       const accion = body.accion;
       if (accion === 'estado') {
-        const { data, error: metricsError } = await (ctx.supabaseAdmin || ctx.supabase)
-          .from('jarvis_metricas_web').select('fuente,metrica,periodo_inicio,periodo_fin,valor,valor_texto')
-          .order('periodo_fin', { ascending: false }).limit(60);
         return Response.json({ site: ORIGIN, google: Boolean(email && privateKey),
           ga4: Boolean(gaProperty), gsc: Boolean(gscSite),
-          pagespeed: true, gtmApiConfigurada: Boolean(gtmPath && email && privateKey),
+          pagespeed: true, gtmApiConfigurada: Boolean(email && privateKey),
           businessProfileConfigurado: Boolean(gbpClientId && gbpClientSecret && gbpRefreshToken && gbpLocation),
-          historico: metricsError ? [] : data || [] });
+          consultadoEn: new Date().toISOString() });
       }
       const dias = [7, 28, 90].includes(Number(body.dias)) ? Number(body.dias) : 28;
       if (accion === 'resumen') return Response.json(await obtenerResumen(dias));
