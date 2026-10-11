@@ -9,7 +9,7 @@ import { withSupabase } from 'npm:@supabase/server@1';
 const OWNER = 'franciscomorgadotobar-crypto';
 const REPO = 'web-coproactiva';
 const DEFAULT_BRANCH = 'main';
-const GITHUB_API = 'https://api.github.com/repos/' + OWNER + '/' + REPO;
+const GITHUB_API = '/repos/' + OWNER + '/' + REPO;
 const gitToken = Deno.env.get('COPROACTIVA_GITHUB_TOKEN') || '';
 const SITE = 'https://www.coproactiva.cl';
 
@@ -113,6 +113,30 @@ export default {
           .select('*').order('creada_en',{ascending:false}).limit(80);
         if(error)throw Error('No fue posible recuperar las propuestas.');
         return json({propuestas:data||[],integracionGithubHabilitada:Boolean(gitToken),puedePublicar:perfil.rol==='superadmin'});
+      }
+      if(accion==='registrar_decision') {
+        const p=body.propuesta||{}, decision=String(body.decision||'');
+        if(!['descartada','ajustes_solicitados'].includes(decision))
+          return mensaje('Decisión no válida.');
+        if(!safePath(p.ruta)||!clean(p.consulta_principal,140))
+          return mensaje('Es necesario indicar una URL y consulta verificables.');
+        const archivo=rutaArchivo(p.ruta);
+        const {data,error}=await admin.from('seo_propuestas').insert({
+          ruta:p.ruta,repo_ruta:archivo,consulta_principal:p.consulta_principal,
+          consultas:Array.isArray(p.consultas)?p.consultas.slice(0,12):[p.consulta_principal],
+          metricas:p.metricas||{},metricas_basales:p.metricas||{},
+          titulo_actual:String(p.titulo_actual||'').slice(0,120),
+          titulo_propuesto:String(p.titulo_propuesto||'').slice(0,120),
+          descripcion_actual:String(p.descripcion_actual||'').slice(0,400),
+          descripcion_propuesta:String(p.descripcion_propuesta||'').slice(0,400),
+          h1_actual:String(p.h1_actual||'').slice(0,250),
+          diagnostico:String(p.diagnostico||'').slice(0,1800),
+          motivo:String(p.motivo||'').slice(0,1800),
+          observaciones:String(body.observaciones||'').slice(0,1200),
+          estado:decision,autor_id:idUsuario,revisor_id:idUsuario
+        }).select('*').single();
+        if(error)throw Error('No se pudo registrar la decisión.');
+        return json({propuesta:data});
       }
       if(accion==='aprobar') {
         const p=body.propuesta||{};
@@ -225,8 +249,8 @@ async function preparar(admin:any,p:any) {
     });
     const req=await gh(GITHUB_API+'/pulls','POST',{
       title:'SEO: mejorar '+p.consulta_principal,
-      head:rama,base:DEFAULT_BRANCH,draft:true,
-      body:'Propuesta preparada desde Coproactiva App Diaria. NO PUBLICAR sin confirmación final.\n\nURL: '+SITE+p.ruta+
+      head:rama,base:DEFAULT_BRANCH,draft:false,
+      body:'Propuesta preparada desde Coproactiva App Diaria. NO PUBLICAR sin confirmación final de superadministrador en Coproactiva.\n\nURL: '+SITE+p.ruta+
         '\nConsultas: '+(p.consultas||[]).join(', ')+
         '\n\nDiagnóstico: '+p.diagnostico+
         '\n\nCambio previsto: título HTML y meta description. No se modifican H1, diseño ni scripts.\n\nSe requiere revisar el diff, el contenido comercial, los tests y luego autorizar publicación.'
@@ -236,7 +260,7 @@ async function preparar(admin:any,p:any) {
       base_sha:head,repo_ruta:archivo,editada_en:new Date().toISOString()
     }).eq('id',p.id).eq('estado','aprobada').select('*').single();
     if(error)throw Error('PR creado, pero no se pudo registrar su preparación: '+req.html_url);
-    return {propuesta:data,aviso:'Cambios preparados en un PR borrador. El sitio público no ha sido modificado.'};
+    return {propuesta:data,aviso:'Cambios preparados en un pull request sin integrar. El sitio público no ha sido modificado.'};
   }catch(error) {
     const info=error instanceof Error?error.message:'No se pudo crear la propuesta GitHub.';
     // Si se creó un PR pero no pudo registrarse, queda visible el error;
