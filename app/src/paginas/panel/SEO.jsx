@@ -219,6 +219,7 @@ function SEOInterno() {
   const sesionesOrganicas = ga?.canales?.find(c => c.clave?.toLowerCase() === 'organic search')?.valores?.[0];
   const eventoLeadGA4 = ga?.eventos?.find(e => e.clave === 'generate_lead');
   const leadsMedidos = eventoLeadGA4?.valores?.[1];
+  const perfilClicks = perfilEmpresa?.disponible ? perfilEmpresa.resumen?.clicsWeb : null;
   const variacionClics = sc?.disponible && sc?.anterior?.clics > 0
     ? ((sc.totales.clics - sc.anterior.clics) / sc.anterior.clics) * 100 : null;
   function abrirAccion(item) {
@@ -277,6 +278,10 @@ function SEOInterno() {
               Configurar conexiones →
             </button>
           </div>}
+        {tiempoReal?.disponible && <div className="seo-aviso seo-aviso-correcto">
+          <span><strong>GA4 en tiempo real:</strong> {numeral(tiempoReal.usuariosActivos)} usuarios activos y {numeral(tiempoReal.eventos)} eventos durante los últimos 30 minutos.</span>
+          <button type="button" className="boton boton-secundario" onClick={() => setVista('analytics')}>Ver tiempo real →</button>
+        </div>}
         <section className="seo-centro-control" aria-label="Visión general">
           <div className="seo-titulo-seccion"><div>
             <h2 className="h4">Centro de control</h2>
@@ -640,16 +645,6 @@ function SEOInterno() {
             </div>
           </div>
         </div>
-      </section>}
-
-      {vista === 'historico' && <section>
-        <h2 className="h4">Antecedentes históricos</h2>
-        <p className="chico apagado">Informes almacenados en Coproactiva (Jarvis): Search Console, Semrush y Google Business Profile. No son una integración en tiempo real ni se mezclan con los indicadores de GA4.</p>
-        <Tabla columnas={[
-          {id:'fuente',etiqueta:'Fuente'}, {id:'metrica',etiqueta:'Indicador'},
-          {id:'valor',etiqueta:'Valor',texto:(n,row) => n == null ? (row.valor_texto || 'Sin valor numérico') : decimal(n, 2)},
-          {id:'periodo_inicio',etiqueta:'Inicio'}, {id:'periodo_fin',etiqueta:'Fin'}
-        ]} filas={estado?.historico || []} archivo="coproactiva-seo-historico.csv" />
       </section>}
 
       {vista === 'conexiones' && <section>
