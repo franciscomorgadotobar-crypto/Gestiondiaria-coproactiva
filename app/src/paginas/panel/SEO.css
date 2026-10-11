@@ -236,3 +236,25 @@
   .seo-comparacion-columnas > div + div { border-left: 0; border-top: 1px solid var(--borde); }
 }
 @media (max-width: 360px) { .seo-pulso-grid { grid-template-columns: 1fr; } }
+
+/* El rendimiento del negocio se muestra primero; los permisos sólo en Configuración. */
+.seo-boton-configuracion { min-height:42px; display:inline-flex; gap:6px; align-items:center; font-size:.84rem; }
+.seo-configuracion-titulo { flex-wrap:wrap; align-items:flex-start; margin-bottom:18px; }
+.seo-configuracion-titulo h2 { margin:0 0 5px; }
+.seo-configuracion-titulo p { max-width:620px; margin:0; }
+.seo-aviso-sincronizacion { padding:8px 12px; font-size:.78rem; border:0; background:transparent; color:var(--texto-apagado); }
+.seo-aviso-sincronizacion .boton { border:0; padding:5px 8px; background:transparent; font-size:.78rem; }
+@media (max-width:600px) {
+  .seo-cabecera { gap:7px; padding-top:16px; padding-bottom:14px; }
+  .seo-cabecera h1 { margin:3px 0; font-size:1.47rem; }
+  .seo-cabecera p { font-size:.78rem; line-height:1.45; }
+  .seo-cabecera-acciones { gap:7px; justify-content:flex-start; flex-wrap:nowrap; margin-top:9px; }
+  .seo-cabecera-acciones select { min-width:0; padding:8px 9px; font-size:.85rem; }
+  .seo-cabecera-acciones .boton { padding:8px 10px; min-height:42px; font-size:.79rem; }
+  .seo-boton-configuracion { margin-left:auto; min-width:42px; justify-content:center; }
+  .seo-ajustes-etiqueta { display:none; }
+  .seo-pestanas { gap:0; scroll-snap-type:x proximity; }
+  .seo-pestanas button { scroll-snap-align:start; padding:11px 12px; font-size:.82rem; }
+  .seo-cuerpo { gap:15px; }
+  .seo-aviso-sincronizacion { align-items:flex-start; }
+}
