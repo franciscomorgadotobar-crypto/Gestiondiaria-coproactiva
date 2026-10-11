@@ -11,7 +11,8 @@ const SECCIONES = [
   ['tecnico', 'SEO técnico'],
   ['velocidad', 'Velocidad'],
   ['oportunidades', 'Oportunidades'],
-  ['historico', 'Histórico']
+  ['historico', 'Histórico'],
+  ['conexiones', 'Conexiones']
 ];
 const numeral = n => Number(n ?? 0).toLocaleString('es-CL', { maximumFractionDigits: 0 });
 const decimal = (n, digits = 1) => Number(n ?? 0).toLocaleString('es-CL', { maximumFractionDigits: digits });
@@ -376,6 +377,31 @@ function SEOInterno() {
           {id:'valor',etiqueta:'Valor',texto:(n,row) => n == null ? (row.valor_texto || 'Sin valor numérico') : decimal(n, 2)},
           {id:'periodo_inicio',etiqueta:'Inicio'}, {id:'periodo_fin',etiqueta:'Fin'}
         ]} filas={estado?.historico || []} archivo="coproactiva-seo-historico.csv" />
+      </section>}
+
+      {vista === 'conexiones' && <section>
+        <h2 className="h4">Conexiones y fuentes de datos</h2>
+        <div className="seo-integraciones">
+          <EstadoIntegracion nombre="Search Console" disponible={!!sc?.disponible} mensaje={sc?.error} />
+          <EstadoIntegracion nombre="Google Analytics 4" disponible={!!ga?.disponible} mensaje={ga?.error} />
+          <EstadoIntegracion nombre="Registros históricos" disponible={!!estado?.historico?.length} mensaje="Sin registros históricos disponibles" />
+        </div>
+        <div className="tarjeta seo-mini-card">
+          <h3 className="h4">Conectar con permisos de lectura</h3>
+          <ol className="seo-pasos">
+            <li>Crear una cuenta de servicio en <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud ↗</a> y habilitar Google Analytics Data API, Search Console API y URL Inspection API.</li>
+            <li>Agregar el correo de esa cuenta como lector en <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer">Search Console ↗</a> para la propiedad <strong>coproactiva.cl</strong>.</li>
+            <li>Agregar la misma cuenta como <strong>Viewer</strong> en la propiedad correspondiente de <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer">GA4 ↗</a>.</li>
+            <li>En Supabase, configurar los secretos <code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code>GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY</code>, <code>GA4_PROPERTY_ID</code> y, de ser necesario, <code>GSC_SITE_URL</code>.</li>
+            <li>Seleccionar <strong>Actualizar</strong> para comprobar acceso y consultar datos reales.</li>
+          </ol>
+          <p className="micro">Las credenciales privadas deben instalarse exclusivamente como secretos del servidor. Nunca pegarlas en este formulario, en GitHub ni en archivos VITE_*.</p>
+        </div>
+        <div className="tarjeta seo-mini-card">
+          <h3 className="h4">Conversiones de contactos comerciales</h3>
+          <p>El sitio utiliza Google Tag Manager y controles de consentimiento. Verificar que el evento de envío exitoso del formulario active <code>generate_lead</code> en GA4 y esté marcado como evento clave. Las solicitudes por teléfono o WhatsApp se deben medir por separado.</p>
+          <p className="chico apagado">Una sesión orgánica, un clic en Google y un lead no son el mismo dato; este módulo no atribuye ventas automáticamente.</p>
+        </div>
       </section>}
 
       <footer className="seo-pie">
