@@ -237,3 +237,61 @@
 @media(max-width:860px){
   .wa-page.modulo-unificado :is(input,select,textarea){font-size:16px}
 }
+
+/* Fase 2: patrones transversales opt-in. El diseño común no debe alterar
+   el tamaño de columnas contables ni las interacciones específicas de cada módulo. */
+.modulo-unificado .ui-panel {
+  min-width: 0;
+  max-width: 100%;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-tarjeta);
+}
+.modulo-unificado .ui-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--modulo-espacio-sm);
+  min-width: 0;
+}
+.modulo-unificado .ui-toolbar > * { min-width: 0; }
+.modulo-unificado .ui-formulario {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  min-width: 0;
+}
+.modulo-unificado .ui-formulario > .ancho-total { grid-column: 1 / -1; }
+.modulo-unificado .ui-formulario .campo { min-width: 0; }
+.modulo-unificado .ui-formulario :is(input,select,textarea) {
+  max-width: 100%;
+  min-width: 0;
+}
+.modulo-unificado .ui-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.modulo-unificado .ui-tabla-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.modulo-unificado .ui-tabla-scroll > table { border-collapse: collapse; }
+.modulo-unificado .ui-tabla-scroll:focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: -2px;
+}
+.modulo-unificado :is(.ui-panel,.ui-tabla-scroll,.ui-formulario,.ui-toolbar) {
+  box-sizing: border-box;
+}
+@media (max-width: 760px) {
+  .modulo-unificado .ui-formulario { grid-template-columns: minmax(0,1fr); }
+  .modulo-unificado .ui-toolbar { align-items: stretch; }
+  .modulo-unificado .ui-toolbar :is(input,select,textarea) { min-width: 0; }
+  .modulo-unificado .ui-acciones > .boton { min-height: var(--tactil); }
+}
