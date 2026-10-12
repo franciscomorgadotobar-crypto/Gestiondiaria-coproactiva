@@ -265,8 +265,9 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
   return <div className="seo-reco-pantalla">
     <div className="seo-reco-contexto">
       <Icono name="search" size={24}/>
-      <div><h2>Diagnóstico y recomendaciones SEO</h2>
-        <p>Son búsquedas reales donde aparece coproactiva.cl. No es un estudio de la competencia ni una lista de palabras del sitio. La app identifica la URL, revisa su HTML y propone mejoras para tu aprobación.</p>
+      <div><h2>{consultaPrioritaria?'Diagnóstico de la búsqueda':'Diagnósticos orgánicos'}</h2>
+        <p>{consultaPrioritaria?consultaPrioritaria:
+          'Consultas reales de Google con oportunidad de mejorar. Se identifica la URL antes de recomendar cambios.'}</p>
       </div>
     </div>
     <div className="seo-reco-cabecera">
