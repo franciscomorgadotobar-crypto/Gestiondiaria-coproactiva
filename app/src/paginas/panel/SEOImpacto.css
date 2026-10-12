@@ -61,3 +61,25 @@
   .seo-impacto-indicador{padding:9px 8px}
   .seo-impacto-indicador strong{font-size:.81rem}
 }
+
+/* Comparación de contenido aprobada: texto original vs cambio, sin tarjetas gigantes. */
+.seo-impacto-cambios{display:flex;flex-direction:column;gap:12px}
+.seo-impacto-cambio-campo{display:flex;flex-direction:column;gap:7px;min-width:0}
+.seo-impacto-cambio-campo h3{margin:0;font-size:.85rem;font-weight:700;
+  line-height:1.35;color:var(--texto-titulo)}
+.seo-impacto-cambio-valores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  border:1px solid var(--borde);border-radius:8px;overflow:hidden}
+.seo-impacto-cambio-valores>div{min-width:0;padding:10px 11px}
+.seo-impacto-cambio-antes{background:var(--tarjeta);border-right:1px solid var(--borde)}
+.seo-impacto-cambio-despues{background:#f3f8f1}
+.seo-impacto-etiqueta{display:inline-flex;align-items:center;border-radius:20px;
+  padding:3px 8px;font-size:.7rem;font-weight:700}
+.seo-impacto-etiqueta.original{background:#eae8e5;color:#555f67}
+.seo-impacto-etiqueta.cambio{background:#dcebd7;color:#326b38}
+.seo-impacto-cambio-valores p{margin:6px 0 0;font-size:.8rem;line-height:1.45;
+  color:var(--texto-cuerpo);overflow-wrap:anywhere}
+@media(max-width:620px){
+  .seo-impacto-cambio-valores{grid-template-columns:minmax(0,1fr)}
+  .seo-impacto-cambio-antes{border-right:0;border-bottom:1px solid var(--borde)}
+  .seo-impacto-cambio-valores>div{padding:9px 11px}
+}
