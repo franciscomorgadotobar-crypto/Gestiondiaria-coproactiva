@@ -54,6 +54,46 @@ jobs:
       - name: Verificar componentes y navegación visual fase 2
         working-directory: app
         run: node --test pruebas/ui-fase2.test.js
+      - name: Verificar navegación y diálogos accesibles fase 3
+        working-directory: app
+        run: node --test pruebas/ui-fase3.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
+
+  validar-navegador:
+    name: UX móvil en navegador real (sin autenticación)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Instalar dependencias
+        working-directory: app
+        run: npm install
+      - name: Preparar Playwright Chromium
+        working-directory: app
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Iniciar servidor de pruebas
+        working-directory: app
+        run: |
+          npm run dev -- --host 127.0.0.1 > vite-ui.log 2>&1 &
+          echo $! > vite-ui.pid
+      - name: Validar resoluciones, formularios y protección de rutas
+        working-directory: app
+        run: node pruebas/ui-browser-smoke.mjs
+      - name: Adjuntar capturas de QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-ui-sin-sesion
+          path: |
+            app/artifacts/ui/
+            app/vite-ui.log
+          retention-days: 7

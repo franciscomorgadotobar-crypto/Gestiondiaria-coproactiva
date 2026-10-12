@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useAtrasCierraDialogo } from '../lib/dialogoHistorial';
+import { useFocoDialogo } from '../lib/focoDialogo';
 
 /*
  * Diálogo visual para pedir uno o varios datos sin recurrir a prompt()/alert().
@@ -16,6 +17,8 @@ export default function DialogoCampos({
   onCancelar
 }) {
   useAtrasCierraDialogo(onCancelar);
+  const modalRef = useRef(null);
+  useFocoDialogo(modalRef,onCancelar);
   const inicial = useMemo(
     () => Object.fromEntries(campos.map(c => [c.id, c.valor ?? ''])),
     [campos]
@@ -37,9 +40,11 @@ export default function DialogoCampos({
   }
 
   return (
-    <div className="modal-fondo" role="presentation" onClick={onCancelar}>
+    <div className="modal-fondo modal-fondo-accesible" role="presentation" onClick={onCancelar}>
       <form
-        className="modal"
+        className="modal modal-accesible"
+        ref={modalRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="dialogo-campos-titulo"
@@ -49,7 +54,7 @@ export default function DialogoCampos({
         <h2 id="dialogo-campos-titulo" className="h3">{titulo}</h2>
         {mensaje && <p className="chico apagado">{mensaje}</p>}
 
-        {campos.map((campo, i) => (
+        {campos.map((campo) => (
           <div className="campo" key={campo.id}>
             <label className="etiqueta-campo" htmlFor={'dialogo-' + campo.id}>
               {campo.label}
@@ -58,7 +63,6 @@ export default function DialogoCampos({
             {campo.opciones ? (
               <select
                 id={'dialogo-' + campo.id}
-                autoFocus={i === 0}
                 value={valores[campo.id] ?? ''}
                 onChange={e => cambiar(campo.id, e.target.value)}
               >
@@ -72,7 +76,6 @@ export default function DialogoCampos({
               <textarea
                 id={'dialogo-' + campo.id}
                 rows={campo.filas ?? 4}
-                autoFocus={i === 0}
                 value={valores[campo.id] ?? ''}
                 placeholder={campo.placeholder ?? ''}
                 onChange={e => cambiar(campo.id, e.target.value)}
@@ -81,7 +84,6 @@ export default function DialogoCampos({
               <input
                 id={'dialogo-' + campo.id}
                 type={campo.tipo ?? 'text'}
-                autoFocus={i === 0}
                 value={valores[campo.id] ?? ''}
                 placeholder={campo.placeholder ?? ''}
                 onChange={e => cambiar(campo.id, e.target.value)}
