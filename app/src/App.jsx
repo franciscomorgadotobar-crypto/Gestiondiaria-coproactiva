@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useSesion } from './lib/sesion';
 import Ingreso from './paginas/Ingreso';
 import Clave from './paginas/Clave';
@@ -81,7 +81,12 @@ function tieneCRM(perfil) {
 
 function Entrada() {
   const { perfil } = useSesion();
+  const location = useLocation();
   if (perfil?.rol === 'cliente') return <Navigate to="/portal" replace />;
+  // Si el usuario regresó mediante Atrás desde un área elegida en esta sesión,
+  // mostrar nuevamente el selector, aunque exista un área guardada.
+  if (location.state?.selectorCoproactiva === true && tieneCRM(perfil))
+    return <SeleccionArea />;
   if (!tieneCRM(perfil)) return <PanelEscritorio><Inicio /></PanelEscritorio>;
 
   const area = areaGuardada();
