@@ -19,20 +19,16 @@ function activaPropiedades(pathname) {
   return activa(pathname, '/propiedades') && !activa(pathname, '/propiedades/nueva');
 }
 
-/* Recarga completa en vez de navegar: "Cambiar de área" puede apretarse
- * estando ya en "/" (cuando el área es 'operacion', Entrada muestra Inicio
- * ahí mismo), y navegar a la misma ruta en la que ya se está no vuelve a
- * renderizar nada en React Router. Una recarga completa no tiene ese
- * problema: Entrada vuelve a evaluar el área desde cero, siempre. */
-function cambiarArea() {
-  limpiarArea();
-  window.location.href = import.meta.env.BASE_URL;
-}
-
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
   const { pathname, hash } = useLocation();
   const navegar = useNavigate();
+  // Cambiar de área no debe reiniciar React ni interrumpir la PWA.
+  // Entrada interpreta este estado incluso al navegar desde la misma ruta '/'.
+  function cambiarArea() {
+    limpiarArea();
+    navegar('/', { state: { selectorCoproactiva: true } });
+  }
   const { iniciar } = useTutoriales();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
   const [alertasGenerales, setAlertasGenerales] = useState(0);
