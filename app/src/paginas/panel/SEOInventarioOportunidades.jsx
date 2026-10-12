@@ -18,7 +18,8 @@ function Icono({nombre}) {
 }
 
 export default function SEOInventarioOportunidades({
-  gestionSEO,lista,sc,dias,onAnalizar,onVerSeguimiento,onVerBusquedas
+  gestionSEO,lista,sc,dias,paginasRevisadas,paginasPendientes,revisionPaginas,
+  onRevisarPaginas,onAnalizar,onVerSeguimiento,onVerBusquedas
 }) {
   const [filtro,setFiltro]=useState('pendientes');
   const sinHistorial=!gestionSEO?.disponibles;
@@ -38,14 +39,14 @@ export default function SEOInventarioOportunidades({
   },[sc,lista,gestionSEO]);
   const inicio=sc?.desde||'—',fin=sc?.hasta||'—';
   const resumen=[
-    {id:'pendientes',cantidad:nuevas.length,titulo:'Prioritarias'},
-    {id:'gestion',cantidad:gestionadas.length,titulo:'En gestión'},
-    {id:'observacion',cantidad:observadas.length,titulo:'Bajo observación'}
+    {id:'pendientes',cantidad:nuevas.length,titulo:'Sugerencias'},
+    {id:'gestion',cantidad:gestionadas.length,titulo:'Mejoras realizadas'}
   ];
   return <div className="seo-inventario">
     <div className="seo-inventario-cabecera">
-      <div><h2>Oportunidades SEO</h2></div>
-      <small>{dias} días · Search Console {inicio} al {fin}</small>
+      <div><h2>Qué podemos mejorar</h2>
+        <p>Diagnóstico de las páginas y búsquedas de coproactiva.cl.</p></div>
+      <small>Google Search Console · {dias} días, hasta {fin}</small>
     </div>
     <div className="seo-inventario-filtros" role="group" aria-label="Clasificar oportunidades SEO">
       {resumen.map(x=><button key={x.id} type="button"
@@ -54,6 +55,20 @@ export default function SEOInventarioOportunidades({
         <span>{x.titulo} <strong>{x.cantidad}</strong></span>
       </button>)}
     </div>
+    <div className="seo-inventario-cobertura">
+      <div>
+        <strong>{paginasRevisadas||0} {paginasRevisadas===1?'página analizada':'páginas analizadas'}</strong>
+        <small>Revisión técnica del HTML, además de las búsquedas de Google.</small>
+      </div>
+      {sc?.disponible&&paginasPendientes>0&&<button type="button"
+        disabled={revisionPaginas?.cargando} onClick={onRevisarPaginas}>
+        {revisionPaginas?.cargando?'Analizando…':'Analizar otras páginas →'}
+      </button>}
+    </div>
+    {revisionPaginas?.cargando&&<p className="seo-inventario-progreso" role="status">
+      Analizando página {revisionPaginas.terminadas+1} de {paginasPendientes+revisionPaginas.terminadas}…
+    </p>}
+    {revisionPaginas?.error&&<p className="seo-inventario-aviso" role="alert">{revisionPaginas.error}</p>}
     {sinHistorial&&<div className="seo-inventario-aviso" role="status">
       No se pudo comprobar el historial de mejoras. Para evitar recomendaciones duplicadas,
       el listado de oportunidades nuevas permanecerá oculto hasta sincronizar.
@@ -76,7 +91,14 @@ export default function SEOInventarioOportunidades({
         </div>
         <button type="button" onClick={()=>onAnalizar(item)}>Ver diagnóstico →</button>
       </article>)}
-      {!nuevas.length&&<p className="seo-inventario-vacio">Sin nuevas acciones prioritarias. Revisa las búsquedas bajo observación.</p>}
+      {!nuevas.length&&<div className="seo-inventario-sin-sugerencias" role="status">
+        <span aria-hidden="true">✓</span>
+        <div><strong>{sc?.disponible && paginasRevisadas>0?'Sin sugerencias pendientes en lo revisado':'Análisis incompleto'}</strong>
+          <small>{paginasPendientes>0
+            ? 'Puedes analizar otras páginas para descubrir nuevas mejoras.'
+            : 'No se encontraron incidencias prioritarias en las páginas consultadas.'}</small>
+        </div>
+      </div>}
     </>}
     {!sinHistorial&&filtro==='gestion'&&<>
       {gestionadas.map(p=><article key={p.id} className="seo-inventario-item">
@@ -90,17 +112,9 @@ export default function SEOInventarioOportunidades({
       </article>)}
       {!gestionadas.length&&<p className="seo-inventario-vacio">Aún no existen mejoras en gestión.</p>}
     </>}
-    {!sinHistorial&&filtro==='observacion'&&<>
-      {observadas.slice(0,20).map(q=><div className="seo-inventario-observada" key={q.clave}>
-        <span>{q.clave}</span>
-        <small>{n(q.impresiones)} impresiones · {n(q.clicks)} clics · CTR {ctr(q.ctr)}</small>
-      </div>)}
-      {!observadas.length&&<p className="seo-inventario-vacio">Sin búsquedas adicionales en este período.</p>}
-      {observadas.length>20&&<p className="seo-inventario-explica">
-        Se muestran 20 de {observadas.length} búsquedas observadas. Puedes revisar la lista de Google en Búsquedas.</p>}
-      <button type="button" className="seo-inventario-enlace" onClick={onVerBusquedas}>
-        Ver búsquedas e indicadores completos →
-      </button>
-    </>}
+    {!sinHistorial&&sc?.disponible&&<div className="seo-inventario-busquedas">
+      <span>Search Console identificó {observadas.length} búsquedas adicionales. Son consultas, <strong>no mejoras pendientes</strong>.</span>
+      <button type="button" onClick={onVerBusquedas}>Ver búsquedas →</button>
+    </div>}
   </div>;
 }

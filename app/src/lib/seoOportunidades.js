@@ -19,7 +19,7 @@ export function construirOportunidades(search, audit, analytics) {
   }
   for (const [i, item] of (audit?.problemas || []).entries()) {
     result.push({
-      id: 'tecnico:' + i, clase: 'tecnico',
+      id: 'tecnico:' + (audit?.url || '') + ':' + item.texto, clase: 'tecnico',
       prioridad: item.nivel === 'alto' ? 'Alta' : 'Media',
       tipo: 'Auditoría técnica', titulo: item.texto,
       detalle: 'Comprobación directa del HTML y archivos de ' + (audit?.url || 'www.coproactiva.cl'),
@@ -118,4 +118,27 @@ export function destinoOportunidadSEO(item) {
     case 'consulta': return 'oportunidades';
     default: return 'tecnico';
   }
+}
+
+/** Selecciona páginas reales presentes en Search Console para ampliar la auditoría.
+ * No inventa páginas: utiliza URLs observadas del dominio público.
+ */
+export function rutasParaAuditoriaSEO(search, rutasRevisadas = [], limite = 5) {
+  if (!search?.disponible) return [];
+  const revisadas = new Set(['/', ...rutasRevisadas]);
+  const encontradas = [];
+  for (const pagina of search.paginas || []) {
+    let url;
+    try { url = new URL(pagina.clave); } catch { continue; }
+    if (!['www.coproactiva.cl','coproactiva.cl'].includes(url.hostname) ||
+      url.protocol !== 'https:') continue;
+    const ruta = url.pathname;
+    if (!/^\/[a-zA-Z0-9/_.-]*$/.test(ruta) ||
+      ruta.includes('..') || ruta.includes('//') ||
+      revisadas.has(ruta)) continue;
+    revisadas.add(ruta);
+    encontradas.push(ruta);
+    if (encontradas.length >= Math.max(1, Math.min(8, limite))) break;
+  }
+  return encontradas;
 }
