@@ -25,7 +25,7 @@ export default function Levantamientos() {
       </header>
 
       <div className="cuerpo levantamientos-cuerpo modulo-contenido">
-        <div className="levantamientos-opciones ui-acciones">
+        <div className="levantamientos-opciones">
           <Link to="/nuevo" className="tarjeta levantamientos-opcion">
             <span className="levantamientos-icono" aria-hidden="true">☑</span>
             <span className="levantamientos-opcion-texto">
