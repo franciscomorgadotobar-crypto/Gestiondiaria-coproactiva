@@ -1,0 +1,25 @@
+.seo-inventario{display:flex;flex-direction:column;gap:14px;min-width:0}
+.seo-inventario-cabecera{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.seo-inventario h2{margin:5px 0;font-size:1.25rem;color:var(--texto-titulo)}
+.seo-inventario-cabecera p{margin:0;max-width:720px;font-size:.85rem;color:var(--texto-apagado);line-height:1.5}
+.seo-inventario-cabecera>small{font-size:.75rem;color:var(--texto-apagado)}
+.seo-inventario-filtros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.seo-inventario-filtros button{border:1px solid var(--borde);border-radius:8px;background:#fff;padding:11px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;font:inherit;cursor:pointer}
+.seo-inventario-filtros button.activo{background:#f8f0e7;border-color:#c8905e}
+.seo-inventario-filtros strong{font-size:1.3rem;font-family:var(--fuente-display);color:var(--texto-titulo)}
+.seo-inventario-filtros span{font-size:.72rem;color:var(--texto-apagado);text-align:center}
+.seo-inventario-explica,.seo-inventario-fuente{font-size:.78rem;line-height:1.5;color:var(--texto-apagado);margin:0}
+.seo-inventario-item{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--borde);padding:13px;border-radius:9px;background:#fff;min-width:0;flex-wrap:wrap}
+.seo-inventario-item-cuerpo{display:flex;align-items:flex-start;gap:11px;min-width:0;flex:1 1 240px}
+.seo-inv-ico{width:30px;height:30px;flex:none;border-radius:8px;background:#fff3e5;color:#9a571c;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.08rem}
+.seo-inv-ico.verde{background:#e6f1e7;color:#39733c}
+.seo-inventario-item-cuerpo>div{min-width:0}
+.seo-inventario-chips{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.seo-inventario-chips small{font-size:.73rem;color:var(--texto-apagado)}
+.seo-inventario-item h3{font-size:.94rem;margin:8px 0 5px;color:var(--texto-titulo);overflow-wrap:anywhere}
+.seo-inventario-item p{font-size:.79rem;color:var(--texto-apagado);margin:0;overflow-wrap:anywhere}
+.seo-inventario-item>button,.seo-inventario-enlace{border:none;background:transparent;text-decoration:none;text-align:left;cursor:pointer;font:inherit;font-weight:700;font-size:.82rem;color:#a4571c;padding:8px 0}
+.seo-inventario-observada{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;border-bottom:1px solid var(--borde);padding:10px 0;font-size:.82rem}
+.seo-inventario-observada small{font-size:.76rem;color:var(--texto-apagado)}
+.seo-inventario-aviso,.seo-inventario-vacio{background:#fff8eb;border:1px solid #e3cba7;padding:13px;border-radius:8px;font-size:.83rem;color:#79542e;line-height:1.5;margin:0}
+@media(max-width:640px){.seo-inventario-item>button{padding-left:41px}.seo-inventario-filtros button{padding:10px 3px}}
