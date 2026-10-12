@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { usePestanaHistorial } from '../../lib/pestanasHistorial';
 import { useSesion } from '../../lib/sesion';
-import { construirOportunidades, destinoOportunidadSEO } from '../../lib/seoOportunidades';
+import { construirOportunidades, destinoOportunidadSEO, rutasParaAuditoriaSEO } from '../../lib/seoOportunidades';
 import { clasificarOportunidadesSEO } from '../../lib/seoEstadoOportunidades';
 import { ejecutarConReintentosSEO } from '../../lib/seoRecuperacion';
 import SEORecomendaciones from './SEORecomendaciones';
@@ -128,6 +128,8 @@ function SEOInterno() {
   const [auditoriaInicio, setAuditoriaInicio] = useState(null);
   const [accionSeleccionada, setAccionSeleccionada] = useState(null);
   const [propuestasSEO, setPropuestasSEO] = useState(null);
+  const [auditoriasExtras, setAuditoriasExtras] = useState({});
+  const [revisionPaginas, setRevisionPaginas] = useState({cargando:false,terminadas:0,error:''});
 
   const invocar = useCallback((accion, extras = {}) => ejecutarConReintentosSEO(async () => {
     const { data, error: err } = await supabase.functions.invoke('seo-analitica', { body: { accion, ...extras } });
@@ -247,8 +249,36 @@ function SEOInterno() {
     });
     return caminos.slice(0, 80);
   }, [sc]);
-  const lista = useMemo(() => construirOportunidades(sc, auditoriaInicio || auditoria, ga),
-    [sc, auditoriaInicio, auditoria, ga]);
+  const lista = useMemo(() => {
+    const portada = auditoriaInicio || (auditoria?.url === sitio+'/' ? auditoria : null);
+    const generadas = construirOportunidades(sc, portada, ga);
+    // Además de la portada, incorporar hallazgos de cada URL auditada.
+    for (const resultado of Object.values(auditoriasExtras)) {
+      generadas.push(...construirOportunidades(null, resultado, null));
+    }
+    return generadas.filter((o,indice,todas)=>todas.findIndex(x=>x.id===o.id)===indice);
+  }, [sc, auditoriaInicio, auditoria, ga, auditoriasExtras]);
+  const rutasPendientesSEO = useMemo(() =>
+    rutasParaAuditoriaSEO(sc, Object.keys(auditoriasExtras), 5),
+    [sc, auditoriasExtras]);
+  const paginasRevisadasSEO = (auditoriaInicio?.status===200 ? 1 : 0) +
+    Object.keys(auditoriasExtras).length;
+  async function analizarMasPaginas() {
+    if (revisionPaginas.cargando || !rutasPendientesSEO.length) return;
+    const pendientes=[...rutasPendientesSEO];
+    setRevisionPaginas({cargando:true,terminadas:0,error:''});
+    let fallidas=0;
+    for (const rutaSiguiente of pendientes) {
+      try {
+        const respuesta=await invocar('auditoria',{ruta:rutaSiguiente});
+        if (!respuesta?.url || !Array.isArray(respuesta.problemas)) throw Error('Auditoría incompleta');
+        setAuditoriasExtras(anteriores=>({...anteriores,[rutaSiguiente]:respuesta}));
+      } catch { fallidas++; }
+      setRevisionPaginas({cargando:true,terminadas:pendientes.indexOf(rutaSiguiente)+1,error:''});
+    }
+    setRevisionPaginas({cargando:false,terminadas:pendientes.length,
+      error:fallidas ? fallidas+' páginas no pudieron revisarse. Puedes reintentar.' : ''});
+  }
   const gestionSEO = useMemo(() => clasificarOportunidadesSEO(lista, propuestasSEO),
     [lista, propuestasSEO]);
   const consultasParaDiagnostico = useMemo(() => {
@@ -352,6 +382,8 @@ function SEOInterno() {
         sc={sc} ga={ga} perfilEmpresa={perfilEmpresa} tiempoReal={tiempoReal}
         auditoriaInicio={auditoriaInicio} lista={lista} gestionSEO={gestionSEO}
         dias={dias} datosHasta={sc?.hasta} consultadoEn={estado?.consultadoEn}
+        paginasRevisadas={paginasRevisadasSEO} paginasPendientes={rutasPendientesSEO.length}
+        revisandoPaginas={revisionPaginas.cargando} onRevisarPaginas={analizarMasPaginas}
         onNavigate={irVista} onAnalyze={abrirAccion} />}
 
       {vista === 'consultas' && <section>
@@ -525,6 +557,8 @@ function SEOInterno() {
 
       {vista === 'oportunidades' && <SEOInventarioOportunidades
         gestionSEO={gestionSEO} lista={lista} sc={sc} dias={dias}
+        paginasRevisadas={paginasRevisadasSEO} paginasPendientes={rutasPendientesSEO.length}
+        revisionPaginas={revisionPaginas} onRevisarPaginas={analizarMasPaginas}
         onAnalizar={abrirAccion}
         onVerSeguimiento={()=>irVista('seguimiento')}
         onVerBusquedas={()=>irVista('consultas')}/>}
