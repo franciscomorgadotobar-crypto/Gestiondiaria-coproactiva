@@ -30,6 +30,9 @@ jobs:
       - name: Probar historial SEO y clasificación sin duplicados
         working-directory: app
         run: node --test src/lib/seoEstadoOportunidades.test.mjs
+      - name: Probar historial de navegación Android y PWA
+        working-directory: app
+        run: node --test src/lib/pestanasHistorial.test.mjs
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
