@@ -1448,7 +1448,7 @@ export default function Contabilidad() {
           </div>
         </div>
 
-        <nav className="contabilidad-nav" aria-label="Contabilidad">
+        <nav className="contabilidad-nav ui-pestanas" aria-label="Contabilidad">
           {VISTAS.map(([id, texto, ruta]) => (
             <Link key={id} to={ruta} className={vista === id ? 'activo' : ''}>{texto}</Link>
           ))}
