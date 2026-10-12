@@ -32,6 +32,9 @@
 
   /* Marca */
   --naranja: #d5863b;
+  /* Naranja de marca para acentos; enlaces/texto requieren mayor contraste. */
+  --enlace: #955123;
+  --enlace-hover: #713810;
   --pizarra: #4a5a68;
   --tinta: #2b3138;
   --papel: #f7f4f0;
@@ -52,7 +55,7 @@
   --texto-cuerpo: #3a4149;
   --texto-apagado: #5a636c;
   --texto-suave: #6b7480;
-  --texto-tenue: #8b939b;
+  --texto-tenue: #626b74;
   --texto-inverso: #ffffff;
 
   /* Estados */
