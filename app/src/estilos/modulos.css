@@ -18,9 +18,8 @@
 
 /* Encabezado — mismo tamaño y espaciado en todos los módulos */
 .modulo-unificado > .encabezado.modulo-cabecera {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  /* Mantener la estructura de cada cabecera (fila, nav, acciones):
+     sólo se unifican espaciados y apariencia. */
   width: 100%;
   min-width: 0;
   background: var(--tarjeta);
@@ -186,4 +185,28 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .modulo-unificado .boton { transition: none; }
+}
+
+/* WhatsApp tiene un contenedor propio (sin .pantalla). Conserva layout de chat,
+   pero hereda sistema de superficies, campos y cabecera. */
+.wa-page.modulo-unificado {width:100%;min-width:0;max-width:1400px;}
+.wa-page.modulo-unificado .wa-header {
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:14px;margin-bottom:12px;
+}
+.wa-page.modulo-unificado .wa-header h1 {
+  color:var(--texto-titulo);font:650 clamp(18px,2vw,22px)/1.3 var(--fuente-display);
+}
+.wa-page.modulo-unificado :is(.wa-filters input,.wa-page select,.wa-page textarea) {
+  border-color:var(--borde);border-radius:var(--radio-control);
+  background:var(--tarjeta);color:var(--texto-cuerpo);
+}
+.wa-page.modulo-unificado .wa-tabs a {
+  color:var(--texto-apagado);border-bottom-color:transparent;
+}
+.wa-page.modulo-unificado .wa-tabs a[aria-current="page"] {
+  color:var(--texto-titulo);border-bottom-color:var(--naranja);
+}
+@media(max-width:860px){
+  .wa-page.modulo-unificado :is(input,select,textarea){font-size:16px}
 }
