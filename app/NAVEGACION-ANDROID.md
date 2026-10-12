@@ -35,3 +35,7 @@ El botón físico o gesto Atrás debe utilizar el historial real de React Router
 8. Abrir la app directamente en una ruta profunda sin historial: se permite la acción normal de Android; no se crea un bucle de salida.
 
 Los tests unitarios verifican lectura/escritura de parámetros URL y que no se borren parámetros ajenos. Los recorridos completos deben validarse en Android real o emulador PWA para todos los componentes de terceros.
+
+## Selector de áreas
+
+Cuando se selecciona un área desde la pantalla de selección, React Router conserva esa pantalla en el historial antes de abrir CRM, Operación, Propiedades, Proveedores, WhatsApp, Contabilidad o SEO. El gesto Atrás desde el primer nivel del área regresa a la selección y permite elegir otra, aunque exista un área guardada previamente. Esto evita el bucle anterior que redirigía inmediatamente a la misma área al volver a `/`. El portal cliente y entradas externas directas conservan su comportamiento normal.
