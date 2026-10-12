@@ -70,8 +70,8 @@
   --info-borde: #d7dde2;
 
   /* Radios */
-  --radio-control: 2px;
-  --radio-tarjeta: 3px;
+  --radio-control: 7px;
+  --radio-tarjeta: 10px;
   --radio-pastilla: 999px;
 
   /* Alto mínimo de un objetivo táctil. Bajo esto no se pone nada que se toque
