@@ -38,3 +38,11 @@ test('oportunidades y pie del módulo no repiten explicaciones',()=>{
   assert.doesNotMatch(oportunidades,/Fuentes: Search Console/);
   assert.doesNotMatch(seo,/<footer className="seo-pie">/);
 });
+
+test('al expandir una mejora se ven los textos Original y Cambio',()=>{
+  assert.match(impacto,/function CambiosDeContenido/);
+  assert.match(impacto,/<CambiosDeContenido item=\{item\}\/>/);
+  assert.match(impacto,/>Original<\/span>/);
+  assert.match(impacto,/>Cambio<\/span>/);
+  assert.match(impacto,/camposModificadosSEO\(item\)/);
+});

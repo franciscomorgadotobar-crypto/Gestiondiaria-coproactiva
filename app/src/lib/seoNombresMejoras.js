@@ -48,3 +48,14 @@ export function nombreMejoraSEO(propuesta) {
     :'Mejora SEO';
   return `${tipo}: ${ubicacionMejoraSEO(propuesta.ruta)}`;
 }
+
+/** Textos efectivamente modificados, para comparar dentro de Seguimiento SEO.
+ * No inventar texto cuando faltan versiones guardadas en registros históricos.
+ */
+export function camposModificadosSEO(propuesta) {
+  if (!propuesta) return [];
+  return [
+    {campo:'Título SEO',original:frase(propuesta.titulo_actual),cambio:frase(propuesta.titulo_propuesto)},
+    {campo:'Meta descripción',original:frase(propuesta.descripcion_actual),cambio:frase(propuesta.descripcion_propuesta)}
+  ].filter(item => item.original !== null && item.cambio !== null && item.original !== item.cambio);
+}

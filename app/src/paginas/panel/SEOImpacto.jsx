@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { nombreMejoraSEO } from '../../lib/seoNombresMejoras';
+import { nombreMejoraSEO, camposModificadosSEO } from '../../lib/seoNombresMejoras';
 import './SEOImpacto.css';
 
 const numero = v => Number(v ?? 0).toLocaleString('es-CL',{maximumFractionDigits:0});
@@ -97,6 +97,26 @@ function Medicion({item,invocar}) {
     </>}
   </div>;
 }
+function CambiosDeContenido({item}) {
+  const cambios=camposModificadosSEO(item);
+  if(!cambios.length)return null;
+  return <section className="seo-impacto-cambios" aria-label="Texto original y cambio aprobado">
+    {cambios.map(campo=><div className="seo-impacto-cambio-campo" key={campo.campo}>
+      <h3>{campo.campo}</h3>
+      <div className="seo-impacto-cambio-valores">
+        <div className="seo-impacto-cambio-antes">
+          <span className="seo-impacto-etiqueta original">Original</span>
+          <p>{campo.original || 'Sin contenido'}</p>
+        </div>
+        <div className="seo-impacto-cambio-despues">
+          <span className="seo-impacto-etiqueta cambio">Cambio</span>
+          <p>{campo.cambio || 'Contenido eliminado'}</p>
+        </div>
+      </div>
+    </div>)}
+  </section>;
+}
+
 function Historial({item,onVerificar,cargando}) {
   const netlify=item.netlify_detalle||{};
   return <details className="seo-impacto-historial">
@@ -142,6 +162,7 @@ function Mejora({item,invocar,onActualizada}) {
       <span className="seo-impacto-flecha" aria-hidden="true">{abierto?'⌃':'⌄'}</span>
     </button>
     {abierto&&<div className="seo-impacto-mejora-detalle">
+      <CambiosDeContenido item={item}/>
       {publicada
         ?<Medicion item={item} invocar={invocar}/>
         :<div className="seo-impacto-espera"><strong>Seguimiento pendiente</strong>
