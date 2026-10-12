@@ -1,0 +1,55 @@
+.seo-impacto{display:flex;flex-direction:column;gap:14px;min-width:0}
+.seo-impacto h2{font-size:1.28rem;color:var(--texto-titulo);margin:0 0 6px}
+.seo-impacto h3{font-size:1.06rem;margin:7px 0 5px;color:var(--texto-titulo)}
+.seo-impacto p{margin:0;line-height:1.48}
+.seo-impacto button,.seo-impacto-buttons a{font:inherit;color:#9d5429;border:1px solid #d7ba9e;background:#fff;border-radius:7px;padding:10px 12px;cursor:pointer;font-size:.8rem;text-decoration:none;font-weight:700}
+.seo-impacto button:disabled{opacity:.6;cursor:not-allowed}
+.seo-impacto-top,.seo-impacto-header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.seo-impacto-top p,.seo-impacto-header p{font-size:.82rem;color:var(--texto-apagado)}
+.seo-impacto-totales{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.seo-impacto-totales>div{display:flex;flex-direction:column;gap:5px;background:#fff;border:1px solid var(--borde);border-radius:9px;padding:13px}
+.seo-impacto-totales strong{font-size:1.65rem;color:var(--texto-titulo)}
+.seo-impacto-totales small,.seo-impacto-dates small{font-size:.74rem;color:var(--texto-apagado)}
+.seo-impacto-card{border:1px solid var(--borde);border-radius:10px;padding:17px;background:#fff}
+.seo-impacto-estado{font-size:.74rem;font-weight:750;border-radius:20px;padding:4px 9px;color:#78572f;background:#fff0dd}
+.seo-impacto-estado.estado-publicada{background:#e7f4e8;color:#28612e}
+.seo-impacto-header h3{margin-top:14px}
+.seo-impacto-detail{border-top:1px solid var(--borde-suave);margin-top:15px;padding-top:14px;display:flex;flex-direction:column;gap:15px}
+.seo-impacto-dates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.seo-impacto-dates>div{background:#f7f5f2;border-radius:7px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.seo-impacto-dates strong{font-size:.8rem;line-height:1.4}
+.seo-impacto-buttons{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.seo-impacto-pendiente{padding:16px;border:1px solid #ebd5b8;background:#fff8ef;border-radius:9px;line-height:1.5}
+.seo-impacto-pendiente strong{font-size:.86rem}
+.seo-impacto-pendiente p{font-size:.8rem;margin-top:8px}
+.seo-impacto-periodos{display:flex;flex-wrap:wrap;gap:8px}
+.seo-impacto-periodos button.activo{background:#b86a30;border-color:#b86a30;color:#fff}
+.seo-impacto-periodos .seo-impacto-refresh{margin-left:auto}
+.seo-impacto-periodo-contenido{background:#faf9f7;border:1px solid var(--borde);padding:14px;border-radius:9px}
+.seo-impacto-periodo-cabecera{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.83rem}
+.seo-impacto-periodo-cabecera span{color:var(--texto-apagado)}
+.seo-impacto-progreso{width:100%;height:7px;background:#e6e2dc;border-radius:20px;margin:14px 0;overflow:hidden}
+.seo-impacto-progreso>span{display:block;height:100%;background:#b86a30;border-radius:20px}
+.seo-impacto-metricas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.seo-impacto-metricas>div{background:#fff;border:1px solid var(--borde);border-radius:6px;padding:11px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.seo-impacto-metricas small{color:var(--texto-apagado);font-size:.76rem}
+.seo-impacto-metricas strong{font-size:.95rem;color:var(--texto-titulo);overflow-wrap:anywhere}
+.seo-impacto-metricas .seo-impacto-bueno{color:#257239}
+.seo-impacto-metricas .seo-impacto-malo{color:#b04135}
+.seo-impacto-neutro{color:#777;font-size:.8rem}
+.seo-impacto-bars{display:flex;flex-direction:column;gap:11px;margin:18px 0}
+.seo-impacto-bars>div{display:grid;grid-template-columns:58px 1fr 75px;gap:8px;align-items:center;font-size:.77rem}
+.seo-impacto-bar{height:10px;border-radius:10px;background:#e8e1d9;overflow:hidden}
+.seo-impacto-bar>span{display:block;height:100%;background:#cc7b32;border-radius:10px}
+.seo-impacto-help{font-size:.77rem;color:var(--texto-apagado);line-height:1.45}
+.seo-impacto-aviso{background:#fff5ec;color:#814b2c;border:1px solid #ebd0b5;border-radius:8px;padding:11px;font-size:.82rem}
+@media(max-width:640px){
+  .seo-impacto-card{padding:12px}
+  .seo-impacto-totales,.seo-impacto-dates{grid-template-columns:1fr}
+  .seo-impacto-totales{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .seo-impacto-totales>div{padding:10px}
+  .seo-impacto-totales strong{font-size:1.25rem}
+  .seo-impacto-totales small{font-size:.66rem}
+  .seo-impacto-header{flex-direction:column}
+  .seo-impacto-metricas{grid-template-columns:1fr}
+}
