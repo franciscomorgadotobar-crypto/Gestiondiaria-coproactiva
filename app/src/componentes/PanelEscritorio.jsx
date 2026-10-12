@@ -207,7 +207,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   function irLevantamientos() {
     if (pathname === '/inicio') {
       document.getElementById('por-hacer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (window.history?.replaceState) window.history.replaceState(null, '', '#por-hacer');
+      // React Router conserva el state/índice del historial usado por Atrás Android.
+      navegar('/inicio#por-hacer', { replace: true, preventScrollReset: true });
       return;
     }
     navegar('/inicio#por-hacer');
