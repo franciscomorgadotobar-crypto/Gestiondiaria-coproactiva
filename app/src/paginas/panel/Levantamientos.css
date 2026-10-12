@@ -75,8 +75,8 @@
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  border: 1px solid #f0dcbd;
-  background: #fdf3e6;
+  border: 1px solid var(--alerta-borde);
+  background: var(--alerta-fondo);
 }
 
 .levantamientos-guia-icono {
@@ -92,7 +92,7 @@
 
 .levantamientos-guia p {
   margin: 0;
-  color: var(--texto);
+  color: var(--texto-cuerpo);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -152,6 +152,28 @@
 
   .levantamientos-guia {
     padding: 18px 20px;
-    border-radius: 3px;
+    border-radius: var(--radio-tarjeta);
   }
+}
+
+/* Las tres acciones conservan su cuadrícula, pero comparten superficies y foco. */
+.levantamientos-pantalla .levantamientos-opcion,
+.levantamientos-pantalla .levantamientos-guia {
+  border-radius: var(--radio-tarjeta);
+}
+.levantamientos-pantalla .levantamientos-opcion {
+  min-width: 0;
+  box-shadow: var(--modulo-sombra);
+}
+.levantamientos-pantalla .levantamientos-opcion:focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: 2px;
+}
+.levantamientos-pantalla .levantamientos-flecha {
+  color: var(--enlace);
+}
+@media (max-width: 520px) {
+  .levantamientos-pantalla .levantamientos-cuerpo { gap: 14px; }
+  .levantamientos-pantalla .levantamientos-opcion { min-height: 92px; }
+  .levantamientos-pantalla .levantamientos-opcion-texto strong { font-size: 15px; }
 }
