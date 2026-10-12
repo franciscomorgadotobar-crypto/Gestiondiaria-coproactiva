@@ -410,7 +410,7 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
               />
             </label>
           </div>
-          <div className="contabilidad-operaciones-botones ui-acciones">
+          <div className="contabilidad-operaciones-botones">
             <button type="button" className="boton boton-secundario" disabled={monto(montoOperacion) <= 0}
                     onClick={() => aplicarOperacion('pago_proveedor')}>Pago a proveedor</button>
             <button type="button" className="boton boton-secundario" disabled={monto(montoOperacion) <= 0}
