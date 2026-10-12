@@ -64,3 +64,20 @@ La cobertura estática se comprueba en `app/pruebas/visual.test.js` y la compila
 6. Comprobación de pantallas reales Android/PWA y escritorio; accesibilidad teclado, lector de pantalla, Atrás y estado vacío/error.
 
 **No usar selectores globales indiscriminados para forzar el aspecto de todas las entradas:** las pantallas de alta densidad y el trabajo de terreno necesitan migraciones específicas y regresiones visuales.
+
+## Fase 2 — Módulos operativos y controles móviles (12-10-2026)
+
+**Áreas migradas:** Comunidades (listado y ficha), Proveedores (listado, ficha, Recepción, Postulantes y Comunicaciones), Contabilidad (asientos y reportes), Levantamientos, editor de plantillas, importación Excel y práctica.
+
+- Añadidos patrones reutilizables y opcionales en `estilos/modulos.css`: `ui-panel`, `ui-toolbar`, `ui-formulario`, `ui-acciones` y `ui-tabla-scroll`.
+- **Comunidades:** pestañas pasan a `ui-pestanas` con `aria-selected`; formularios, herramientas, tarjetas y KPIs comparten radios, contraste y tamaño táctil.
+- **Proveedores:** filtros y comunicaciones usan patrón común, se mantiene selección múltiple y los listados móviles existentes. Formularios en dos columnas escritorio y una columna en teléfono.
+- **Contabilidad:** preserva todas las cifras y cuadrículas especiales de edición, sin alterar asientos ni validación del balance. Tablas extensas desplazables, enfocables y anunciadas como región; cifras tabulares y controles de 16 px en móvil.
+- **Levantamientos:** opciones conservan su cuadrícula y navegación, superficies y avisos usan tokens corporativos. Se incorpora marco visual en editor de plantillas, importación y práctica.
+- Los elementos dentro de cada módulo conservan las autorizaciones, acciones y resultados existentes. Ninguna consulta o procedimiento SQL cambió.
+
+### Control de calidad
+`app/pruebas/ui-fase2.test.js` verifica navegación por pestañas, selección de proveedores, tablas completas, cuadrículas móviles y herencia de sistema visual. Corre en GitHub Actions junto con las pruebas anteriores y la compilación.
+
+### Revisión visual pendiente
+Verificar con sesión autenticada y capturas de 360, 390, 768 y 1280 px: fichas de comunidades y checklists, filtros de proveedores, libro diario y balance, editor de asientos con varias líneas, importación Excel, guardado en editor y tutorial/práctica. Las pruebas estáticas no equivalen a revisar las pantallas en ejecución.
