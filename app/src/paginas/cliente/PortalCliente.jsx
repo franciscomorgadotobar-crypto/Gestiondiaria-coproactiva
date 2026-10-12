@@ -573,7 +573,7 @@ function DetalleCliente({ id }) {
   const { perfil } = useSesion();
   const [params, setParams] = useSearchParams();
   const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'resumen';
-  const [tab, setTab] = useState(tabInicial);
+  const tab = tabInicial; // URL permite volver de Documentos a Incidencias con Atrás.
   const [vista, setVista] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -614,14 +614,12 @@ function DetalleCliente({ id }) {
     return () => { vigente = false; };
   }, [id, perfil?.id]);
 
-  useEffect(() => {
-    const seccion = params.get('seccion');
-    if (TABS.some(([x]) => x === seccion)) setTab(seccion);
-  }, [params]);
-
   function cambiarTab(nuevo) {
-    setTab(nuevo);
-    setParams({ seccion: nuevo }, { replace: true });
+    if (tab === nuevo || !TABS.some(([clave]) => clave === nuevo)) return;
+    const siguientes = new URLSearchParams(params);
+    if (nuevo === 'resumen') siguientes.delete('seccion');
+    else siguientes.set('seccion', nuevo);
+    setParams(siguientes, { replace: false, preventScrollReset: true });
   }
 
   if (cargando) return <p className="cargando">Cargando…</p>;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { usePestanaHistorial } from '../../lib/pestanasHistorial';
 import { useSesion } from '../../lib/sesion';
 import { construirOportunidades } from '../../lib/seoOportunidades';
 import { clasificarOportunidadesSEO } from '../../lib/seoEstadoOportunidades';
@@ -21,6 +22,7 @@ const SECCIONES = [
   ['tagmanager', 'Medición'],
   ['conexiones', 'Configuración']
 ];
+const VISTAS_SEO = SECCIONES.map(([id]) => id);
 const numeral = n => Number(n ?? 0).toLocaleString('es-CL', { maximumFractionDigits: 0 });
 const decimal = (n, digits = 1) => Number(n ?? 0).toLocaleString('es-CL', { maximumFractionDigits: digits });
 const porcentaje = n => decimal(Number(n ?? 0) * 100) + '%';
@@ -103,7 +105,7 @@ function Barra({ titulo, valor, max, detalle }) {
     <div className="seo-barra-fondo"><span style={{ width: (100 * Number(valor || 0) / Math.max(1, max)) + '%' }} /></div></div>;
 }
 function SEOInterno() {
-  const [vista, setVista] = useState('resumen');
+  const [vista, setVista] = usePestanaHistorial('vista', 'resumen', VISTAS_SEO);
   const [dias, setDias] = useState(28);
   const [estado, setEstado] = useState(null);
   const [datos, setDatos] = useState(null);

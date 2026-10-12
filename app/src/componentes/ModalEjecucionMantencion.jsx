@@ -1,3 +1,4 @@
+import { useAtrasCierraDialogo } from '../lib/dialogoHistorial';
 import { useState } from 'react';
 
 export default function ModalEjecucionMantencion({
@@ -10,6 +11,7 @@ export default function ModalEjecucionMantencion({
   onConfirmar,
   onCancelar
 }) {
+  useAtrasCierraDialogo(onCancelar);
   const [ejecutor, setEjecutor] = useState(ejecutorInicial);
   const [observaciones, setObservaciones] = useState('');
   const [archivos, setArchivos] = useState([]);

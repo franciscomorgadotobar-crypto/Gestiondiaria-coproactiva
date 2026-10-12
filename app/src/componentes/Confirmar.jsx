@@ -1,3 +1,4 @@
+import { useAtrasCierraDialogo } from '../lib/dialogoHistorial';
 /* Recuadro de confirmación genérico: un título, un texto y dos salidas.
  *
  * Existe para el caso de "estás por perder algo": cambios sin guardar,
@@ -8,6 +9,7 @@ export default function Confirmar({
   titulo, mensaje, textoConfirmar = 'Aceptar', textoCancelar = 'Volver a editar',
   onConfirmar, onCancelar
 }) {
+  useAtrasCierraDialogo(onCancelar);
   return (
     <div className="modal-fondo" role="presentation" onClick={onCancelar}>
       <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-titulo"

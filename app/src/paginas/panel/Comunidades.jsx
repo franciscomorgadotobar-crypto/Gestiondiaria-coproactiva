@@ -460,7 +460,7 @@ function DetalleComunidad({ id }) {
     ? searchParams.get('seccion')
     : 'resumen';
 
-  const [seccion, setSeccion] = useState(seccionInicial);
+  const seccion = seccionInicial; // URL es fuente de verdad: Atrás restaura automáticamente la sección.
   const [comunidad, setComunidad] = useState(null);
   const [controles, setControles] = useState([]);
   const [activos, setActivos] = useState([]);
@@ -607,10 +607,10 @@ function DetalleComunidad({ id }) {
   }, [actividadAlertas, reglas]);
 
   function cambiarSeccion(s) {
-    setSeccion(s);
+    if (s === seccion || !SECCIONES.some(([clave]) => clave === s)) return;
     const p = new URLSearchParams(searchParams);
     if (s === 'resumen') p.delete('seccion'); else p.set('seccion', s);
-    setSearchParams(p, { replace: true });
+    setSearchParams(p, { replace: false, preventScrollReset: true });
   }
 
   const activosPorId = useMemo(() => new Map(activos.map(a => [a.id, a])), [activos]);
