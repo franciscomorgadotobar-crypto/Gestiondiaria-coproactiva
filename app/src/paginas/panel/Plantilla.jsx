@@ -376,7 +376,7 @@ export default function EditorPlantilla() {
   if (!plantilla) return <p className="cargando">Cargando…</p>;
 
   return (
-    <div className="pantalla pantalla-angosta">
+    <div className="pantalla pantalla-angosta modulo-unificado">
       {dialogoCategoria && (
         <DialogoCampos
           titulo={dialogoCategoria.tipo === 'renombrar' ? 'Renombrar categoría' : 'Nueva categoría'}
@@ -427,7 +427,7 @@ export default function EditorPlantilla() {
         />
       )}
 
-      <header className="encabezado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={volver}>
@@ -474,7 +474,7 @@ export default function EditorPlantilla() {
         </label>
       </header>
 
-      <div className="cuerpo">
+      <div className="cuerpo modulo-contenido">
         {categorias.map((cat, i) => (
           <section key={cat.nombre} className="categoria">
             <div className="categoria-editable">
