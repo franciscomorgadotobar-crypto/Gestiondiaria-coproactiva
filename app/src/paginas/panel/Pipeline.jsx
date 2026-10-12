@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { usePestanaHistorial } from '../../lib/pestanasHistorial';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import './Pipeline.css';
@@ -71,7 +72,7 @@ export default function Pipeline() {
   const [diagnosticos, setDiagnosticos] = useState(new Map());   // prospecto_id → { control, resultado }
   const [equipo, setEquipo] = useState([]);
   const [error, setError] = useState(null);
-  const [etapa, setEtapa] = useState('nuevo');
+  const [etapa, setEtapa] = usePestanaHistorial('etapa', 'nuevo', ETAPAS.map(([clave]) => clave));
   const [abierto, setAbierto] = useState(null);   // id en edición, o 'nuevo'
   const [form, setForm] = useState(VACIO);
   const [guardando, setGuardando] = useState(false);
