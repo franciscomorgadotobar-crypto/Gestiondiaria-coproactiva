@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { construirOportunidades } from '../../lib/seoOportunidades';
+import { clasificarOportunidadesSEO } from '../../lib/seoEstadoOportunidades';
 import SEORecomendaciones from './SEORecomendaciones';
 import SEODashboard from './SEODashboard';
 import SEOImpacto from './SEOImpacto';
@@ -122,6 +123,7 @@ function SEOInterno() {
   const [tiempoReal, setTiempoReal] = useState(null);
   const [auditoriaInicio, setAuditoriaInicio] = useState(null);
   const [accionSeleccionada, setAccionSeleccionada] = useState(null);
+  const [propuestasSEO, setPropuestasSEO] = useState(null);
 
   const invocar = useCallback(async (accion, extras = {}) => {
     const { data, error: err } = await supabase.functions.invoke('seo-analitica', { body: { accion, ...extras } });
@@ -136,13 +138,25 @@ function SEOInterno() {
     return data;
   }, []);
 
+  const cargarHistorialSEO = useCallback(async () => {
+    try {
+      const {data,error:err} = await supabase.functions.invoke('seo-propuestas',{body:{accion:'listar'}});
+      if(err || data?.error || !Array.isArray(data?.propuestas)) throw Error('No se pudo sincronizar el historial SEO.');
+      setPropuestasSEO(data.propuestas);
+    } catch {
+      // Sin historial NO volver a afirmar que una recomendación es nueva.
+      setPropuestasSEO(null);
+    }
+  }, []);
+
   const recargar = useCallback(async (manual = false) => {
     setCargando(true); setError(''); setAvisoActualizacion(null);
     try {
       const resultados = await Promise.allSettled([
         invocar('estado'), invocar('resumen', { dias }),
         invocar('tag-manager'), invocar('auditoria', { ruta: '/' }),
-        invocar('business-profile', { dias }), invocar('ga4-tiempo-real')
+        invocar('business-profile', { dias }), invocar('ga4-tiempo-real'),
+        cargarHistorialSEO()
       ]);
       if (resultados[0].status !== 'fulfilled') throw resultados[0].reason;
       if (resultados[1].status !== 'fulfilled') throw resultados[1].reason;
@@ -177,7 +191,7 @@ function SEOInterno() {
       setError(err.message || 'No fue posible recuperar las métricas.');
       if (manual) setAvisoActualizacion({ tipo: 'error', texto: 'No se pudo actualizar. Revisa el detalle del error.' });
     } finally { setCargando(false); }
-  }, [dias, invocar]);
+  }, [dias, invocar, cargarHistorialSEO]);
 
   useEffect(() => { recargar(false); }, [recargar]);
 
@@ -216,6 +230,8 @@ function SEOInterno() {
   }, [sc]);
   const lista = useMemo(() => construirOportunidades(sc, auditoriaInicio || auditoria, ga),
     [sc, auditoriaInicio, auditoria, ga]);
+  const gestionSEO = useMemo(() => clasificarOportunidadesSEO(lista, propuestasSEO),
+    [lista, propuestasSEO]);
   const sesionesOrganicas = ga?.canales?.find(c => c.clave?.toLowerCase() === 'organic search')?.valores?.[0];
   const eventoLeadGA4 = ga?.eventos?.find(e => e.clave === 'generate_lead');
   const leadsMedidos = eventoLeadGA4?.valores?.[1];
@@ -228,6 +244,7 @@ function SEOInterno() {
   function irVista(vistaNueva, rutaNueva) {
     if (rutaNueva) setRuta(rutaNueva);
     setVista(vistaNueva);
+    if (vistaNueva === 'resumen') void cargarHistorialSEO();
     requestAnimationFrame(() => {
       const nav = document.getElementById('seo-navegacion');
       nav?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -261,6 +278,7 @@ function SEOInterno() {
           className={vista === id ? 'activo' : ''}
           onClick={e => {
             setVista(id);
+            if (id === 'resumen') void cargarHistorialSEO();
             e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
           }}>{label}</button>
       )}</nav>
@@ -276,8 +294,8 @@ function SEOInterno() {
 
       {vista === 'resumen' && <SEODashboard
         sc={sc} ga={ga} perfilEmpresa={perfilEmpresa} tiempoReal={tiempoReal}
-        auditoriaInicio={auditoriaInicio} lista={lista} dias={dias}
-        consultadoEn={estado?.consultadoEn}
+        auditoriaInicio={auditoriaInicio} lista={lista} gestionSEO={gestionSEO}
+        dias={dias} datosHasta={sc?.hasta} consultadoEn={estado?.consultadoEn}
         onNavigate={irVista} onAnalyze={abrirAccion} />}
 
       {vista === 'consultas' && <section>

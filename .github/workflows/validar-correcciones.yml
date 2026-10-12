@@ -27,6 +27,9 @@ jobs:
       - name: Probar reglas de SEO y propuestas editoriales
         working-directory: app
         run: node --test pruebas/seo.test.js
+      - name: Probar historial SEO y clasificación sin duplicados
+        working-directory: app
+        run: node --test src/lib/seoEstadoOportunidades.test.mjs
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build

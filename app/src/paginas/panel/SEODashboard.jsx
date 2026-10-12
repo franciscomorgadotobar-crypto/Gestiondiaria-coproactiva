@@ -124,23 +124,60 @@ function TopPaginas({ga,sc,onNavigate}) {
     <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate(usarGA?'analytics':'consultas')}>Analizar páginas →</button>
   </section>;
 }
-function Prioridades({lista,onNavigate,onAnalyze}) {
-  const acciones=(lista||[]).filter(x=>x.prioridad!=='Pendiente').slice(0,4);
+function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
+  const acciones=(gestionSEO?.nuevas || []).filter(x=>x.prioridad!=='Pendiente').slice(0,4);
+  const gestionadas=[...(gestionSEO?.enGestion||[])].sort((a,b)=>
+    Number(b.estado==='publicada')-Number(a.estado==='publicada'));
+  const publicada=gestionadas.find(x=>x.estado==='publicada');
+  const primeras=publicada ? [publicada] : gestionadas.slice(0,1);
   return <section className="seo-exec-superficie">
     <div className="seo-exec-seccion-cabecera"><div><h3>Qué debemos mejorar</h3>
-      <p>Prioridades basadas en datos, sin modificar automáticamente la web.</p></div></div>
-    {acciones.length ? <div className="seo-exec-acciones">
-      {acciones.map(x=><button key={x.id} type="button" onClick={()=>onAnalyze(x)}>
-        <span className={'seo-prioridad '+(x.prioridad||'media').toLowerCase()}>{x.prioridad}</span>
-        <strong>{x.titulo}</strong>
-        <small>{x.metricas?numero(x.metricas.impresiones)+' impresiones · CTR '+porcentaje(x.metricas.ctr):x.tipo}</small>
-        <span className="seo-exec-enlace">Ver análisis →</span>
-      </button>)}
-    </div>:<p className="seo-exec-ayuda">No hay oportunidades priorizadas con los datos actuales. Revisa las búsquedas y el diagnóstico técnico para ampliar el análisis.</p>}
-    <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('oportunidades')}>Ver todas las oportunidades →</button>
+      <p>Recomendaciones nuevas y cambios que ya están en seguimiento.</p></div></div>
+    {!gestionSEO?.disponibles && <div className="seo-exec-historial-aviso" role="status">
+      No fue posible cruzar Search Console con el historial de mejoras. Para evitar duplicar
+      recomendaciones, vuelve a actualizar o revisa Seguimiento.
+    </div>}
+    {gestionSEO?.disponibles && <>
+      {primeras.map(p=><div className="seo-exec-mejora-curso" key={p.id}>
+        <div className="seo-exec-mejora-encabezado">
+          <span className="seo-exec-mejora-icono" aria-hidden="true">✓</span>
+          <span className="seo-exec-mejora-badge">
+            {p.estado==='publicada'?'Publicada · En seguimiento':
+              p.estado==='integrada'?'Integrada · Verificar publicación':
+              p.estado==='preparada'?'En revisión':'Aprobada · En preparación'}
+          </span>
+        </div>
+        <strong>{p.estado==='publicada'?'Ya implementamos una mejora SEO':'Ya existe una mejora para esta página'}</strong>
+        <p>{p.ruta==='/'?'Portada de Coproactiva':p.ruta}: {p.consulta_principal}.
+          {' '}{Array.isArray(p.consultas) ? p.consultas.length : 1} búsquedas asociadas ya se gestionan
+          en esa propuesta; no corresponde repetirlas como recomendaciones nuevas.</p>
+        <small>{p.estado==='publicada'&&p.verificada_en
+          ? 'Publicación comprobada el '+new Date(p.verificada_en).toLocaleDateString('es-CL')+'.'
+          : 'Consulta el estado de esta modificación en Seguimiento.'}
+          {' '}Las métricas históricas todavía pueden reflejar el período anterior al cambio.</small>
+        <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('seguimiento')}>
+          {p.estado==='publicada'?'Ver evolución de resultados →':'Ver estado de la propuesta →'}
+        </button>
+      </div>)}
+      {gestionadas.length>1&&<button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('seguimiento')}>
+        Ver las {gestionadas.length} mejoras en gestión →
+      </button>}
+      {!!acciones.length && <h4 className="seo-exec-otras-titulo">Otras oportunidades sin una mejora aprobada</h4>}
+      {acciones.length ? <div className="seo-exec-acciones">
+        {acciones.map(x=><button key={x.id} type="button" onClick={()=>onAnalyze(x)}>
+          <span className={'seo-prioridad '+(x.prioridad||'media').toLowerCase()}>{x.prioridad}</span>
+          <strong>{x.titulo}</strong>
+          <small>{x.metricas?numero(x.metricas.impresiones)+' impresiones · CTR '+porcentaje(x.metricas.ctr):x.tipo}</small>
+          <span className="seo-exec-enlace">Ver análisis →</span>
+        </button>)}
+      </div>:<p className="seo-exec-ayuda">No hay otras oportunidades nuevas priorizadas con los datos procesados disponibles. Seguimos midiendo los cambios anteriores.</p>}
+      <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('oportunidades')}>
+        Ver otras oportunidades →
+      </button>
+    </>}
   </section>;
 }
-export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaInicio,lista,dias,consultadoEn,onNavigate,onAnalyze}) {
+export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaInicio,lista,gestionSEO,dias,datosHasta,consultadoEn,onNavigate,onAnalyze}) {
   const lead=(ga?.eventos||[]).find(e=>e.clave==='generate_lead');
   const leads=lead ? Number(lead.valores?.[0]||0) : null;
   const total=sc?.totales||{};
@@ -156,6 +193,9 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       <div><span className="seleccion-area-etiqueta">VISIÓN EJECUTIVA</span>
         <h2>Así va coproactiva.cl</h2>
         <p>{dias} días de rendimiento web, visibilidad en Google y oportunidades comerciales.</p>
+        {datosHasta && <p className="seo-exec-ventana">Search Console: datos finalizados hasta el
+          {' '}{new Date(datosHasta+'T12:00:00').toLocaleDateString('es-CL')}.
+          No son indicadores en tiempo real.</p>}
       </div>
       {last && <span className="seo-exec-actualizado">Última consulta: {last}</span>}
     </div>
@@ -190,7 +230,7 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       <BarrasCanal ga={ga} onNavigate={onNavigate}/>
       <ListaConsultas sc={sc} onNavigate={onNavigate}/>
       <TopPaginas ga={ga} sc={sc} onNavigate={onNavigate}/>
-      <Prioridades lista={lista} onNavigate={onNavigate} onAnalyze={onAnalyze}/>
+      <Prioridades gestionSEO={gestionSEO} onNavigate={onNavigate} onAnalyze={onAnalyze}/>
     </div>
     <div className="seo-exec-grid-pares seo-exec-resumen-final">
       <section className="seo-exec-superficie">
