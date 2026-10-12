@@ -279,3 +279,38 @@
 .seo-error-recuperable{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .seo-error-recuperable span{font-size:.84rem;line-height:1.45}
 .seo-error-recuperable button{flex:none;min-height:40px}
+
+
+/* SEO: mismo componente visual móvil de Operación, sin duplicar la tira
+ * horizontal que se conserva en escritorio. */
+@media (max-width: 899px) {
+  .seo-pantalla #seo-navegacion.seo-pestanas { display: none; }
+  .seo-barra-inferior .nav-movil-item {
+    font-size: clamp(8px, 2.45vw, 10.5px);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  .seo-barra-inferior .nav-movil-item:focus-visible,
+  .seo-menu-mas button:focus-visible {
+    outline: 2px solid var(--enlace);
+    outline-offset: -2px;
+  }
+  .seo-menu-mas {
+    max-height: calc(100dvh - 104px - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+  .seo-menu-mas-enlaces .seo-menu-item-label {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+  }
+  .seo-menu-mas-enlaces .seo-menu-item-label svg { flex: none; }
+  .seo-menu-mas-enlaces button.activo {
+    color: var(--enlace);
+    font-weight: 750;
+    background: var(--hover);
+  }
+  .seo-menu-mas-enlaces button { min-height: 50px; }
+}
