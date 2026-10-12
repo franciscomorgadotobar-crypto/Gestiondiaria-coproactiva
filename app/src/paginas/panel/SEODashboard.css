@@ -81,3 +81,16 @@ button.seo-exec-kpi.accion:hover { background:var(--hover); border-color:var(--n
   .seo-exec-mini-metricas strong { font-size:1.3rem; }
 }
 @media(max-width:345px) { .seo-exec-grid-kpis { grid-template-columns:1fr; } }
+
+/* El Home distingue acción nueva de mejora ya publicada o en preparación. */
+.seo-exec-ventana{font-size:.78rem!important;color:#835d36!important;margin-top:7px!important}
+.seo-exec-mejora-curso{border:1px solid #c7dfc1;background:#f3f8ef;border-radius:11px;padding:17px;display:flex;flex-direction:column;gap:10px}
+.seo-exec-mejora-encabezado{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.seo-exec-mejora-icono{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#397c40;color:#fff;font-weight:750;font-size:1rem}
+.seo-exec-mejora-badge{font-weight:700;color:#386f3d;font-size:.77rem}
+.seo-exec-mejora-curso>strong{font-size:.99rem;color:var(--texto-titulo)}
+.seo-exec-mejora-curso p{margin:0;font-size:.82rem;line-height:1.5;color:#374a38}
+.seo-exec-mejora-curso small{font-size:.76rem;color:#596d54;line-height:1.5}
+.seo-exec-mejora-curso>.seo-exec-enlace{align-self:flex-start}
+.seo-exec-otras-titulo{font-size:.87rem;margin:14px 0 0;color:var(--texto-titulo)}
+.seo-exec-historial-aviso{border:1px solid #e9d4b4;background:#fff8ef;color:#7c5430;border-radius:8px;padding:13px;font-size:.83rem;line-height:1.5}
