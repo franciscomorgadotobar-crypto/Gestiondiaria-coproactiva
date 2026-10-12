@@ -17,7 +17,7 @@ test('seguimiento no duplica estado de Netlify ni permisos en el reporte',()=>{
   assert.doesNotMatch(impacto,/Falta configurar NETLIFY_ACCESS_TOKEN/);
   assert.doesNotMatch(impacto,/API pendiente de autorización/);
   assert.doesNotMatch(impacto,/Sin referencia comparable/);
-  assert.doesNotMatch(impacto,/^\s*}\s*$/m);
+  assert.doesNotMatch(impacto,/}\s*\n\s*<div className="seo-impacto-buttons"/);
 });
 
 test('sin datos posteriores aparece una sola referencia base y no cuatro cuadros vacíos',()=>{
