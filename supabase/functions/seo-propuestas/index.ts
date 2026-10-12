@@ -13,6 +13,8 @@ const DEFAULT_BRANCH = 'main';
 const GITHUB_API = '/repos/' + OWNER + '/' + REPO;
 const gitToken = Deno.env.get('COPROACTIVA_GITHUB_TOKEN') || '';
 const SITE = 'https://www.coproactiva.cl';
+const NETLIFY_TOKEN = Deno.env.get('NETLIFY_ACCESS_TOKEN') || '';
+const NETLIFY_SITE_ID = Deno.env.get('NETLIFY_SITE_ID') || 'www.coproactiva.cl';
 
 const json = (x: unknown, status=200) => Response.json(x,{status});
 const mensaje = (s:string,status=400) => json({error:s},status);
@@ -97,6 +99,70 @@ function revisarArchivo(html:string,p:any) {
 /** La fusion de GitHub NO es publicación. Esta función verifica el HTML actual de hosting,
  * siempre desde origen fijo y sin cache. \`verificada_en\` registra primera comprobación,
  * no una fecha de despliegue supuesta. */
+/** Netlify API en servidor. La instalación NO publica nada al consultar.
+ * Netlify acepta ID de sitio o dominio verificado en /sites/{site_id}.
+ */
+async function obtenerEstadoNetlify(p:any) {
+  if(!NETLIFY_TOKEN) return {conectado:false,
+    motivo:'Falta configurar NETLIFY_ACCESS_TOKEN en Supabase. No se puede consultar el historial de despliegues.',
+    consultadoEn:new Date().toISOString()};
+  if(!/^[a-z0-9.-]{4,120}$/i.test(NETLIFY_SITE_ID))
+    return {conectado:false,motivo:'NETLIFY_SITE_ID no tiene formato permitido.',
+      consultadoEn:new Date().toISOString()};
+  const base='https://api.netlify.com/api/v1/sites/'+encodeURIComponent(NETLIFY_SITE_ID);
+  const headers={'Authorization':'Bearer '+NETLIFY_TOKEN,'Accept':'application/json'};
+  try {
+    const get=async(url:string) => {
+      const response=await fetch(url,{headers,signal:AbortSignal.timeout(13000)});
+      if(!response.ok)throw Error('Netlify API HTTP '+response.status+
+        (response.status===401?' (token no autorizado)':response.status===404?' (sitio no encontrado)':''));
+      return response.json();
+    };
+    const [site,deploys]=await Promise.all([
+      get(base),
+      get(base+'/deploys?production=true&per_page=8')
+    ]);
+    const production=Array.isArray(deploys)
+      ? deploys.filter((d:any)=>!d.context||d.context==='production')
+      : [];
+    const ultimo=production[0]||null;
+    const settings=site?.build_settings||{};
+    const repoPath=String(settings.repo_path||settings.repo_url||site?.repo?.repo_path||'').slice(0,250);
+    const repoCorrecto=repoPath?
+      repoPath.toLowerCase().includes((OWNER+'/'+REPO).toLowerCase()):null;
+    const branch=String(settings.repo_branch||site?.repo?.branch||'').slice(0,100);
+    const ramaCorrecta=branch?branch===DEFAULT_BRANCH:null;
+    const sha=String(ultimo?.commit_ref||'');
+    const shaPropuesta=String(p.publicacion_sha||'');
+    return {
+      conectado:true, consultadoEn:new Date().toISOString(),
+      sitio:String(site?.name||'').slice(0,120),
+      dominio:String(site?.custom_domain||site?.url||'').slice(0,180),
+      repo:repoPath, rama:branch, repoCorrecto,ramaCorrecta,
+      deploy:{
+        id:String(ultimo?.id||'').slice(0,100),
+        estado:String(ultimo?.state||'sin registros').slice(0,80),
+        contexto:String(ultimo?.context||'production').slice(0,60),
+        sha:sha.slice(0,40),
+        coincideMerge:sha && shaPropuesta?sha===shaPropuesta:null,
+        iniciadoEn:ultimo?.created_at||null,
+        publicadoEn:ultimo?.published_at||null,
+        url:String(ultimo?.deploy_ssl_url||'').slice(0,250)
+      },
+      motivo:repoCorrecto===false?'Netlify está conectado a OTRO repositorio. Revisa su configuración de Git.':
+        ramaCorrecta===false?'Netlify despliega otra rama, no main.':
+        ultimo?.state==='error'?'Último despliegue falló en Netlify.':
+        ultimo?.state!=='ready'?'Netlify aún no confirma un deploy listo.':
+        sha && shaPropuesta && sha!==shaPropuesta?
+        'La última versión Netlify tiene otro commit. El HTML público decidirá si contiene la mejora.':
+        'Netlify respondió correctamente. Confirmar también contenido en el dominio público.'
+    };
+  } catch(err) {
+    return {conectado:false,consultadoEn:new Date().toISOString(),
+      motivo:err instanceof Error?err.message:'Error consultando Netlify.'};
+  }
+}
+
 async function verificarPublicacion(admin:any,p:any) {
   if(!['integrada','publicada'].includes(p.estado))return {propuesta:p,comprobacion:null};
   const ruta=String(p.ruta||'/');
@@ -119,7 +185,9 @@ async function verificarPublicacion(admin:any,p:any) {
     const detalle=coinciden
       ? 'Título SEO y meta descripción confirmados en la web pública (primera verificación).'
       : 'La web pública aún no coincide con la propuesta de GitHub. Verificar hosting y caché.';
-    const updates:any={ultima_verificacion_en:ahora,verificacion_detalle:detalle,editada_en:ahora};
+    const netlify=await obtenerEstadoNetlify(p);
+    const updates:any={ultima_verificacion_en:ahora,verificacion_detalle:detalle,
+      netlify_detalle:netlify,netlify_consultado_en:netlify.consultadoEn,editada_en:ahora};
     if(coinciden&&p.estado==='integrada'){
       updates.estado='publicada';updates.verificada_en=ahora;
       updates.publicada_en=ahora; // momento de verificación: no implica hora exacta del despliegue.
@@ -130,9 +198,13 @@ async function verificarPublicacion(admin:any,p:any) {
     return {propuesta:data||p,comprobacion:{coinciden,title,description,fecha:ahora,detalle}};
   }catch(err){
     const detail='No se pudo comprobar el hosting: '+(err instanceof Error?err.message:'Error de red');
+    const netlify=await obtenerEstadoNetlify(p);
     await admin.from('seo_propuestas').update({ultima_verificacion_en:ahora,
-      verificacion_detalle:detail.slice(0,600)}).eq('id',p.id).eq('estado',p.estado);
-    return {propuesta:{...p,ultima_verificacion_en:ahora,verificacion_detalle:detail},
+      verificacion_detalle:detail.slice(0,600),
+      netlify_detalle:netlify,netlify_consultado_en:netlify.consultadoEn
+    }).eq('id',p.id).eq('estado',p.estado);
+    return {propuesta:{...p,ultima_verificacion_en:ahora,verificacion_detalle:detail,
+      netlify_detalle:netlify,netlify_consultado_en:netlify.consultadoEn},
       comprobacion:{coinciden:false,error:detail}};
   }
 }
@@ -187,7 +259,9 @@ export default {
         const cambios=new Map<string,any>();
         resultados.forEach((r,i)=>{if(r.status==='fulfilled')cambios.set(pendientes[i].id,r.value);});
         return json({propuestas:(data||[]).map((p:any)=>cambios.get(p.id)||p),
-          integracionGithubHabilitada:Boolean(gitToken),puedePublicar:perfil.rol==='superadmin',
+          integracionGithubHabilitada:Boolean(gitToken),
+          integracionNetlifyHabilitada:Boolean(NETLIFY_TOKEN),
+          puedePublicar:perfil.rol==='superadmin',
           ultimaSincronizacion:new Date().toISOString(),
           observaciones:resultados.filter(r=>r.status==='rejected').length
             ? 'Algunas verificaciones remotas no finalizaron. Puedes reintentarlas individualmente.':null});
