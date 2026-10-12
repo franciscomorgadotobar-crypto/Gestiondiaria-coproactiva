@@ -515,8 +515,8 @@ export default function Proveedores() {
   }
 
   return (
-    <div className="pantalla proveedores-pantalla">
-      <header className="encabezado">
+    <div className="pantalla proveedores-pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="proveedores-intro">
           <h1 className="h3">Proveedores</h1>
           <p className="chico apagado proveedores-descripcion">
@@ -813,8 +813,8 @@ function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto 
 
 function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeEliminar, onVolver, onEditar, onBlacklist, onEliminar, onContacto, aviso, error, onCerrarAviso, children }) {
   return (
-    <div className="pantalla proveedor-ficha">
-      <header className="encabezado">
+    <div className="pantalla proveedor-ficha modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila" style={{ alignItems: 'flex-start', gap: 10 }}>
           <div className="crece">
             <div className="fila" style={{ gap: 8, justifyContent: 'flex-start' }}>
