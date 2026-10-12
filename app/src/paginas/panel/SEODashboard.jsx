@@ -125,7 +125,7 @@ function TopPaginas({ga,sc,onNavigate}) {
     <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate(usarGA?'analytics':'consultas')}>Analizar páginas →</button>
   </section>;
 }
-function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
+function Prioridades({gestionSEO,onNavigate,onAnalyze,sc,auditoriaInicio,paginasRevisadas,paginasPendientes,revisandoPaginas,onRevisarPaginas}) {
   const totalPrioritarias=(gestionSEO?.nuevas || []).filter(x=>x.prioridad!=='Pendiente').length;
   const acciones=(gestionSEO?.nuevas || []).filter(x=>x.prioridad!=='Pendiente').slice(0,4);
   const gestionadas=[...(gestionSEO?.enGestion||[])].sort((a,b)=>
@@ -133,10 +133,8 @@ function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
   const publicada=gestionadas.find(x=>x.estado==='publicada');
   const primeras=publicada ? [publicada] : gestionadas.slice(0,1);
   return <section className="seo-exec-superficie">
-    <div className="seo-exec-seccion-cabecera"><div><h3>Qué debemos mejorar</h3>
-      <p>{gestionSEO?.disponibles
-        ? totalPrioritarias+' oportunidades priorizadas · '+gestionadas.length+' mejoras en gestión.'
-        : 'Comprobando nuevas oportunidades y el historial de cambios.'}</p></div></div>
+    <div className="seo-exec-seccion-cabecera"><div><h3>Oportunidades SEO</h3>
+      <p>Recomendaciones basadas en búsquedas y páginas revisadas.</p></div></div>
     {!gestionSEO?.disponibles && <div className="seo-exec-historial-aviso" role="status">
       No fue posible cruzar Search Console con el historial de mejoras. Para evitar duplicar
       recomendaciones, vuelve a actualizar o revisa Seguimiento.
@@ -164,19 +162,31 @@ function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
       {!!acciones.length && <h4 className="seo-exec-otras-titulo">Otras oportunidades sin una mejora aprobada</h4>}
       {acciones.length ? <div className="seo-exec-acciones">
         {acciones.map(x=><button key={x.id} type="button" onClick={()=>onAnalyze(x)}>
-          <span className={'seo-prioridad '+(x.prioridad||'media').toLowerCase()}>{x.prioridad}</span>
           <strong>{x.titulo}</strong>
           <small>{x.metricas?numero(x.metricas.impresiones)+' impresiones · CTR '+porcentaje(x.metricas.ctr):x.tipo}</small>
-          <span className="seo-exec-enlace">Ver análisis →</span>
+          <span className="seo-exec-enlace">Ver diagnóstico →</span>
         </button>)}
-      </div>:<p className="seo-exec-ayuda">No hay otras oportunidades nuevas priorizadas con los datos procesados disponibles. Seguimos midiendo los cambios anteriores.</p>}
+      </div> : <div className="seo-exec-sin-sugerencias" role="status">
+        <span aria-hidden="true">✓</span>
+        <div>
+          <strong>{sc?.disponible && auditoriaInicio && gestionSEO?.disponibles
+            ? 'SEO al día en lo revisado' : 'Sin nuevas sugerencias confirmadas'}</strong>
+          <small>{sc?.disponible && auditoriaInicio
+            ? 'No se detectaron mejoras prioritarias en '+paginasRevisadas+' página(s) revisada(s).'
+            : 'Faltan fuentes o auditorías para confirmar el estado.'}</small>
+        </div>
+      </div>}
+      {!!paginasPendientes && <button type="button" className="seo-exec-enlace"
+        disabled={revisandoPaginas} onClick={()=>onNavigate('oportunidades')}>
+        {revisandoPaginas?'Revisando otras páginas…':'Buscar mejoras en otras páginas →'}
+      </button>}
       <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('oportunidades')}>
-        Ver catálogo completo de oportunidades →
+        Ver sugerencias y análisis →
       </button>
     </>}
   </section>;
 }
-export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaInicio,lista,gestionSEO,dias,datosHasta,consultadoEn,onNavigate,onAnalyze}) {
+export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaInicio,lista,gestionSEO,dias,datosHasta,consultadoEn,paginasRevisadas,paginasPendientes,revisandoPaginas,onRevisarPaginas,onNavigate,onAnalyze}) {
   const lead=(ga?.eventos||[]).find(e=>e.clave==='generate_lead');
   const leads=lead ? Number(lead.valores?.[0]||0) : null;
   const total=sc?.totales||{};
@@ -229,7 +239,9 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       <BarrasCanal ga={ga} onNavigate={onNavigate}/>
       <ListaConsultas sc={sc} onNavigate={onNavigate}/>
       <TopPaginas ga={ga} sc={sc} onNavigate={onNavigate}/>
-      <Prioridades gestionSEO={gestionSEO} onNavigate={onNavigate} onAnalyze={onAnalyze}/>
+      <Prioridades gestionSEO={gestionSEO} onNavigate={onNavigate} onAnalyze={onAnalyze} sc={sc} auditoriaInicio={auditoriaInicio}
+        paginasRevisadas={paginasRevisadas} paginasPendientes={paginasPendientes}
+        revisandoPaginas={revisandoPaginas} onRevisarPaginas={onRevisarPaginas} />
     </div>
     <div className="seo-exec-grid-pares seo-exec-resumen-final">
       <section className="seo-exec-superficie">
