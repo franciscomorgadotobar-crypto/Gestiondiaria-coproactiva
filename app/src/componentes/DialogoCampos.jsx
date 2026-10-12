@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useAtrasCierraDialogo } from '../lib/dialogoHistorial';
 
 /*
  * Diálogo visual para pedir uno o varios datos sin recurrir a prompt()/alert().
@@ -14,6 +15,7 @@ export default function DialogoCampos({
   onConfirmar,
   onCancelar
 }) {
+  useAtrasCierraDialogo(onCancelar);
   const inicial = useMemo(
     () => Object.fromEntries(campos.map(c => [c.id, c.valor ?? ''])),
     [campos]
