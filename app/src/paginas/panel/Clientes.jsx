@@ -102,7 +102,7 @@ export default function Clientes() {
 
   if (!puedeAdministrar) {
     return (
-      <div className="pantalla">
+      <div className="pantalla modulo-unificado">
         <div className="cuerpo"><div className="aviso aviso-critico">Solo el superadministrador puede administrar clientes.</div></div>
       </div>
     );
@@ -206,8 +206,8 @@ export default function Clientes() {
   }
 
   return (
-    <div className="pantalla">
-      <header className="encabezado">
+    <div className="pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <button className="boton boton-texto navegacion-interna" style={{ padding: '4px 8px 8px 0' }} onClick={() => navegar('/configuracion')}>
           ‹ Configuración
         </button>
