@@ -387,48 +387,73 @@ async function perfilEmpresa(dias:number) {
 
 /** Seguimiento verificable por URL, comparando ventanas iguales de Search Console.
  * Siempre usa datos finalizados de Google y nunca afirma comparativa si faltan días. */
-async function seguimientoPorPagina(ruta:string, fechaPublicacion:string) {
-  if(!email || !privateKey) return {disponible:false,error:'Search Console no está autorizado.'};
+/** Impacto SEO medido por URL tras verificación REAL del hosting.
+ * Incluye Línea base, muestras diarias y períodos equivalentes 7/28/90.
+ * Consulta directamente a Search Console con ventana finalizada, nunca datos ficticios.
+ */
+async function seguimientoPorPagina(ruta:string,fechaPublicacion:string) {
+  if(!email||!privateKey)return {disponible:false,error:'Search Console no está autorizado.'};
   const fecha=fechaPublicacion.slice(0,10);
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || Number.isNaN(Date.parse(fecha+'T00:00:00Z')))
-    throw Error('Fecha de publicación no válida.');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !Number.isFinite(Date.parse(fecha+'T00:00:00Z')))
+    throw Error('Fecha de verificación no válida.');
+  const dia=86400000;
   const base=Date.parse(fecha+'T00:00:00Z');
-  if(base > Date.now()+86400000 || base < Date.parse('2025-01-01T00:00:00Z'))
-    throw Error('Fecha de publicación fuera del período admitido.');
-  const iso=(ms:number) => new Date(ms).toISOString().slice(0,10);
+  if(base>Date.now()+dia || base<Date.parse('2025-01-01T00:00:00Z'))throw Error('Fecha fuera del período permitido.');
+  const iso=(ms:number)=>new Date(ms).toISOString().slice(0,10);
+  const inicioPos=base+dia; // excluye el día parcial de la primera verificación.
   const token=await googleToken();
   const endpoint='https://www.googleapis.com/webmasters/v3/sites/'+encodeURIComponent(gscSite)+'/searchAnalytics/query';
   const maxDate=daysBefore(3);
-  const reporte=async(inicio:string,fin:string) => {
-    if(fin<inicio)return {clicks:0,impresiones:0,ctr:0,posicion:0};
-    const data=await googlePost(endpoint,{
-      startDate:inicio,endDate:fin,dataState:'final',dimensions:[],rowLimit:1,
-      dimensionFilterGroups:[{filters:[{
-        dimension:'page',operator:'equals',expression:ORIGIN+ruta
-      }]}]
+  const url=ORIGIN+ruta;
+  const resumen=(r:any)=>({
+    clicks:Number(r.clicks||0),impresiones:Number(r.impressions||0),
+    ctr:Number(r.ctr||0),posicion:Number(r.position||0)
+  });
+  const consulta=async(inicio:string,fin:string,series=false) => {
+    if(fin<inicio)return null;
+    const result=await googlePost(endpoint,{
+      startDate:inicio,endDate:fin,dataState:'final',
+      dimensions:series?['date']:[],rowLimit:series?100:1,
+      dimensionFilterGroups:[{filters:[{dimension:'page',operator:'equals',expression:url}]}]
     },token);
-    const r=data.rows?.[0]||{};
-    return {clicks:Number(r.clicks||0),impresiones:Number(r.impressions||0),
-      ctr:Number(r.ctr||0),posicion:Number(r.position||0)};
+    if(series)return (result.rows||[]).map((r:any)=>({fecha:String(r.keys?.[0]||''),...resumen(r)}));
+    return resumen(result.rows?.[0]||{});
   };
   const periodos=await Promise.all([7,28,90].map(async dias=>{
-    const start=iso(base), finProgramado=iso(base+(dias-1)*86400000);
-    const fin=finProgramado<maxDate?finProgramado:maxDate;
-    const inicioPrevio=iso(base-dias*86400000),finPrevio=iso(base-86400000);
-    const previo=await reporte(inicioPrevio,finPrevio);
-    const posterior=await reporte(start,fin);
-    const diasFinalizados=fin>=start?Math.min(dias,Math.round((Date.parse(fin+'T00:00:00Z')-base)/86400000)+1):0;
-    const completo=diasFinalizados===dias;
-    return {dias,completo,diasFinalizados,desde:inicioPrevio,hastaPrevio:finPrevio,
-      inicioPosterior:start,finPosterior:fin>=start?fin:null,
-      anterior:previo,posterior:posterior,
-      cambioClics:completo && previo.clicks>0?100*(posterior.clicks-previo.clicks)/previo.clicks:null,
-      cambioImpresiones:completo && previo.impresiones>0?
-        100*(posterior.impresiones-previo.impresiones)/previo.impresiones:null
+    const antesDesde=iso(inicioPos-dias*dia),antesHasta=iso(inicioPos-dia);
+    const despuesHastaPlan=iso(inicioPos+(dias-1)*dia);
+    const despuesHasta=despuesHastaPlan<maxDate?despuesHastaPlan:maxDate;
+    const disponibles=despuesHasta>=iso(inicioPos)?
+      Math.min(dias,Math.floor((Date.parse(despuesHasta+'T00:00:00Z')-inicioPos)/dia)+1):0;
+    // Comparación parcial: misma cantidad de días ANTES para evitar sesgos por
+    // enfrentar una semana de datos contra un mes entero.
+    const antesIgualDesde=disponibles>0?iso(inicioPos-disponibles*dia):null;
+    const [baseCompleta, antesIgual,despues,serieAnterior,seriePosterior]=await Promise.all([
+      consulta(antesDesde,antesHasta),
+      disponibles?consulta(antesIgualDesde!,antesHasta):Promise.resolve(null),
+      disponibles?consulta(iso(inicioPos),despuesHasta):Promise.resolve(null),
+      dias===28?consulta(antesDesde,antesHasta,true):Promise.resolve(null),
+      dias===28 && disponibles?consulta(iso(inicioPos),despuesHasta,true):Promise.resolve(null)
+    ]);
+    const completo=disponibles===dias;
+    const variacion=(a:number,b:number) => a>0?Math.round((b-a)/a*1000)/10:null;
+    return {
+      dias,completo,diasFinalizados:disponibles,
+      anterior:baseCompleta,anteriorComparable:antesIgual,
+      posterior:despues,
+      desdeAnterior:antesDesde,hastaAnterior:antesHasta,
+      desdePosterior:iso(inicioPos),hastaPosterior:disponibles?despuesHasta:null,
+      cambioClics:despues&&antesIgual?variacion(antesIgual.clicks,despues.clicks):null,
+      cambioImpresiones:despues&&antesIgual?variacion(antesIgual.impresiones,despues.impresiones):null,
+      cambioCtrPuntos:despues&&antesIgual?Math.round((despues.ctr-antesIgual.ctr)*10000)/100:null,
+      cambioPosicion:despues&&antesIgual&&antesIgual.impresiones>0&&despues.impresiones>0?
+        Math.round((despues.posicion-antesIgual.posicion)*10)/10:null,
+      serieAnterior:serieAnterior||[],seriePosterior:seriePosterior||[]
     };
   }));
-  return {disponible:true,url:ORIGIN+ruta,publicadoEn:fecha,consultadoEn:new Date().toISOString(),
-    periodos,nota:'Comparación URL por URL en Search Console, intervalos iguales antes y después de publicar. Los datos se finalizan con retraso. No prueba causalidad.'};
+  return {disponible:true,url,fechaPrimeraVerificacion:fecha,inicioMedicion:iso(inicioPos),
+    hastaDatoProcesado:maxDate,consultadoEn:new Date().toISOString(),periodos,
+    nota:'Google Search Console · misma URL y ventanas comparables. Los períodos parciales se comparan con igual número de días anteriores. La fecha inicial es la primera verificación, no necesariamente el momento exacto del despliegue. Mejoras SEO no demuestran causalidad.'};
 }
 
 /* Opcional: leer la última versión PUBLICADA del contenedor mediante Tag Manager

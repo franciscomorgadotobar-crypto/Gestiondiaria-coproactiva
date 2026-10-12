@@ -94,7 +94,64 @@ function revisarArchivo(html:string,p:any) {
   out=out.replace(metadata.tag,changedTag);
   return out;
 }
-const tareas=["aprobada","preparada","ajustes_solicitados","descartada","publicada","error_preparacion"];
+/** La fusion de GitHub NO es publicación. Esta función verifica el HTML actual de hosting,
+ * siempre desde origen fijo y sin cache. \`verificada_en\` registra primera comprobación,
+ * no una fecha de despliegue supuesta. */
+async function verificarPublicacion(admin:any,p:any) {
+  if(!['integrada','publicada'].includes(p.estado))return {propuesta:p,comprobacion:null};
+  const ruta=String(p.ruta||'/');
+  const ahora=new Date().toISOString();
+  try {
+    if(!safePath(ruta)) throw Error('Ruta no permitida.');
+    const url=SITE+ruta+(ruta.includes('?')?'&':'?')+'_seo_rev='+Date.now();
+    const r=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'},
+      signal:AbortSignal.timeout(14000),redirect:'follow'});
+    if(!['www.coproactiva.cl','coproactiva.cl'].includes(new URL(r.url).hostname))
+      throw Error('La URL del hosting redirige a otro dominio.');
+    if(!r.ok)throw Error('El hosting respondió HTTP '+r.status+'.');
+    if(!(r.headers.get('content-type')||'').includes('text/html'))
+      throw Error('El hosting no entregó HTML.');
+    const html=(await r.text()).slice(0,500000);
+    const title=tituloHtml(html).actual;
+    const description=metaDescription(html).actual;
+    const coinciden=title.trim()===String(p.titulo_propuesto||'').trim() &&
+      description.trim()===String(p.descripcion_propuesta||'').trim();
+    const detalle=coinciden
+      ? 'Título SEO y meta descripción confirmados en la web pública (primera verificación).'
+      : 'La web pública aún no coincide con la propuesta de GitHub. Verificar hosting y caché.';
+    const updates:any={ultima_verificacion_en:ahora,verificacion_detalle:detalle,editada_en:ahora};
+    if(coinciden&&p.estado==='integrada'){
+      updates.estado='publicada';updates.verificada_en=ahora;
+      updates.publicada_en=ahora; // momento de verificación: no implica hora exacta del despliegue.
+    }
+    const {data,error}=await admin.from('seo_propuestas').update(updates).eq('id',p.id)
+      .eq('estado',p.estado).select('*').maybeSingle();
+    if(error)throw Error('No fue posible actualizar la comprobación de publicación.');
+    return {propuesta:data||p,comprobacion:{coinciden,title,description,fecha:ahora,detalle}};
+  }catch(err){
+    const detail='No se pudo comprobar el hosting: '+(err instanceof Error?err.message:'Error de red');
+    await admin.from('seo_propuestas').update({ultima_verificacion_en:ahora,
+      verificacion_detalle:detail.slice(0,600)}).eq('id',p.id).eq('estado',p.estado);
+    return {propuesta:{...p,ultima_verificacion_en:ahora,verificacion_detalle:detail},
+      comprobacion:{coinciden:false,error:detail}};
+  }
+}
+async function sincronizarGitHub(admin:any,p:any) {
+  if(!p.pr_numero||!gitToken||!['preparada','integrada'].includes(p.estado))return p;
+  const pr=await gh(GITHUB_API+'/pulls/'+Number(p.pr_numero));
+  if(pr.head?.ref!==p.rama_git || pr.base?.ref!==DEFAULT_BRANCH)
+    throw Error('El PR no coincide con la rama registrada.');
+  if(pr.merged_at && p.estado==='preparada') {
+    const {data,error}=await admin.from('seo_propuestas').update({
+      estado:'integrada',fusionada_en:pr.merged_at,publicacion_sha:pr.merge_commit_sha,
+      verificacion_detalle:'PR fusionado en GitHub. Falta verificar publicación web.',editada_en:new Date().toISOString()
+    }).eq('id',p.id).eq('estado','preparada').select('*').maybeSingle();
+    if(error)throw Error('No se pudo sincronizar el merge de GitHub.');
+    return data||p;
+  }
+  return p;
+}
+
 
 export default {
   fetch:withSupabase({auth:'user'},async(req,ctx)=>{
@@ -119,7 +176,21 @@ export default {
         const {data,error}=await admin.from('seo_propuestas')
           .select('*').order('creada_en',{ascending:false}).limit(80);
         if(error)throw Error('No fue posible recuperar las propuestas.');
-        return json({propuestas:data||[],integracionGithubHabilitada:Boolean(gitToken),puedePublicar:perfil.rol==='superadmin'});
+        // Reconciliación en cada apertura de la lista, sin publicar contenidos.
+        const pendientes=(data||[]).filter((p:any)=>['integrada','preparada'].includes(p.estado)).slice(0,6);
+        const resultados=await Promise.allSettled(pendientes.map(async(p:any)=>{
+          let actual=p;
+          if(gitToken&&p.pr_numero)actual=await sincronizarGitHub(admin,actual);
+          if(actual.estado==='integrada')actual=(await verificarPublicacion(admin,actual)).propuesta;
+          return actual;
+        }));
+        const cambios=new Map<string,any>();
+        resultados.forEach((r,i)=>{if(r.status==='fulfilled')cambios.set(pendientes[i].id,r.value);});
+        return json({propuestas:(data||[]).map((p:any)=>cambios.get(p.id)||p),
+          integracionGithubHabilitada:Boolean(gitToken),puedePublicar:perfil.rol==='superadmin',
+          ultimaSincronizacion:new Date().toISOString(),
+          observaciones:resultados.filter(r=>r.status==='rejected').length
+            ? 'Algunas verificaciones remotas no finalizaron. Puedes reintentarlas individualmente.':null});
       }
       if(accion==='registrar_decision') {
         const p=body.propuesta||{}, decision=String(body.decision||'');
@@ -177,6 +248,16 @@ export default {
         const resultado=await preparar(admin,creada);
         return json(resultado);
       }
+      if(accion==='sincronizar') {
+        const id=String(body.id||'');
+        if(!/^[a-f0-9-]{36}$/i.test(id))return mensaje('Identificador inválido.',400);
+        const {data:p,error}=await admin.from('seo_propuestas').select('*').eq('id',id).maybeSingle();
+        if(error||!p)return mensaje('No se encontró la propuesta.',404);
+        let actual=p;
+        if(gitToken&&p.pr_numero)actual=await sincronizarGitHub(admin,actual);
+        const result=await verificarPublicacion(admin,actual);
+        return json({...result,propuesta:result.propuesta,integracionGithubHabilitada:Boolean(gitToken)});
+      }
       if(accion==='preparar') {
         if(!clean(body.id,100))return mensaje('ID de propuesta requerido.');
         const {data:propuesta}=await admin.from('seo_propuestas').select('*')
@@ -219,12 +300,15 @@ export default {
         });
         if(!merged.merged)return mensaje('GitHub no confirmó la integración.',502);
         const {data,error}=await admin.from('seo_propuestas').update({
-          estado:'publicada',publicacion_sha:String(merged.sha||''),
-          revisor_id:idUsuario,publicada_en:new Date().toISOString(),editada_en:new Date().toISOString()
+          estado:'integrada',publicacion_sha:String(merged.sha||''),
+          revisor_id:idUsuario,fusionada_en:new Date().toISOString(),
+          verificacion_detalle:'GitHub integrado. Esperando comprobar contenido servido por hosting.',
+          editada_en:new Date().toISOString()
         }).eq('id',p.id).eq('estado','preparada').select('*').single();
-        if(error) return json({publicadoEnGitHub:true,advertencia:'Integrado en GitHub; no se pudo actualizar el registro interno. Verificar manualmente.'});
-        return json({propuesta:data,publicadoEnGitHub:true,
-          aviso:'PR integrado. La publicación web dependerá del despliegue automático de GitHub Pages.'});
+        if(error) return json({integradaEnGitHub:true,
+          advertencia:'Fusionada en GitHub, pero el registro interno requiere revisión. La web NO está verificada.'});
+        return json({propuesta:data,integradaEnGitHub:true,
+          aviso:'GitHub fusionó el cambio. Aún NO está confirmada la publicación web; se verificará el HTML antes de iniciar las mediciones.'});
       }
       return mensaje('Acción SEO no implementada.',400);
     }catch(err) {

@@ -6,16 +6,17 @@ La pestaña **Recomendaciones** no pide que el usuario vuelva a analizar una URL
 
 Se muestra la evidencia (consultas, impresiones, clics, CTR, posición), URL real, diagnóstico, hipótesis y comparación exacta actual/propuesto de título SEO y meta description. Las propuestas automáticas no alteran contenido comercial, H1 ni diseño.
 
-## Estados
+## Estados y sincronización
 
-1. **Diagnóstico / propuesta**: fuentes directas de Google y sitio.
-2. **Aprobar y preparar**: registra una propuesta en tabla seo_propuestas y, si GitHub está autorizado, crea rama y PR sobre web-coproactiva sin modificar main.
-3. **Pedir ajuste / Descartar**: guarda la decisión y una observación opcional, sin tocar GitHub.
-4. **Revisión final**: revisar el PR y el contenido, sólo superadmin puede publicar.
-5. **Publicar**: exige escribir PUBLICAR, valida PR y comprobaciones de GitHub, integra en main, guarda SHA y fecha.
-6. **Seguimiento**: conserva fecha y métricas iniciales. Cuando el PR se integra, la ficha consulta directamente Search Console por la URL publicada para comparar períodos iguales (7, 28 y 90 días antes y después). Cada período indica si está completo o todavía faltan datos finalizados; no atribuye causalidad.
+1. **Aprobada**: usuario autorizó preparar el cambio.
+2. **Preparada**: pull request abierto en el repositorio de la web (sin publicar).
+3. **Integrada**: PR fusionado a main; NO significa que el hosting haya recibido la versión.
+4. **Publicada y verificada**: la Edge Function solicita el HTML de coproactiva.cl sin caché y comprueba que coincidan exactamente título y meta descripción propuestos. La primera fecha verificada se usa como inicio conservador de medición, aunque el despliegue haya podido ocurrir antes.
+5. **Seguimiento**: en la pestaña Seguimiento, Search Console compara 7, 28 y 90 días anteriores/posteriores para la MISMA URL. Ventanas parciales comparan el mismo número de días disponibles. Clics, impresiones, CTR en puntos porcentuales y posición media; no equivale a un experimento causal.
 
-«Integrado en GitHub» no garantiza que GitHub Pages ya haya desplegado el sitio. Aprobar nunca integra ni publica.
+La sincronización verifica merges desde GitHub cuando hay token secreto autorizado, y verifica despliegue web incluso sin token cuando existe un merge validado en base de datos. El registro histórico #1 fue reconciliado con PR #1 del repositorio web-coproactiva tras comprobar la fusión en la API GitHub.
+
+**Publicación del sitio:** actualmente no se ha encontrado workflow de despliegue de web-coproactiva y el repositorio no tiene GitHub Pages habilitado. No se puede afirmar que merge en main publique automáticamente en el hosting. La automatización de despliegue requiere identificar el hosting real y conceder permisos adecuados de forma segura (sin pegar credenciales en el código ni en un chat).
 
 ## Configuración requerida
 

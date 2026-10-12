@@ -5,6 +5,7 @@ import { useSesion } from '../../lib/sesion';
 import { construirOportunidades } from '../../lib/seoOportunidades';
 import SEORecomendaciones from './SEORecomendaciones';
 import SEODashboard from './SEODashboard';
+import SEOImpacto from './SEOImpacto';
 import './SEO.css';
 
 const SECCIONES = [
@@ -13,6 +14,7 @@ const SECCIONES = [
   ['analytics', 'Audiencia'],
   ['business', 'Google Maps'],
   ['oportunidades', 'Oportunidades'],
+  ['seguimiento', 'Seguimiento'],
   ['tecnico', 'SEO técnico'],
   ['velocidad', 'PageSpeed'],
   ['tagmanager', 'Medición'],
@@ -420,6 +422,8 @@ function SEOInterno() {
       {vista === 'oportunidades' && <SEORecomendaciones
         lista={lista} invocar={invocar} dias={dias} irVista={irVista}
         consultaPrioritaria={accionSeleccionada?.consulta || null} />}
+
+      {vista === 'seguimiento' && <SEOImpacto invocar={invocar} />}
 
       {vista === 'business' && <section>
         <div className="seo-titulo-seccion">
