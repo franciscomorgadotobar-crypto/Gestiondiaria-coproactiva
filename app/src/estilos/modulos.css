@@ -1,0 +1,189 @@
+/**
+ * Sistema visual común: CoproActiva App Diaria.
+ * Esta capa es de presentación. No cambia permisos, rutas, datos ni lógica.
+ * Aplicar "modulo-unificado" en la raíz y "modulo-cabecera" al encabezado.
+ */
+:root {
+  --modulo-espacio-xs: 6px;
+  --modulo-espacio-sm: 10px;
+  --modulo-espacio: 16px;
+  --modulo-espacio-lg: 20px;
+  --modulo-fondo: var(--tarjeta);
+  --modulo-borde: var(--borde);
+  --modulo-radio: var(--radio-tarjeta);
+  --modulo-sombra: 0 1px 2px rgba(43,49,56,.035);
+}
+
+.pantalla.modulo-unificado { min-width: 0; max-width: 100%; color: var(--texto-cuerpo); }
+
+/* Encabezado — mismo tamaño y espaciado en todos los módulos */
+.modulo-unificado > .encabezado.modulo-cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  background: var(--tarjeta);
+  border-bottom: 1px solid var(--borde);
+  padding: 18px 20px;
+}
+.modulo-unificado .modulo-cabecera h1:is(.h2,.h3),
+.modulo-unificado .modulo-cabecera > h1 {
+  font: 650 clamp(18px,2vw,22px)/1.3 var(--fuente-display);
+  letter-spacing: -.015em;
+  color: var(--texto-titulo);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.modulo-unificado .modulo-cabecera :is(.chico.apagado,.seo-cabecera p,.propiedades-descripcion) {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--texto-apagado);
+  max-width: 740px;
+}
+.modulo-unificado .modulo-cabecera .navegacion-interna {
+  margin-bottom: 7px;
+  min-height: 27px;
+}
+.modulo-unificado .modulo-cabecera .navegacion-interna .boton-texto {
+  font-size: 12px;
+  min-height: 28px;
+  padding: 3px 4px 3px 0;
+}
+.modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido {
+  min-width: 0;
+  width: 100%;
+  padding: 18px 20px;
+}
+
+/* Superficies, componentes compactos y jerarquía de títulos */
+.modulo-unificado :is(
+  .tarjeta, .comunidad-form, .comunidad-card, .propiedad-card, .propiedad-seccion,
+  .comunidades-herramientas, .contabilidad-resumen-grid > .tarjeta,
+  .seo-exec-superficie, .seo-exec-kpi, .seo-reco-card,
+  .seo-impacto-card, .seo-inventario-item, .seo-impacto-netlify, .wa-box
+) {
+  border-radius: var(--modulo-radio);
+  border-color: var(--modulo-borde);
+}
+.modulo-unificado :is(.tarjeta,.seo-reco-card,.seo-impacto-card,.seo-exec-superficie,.seo-inventario-item) {
+  box-shadow: var(--modulo-sombra);
+}
+.modulo-unificado :is(.grupo-titulo,.comunidad-seccion-titulo,.seo-titulo-seccion,.seo-exec-seccion-cabecera) :is(h2,h3,h4),
+.modulo-unificado .modulo-seccion-titulo {
+  color: var(--texto-titulo);
+  font-family: var(--fuente-display);
+  font-weight: 650;
+  line-height: 1.3;
+}
+.modulo-unificado :is(.micro,.chico,.seo-reco-nota,.seo-impacto-help) {
+  line-height: 1.48;
+}
+
+/* Botones: jerarquía primaria / secundaria / enlace existente, mismo radio */
+.modulo-unificado :is(.boton,.seo-exec-enlace,.seo-impacto button,.seo-inventario-item > button) {
+  border-radius: var(--radio-control);
+}
+.modulo-unificado .boton {
+  min-height: 40px;
+  transition: background-color .15s ease,border-color .15s ease;
+}
+.modulo-unificado :is(.boton,.seo-pestanas button,.contabilidad-nav a,.wa-tabs a):focus-visible,
+.modulo-unificado :is(input,select,textarea,button,a):focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: 2px;
+}
+
+/* Filtros: aspecto, enfoque y anchura sin modificar el valor de los campos */
+.modulo-unificado :is(.campo input,.campo select,.campo textarea,
+  .seo-cabecera select,.seo-herramientas input,.seo-herramientas select,
+  .wa-page input,.wa-page select,.wa-page textarea) {
+  border-radius: var(--radio-control);
+  border-color: var(--borde);
+  background: var(--tarjeta);
+  color: var(--texto-cuerpo);
+  min-width: 0;
+}
+.modulo-unificado :is(.campo input,.campo select,.campo textarea,
+  .seo-cabecera select,.seo-herramientas input,.seo-herramientas select,
+  .wa-page input,.wa-page select,.wa-page textarea):focus {
+  border-color: var(--borde-foco);
+  outline-color: var(--borde-foco);
+}
+.modulo-unificado :is(.comunidades-herramientas,.contabilidad-toolbar,
+  .proveedores-busqueda-fila,.propiedades-filtros,.seo-tabla-acciones) {
+  gap: var(--modulo-espacio-sm);
+}
+
+/* Navegación secundaria: mismo subrayado naranja, legibilidad en móvil */
+.modulo-unificado :is(.seo-pestanas,.contabilidad-nav,.wa-tabs) {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--borde-suave);
+  gap: 4px;
+}
+.modulo-unificado :is(.seo-pestanas button,.contabilidad-nav a,.wa-tabs a) {
+  flex: 0 0 auto;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: var(--texto-apagado);
+  font: 650 13px/1.2 var(--fuente-cuerpo);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  padding: 11px 12px;
+}
+.modulo-unificado :is(.seo-pestanas button.activo,.contabilidad-nav a.activo,.wa-tabs a[aria-current="page"]) {
+  color: var(--texto-titulo);
+  border-bottom-color: var(--naranja);
+}
+
+/* Tablas: no cortar columnas ni forzar ancho superior al móvil */
+.modulo-unificado :is(.tabla-contenedor,.tabla-scroll,.contabilidad-tabla-scroll) {
+  overflow-x: auto;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+}
+.modulo-unificado :is(table,.wa-table) { border-collapse: collapse; }
+.modulo-unificado :is(table,.wa-table) :is(th,td) {
+  border-bottom-color: var(--borde-suave);
+}
+
+/* Advertencias: informan, sin parecer botones ni banners enormes */
+.modulo-unificado :is(.aviso,.seo-aviso,.seo-impacto-aviso,.seo-reco-alerta) {
+  border-radius: var(--radio-control);
+  line-height: 1.5;
+}
+
+/* Identidad también en WhatsApp y en listados heredados con colores aislados */
+.modulo-unificado .wa-layout { border-color: var(--borde); border-radius: var(--radio-tarjeta); }
+.modulo-unificado .wa-list { background: var(--papel); }
+.modulo-unificado .wa-contact { border-bottom-color: var(--borde-suave); }
+.modulo-unificado .wa-contact.selected { background: var(--ok-fondo); }
+.modulo-unificado .wa-detail { background: var(--tarjeta); }
+.modulo-unificado .wa-message { background: var(--info-fondo); border-color: var(--info-borde); }
+.modulo-unificado .wa-message.saliente { background: var(--ok-fondo); border-color: var(--ok-borde); }
+
+/* Estados y pequeñas métricas homogéneas */
+.modulo-unificado :is(.chip,.seo-prioridad,.seo-exec-mejora-badge,.seo-impacto-estado) {
+  border-radius: var(--radio-pastilla);
+}
+@media (max-width: 899px) {
+  .modulo-unificado > .encabezado.modulo-cabecera { padding: 13px 16px 14px; }
+  .modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido { padding: 15px 16px; }
+  .modulo-unificado :is(.campo input,.campo select,.campo textarea,
+    .seo-cabecera select,.wa-page input,.wa-page select,.wa-page textarea) {
+    font-size: 16px;
+  }
+  .modulo-unificado :is(.boton,.seo-impacto button,.seo-inventario-item > button) { min-height: 44px; }
+  .modulo-unificado :is(.seo-pestanas button,.contabilidad-nav a,.wa-tabs a) { min-height: 44px; }
+  .modulo-unificado :is(.seo-exec-kpi,.seo-reco-card,.seo-impacto-card) { padding: 13px; }
+  .modulo-unificado .wa-layout { min-width: 0; }
+  .modulo-unificado .wa-detail { padding: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modulo-unificado .boton { transition: none; }
+}
