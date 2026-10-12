@@ -48,6 +48,9 @@ jobs:
       - name: Probar oportunidades SEO, consultas y auditoría de páginas
         working-directory: app
         run: node --test pruebas/seo-oportunidades-claras.test.js
+      - name: Verificar sistema visual y accesibilidad fase 1
+        working-directory: app
+        run: node --test pruebas/ui-sistema-fase1.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
