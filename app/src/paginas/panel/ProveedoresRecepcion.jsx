@@ -452,7 +452,7 @@ function Recepcion({ vista }) {
           </form>
         ) : (
           <section className="tarjeta proveedores-postulantes-tabla">
-            <div className="tabla-responsive ui-tabla-scroll">
+            <div className="tabla-responsive ui-tabla-scroll" role="region" aria-label="Tabla de postulantes, desplazamiento horizontal" tabIndex={0}>
               <table className="tabla">
                 <thead>
                   <tr><th>Nombre</th><th>Comuna</th><th>Área</th><th>Estado</th><th>Ingreso</th><th>Contacto</th></tr>
