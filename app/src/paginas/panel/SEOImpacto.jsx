@@ -1,255 +1,185 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import './SEOImpacto.css';
-const n = v => v==null ? '—' : Number(v).toLocaleString('es-CL',{maximumFractionDigits:0});
-const d = v => v==null ? '—' : Number(v).toLocaleString('es-CL',{maximumFractionDigits:1});
-const pct = v => v==null?'—':(Number(v)*100).toLocaleString('es-CL',{maximumFractionDigits:2})+'%';
-const date = x=>x?new Date(x).toLocaleString('es-CL',{dateStyle:'medium',timeStyle:'short'}):'Pendiente';
-const estado = {
-  aprobada:['Aprobación guardada','Falta preparar PR'],
-  preparada:['En revisión','Propuesta abierta en GitHub'],
-  integrada:['Integrada en GitHub','Hosting no verificado'],
-  publicada:['Publicada y comprobada','Medición en curso'],
-  descartada:['Descartada','Sin cambios en web'],
-  ajustes_solicitados:['Ajustes solicitados','Esperando nueva propuesta'],
-  error_preparacion:['Error de preparación','Revisar integración']
+
+const numero = v => Number(v ?? 0).toLocaleString('es-CL',{maximumFractionDigits:0});
+const decimal = v => Number(v ?? 0).toLocaleString('es-CL',{maximumFractionDigits:1});
+const porcentaje = v => (Number(v ?? 0)*100).toLocaleString('es-CL',{maximumFractionDigits:2})+'%';
+const fecha = x => x ? new Date(x).toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'}) : 'Pendiente';
+const ESTADOS = {
+  aprobada:'Aprobada', preparada:'En revisión', integrada:'Integrada en GitHub',
+  publicada:'Publicada', descartada:'Descartada',
+  ajustes_solicitados:'Ajustes solicitados', error_preparacion:'Error de preparación'
 };
-async function llamar(accion,extra={}) {
+async function servicio(accion,extra={}) {
   const {data,error}=await supabase.functions.invoke('seo-propuestas',{body:{accion,...extra}});
-  if(error){let msg=error.message;
-    if(error.context?.json)try{msg=(await error.context.json())?.error||msg;}catch{}
-    throw Error(msg||'No fue posible consultar propuestas.');
+  if(error) {
+    let detalle=error.message||'No se pudo consultar el historial.';
+    if(error.context?.json)try{detalle=(await error.context.json())?.error||detalle;}catch{/* sin json */}
+    throw Error(detalle);
   }
   if(data?.error)throw Error(data.error);
   return data;
 }
-function Delta({num,suffix='',negativoMejora=false}) {
-  if(num==null)return <span className="seo-impacto-neutro">Sin referencia comparable</span>;
-  const bueno=negativoMejora?num<0:num>0;
-  return <strong className={num===0?'seo-impacto-neutro':bueno?'seo-impacto-bueno':'seo-impacto-malo'}>
-    {num>0?'+':''}{d(num)}{suffix}
-  </strong>;
+function Diferencia({valor,sufijo='',invertido=false}) {
+  if(valor==null)return null;
+  const mejora=invertido?valor<0:valor>0;
+  const clase=valor===0?'neutral':mejora?'positiva':'negativa';
+  return <span className={'seo-impacto-diferencia '+clase}>
+    {valor>0?'+':''}{decimal(valor)}{sufijo}
+  </span>;
 }
-function Grafico({periodo}) {
-  const anterior=periodo.anteriorComparable||periodo.anterior;
-  const posterior=periodo.posterior;
-  if(!posterior)return <p className="seo-impacto-help">Esperando los primeros días procesados por Google.</p>;
-  const max=Math.max(1,anterior?.clicks||0,posterior.clicks);
-  return <div className="seo-impacto-bars" aria-label="Clics antes y después">
-    {[['Antes',anterior?.clicks||0],['Después',posterior.clicks]].map(([etiqueta,valor])=><div key={etiqueta}>
-      <span>{etiqueta}</span>
-      <div className="seo-impacto-bar"><span style={{width:(100*valor/max)+'%'}}/></div>
-      <strong>{n(valor)} clics</strong>
-    </div>)}
-  </div>;
-}
-function PanelNetlify({netlify}) {
-  const ok=!!netlify?.conectado;
-  const deploy=netlify?.deploy||{};
-  return <div className="seo-impacto-netlify">
-    <div className="seo-impacto-netlify-titulo">
-      <strong>Despliegue de Netlify</strong>
-      <span className={ok?'seo-impacto-netlify-conectado':'seo-impacto-netlify-pendiente'}>
-        {ok?'API conectada':'API pendiente de autorización'}
-      </span>
+function Indicador({nombre,antes,despues,cambio,sufijo='',invertido=false}) {
+  return <div className="seo-impacto-indicador">
+    <small>{nombre}</small>
+    <div className="seo-impacto-indicador-valores">
+      <strong>{antes} → {despues}</strong>
+      <Diferencia valor={cambio} sufijo={sufijo} invertido={invertido}/>
     </div>
-    {netlify?.motivo&&<p>{netlify.motivo}</p>}
-    {ok&&<>
-      <div className="seo-impacto-netlify-grid">
-        <div><small>Sitio de Netlify</small><strong>{netlify.sitio||'No informado'}</strong></div>
-        <div><small>Rama de producción</small><strong>{netlify.rama||'Sin determinar'}</strong></div>
-        <div><small>Último despliegue</small><strong>{deploy.estado||'Sin registro'}</strong></div>
-        <div><small>Commit desplegado</small><strong>{deploy.sha?deploy.sha.slice(0,12):'No disponible'}</strong></div>
-      </div>
-      {netlify.repoCorrecto===false&&<p className="seo-impacto-aviso">
-        Netlify podría estar enlazado con otro repositorio. Verifica los ajustes de Git en Netlify.</p>}
-      {netlify.ramaCorrecta===false&&<p className="seo-impacto-aviso">
-        La rama de publicación configurada no es main.</p>}
-      {deploy.publicadoEn&&<p className="seo-impacto-help">
-        Último despliegue reportado: {date(deploy.publicadoEn)}.</p>}
-      {deploy.url&&<a href={deploy.url} target="_blank" rel="noopener noreferrer">
-        Ver despliegue en Netlify ↗</a>}
-    </>}
-    {!ok&&<p className="seo-impacto-help">
-      Para consultar el estado de Netlify sin exponer credenciales, configura NETLIFY_ACCESS_TOKEN
-      en los secretos de Supabase. NETLIFY_SITE_ID es opcional si el dominio asociado es www.coproactiva.cl.
-      La aplicación seguirá verificando el HTML público aunque esta conexión esté pendiente.
-    </p>}
   </div>;
 }
-
-function Detalle({item,invocar,onActualizada,puedeDesplegar}) {
-  const [dias,setDias]=useState(7),[datos,setDatos]=useState(null);
-  const [error,setError]=useState(''),[cargando,setCargando]=useState(false);
-  const [comprobacion,setComprobacion]=useState(null);
-  const [confirmacionDespliegue,setConfirmacionDespliegue]=useState('');
-  const medir=useCallback(async()=> {
+function Medicion({item,invocar}) {
+  const [plazo,setPlazo]=useState('7');
+  const [datos,setDatos]=useState(null);
+  const [cargando,setCargando]=useState(false);
+  const [error,setError]=useState('');
+  const actualizar=useCallback(async()=>{
     if(!item.verificada_en)return;
     setCargando(true);setError('');
     try {
       const r=await invocar('seguimiento-seo',{ruta:item.ruta,publicadaEn:item.verificada_en});
-      if(r.error)throw Error(r.error);
+      if(r?.error)throw Error(r.error);
       setDatos(r);
-    }catch(e){setError(e.message||'No fue posible medir el impacto SEO.');}
+    }catch(err){setError(err.message||'No se pudieron recuperar las métricas.');}
     finally{setCargando(false);}
   },[item.verificada_en,item.ruta,invocar]);
-  useEffect(()=>{medir();},[medir]);
-  async function sincronizar() {
+  useEffect(()=>{actualizar();},[actualizar]);
+  const periodo=datos?.periodos?.find(x=>x.dias===Number(plazo));
+  const listo=Boolean(periodo?.posterior && periodo?.diasFinalizados>0);
+  const base=periodo?.anteriorComparable||periodo?.anterior;
+  return <div className="seo-impacto-medicion">
+    <div className="seo-impacto-herramientas">
+      <label htmlFor={'seo-plazo-'+item.id}>Comparar a</label>
+      <select id={'seo-plazo-'+item.id} value={plazo} onChange={e=>setPlazo(e.target.value)}>
+        <option value="7">7 días</option>
+        <option value="28">28 días</option>
+        <option value="90">90 días</option>
+      </select>
+      <button type="button" onClick={actualizar} disabled={cargando}>
+        {cargando?'Consultando…':'Actualizar'}
+      </button>
+    </div>
+    {error&&<p role="alert" className="seo-impacto-error">{error}</p>}
+    {!periodo&&!error&&<p className="seo-impacto-msg">{cargando?'Consultando Search Console…':'Sin datos disponibles.'}</p>}
+    {periodo&&!listo&&<div className="seo-impacto-espera" role="status">
+      <strong>Esperando datos posteriores al cambio</strong>
+      <p>Google aún no ha procesado el período posterior. Última referencia: {numero(periodo.anterior?.clicks)} clics,
+        {' '}{numero(periodo.anterior?.impresiones)} impresiones, CTR {porcentaje(periodo.anterior?.ctr)}
+        {' '}y posición {decimal(periodo.anterior?.posicion)}.</p>
+    </div>}
+    {periodo&&listo&&<>
+      <p className="seo-impacto-periodo-etapa">
+        {periodo.completo?'Período completo':'Resultado provisional'}
+        {' · '}{periodo.diasFinalizados} de {plazo} días procesados
+      </p>
+      <div className="seo-impacto-indicadores">
+        <Indicador nombre="Clics" antes={numero(base?.clicks)} despues={numero(periodo.posterior.clicks)}
+          cambio={periodo.cambioClics} sufijo="%"/>
+        <Indicador nombre="Impresiones" antes={numero(base?.impresiones)} despues={numero(periodo.posterior.impresiones)}
+          cambio={periodo.cambioImpresiones} sufijo="%"/>
+        <Indicador nombre="CTR" antes={porcentaje(base?.ctr)} despues={porcentaje(periodo.posterior.ctr)}
+          cambio={periodo.cambioCtrPuntos} sufijo=" pp"/>
+        <Indicador nombre="Posición" antes={decimal(base?.posicion)} despues={decimal(periodo.posterior.posicion)}
+          cambio={periodo.cambioPosicion} invertido/>
+      </div>
+      <small className="seo-impacto-lectura">Antes → después · Misma URL y períodos equivalentes. No implica causalidad.</small>
+    </>}
+  </div>;
+}
+function Historial({item,onVerificar,cargando}) {
+  const netlify=item.netlify_detalle||{};
+  return <details className="seo-impacto-historial">
+    <summary>Historial y enlaces</summary>
+    <div className="seo-impacto-historial-contenido">
+      <div><span>GitHub</span><strong>{fecha(item.fusionada_en)}</strong></div>
+      <div><span>Publicación verificada</span><strong>{fecha(item.verificada_en)}</strong></div>
+      {item.ultima_verificacion_en&&<div><span>Última comprobación</span><strong>{fecha(item.ultima_verificacion_en)}</strong></div>}
+      {item.pr_url&&<a href={item.pr_url} target="_blank" rel="noopener noreferrer">Revisar cambios en GitHub ↗</a>}
+      <a href={'https://www.coproactiva.cl'+item.ruta} target="_blank" rel="noopener noreferrer">Abrir página ↗</a>
+      {item.estado==='integrada'&&
+        <button type="button" disabled={cargando} onClick={onVerificar}>
+          {cargando?'Comprobando…':'Comprobar publicación'}
+        </button>}
+      {netlify.conectado===true&&netlify.deploy?.url&&
+        <a href={netlify.deploy.url} target="_blank" rel="noopener noreferrer">Ver despliegue Netlify ↗</a>}
+    </div>
+  </details>;
+}
+function Mejora({item,invocar,onActualizada}) {
+  const [abierto,setAbierto]=useState(false);
+  const [cargando,setCargando]=useState(false);
+  const [error,setError]=useState('');
+  async function verificar(){
     setCargando(true);setError('');
     try{
-      const r=await llamar('sincronizar',{id:item.id});
-      setComprobacion(r.comprobacion||null);
+      const r=await servicio('sincronizar',{id:item.id});
       if(r.propuesta)onActualizada(r.propuesta);
-      if(r.propuesta?.estado==='publicada') {
-        setError('');
-      }else if(r.comprobacion?.error){
-        setError(r.comprobacion.error);
-      }else if(r.propuesta?.verificacion_detalle)setError(r.propuesta.verificacion_detalle);
-    }catch(e){setError(e.message);}
+      if(r.comprobacion?.error)setError(r.comprobacion.error);
+      else if(r.propuesta?.estado!=='publicada')setError('El cambio aún no se confirma en la web.');
+    }catch(e){setError(e.message||'No fue posible verificar la publicación.');}
     finally{setCargando(false);}
   }
-  async function relanzar() {
-    setCargando(true);setError('');
-    try {
-      const r=await llamar('reintentar_despliegue',{
-        id:item.id,confirmacion:confirmacionDespliegue
-      });
-      if(r.propuesta)onActualizada(r.propuesta);
-      setError(r.aviso||'Se consultó Netlify.');
-      setConfirmacionDespliegue('');
-    }catch(e){setError(e.message||'No se pudo solicitar el despliegue.');}
-    finally{setCargando(false);}
-  }
-  const periodo=datos?.periodos?.find(x=>x.dias===dias);
-  return <section className="seo-impacto-detail">
-    <div className="seo-impacto-dates">
-      <div><small>Fusionada en GitHub</small><strong>{date(item.fusionada_en)}</strong></div>
-      <div><small>Primera comprobación en web</small><strong>{date(item.verificada_en)}</strong></div>
-      <div><small>Última verificación</small><strong>{date(item.ultima_verificacion_en)}</strong></div>
-    </div>
-    {!!item.verificacion_detalle && <p className="seo-impacto-help">{item.verificacion_detalle}</p>}
-    <PanelNetlify netlify={item.netlify_detalle}/>
-    {item.estado==='integrada'&&puedeDesplegar&&item.netlify_detalle?.conectado&&
-      item.netlify_detalle?.repoCorrecto===true&&item.netlify_detalle?.ramaCorrecta===true&&
-      <div className="seo-impacto-despliegue-manual">
-        <strong>¿Netlify no publicó el cambio fusionado?</strong>
-        <p>Un superadministrador puede solicitar que Netlify vuelva a construir la rama main.
-          Esta acción inicia un despliegue en producción; no garantiza que quede publicado.</p>
-        <label>Escribe DESPLEGAR para continuar
-          <input value={confirmacionDespliegue} onChange={e=>setConfirmacionDespliegue(e.target.value)}
-            placeholder="DESPLEGAR" autoComplete="off"/>
-        </label>
-        <button type="button" disabled={cargando||confirmacionDespliegue!=='DESPLEGAR'}
-          onClick={relanzar}>Solicitar despliegue de Netlify</button>
-      </div>}
-}
-    <div className="seo-impacto-buttons">
-      {item.pr_url&&<a href={item.pr_url} target="_blank" rel="noopener noreferrer">Ver cambios aprobados ↗</a>}
-      <a href={'https://www.coproactiva.cl'+item.ruta} target="_blank" rel="noopener noreferrer">Abrir página ↗</a>
-      <button type="button" disabled={cargando} onClick={sincronizar}>
-        {cargando?'Verificando…':'Verificar publicación'}
-      </button>
-    </div>
-    {error&&<p role="status" className="seo-impacto-aviso">{error}</p>}
-    {comprobacion?.coinciden&&<p className="seo-impacto-bueno">El servidor confirmó que el título y la descripción ya están en la web.</p>}
-    {item.estado!=='publicada'||!item.verificada_en?
-      <div className="seo-impacto-pendiente">
-        <strong>El seguimiento todavía no ha comenzado.</strong>
-        <p>El cambio está integrado en GitHub, pero el sitio público debe entregar el nuevo título y descripción antes de fijar la fecha inicial. No se atribuirán resultados a cambios que aún no vemos en la web.</p>
+  const estado=ESTADOS[item.estado]||item.estado;
+  const publicada=item.estado==='publicada'&&!!item.verificada_en;
+  return <article className="seo-impacto-mejora">
+    <button type="button" className="seo-impacto-mejora-cabecera"
+      onClick={()=>setAbierto(v=>!v)} aria-expanded={abierto}>
+      <div className="seo-impacto-mejora-texto">
+        <strong>{item.ruta==='/'?'Portada':item.ruta} · {item.consulta_principal}</strong>
+        <small>{estado}{publicada?' · '+fecha(item.verificada_en):''}</small>
       </div>
-      :<>
-        <div className="seo-impacto-periodos" role="group" aria-label="Plazo de seguimiento">
-          {[7,28,90].map(x=><button type="button" key={x}
-            className={dias===x?'activo':''} onClick={()=>setDias(x)}>{x} días</button>)}
-          <button type="button" onClick={medir} disabled={cargando} className="seo-impacto-refresh">
-            {cargando?'Consultando…':'Actualizar datos'}
-          </button>
-        </div>
-        {!datos&&!error&&<p className="seo-impacto-help">Consultando Search Console…</p>}
-        {periodo&&<div className="seo-impacto-periodo-contenido">
-          <div className="seo-impacto-periodo-cabecera">
-            <strong>{periodo.completo?'Comparación completa':'Seguimiento en desarrollo'}</strong>
-            <span>{periodo.diasFinalizados} de {dias} días procesados</span>
-          </div>
-          <div className="seo-impacto-progreso"><span style={{width:(100*periodo.diasFinalizados/dias)+'%'}}/></div>
-          <div className="seo-impacto-metricas">
-            <div><small>Clics</small><strong>{n(periodo.anteriorComparable?.clicks ?? periodo.anterior?.clicks)}
-              {' → '}{n(periodo.posterior?.clicks)}</strong>
-              <Delta num={periodo.cambioClics} suffix="%"/></div>
-            <div><small>Impresiones</small><strong>{n(periodo.anteriorComparable?.impresiones ?? periodo.anterior?.impresiones)}
-              {' → '}{n(periodo.posterior?.impresiones)}</strong>
-              <Delta num={periodo.cambioImpresiones} suffix="%"/></div>
-            <div><small>CTR</small><strong>{pct(periodo.anteriorComparable?.ctr ?? periodo.anterior?.ctr)}
-              {' → '}{pct(periodo.posterior?.ctr)}</strong>
-              <Delta num={periodo.cambioCtrPuntos} suffix=" pp"/></div>
-            <div><small>Posición promedio</small><strong>{d(periodo.anteriorComparable?.posicion ?? periodo.anterior?.posicion)}
-              {' → '}{d(periodo.posterior?.posicion)}</strong>
-              <Delta num={periodo.cambioPosicion} negativoMejora/></div>
-          </div>
-          <Grafico periodo={periodo}/>
-          <p className="seo-impacto-help">{periodo.diasFinalizados===0
-            ? 'Google todavía no ha finalizado datos posteriores a la fecha de verificación.'
-            : periodo.completo?'Se compararon ventanas completas de igual duración.'
-              :'Comparación provisional con el mismo número de días antes y después del cambio.'}</p>
-          <p className="seo-impacto-help">Ventana anterior: {periodo.desdeAnterior} al {periodo.hastaAnterior}.
-            {periodo.hastaPosterior&&' Ventana posterior: '+periodo.desdePosterior+' al '+periodo.hastaPosterior+'.'}</p>
+      <span className="seo-impacto-flecha" aria-hidden="true">{abierto?'⌃':'⌄'}</span>
+    </button>
+    {abierto&&<div className="seo-impacto-mejora-detalle">
+      {publicada
+        ?<Medicion item={item} invocar={invocar}/>
+        :<div className="seo-impacto-espera"><strong>Seguimiento pendiente</strong>
+          <p>{item.estado==='integrada'?'El cambio ya está en GitHub; falta comprobar su publicación en la web.':
+            'Primero se debe aprobar, integrar y verificar el cambio.'}</p>
+          {item.estado==='integrada'&&<button type="button" disabled={cargando} onClick={verificar}>Comprobar publicación</button>}
         </div>}
-        {datos&&<p className="seo-impacto-help">{datos.nota}</p>}
-      </>}
-  </section>;
+      {error&&<p className="seo-impacto-error" role="alert">{error}</p>}
+      <Historial item={item} onVerificar={verificar} cargando={cargando}/>
+    </div>}
+  </article>;
 }
 export default function SEOImpacto({invocar}) {
-  const [items,setItems]=useState([]),[seleccion,setSeleccion]=useState('');
-  const [error,setError]=useState(''),[cargando,setCargando]=useState(true),[fecha,setFecha]=useState('');
-  const [puedeDesplegar,setPuedeDesplegar]=useState(false);
-  const refrescar=useCallback(async()=>{
+  const [propuestas,setPropuestas]=useState([]);
+  const [cargando,setCargando]=useState(true);
+  const [error,setError]=useState('');
+  const cargar=useCallback(async()=>{
     setCargando(true);setError('');
     try {
-      const r=await llamar('listar');
-      setItems(r.propuestas||[]);
-      setPuedeDesplegar(!!r.puedePublicar);
-      setFecha(r.ultimaSincronizacion||new Date().toISOString());
-      if(r.observaciones)setError(r.observaciones);
-      setSeleccion(prev=>r.propuestas?.some(x=>x.id===prev)?prev:r.propuestas?.[0]?.id||'');
-    }catch(e){setError(e.message||'Sin historial disponible.');}
+      const resultado=await servicio('listar');
+      setPropuestas(resultado.propuestas||[]);
+      if(resultado.observaciones)setError(resultado.observaciones);
+    }catch(e){setError(e.message||'No se pudo cargar el seguimiento.');}
     finally{setCargando(false);}
   },[]);
-  useEffect(()=>{refrescar();},[refrescar]);
-  const aprobadas=useMemo(()=>items.filter(x=>x.estado!=='descartada'&&x.estado!=='ajustes_solicitados'),[items]);
-  return <div className="seo-impacto">
-    <header className="seo-impacto-top">
-      <div><h2>Seguimiento de mejoras SEO</h2>
-        <p>Cada modificación conserva su fecha, cambios exactos y la evolución real posterior.</p></div>
-      <button type="button" onClick={refrescar} disabled={cargando}>
-        {cargando?'Sincronizando…':'Sincronizar'}
-      </button>
-    </header>
-    <div className="seo-impacto-totales">
-      <div><strong>{n(aprobadas.length)}</strong><small>Propuestas registradas</small></div>
-      <div><strong>{n(aprobadas.filter(x=>x.estado==='integrada').length)}</strong><small>Integradas, por verificar</small></div>
-      <div><strong>{n(aprobadas.filter(x=>x.estado==='publicada').length)}</strong><small>Publicadas verificadas</small></div>
+  useEffect(()=>{cargar();},[cargar]);
+  const gestionadas=useMemo(()=>propuestas.filter(p=>!['descartada','ajustes_solicitados'].includes(p.estado)),[propuestas]);
+  return <section className="seo-impacto">
+    <div className="seo-impacto-top">
+      <div><h2>Seguimiento SEO</h2>
+        <p>{gestionadas.length} {gestionadas.length===1?'mejora registrada':'mejoras registradas'}</p>
+      </div>
+      <button type="button" onClick={cargar} disabled={cargando}>{cargando?'Actualizando…':'Actualizar'}</button>
     </div>
-    {fecha&&<p className="seo-impacto-help">Última sincronización: {date(fecha)}</p>}
-    {error&&<p className="seo-impacto-aviso" role="status">{error}</p>}
-    {aprobadas.length===0&&!cargando&&<p>Sin modificaciones aprobadas todavía.</p>}
-    {aprobadas.map(p=>{
-      const activo=p.id===seleccion;const state=estado[p.estado]||[p.estado,''];
-      return <article key={p.id} className="seo-impacto-card">
-        <div className="seo-impacto-header">
-          <div>
-            <span className={'seo-impacto-estado estado-'+p.estado}>{state[0]}</span>
-            <h3>{p.consulta_principal}</h3>
-            <p>{p.ruta} · {state[1]}</p>
-          </div>
-          <button type="button" onClick={()=>setSeleccion(activo?'':p.id)}>
-            {activo?'Contraer':'Ver evolución →'}
-          </button>
-        </div>
-        {activo&&<Detalle item={p} invocar={invocar}
-          onActualizada={cambio=>setItems(prev=>prev.map(x=>x.id===cambio.id?cambio:x))}
-          puedeDesplegar={puedeDesplegar}/>}
-      </article>;
-    })}
-    <p className="seo-impacto-help">Los indicadores proceden de Google Search Console y corresponden a la URL evaluada, no a ventas ni visitantes únicos. Las variaciones no prueban que la mejora sea la única causa.</p>
-  </div>;
+    {error&&<p role="alert" className="seo-impacto-error">{error}</p>}
+    {!cargando&&!gestionadas.length&&<p className="seo-impacto-msg">Todavía no hay mejoras aprobadas.</p>}
+    <div className="seo-impacto-listado">
+      {gestionadas.map(p=><Mejora key={p.id} item={p} invocar={invocar}
+        onActualizada={nuevo=>setPropuestas(actual=>actual.map(x=>x.id===nuevo.id?nuevo:x))}/>)}
+    </div>
+  </section>;
 }
