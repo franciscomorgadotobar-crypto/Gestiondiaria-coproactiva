@@ -1503,7 +1503,7 @@ export default function Contabilidad() {
               </div>
             </section>
 
-            <section className="contabilidad-acciones-principales ui-acciones">
+            <section className="contabilidad-acciones-principales">
               {entidad.plan_origen === 'pendiente' ? (
                 <Link className="boton boton-movil" to="/contabilidad/configuracion">
                   Configurar plan
