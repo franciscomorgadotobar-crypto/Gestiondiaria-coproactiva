@@ -51,6 +51,9 @@ jobs:
       - name: Verificar sistema visual y accesibilidad fase 1
         working-directory: app
         run: node --test pruebas/ui-sistema-fase1.test.js
+      - name: Verificar componentes y navegación visual fase 2
+        working-directory: app
+        run: node --test pruebas/ui-fase2.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
