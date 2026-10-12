@@ -41,9 +41,19 @@ test('portal cliente y propiedades usan el mismo marco visual',()=>{
 });
 
 test('el sistema tiene reglas comunes y conserva estados semánticos',()=>{
-  for(const regla of ['.modulo-cabecera','.seo-pestanas','.contabilidad-nav',
-    '.wa-tabs','.tarjeta','focus-visible','prefers-reduced-motion']) {
+  for(const regla of ['.modulo-cabecera','.ui-pestanas','.ui-estado',
+    '.tarjeta','focus-visible','prefers-reduced-motion']) {
     assert.ok(css.includes(regla),'Falta regla visual '+regla);
+  }
+
+  const rutas = [
+    read('paginas/panel/SEO.jsx'),
+    read('paginas/panel/Contabilidad.jsx'),
+    read('componentes/ProveedoresNavegacion.jsx'),
+    read('paginas/panel/WhatsApp.jsx')
+  ];
+  for(const modulo of rutas) {
+    assert.match(modulo, /ui-pestanas/, 'Toda pestaña de módulo debe usar el patrón común');
   }
   for(const estado of ['--ok-fondo','--alerta-fondo','--critico-fondo']) {
     assert.ok(tokens.includes(estado),'No debe perderse '+estado);
