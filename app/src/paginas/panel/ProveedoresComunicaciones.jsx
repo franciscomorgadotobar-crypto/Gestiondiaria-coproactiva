@@ -150,7 +150,7 @@ export default function ProveedoresComunicaciones() {
                     <div><strong>{seleccionada.fallidos}</strong><span>Error</span></div>
                   </div>
 
-                  <div className="tabla-responsive ui-tabla-scroll">
+                  <div className="tabla-responsive ui-tabla-scroll" role="region" aria-label="Tabla de destinatarios, desplazamiento horizontal" tabIndex={0}>
                     <table className="tabla comunicaciones-destinatarios">
                       <thead><tr><th>Proveedor</th><th>Contacto</th><th>Correo</th><th>Estado</th></tr></thead>
                       <tbody>
