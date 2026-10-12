@@ -95,8 +95,8 @@ export default function ImportarPlantillas() {
   const puntos = resultado?.plantillas.reduce((s, p) => s + p.items.length, 0) ?? 0;
 
   return (
-    <div className="pantalla pantalla-angosta">
-      <header className="encabezado">
+    <div className="pantalla pantalla-angosta modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar('/plantillas')}>
@@ -109,7 +109,7 @@ export default function ImportarPlantillas() {
         </p>
       </header>
 
-      <div className="cuerpo importar">
+      <div className="cuerpo importar modulo-contenido">
         {perfil && !puedeEditar ? (
           <div className="aviso aviso-critico">Solo administración y jefatura pueden crear plantillas.</div>
         ) : (
