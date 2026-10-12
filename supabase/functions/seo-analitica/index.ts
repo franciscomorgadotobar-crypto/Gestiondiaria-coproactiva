@@ -197,7 +197,11 @@ async function auditoriaTecnica(ruta: string) {
   const problemas: { nivel: string; texto: string }[] = [];
   if (pagina.status !== 200) problemas.push({ nivel: 'alto', texto: 'La URL devuelve HTTP ' + pagina.status + '.' });
   if (!titulo) problemas.push({ nivel: 'alto', texto: 'Falta el título SEO.' });
-  if (titulo.length > 65) problemas.push({ nivel: 'medio', texto: 'Título extenso (' + titulo.length + ' caracteres).' });
+  // Google no tiene un límite fijo de 60/65 caracteres. No crear una tarea por una
+  // mejora previamente aprobada cuyo título tenga 67 caracteres. Sólo revisar
+  // títulos excepcionalmente largos; la posible truncación requiere validación visual.
+  if (titulo.length > 80) problemas.push({ nivel: 'medio',
+    texto: 'Título muy largo (' + titulo.length + ' caracteres): revisar posible recorte, no es una penalización SEO automática.' });
   if (!description) problemas.push({ nivel: 'medio', texto: 'Falta meta description.' });
   if (h1s.length !== 1) problemas.push({ nivel: 'medio', texto: 'Se detectaron ' + h1s.length + ' encabezados H1.' });
   if (!canonical) problemas.push({ nivel: 'alto', texto: 'Falta canonical.' });
