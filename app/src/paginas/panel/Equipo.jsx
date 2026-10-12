@@ -163,8 +163,8 @@ export default function Equipo() {
   }
 
   return (
-    <div className="pantalla">
-      <header className="encabezado">
+    <div className="pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar('/configuracion')}>
