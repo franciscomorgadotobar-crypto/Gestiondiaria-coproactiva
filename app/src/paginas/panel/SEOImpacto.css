@@ -1,76 +1,63 @@
-.seo-impacto{display:flex;flex-direction:column;gap:14px;min-width:0}
-.seo-impacto h2{font-size:1.28rem;color:var(--texto-titulo);margin:0 0 6px}
-.seo-impacto h3{font-size:1.06rem;margin:7px 0 5px;color:var(--texto-titulo)}
-.seo-impacto p{margin:0;line-height:1.48}
-.seo-impacto button,.seo-impacto-buttons a{font:inherit;color:#9d5429;border:1px solid #d7ba9e;background:#fff;border-radius:7px;padding:10px 12px;cursor:pointer;font-size:.8rem;text-decoration:none;font-weight:700}
-.seo-impacto button:disabled{opacity:.6;cursor:not-allowed}
-.seo-impacto-top,.seo-impacto-header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
-.seo-impacto-top p,.seo-impacto-header p{font-size:.82rem;color:var(--texto-apagado)}
-.seo-impacto-totales{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.seo-impacto-totales>div{display:flex;flex-direction:column;gap:5px;background:#fff;border:1px solid var(--borde);border-radius:9px;padding:13px}
-.seo-impacto-totales strong{font-size:1.65rem;color:var(--texto-titulo)}
-.seo-impacto-totales small,.seo-impacto-dates small{font-size:.74rem;color:var(--texto-apagado)}
-.seo-impacto-card{border:1px solid var(--borde);border-radius:10px;padding:17px;background:#fff}
-.seo-impacto-estado{font-size:.74rem;font-weight:750;border-radius:20px;padding:4px 9px;color:#78572f;background:#fff0dd}
-.seo-impacto-estado.estado-publicada{background:#e7f4e8;color:#28612e}
-.seo-impacto-header h3{margin-top:14px}
-.seo-impacto-detail{border-top:1px solid var(--borde-suave);margin-top:15px;padding-top:14px;display:flex;flex-direction:column;gap:15px}
-.seo-impacto-dates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.seo-impacto-dates>div{background:#f7f5f2;border-radius:7px;padding:12px;display:flex;flex-direction:column;gap:6px}
-.seo-impacto-dates strong{font-size:.8rem;line-height:1.4}
-.seo-impacto-buttons{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
-.seo-impacto-pendiente{padding:16px;border:1px solid #ebd5b8;background:#fff8ef;border-radius:9px;line-height:1.5}
-.seo-impacto-pendiente strong{font-size:.86rem}
-.seo-impacto-pendiente p{font-size:.8rem;margin-top:8px}
-.seo-impacto-periodos{display:flex;flex-wrap:wrap;gap:8px}
-.seo-impacto-periodos button.activo{background:#b86a30;border-color:#b86a30;color:#fff}
-.seo-impacto-periodos .seo-impacto-refresh{margin-left:auto}
-.seo-impacto-periodo-contenido{background:#faf9f7;border:1px solid var(--borde);padding:14px;border-radius:9px}
-.seo-impacto-periodo-cabecera{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.83rem}
-.seo-impacto-periodo-cabecera span{color:var(--texto-apagado)}
-.seo-impacto-progreso{width:100%;height:7px;background:#e6e2dc;border-radius:20px;margin:14px 0;overflow:hidden}
-.seo-impacto-progreso>span{display:block;height:100%;background:#b86a30;border-radius:20px}
-.seo-impacto-metricas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.seo-impacto-metricas>div{background:#fff;border:1px solid var(--borde);border-radius:6px;padding:11px;display:flex;flex-direction:column;gap:7px;min-width:0}
-.seo-impacto-metricas small{color:var(--texto-apagado);font-size:.76rem}
-.seo-impacto-metricas strong{font-size:.95rem;color:var(--texto-titulo);overflow-wrap:anywhere}
-.seo-impacto-metricas .seo-impacto-bueno{color:#257239}
-.seo-impacto-metricas .seo-impacto-malo{color:#b04135}
-.seo-impacto-neutro{color:#777;font-size:.8rem}
-.seo-impacto-bars{display:flex;flex-direction:column;gap:11px;margin:18px 0}
-.seo-impacto-bars>div{display:grid;grid-template-columns:58px 1fr 75px;gap:8px;align-items:center;font-size:.77rem}
-.seo-impacto-bar{height:10px;border-radius:10px;background:#e8e1d9;overflow:hidden}
-.seo-impacto-bar>span{display:block;height:100%;background:#cc7b32;border-radius:10px}
-.seo-impacto-help{font-size:.77rem;color:var(--texto-apagado);line-height:1.45}
-.seo-impacto-aviso{background:#fff5ec;color:#814b2c;border:1px solid #ebd0b5;border-radius:8px;padding:11px;font-size:.82rem}
-@media(max-width:640px){
-  .seo-impacto-card{padding:12px}
-  .seo-impacto-totales,.seo-impacto-dates{grid-template-columns:1fr}
-  .seo-impacto-totales{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .seo-impacto-totales>div{padding:10px}
-  .seo-impacto-totales strong{font-size:1.25rem}
-  .seo-impacto-totales small{font-size:.66rem}
-  .seo-impacto-header{flex-direction:column}
-  .seo-impacto-metricas{grid-template-columns:1fr}
+.seo-impacto{display:flex;flex-direction:column;gap:12px;min-width:0}
+.seo-impacto h2{font-size:1.16rem;color:var(--texto-titulo);margin:0}
+.seo-impacto p{margin:0;line-height:1.4}
+.seo-impacto-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.seo-impacto-top>div{display:flex;flex-direction:column;gap:4px}
+.seo-impacto-top p{font-size:.79rem;color:var(--texto-apagado)}
+.seo-impacto button,.seo-impacto select{font:inherit;font-size:.82rem}
+.seo-impacto button{cursor:pointer}
+.seo-impacto button:disabled{cursor:not-allowed;opacity:.6}
+.seo-impacto-top>button,.seo-impacto-herramientas>button,
+.seo-impacto-espera button,.seo-impacto-historial button{
+  background:transparent;color:#945b2b;border:1px solid var(--borde);
+  padding:8px 10px;border-radius:7px;min-height:40px;font-weight:650;
 }
-
-.seo-impacto-netlify{border:1px solid var(--borde);border-radius:8px;padding:14px;background:#f8f8f7;display:flex;flex-direction:column;gap:10px}
-.seo-impacto-netlify-titulo{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.seo-impacto-netlify-titulo strong{font-size:.95rem;color:var(--texto-titulo)}
-.seo-impacto-netlify-titulo span{font-size:.7rem;border-radius:20px;padding:5px 9px;font-weight:700}
-.seo-impacto-netlify-conectado{color:#267042;background:#e5f3e5}
-.seo-impacto-netlify-pendiente{color:#915a22;background:#fff0dd}
-.seo-impacto-netlify p{font-size:.8rem;line-height:1.5}
-.seo-impacto-netlify-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.seo-impacto-netlify-grid>div{background:#fff;border:1px solid var(--borde-suave);padding:10px;border-radius:6px;min-width:0;display:flex;flex-direction:column;gap:5px}
-.seo-impacto-netlify-grid small{font-size:.7rem;color:var(--texto-apagado)}
-.seo-impacto-netlify-grid strong{font-size:.85rem;overflow-wrap:anywhere}
-.seo-impacto-netlify a{font-size:.8rem;color:#965022;font-weight:700}
-@media(max-width:440px){.seo-impacto-netlify-grid{grid-template-columns:1fr}}
-
-.seo-impacto-despliegue-manual{background:#fff8ee;border:1px solid #dfc5a1;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:9px}
-.seo-impacto-despliegue-manual strong{color:#7a4c1e;font-size:.88rem}
-.seo-impacto-despliegue-manual p{font-size:.79rem;line-height:1.45}
-.seo-impacto-despliegue-manual label{display:flex;flex-direction:column;gap:5px;font-size:.77rem;font-weight:700}
-.seo-impacto-despliegue-manual input{max-width:260px;border:1px solid #dbb68b;border-radius:5px;background:#fff;min-height:40px;padding:8px 11px;font:inherit}
-.seo-impacto-despliegue-manual button{align-self:flex-start}
+.seo-impacto-listado{border-top:1px solid var(--borde)}
+.seo-impacto-mejora{border-bottom:1px solid var(--borde);background:transparent}
+.seo-impacto-mejora-cabecera{padding:13px 0;display:flex;align-items:center;
+  justify-content:space-between;gap:12px;width:100%;border:0;background:transparent;text-align:left}
+.seo-impacto-mejora-texto{display:flex;flex-direction:column;gap:5px;min-width:0}
+.seo-impacto-mejora-texto strong{font-size:.88rem;color:var(--texto-titulo);
+  line-height:1.34;overflow-wrap:anywhere}
+.seo-impacto-mejora-texto small{font-size:.78rem;color:var(--texto-apagado)}
+.seo-impacto-flecha{font-size:1.6rem;font-weight:400;color:#a26a35;flex:none;line-height:1}
+.seo-impacto-mejora-detalle{display:flex;flex-direction:column;gap:12px;padding:1px 0 16px}
+.seo-impacto-herramientas{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seo-impacto-herramientas label{font-size:.78rem;color:var(--texto-apagado)}
+.seo-impacto-herramientas select{border:1px solid var(--borde);border-radius:7px;
+  background:var(--tarjeta);color:var(--texto-cuerpo);min-height:40px;padding:7px 9px}
+.seo-impacto-herramientas>button{margin-left:auto}
+.seo-impacto-espera{background:var(--tarjeta);border:1px solid var(--borde);
+  border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:5px}
+.seo-impacto-espera strong{font-size:.83rem;color:var(--texto-titulo)}
+.seo-impacto-espera p{font-size:.8rem;color:var(--texto-apagado)}
+.seo-impacto-espera button{align-self:flex-start}
+.seo-impacto-msg{font-size:.81rem;color:var(--texto-apagado)}
+.seo-impacto-periodo-etapa{font-size:.77rem;color:var(--texto-apagado)}
+.seo-impacto-indicadores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:1px;background:var(--borde);border:1px solid var(--borde);border-radius:8px;overflow:hidden}
+.seo-impacto-indicador{display:flex;flex-direction:column;gap:5px;min-width:0;
+  background:var(--tarjeta);padding:10px}
+.seo-impacto-indicador small{font-size:.73rem;color:var(--texto-apagado)}
+.seo-impacto-indicador-valores{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px}
+.seo-impacto-indicador strong{font-size:.86rem;font-weight:700;color:var(--texto-titulo);overflow-wrap:anywhere}
+.seo-impacto-diferencia{font-size:.73rem;font-weight:700}
+.seo-impacto-diferencia.positiva{color:#30733b}
+.seo-impacto-diferencia.negativa{color:#ac4f3b}
+.seo-impacto-diferencia.neutral{color:var(--texto-apagado)}
+.seo-impacto-lectura{font-size:.73rem;color:var(--texto-apagado);line-height:1.35}
+.seo-impacto-historial{border-top:1px solid var(--borde);font-size:.79rem}
+.seo-impacto-historial summary{cursor:pointer;color:#9a5b2c;font-weight:650;padding:9px 0}
+.seo-impacto-historial-contenido{display:flex;flex-direction:column;gap:8px;padding:0 0 6px}
+.seo-impacto-historial-contenido>div{display:flex;justify-content:space-between;gap:10px}
+.seo-impacto-historial-contenido span{color:var(--texto-apagado)}
+.seo-impacto-historial-contenido strong{font-size:.78rem;text-align:right}
+.seo-impacto-historial-contenido a{font-size:.79rem;font-weight:650;color:#95582d}
+.seo-impacto-historial button{align-self:flex-start}
+.seo-impacto-error{font-size:.81rem;color:#973b2e;background:#fff3ef;
+  border:1px solid #ecc5bd;padding:10px;border-radius:8px}
+@media(max-width:480px){
+  .seo-impacto-indicadores{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .seo-impacto-indicador{padding:9px 8px}
+  .seo-impacto-indicador strong{font-size:.81rem}
+}
