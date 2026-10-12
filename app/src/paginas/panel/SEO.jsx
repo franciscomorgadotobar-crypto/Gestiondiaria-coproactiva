@@ -651,10 +651,7 @@ function SEOInterno() {
         </div>
       </section>}
 
-      <footer className="seo-pie">
-        <span>Fuentes activas: Google Analytics, Search Console, Tag Manager y Business Profile (según permisos concedidos). No se presentan datos archivados como si fueran actuales.</span>
-        <a href={sitio} target="_blank" rel="noopener noreferrer">Abrir sitio web ↗</a>
-      </footer>
+
     </div>
   </div>;
 }
