@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { propuestaEditorial } from '../../lib/seoOportunidades';
-import { PROPUESTAS_PREPARADAS_EXTERNAMENTE } from '../../lib/seoPreparacionesExternas';
 import './SEORecomendaciones.css';
 
 const n = v => Number(v ?? 0).toLocaleString('es-CL', { maximumFractionDigits: 0 });
@@ -122,6 +121,7 @@ function estadosDisponibles(actual) {
   return {
     aprobada:'Aprobación guardada · pendiente de preparar',
     preparada:'Propuesta preparada en GitHub · sin publicar',
+    integrada:'Fusionada en GitHub · esperando publicación en la web',
     ajustes_solicitados:'Se solicitaron ajustes',
     descartada:'Recomendación descartada',
     publicada:'PR integrado · esperando/validando despliegue',
@@ -212,9 +212,8 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
 
   const detalle=grupos.find(x=>x.id===seleccion);
   const ultima=detalle && decisiones.find(p=>p.ruta===detalle.ruta &&
-    ['aprobada','preparada','publicada','error_preparacion'].includes(p.estado));
+    ['aprobada','preparada','integrada','publicada','error_preparacion'].includes(p.estado));
   const previo=detalle && (ultima || decisiones.find(p=>p.ruta===detalle.ruta && p.consulta_principal===detalle.consultas[0]?.consulta));
-  const preparadoExterno=previo && !previo.pr_url ? PROPUESTAS_PREPARADAS_EXTERNAMENTE[previo.id] : null;
   function irDetalle(item) {
     setSeleccion(item.id);setModo('');setComentario('');setMensaje('');setResultadoLocal(null);setConfirmacion('');
   }
@@ -262,7 +261,7 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
   }
   const editable=detalle?.auditoria?.status===200 && detalle?.propuesta && !detalle.propuesta.error &&
     (detalle.propuesta.titulo?.cambiar||detalle.propuesta.description?.cambiar);
-  const yaDecidido=!!(previo && ['aprobada','preparada','publicada','error_preparacion','descartada','ajustes_solicitados'].includes(previo.estado));
+  const yaDecidido=!!(previo && ['aprobada','preparada','integrada','publicada','error_preparacion','descartada','ajustes_solicitados'].includes(previo.estado));
   return <div className="seo-reco-pantalla">
     <div className="seo-reco-contexto">
       <Icono name="search" size={24}/>
@@ -289,7 +288,7 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
     </div>}
     {grupos.map((item,i)=>{
       const p=item.propuesta,actual=decisiones.find(x=>x.ruta===item.ruta &&
-        ['aprobada','preparada','publicada','error_preparacion'].includes(x.estado));
+        ['aprobada','preparada','integrada','publicada','error_preparacion'].includes(x.estado));
       return <article className={'seo-reco-card '+(item.id===seleccion?'expandida':'')} key={item.id}>
         <div className="seo-reco-card-header">
           <span className={'seo-reco-estado-prioridad '+(item.prioridad==='Alta'?'alta':'media')}>{item.prioridad||'Revisar'}</span>
@@ -333,13 +332,11 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
           </>}
           {!!previo && <div className="seo-reco-flujo">
             <div className="seo-reco-pasos">
-              {['Diagnóstico','Propuesta','Revisión','Publicación'].map((x,j)=><div key={x} className={j <= (preparadoExterno ? 2 : previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'actual':''}>
-                <span>{j <= (preparadoExterno ? 2 : previo.estado==='publicada'?3:previo.estado==='preparada'?2:1)?'✓':j+1}</span><small>{x}</small>
+              {['Diagnóstico','Propuesta','Revisión','Publicación'].map((x,j)=><div key={x} className={j <= (previo.estado==='publicada'?3:['integrada','preparada'].includes(previo.estado)?2:1)?'actual':''}>
+                <span>{j <= (previo.estado==='publicada'?3:['integrada','preparada'].includes(previo.estado)?2:1)?'✓':j+1}</span><small>{x}</small>
               </div>)}
             </div>
-            <p><Icono name="shield"/>{preparadoExterno
-              ? 'Propuesta preparada como borrador externo · pendiente de revisión'
-              : estadosDisponibles(previo)}</p>
+            <p><Icono name="shield"/>{estadosDisponibles(previo)}</p>
             {resultadoLocal && (!resultadoLocal.id || resultadoLocal.id===previo.id) && <div
               className={'seo-reco-respuesta seo-reco-respuesta-'+resultadoLocal.tipo}
               role="status" aria-live="polite">
@@ -347,17 +344,10 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
               <p>{resultadoLocal.texto}</p>
               {resultadoLocal.url && <a href={resultadoLocal.url} target="_blank" rel="noopener noreferrer">Abrir propuesta en GitHub ↗</a>}
             </div>}
-            {preparadoExterno && <div className="seo-reco-respuesta seo-reco-respuesta-correcto">
-              <strong>Propuesta ya creada en GitHub</strong>
-              <p>PR #{preparadoExterno.numero}: {preparadoExterno.nota} Se creó con autorización externa; el registro interno todavía no está sincronizado con GitHub.</p>
-              <a href={preparadoExterno.url} target="_blank" rel="noopener noreferrer">
-                <Icono name="external"/> Revisar los cambios propuestos →
-              </a>
-            </div>}
             {previo.pr_url && <a href={previo.pr_url} target="_blank" rel="noopener noreferrer" className="seo-reco-linkgit">
               <Icono name="external"/> Abrir revisión de cambios en GitHub
             </a>}
-            {previo.estado==='aprobada' && !preparadoExterno && <>
+            {previo.estado==='aprobada' && <>
               {!integracionGithub && <div className="seo-reco-respuesta seo-reco-respuesta-pendiente" role="status">
                 <strong>Falta autorizar GitHub en la aplicación</strong>
                 <p>La aprobación está guardada, pero la app no tiene permiso para crear ramas o solicitudes de cambio.
@@ -374,6 +364,22 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
               {integracionGithub && <button type="button" className="boton boton-secundario" disabled={!!cargandoDecision}
                 onClick={()=>decidir('preparar')}>{cargandoDecision==='preparar'?'Reintentando…':'Reintentar preparación'}</button>}
             </>}
+            {previo.estado==='integrada' && <div className="seo-reco-respuesta seo-reco-respuesta-pendiente">
+              <strong>GitHub fusionado. Falta confirmar la web.</strong>
+              <p>{previo.verificacion_detalle || 'El sistema debe comprobar el título y la descripción en coproactiva.cl antes de iniciar el seguimiento.'}</p>
+              <button type="button" className="boton boton-secundario" onClick={async()=>{
+                setCargandoDecision('sincronizar'); setError(''); setResultadoLocal(null);
+                try{
+                  const out=await servicio('sincronizar',{id:previo.id});
+                  setResultadoLocal({id:previo.id,tipo:out.propuesta?.estado==='publicada'?'correcto':'pendiente',
+                    texto:out.comprobacion?.detalle || out.comprobacion?.error || out.propuesta?.verificacion_detalle || 'Comprobación realizada.'});
+                  await listar();
+                }catch(e){setResultadoLocal({id:previo.id,tipo:'error',texto:e.message});}
+                finally{setCargandoDecision('');}
+              }} disabled={!!cargandoDecision}>
+                {cargandoDecision==='sincronizar'?'Verificando…':'Verificar publicación'}
+              </button>
+            </div>}
             {previo.estado==='preparada' && puedePublicar && <div className="seo-reco-confirmar">
               <p><strong>Confirmación final:</strong> primero revisa el PR en GitHub y sus validaciones. Si estás conforme, escribe PUBLICAR. Se integrará el cambio en main y el sitio lo desplegará después.</p>
               <label>Escribe PUBLICAR para confirmar <input value={confirmacion} onChange={e=>setConfirmacion(e.target.value)}
@@ -382,8 +388,11 @@ export default function SEORecomendaciones({lista,invocar,dias,irVista,consultaP
                 onClick={()=>decidir('publicar')}>Confirmar publicación en GitHub</button>
             </div>}
             {previo.estado==='preparada'&&!puedePublicar && <p className="seo-reco-aviso">La publicación requiere autorización de superadministrador.</p>}
-            {previo.estado==='publicada' && <SeguimientoSeo invocar={invocar}
-              ruta={previo.ruta} publicadaEn={previo.publicada_en}/>}
+            {previo.estado==='publicada' && <div className="seo-reco-respuesta seo-reco-respuesta-correcto">
+              <strong>Publicación comprobada en coproactiva.cl</strong>
+              <p>Primera verificación: {previo.verificada_en ? new Date(previo.verificada_en).toLocaleString('es-CL') : 'Pendiente'}. Ya puedes comparar los resultados SEO.</p>
+              <button type="button" className="boton boton-secundario" onClick={()=>irVista('seguimiento')}>Ver seguimiento 7 / 28 / 90 días →</button>
+            </div>}
 
           </div>}
           {editable && !yaDecidido && <>
