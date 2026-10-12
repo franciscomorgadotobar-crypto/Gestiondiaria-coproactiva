@@ -97,8 +97,8 @@ function Listado() {
   }, [registros, buscar, comunidadId, tipo, nivel, estado, periodo]);
 
   return (
-    <div className="pantalla bitacora-pantalla">
-      <header className="encabezado">
+    <div className="pantalla bitacora-pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto bitacora-volver" onClick={() => navegar('/inicio')}>
             ‹ Inicio
@@ -353,8 +353,8 @@ function NuevaEntrada() {
   }
 
   return (
-    <div className="pantalla bitacora-pantalla">
-      <header className="encabezado">
+    <div className="pantalla bitacora-pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto bitacora-volver" onClick={() => navegar('/bitacora')}>
             ‹ Bitácora
@@ -543,8 +543,8 @@ function Detalle({ id }) {
     && registro.estado !== 'finalizada';
 
   return (
-    <div className="pantalla bitacora-pantalla">
-      <header className="encabezado">
+    <div className="pantalla bitacora-pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto bitacora-volver" onClick={() => navegar('/bitacora')}>
             ‹ Bitácora
