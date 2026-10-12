@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { guardarArea } from '../lib/area';
 
@@ -18,6 +19,16 @@ import { guardarArea } from '../lib/area';
 export default function SeleccionArea() {
   const { perfil, salir } = useSesion();
   const navegar = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.selectorCoproactiva === true) return;
+    // Esta entrada representa el selector en el historial, para que
+    // Android Atrás vuelva aquí desde el módulo que se elija después.
+    navegar('/', { replace: true, state: { selectorCoproactiva: true },
+      preventScrollReset: true });
+  }, [location.state?.selectorCoproactiva, navegar]);
+
   // Equipo y Clientes son de administración: jefatura trabaja CRM y
   // Operación, pero no tiene nada que configurar ahí.
   const puedeConfigurar = ['superadmin', 'admin'].includes(perfil?.rol);
@@ -27,7 +38,7 @@ export default function SeleccionArea() {
     // Nunca "/": esta pantalla ya está montada ahí, y navegar a la misma
     // ruta en la que se está no vuelve a renderizar nada en React Router.
     const destino = { crm: '/pipeline', propiedades: '/propiedades', proveedores: '/proveedores', contabilidad: '/contabilidad', whatsapp: '/whatsapp', seo: '/seo' }[area] ?? '/inicio';
-    navegar(destino, { replace: true });
+    navegar(destino); // Push: Atrás regresa a la selección de áreas.
   }
 
   return (
