@@ -78,10 +78,11 @@ function PanelNetlify({netlify}) {
   </div>;
 }
 
-function Detalle({item,invocar,onActualizada}) {
+function Detalle({item,invocar,onActualizada,puedeDesplegar}) {
   const [dias,setDias]=useState(7),[datos,setDatos]=useState(null);
   const [error,setError]=useState(''),[cargando,setCargando]=useState(false);
   const [comprobacion,setComprobacion]=useState(null);
+  const [confirmacionDespliegue,setConfirmacionDespliegue]=useState('');
   const medir=useCallback(async()=> {
     if(!item.verificada_en)return;
     setCargando(true);setError('');
@@ -107,6 +108,18 @@ function Detalle({item,invocar,onActualizada}) {
     }catch(e){setError(e.message);}
     finally{setCargando(false);}
   }
+  async function relanzar() {
+    setCargando(true);setError('');
+    try {
+      const r=await llamar('reintentar_despliegue',{
+        id:item.id,confirmacion:confirmacionDespliegue
+      });
+      if(r.propuesta)onActualizada(r.propuesta);
+      setError(r.aviso||'Se consultó Netlify.');
+      setConfirmacionDespliegue('');
+    }catch(e){setError(e.message||'No se pudo solicitar el despliegue.');}
+    finally{setCargando(false);}
+  }
   const periodo=datos?.periodos?.find(x=>x.dias===dias);
   return <section className="seo-impacto-detail">
     <div className="seo-impacto-dates">
@@ -115,7 +128,21 @@ function Detalle({item,invocar,onActualizada}) {
       <div><small>Última verificación</small><strong>{date(item.ultima_verificacion_en)}</strong></div>
     </div>
     {!!item.verificacion_detalle && <p className="seo-impacto-help">{item.verificacion_detalle}</p>}
-    <PanelNetlify netlify={item.netlify_detalle}/>}
+    <PanelNetlify netlify={item.netlify_detalle}/>
+    {item.estado==='integrada'&&puedeDesplegar&&item.netlify_detalle?.conectado&&
+      item.netlify_detalle?.repoCorrecto===true&&item.netlify_detalle?.ramaCorrecta===true&&
+      <div className="seo-impacto-despliegue-manual">
+        <strong>¿Netlify no publicó el cambio fusionado?</strong>
+        <p>Un superadministrador puede solicitar que Netlify vuelva a construir la rama main.
+          Esta acción inicia un despliegue en producción; no garantiza que quede publicado.</p>
+        <label>Escribe DESPLEGAR para continuar
+          <input value={confirmacionDespliegue} onChange={e=>setConfirmacionDespliegue(e.target.value)}
+            placeholder="DESPLEGAR" autoComplete="off"/>
+        </label>
+        <button type="button" disabled={cargando||confirmacionDespliegue!=='DESPLEGAR'}
+          onClick={relanzar}>Solicitar despliegue de Netlify</button>
+      </div>}
+}
     <div className="seo-impacto-buttons">
       {item.pr_url&&<a href={item.pr_url} target="_blank" rel="noopener noreferrer">Ver cambios aprobados ↗</a>}
       <a href={'https://www.coproactiva.cl'+item.ruta} target="_blank" rel="noopener noreferrer">Abrir página ↗</a>
@@ -174,11 +201,13 @@ function Detalle({item,invocar,onActualizada}) {
 export default function SEOImpacto({invocar}) {
   const [items,setItems]=useState([]),[seleccion,setSeleccion]=useState('');
   const [error,setError]=useState(''),[cargando,setCargando]=useState(true),[fecha,setFecha]=useState('');
+  const [puedeDesplegar,setPuedeDesplegar]=useState(false);
   const refrescar=useCallback(async()=>{
     setCargando(true);setError('');
     try {
       const r=await llamar('listar');
       setItems(r.propuestas||[]);
+      setPuedeDesplegar(!!r.puedePublicar);
       setFecha(r.ultimaSincronizacion||new Date().toISOString());
       if(r.observaciones)setError(r.observaciones);
       setSeleccion(prev=>r.propuestas?.some(x=>x.id===prev)?prev:r.propuestas?.[0]?.id||'');
@@ -217,7 +246,8 @@ export default function SEOImpacto({invocar}) {
           </button>
         </div>
         {activo&&<Detalle item={p} invocar={invocar}
-          onActualizada={cambio=>setItems(prev=>prev.map(x=>x.id===cambio.id?cambio:x))}/>}
+          onActualizada={cambio=>setItems(prev=>prev.map(x=>x.id===cambio.id?cambio:x))}
+          puedeDesplegar={puedeDesplegar}/>}
       </article>;
     })}
     <p className="seo-impacto-help">Los indicadores proceden de Google Search Console y corresponden a la URL evaluada, no a ventas ni visitantes únicos. Las variaciones no prueban que la mejora sea la única causa.</p>
