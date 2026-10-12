@@ -6,6 +6,7 @@ import { useSesion } from '../../lib/sesion';
 import { construirOportunidades, destinoOportunidadSEO } from '../../lib/seoOportunidades';
 import { clasificarOportunidadesSEO } from '../../lib/seoEstadoOportunidades';
 import SEORecomendaciones from './SEORecomendaciones';
+import SEOInventarioOportunidades from './SEOInventarioOportunidades';
 import SEODashboard from './SEODashboard';
 import SEOImpacto from './SEOImpacto';
 import './SEO.css';
@@ -22,7 +23,7 @@ const SECCIONES = [
   ['tagmanager', 'Medición'],
   ['conexiones', 'Configuración']
 ];
-const VISTAS_SEO = SECCIONES.map(([id]) => id);
+const VISTAS_SEO = [...SECCIONES.map(([id]) => id), 'diagnostico'];
 const numeral = n => Number(n ?? 0).toLocaleString('es-CL', { maximumFractionDigits: 0 });
 const decimal = (n, digits = 1) => Number(n ?? 0).toLocaleString('es-CL', { maximumFractionDigits: digits });
 const porcentaje = n => decimal(Number(n ?? 0) * 100) + '%';
@@ -234,6 +235,10 @@ function SEOInterno() {
     [sc, auditoriaInicio, auditoria, ga]);
   const gestionSEO = useMemo(() => clasificarOportunidadesSEO(lista, propuestasSEO),
     [lista, propuestasSEO]);
+  const consultasParaDiagnostico = useMemo(() => {
+    if(accionSeleccionada?.clase === 'consulta') return [accionSeleccionada];
+    return (gestionSEO.nuevas || []).filter(x=>x.clase === 'consulta');
+  }, [accionSeleccionada, gestionSEO]);
   const sesionesOrganicas = ga?.canales?.find(c => c.clave?.toLowerCase() === 'organic search')?.valores?.[0];
   const eventoLeadGA4 = ga?.eventos?.find(e => e.clave === 'generate_lead');
   const leadsMedidos = eventoLeadGA4?.valores?.[1];
@@ -262,7 +267,7 @@ function SEOInterno() {
       }
       return;
     }
-    irVista(destino);
+    irVista(destino === 'oportunidades' ? 'diagnostico' : destino);
   }
   function irVista(vistaNueva, rutaNueva) {
     if (rutaNueva) setRuta(rutaNueva);
@@ -476,9 +481,19 @@ function SEOInterno() {
         </> : <Vacio titulo="Medir experiencia de página" descripcion="PageSpeed evalúa rendimiento, SEO, accesibilidad y buenas prácticas del dispositivo seleccionado." />)}
       </section>}
 
-      {vista === 'oportunidades' && <SEORecomendaciones
-        lista={lista} invocar={invocar} dias={dias} irVista={irVista}
-        consultaPrioritaria={accionSeleccionada?.consulta || null} />}
+      {vista === 'oportunidades' && <SEOInventarioOportunidades
+        gestionSEO={gestionSEO} lista={lista} sc={sc} dias={dias}
+        onAnalizar={abrirAccion}
+        onVerSeguimiento={()=>irVista('seguimiento')}
+        onVerBusquedas={()=>irVista('consultas')}/>}
+
+      {vista === 'diagnostico' && <>
+        <button type="button" className="boton boton-texto seo-volver-oportunidades"
+          onClick={()=>irVista('oportunidades')}>← Volver a todas las oportunidades</button>
+        <SEORecomendaciones lista={consultasParaDiagnostico}
+          invocar={invocar} dias={dias} irVista={irVista}
+          consultaPrioritaria={accionSeleccionada?.consulta || null}/>
+      </>}
 
       {vista === 'seguimiento' && <SEOImpacto invocar={invocar} />}
 
