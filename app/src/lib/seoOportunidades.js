@@ -103,3 +103,19 @@ export function propuestaEditorial(consulta, auditoria) {
     h1: { actual: auditoria.h1s?.[0] || '', propuesto: auditoria.h1s?.[0] || '', cambiar: false }
   };
 }
+
+/**
+ * Las consultas comerciales requieren diagnóstico editorial; las alertas de
+ * HTML y GA4 tienen pantallas propias. Nunca enviar un hallazgo técnico a la
+ * primera propuesta editorial por no tener consulta asociada.
+ */
+export function destinoOportunidadSEO(item) {
+  switch (item?.clase) {
+    case 'tecnico': return 'tecnico';
+    case 'analytics': return 'analytics';
+    case 'conexiones': return 'conexiones';
+    case 'velocidad': return 'velocidad';
+    case 'consulta': return 'oportunidades';
+    default: return 'tecnico';
+  }
+}
