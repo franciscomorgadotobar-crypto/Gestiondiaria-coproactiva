@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { nombreMejoraSEO, ubicacionMejoraSEO } from '../src/lib/seoNombresMejoras.js';
+import { nombreMejoraSEO, ubicacionMejoraSEO, camposModificadosSEO } from '../src/lib/seoNombresMejoras.js';
 
 const cambioPortada = {
   ruta: '/',
@@ -43,4 +43,24 @@ test('diferencias solo de espacios no generan cambio espurio',()=>{
   const misma={ruta:'/',titulo_actual:'A  B',titulo_propuesto:' A B ',
     descripcion_actual:'Uno',descripcion_propuesta:'Uno'};
   assert.equal(nombreMejoraSEO(misma),'Mejora SEO: Portada');
+});
+
+test('seguimiento recupera Original y Cambio de título y meta descripción',()=>{
+  const campos=camposModificadosSEO(cambioPortada);
+  assert.deepEqual(campos.map(c=>c.campo),['Título SEO','Meta descripción']);
+  assert.equal(campos[0].original,cambioPortada.titulo_actual);
+  assert.equal(campos[0].cambio,cambioPortada.titulo_propuesto);
+  assert.equal(campos[1].original,cambioPortada.descripcion_actual);
+  assert.equal(campos[1].cambio,cambioPortada.descripcion_propuesta);
+});
+
+test('mostrar solo campos realmente modificados sin inventar diferencias',()=>{
+  const cambio={
+    ruta:'/servicios/contacto.html',titulo_actual:'Original',titulo_propuesto:'Cambio',
+    descripcion_actual:'Igual',descripcion_propuesta:'Igual'
+  };
+  assert.equal(camposModificadosSEO(cambio).length,1);
+  assert.equal(camposModificadosSEO(cambio)[0].campo,'Título SEO');
+  assert.deepEqual(camposModificadosSEO({ruta:'/',consulta_principal:'consulta sin versiones'}),[]);
+  assert.deepEqual(camposModificadosSEO(null),[]);
 });
