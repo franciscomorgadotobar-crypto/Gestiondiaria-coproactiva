@@ -99,7 +99,7 @@ export default function Plantillas() {
   }
 
   return (
-    <div className="pantalla plantillas-pantalla">
+    <div className="pantalla plantillas-pantalla modulo-unificado">
       {dialogoNombre && (
         <DialogoCampos
           titulo={dialogoNombre.tipo === 'crear' ? 'Nueva plantilla' : 'Duplicar plantilla'}
@@ -131,7 +131,7 @@ export default function Plantillas() {
         />
       )}
 
-      <header className="encabezado plantillas-encabezado">
+      <header className="encabezado plantillas-encabezado modulo-cabecera">
         <div className="fila navegacion-interna plantillas-volver">
           <button className="boton boton-texto"
                   onClick={() => navegar('/inicio')}>
