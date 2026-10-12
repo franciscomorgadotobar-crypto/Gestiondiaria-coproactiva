@@ -258,7 +258,7 @@ export default function Pipeline() {
   }
 
   return (
-    <div className="pantalla pantalla-ancha">
+    <div className="pantalla pantalla-ancha modulo-unificado">
       {perdidaPendiente && (
         <DialogoCampos
           titulo="Marcar prospecto como perdido"
@@ -288,7 +288,7 @@ export default function Pipeline() {
           onCancelar={() => setGanarPendiente(null)}
         />
       )}
-      <header className="encabezado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio

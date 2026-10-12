@@ -33,6 +33,9 @@ jobs:
       - name: Probar historial de navegación Android y PWA
         working-directory: app
         run: node --test src/lib/pestanasHistorial.test.mjs
+      - name: Verificar homologación visual de módulos y PWA
+        working-directory: app
+        run: node --test pruebas/visual.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build

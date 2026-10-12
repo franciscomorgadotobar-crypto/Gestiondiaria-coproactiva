@@ -1272,7 +1272,7 @@ export default function Contabilidad() {
   const mayorSaldo = mayorDebe - mayorHaber;
 
   return (
-    <div className="pantalla contabilidad-pantalla">
+    <div className="pantalla contabilidad-pantalla modulo-unificado">
       {editorAbierto && entidad?.plan_origen !== 'pendiente' && (
         <EditorAsiento
           cuentas={cuentas.filter(x => x.activa && x.clase === 'movimiento' && x.imputable !== false)}
@@ -1431,7 +1431,7 @@ export default function Contabilidad() {
         />
       )}
 
-      <header className="encabezado contabilidad-encabezado">
+      <header className="encabezado contabilidad-encabezado modulo-cabecera">
         <div className="contabilidad-cabecera-principal">
           <div>
             <h1 className="h2">Contabilidad</h1>

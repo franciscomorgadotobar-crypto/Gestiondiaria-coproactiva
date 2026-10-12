@@ -143,7 +143,7 @@ export default function Inicio() {
   }
 
   return (
-    <div className="pantalla inicio-pantalla">
+    <div className="pantalla inicio-pantalla modulo-unificado">
       <AvisoConexion />
 
       {porBorrar && (
@@ -157,7 +157,7 @@ export default function Inicio() {
         />
       )}
 
-      <header className="encabezado" data-tutorial="inicio-saludo">
+      <header className="encabezado modulo-cabecera" data-tutorial="inicio-saludo">
         <div className="fila">
           <div className="crece">
             <h1 className="h3">Hola, {perfil?.nombre?.split(' ')[0] ?? ''}</h1>

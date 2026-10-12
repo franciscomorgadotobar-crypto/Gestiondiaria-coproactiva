@@ -360,8 +360,8 @@ function DashboardCliente() {
   }, [vistas]);
 
   return (
-    <div className="pantalla portal-pantalla">
-      <header className="encabezado portal-encabezado">
+    <div className="pantalla portal-pantalla modulo-unificado">
+      <header className="encabezado portal-encabezado modulo-cabecera">
         <div className="fila" style={{ alignItems: 'flex-start' }}>
           <div className="crece">
             <h1 className="h3">Mi portal</h1>
@@ -625,8 +625,8 @@ function DetalleCliente({ id }) {
   if (cargando) return <p className="cargando">Cargando…</p>;
 
   return (
-    <div className="pantalla portal-pantalla">
-      <header className="encabezado portal-encabezado">
+    <div className="pantalla portal-pantalla modulo-unificado">
+      <header className="encabezado portal-encabezado modulo-cabecera">
         <button className="boton boton-texto portal-volver" onClick={() => navegar('/portal')}>
           ‹ Mis comunidades
         </button>

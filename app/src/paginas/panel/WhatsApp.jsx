@@ -65,7 +65,7 @@ function WhatsAppInterno({perfil}) {
  const openWindow=lastIncoming&&Date.now()-new Date(lastIncoming).getTime()<86400000;
  const isOwner=current?.estado==='atencion_humana'&&current?.asignado_a===perfil.id;
  const visible=items.filter(x=>(filter==='todas'||(filter==='bot'?['bot','esperando_usuario'].includes(x.estado):x.estado===filter))&&`${x.contacto?.nombre_whatsapp??''} ${x.contacto?.telefono??''} ${x.comunidad?.nombre??''}`.toLowerCase().includes(query.toLowerCase()));
- return <div className="cuerpo wa-page">
+ return <div className="cuerpo wa-page modulo-unificado">
    <div className="wa-header"><div><h1>WhatsApp</h1><p className="apagado">Recepción de solicitudes y atención de administración.</p></div><span className="wa-status">{config?.habilitado?'Canal habilitado':'Pendiente de conexión'}</span></div>
    <nav className="wa-tabs" aria-label="WhatsApp"><Link to="/whatsapp">Bandeja</Link>{perfil.rol==='superadmin'&&<><Link to="/whatsapp/automatizaciones">Automatizaciones</Link><Link to="/whatsapp/configuracion">Configuración</Link></>}</nav>
    {error&&<p className="aviso aviso-critico" role="alert">{error}</p>}

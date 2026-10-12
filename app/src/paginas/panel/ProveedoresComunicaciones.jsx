@@ -67,8 +67,8 @@ export default function ProveedoresComunicaciones() {
   if (!puedeGestionar) return <Navigate to="/inicio" replace />;
 
   return (
-    <div className="pantalla proveedores-pantalla">
-      <header className="encabezado">
+    <div className="pantalla proveedores-pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="proveedores-intro">
           <div className="fila navegacion-interna" style={{ marginBottom: 6 }}>
             <button type="button" className="boton boton-texto" onClick={() => navegar('/proveedores')}>‹ Proveedores</button>

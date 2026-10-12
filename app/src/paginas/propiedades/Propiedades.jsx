@@ -235,7 +235,7 @@ function ListadoPropiedades() {
 
   return (
     <div className="pantalla">
-      <header className="encabezado propiedades-encabezado">
+      <header className="encabezado propiedades-encabezado modulo-cabecera">
         <div className="propiedades-encabezado-contenido">
           <div className="crece">
             <h1 className="h3">Propiedades</h1>
@@ -613,8 +613,8 @@ function FichaPropiedad({ id = null }) {
   );
 
   return (
-    <div className="pantalla pantalla-angosta">
-      <header className="encabezado">
+    <div className="pantalla pantalla-angosta modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button type="button" className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => salir(volverA)}>

@@ -18,8 +18,8 @@ export default function Configuracion() {
   if (perfil && !esAdministracion) return <Navigate to={inicioSegunArea()} replace />;
 
   return (
-    <div className="pantalla">
-      <header className="encabezado">
+    <div className="pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar(inicioSegunArea())}>
@@ -32,7 +32,7 @@ export default function Configuracion() {
         </p>
       </header>
 
-      <div className="cuerpo">
+      <div className="cuerpo modulo-contenido">
         <div className="rejilla">
           <Link to="/mi-cuenta" className="tarjeta tarjeta-enlace">
             <span className="seleccion-area-etiqueta">Personal</span>

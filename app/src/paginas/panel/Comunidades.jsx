@@ -274,8 +274,8 @@ function ListadoComunidades() {
   }, [comunidades, alertas]);
 
   return (
-    <div className="pantalla comunidades-pantalla">
-      <header className="encabezado">
+    <div className="pantalla comunidades-pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
             ‹ Inicio
@@ -1070,7 +1070,7 @@ function DetalleComunidad({ id }) {
         />
       )}
 
-      <header className="encabezado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar('/comunidades')}>
             ‹ Comunidades

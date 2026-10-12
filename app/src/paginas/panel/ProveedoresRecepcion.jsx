@@ -185,8 +185,8 @@ function Recepcion({ vista }) {
 
   if (isMail) {
     return (
-      <div className="pantalla proveedores-pantalla proveedores-recepcion-pantalla">
-        <header className="encabezado">
+      <div className="pantalla proveedores-pantalla proveedores-recepcion-pantalla modulo-unificado">
+        <header className="encabezado modulo-cabecera">
           <div className="proveedores-intro">
             <h1 className="h3">Correos por clasificar</h1>
             <p className="chico apagado proveedores-descripcion">
@@ -361,8 +361,8 @@ function Recepcion({ vista }) {
   }
 
   return (
-    <div className="pantalla proveedores-pantalla proveedores-recepcion-pantalla">
-      <header className="encabezado">
+    <div className="pantalla proveedores-pantalla proveedores-recepcion-pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="proveedores-intro">
           <h1 className="h3">Postulantes</h1>
           <p className="chico apagado proveedores-descripcion">

@@ -281,8 +281,8 @@ function SEOInterno() {
       });
     });
   }
-  return <div className="pantalla seo-pantalla">
-    <header className="encabezado seo-cabecera">
+  return <div className="pantalla seo-pantalla modulo-unificado">
+    <header className="encabezado seo-cabecera modulo-cabecera">
       <div><span className="seleccion-area-etiqueta">Marketing · posicionamiento orgánico</span>
         <h1 className="h3">SEO y Analítica</h1>
         <p className="chico apagado">Resultados, audiencia, posicionamiento y decisiones para coproactiva.cl.</p>
@@ -300,7 +300,7 @@ function SEOInterno() {
       </div>
     </header>
 
-    <div className="cuerpo seo-cuerpo">
+    <div className="cuerpo seo-cuerpo modulo-contenido">
       <nav id="seo-navegacion" className="seo-pestanas" aria-label="Secciones SEO" role="tablist">{SECCIONES.map(([id, label]) =>
         <button key={id} type="button" role="tab" aria-selected={vista === id}
           className={vista === id ? 'activo' : ''}
