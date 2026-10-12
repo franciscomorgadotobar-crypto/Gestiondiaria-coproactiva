@@ -39,6 +39,9 @@ jobs:
       - name: Revisar presentación ejecutiva de SEO
         working-directory: app
         run: node --test pruebas/seo-compacto.test.js
+      - name: Verificar nombres de mejoras SEO
+        working-directory: app
+        run: node --test pruebas/seo-nombres-mejoras.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
