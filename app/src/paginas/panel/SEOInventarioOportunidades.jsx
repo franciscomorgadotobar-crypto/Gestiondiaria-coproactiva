@@ -29,8 +29,9 @@ export default function SEOInventarioOportunidades({
     if(!sc?.disponible||!gestionSEO?.disponibles)return [];
     const detectadas=new Set(lista.filter(x=>x.clase==='consulta')
       .map(x=>normalizarConsultaSEO(x.consulta)));
-    const yaTrabajadas=new Set((gestionSEO.coincidencias||[])
-      .map(x=>normalizarConsultaSEO(x.oportunidad.consulta)));
+    const yaTrabajadas=new Set((gestionSEO.enGestion||[]).flatMap(p=>
+      Array.isArray(p.consultas)&&p.consultas.length?p.consultas:[p.consulta_principal]
+    ).map(normalizarConsultaSEO));
     return (sc.consultas||[]).filter(q=>!detectadas.has(normalizarConsultaSEO(q.clave)) &&
       !yaTrabajadas.has(normalizarConsultaSEO(q.clave)));
   },[sc,lista,gestionSEO]);
