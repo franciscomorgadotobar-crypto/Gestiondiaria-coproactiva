@@ -15,8 +15,8 @@ export default function Confirmar({
   const modalRef = useRef(null);
   useFocoDialogo(modalRef,onCancelar);
   return (
-    <div className="modal-fondo" role="presentation" onClick={onCancelar}>
-      <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-titulo"
+    <div className="modal-fondo modal-fondo-accesible" role="presentation" onClick={onCancelar}>
+      <div className="modal modal-accesible" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-titulo"
            ref={modalRef} tabIndex={-1}
            onClick={e => e.stopPropagation()}>
         <h2 id="confirmar-titulo" className="h3">{titulo}</h2>
