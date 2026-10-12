@@ -20,13 +20,13 @@ test('modificación únicamente de título en un servicio',()=>{
   const mejora={ruta:'/servicios/administracion-de-condominios.html',
     titulo_actual:'A',titulo_propuesto:'B',descripcion_actual:'Igual',descripcion_propuesta:'Igual'};
   assert.equal(nombreMejoraSEO(mejora),
-    'Cambio de título: Servicio: Administracion de condominios');
+    'Cambio de título: Servicio (Administracion de condominios)');
 });
 test('modificación únicamente de meta descripción en un blog',()=>{
   const mejora={ruta:'/blog/acuerdos-validos-asamblea.html',
     titulo_actual:'A',titulo_propuesto:'A',descripcion_actual:'A',descripcion_propuesta:'B'};
   assert.equal(nombreMejoraSEO(mejora),
-    'Cambio de meta descripción: Artículo: Acuerdos validos asamblea');
+    'Cambio de meta descripción: Artículo (Acuerdos validos asamblea)');
 });
 test('rutas de páginas distinguen portada, servicios, blog y secciones',()=>{
   assert.equal(ubicacionMejoraSEO('/index.html'),'Portada');
