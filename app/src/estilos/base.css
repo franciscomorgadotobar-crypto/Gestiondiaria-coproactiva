@@ -19,8 +19,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--naranja); text-decoration: none; }
-a:hover { color: var(--pizarra); }
+a { color: var(--enlace); text-decoration: none; }
+a:hover { color: var(--enlace-hover); }
 /* Una tarjeta entera que lleva a otra pantalla no se pinta como enlace: el
    texto queda como en cualquier tarjeta y el borde marca que se puede tocar. */
 a.tarjeta, a.tarjeta:hover { color: inherit; }
@@ -113,7 +113,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .boton-texto {
   border-color: transparent;
   background: transparent;
-  color: var(--naranja);
+  color: var(--enlace);
   padding: 6px 4px;
 }
 .boton-texto:hover:not(:disabled) { background: transparent; color: var(--pizarra); }
@@ -314,7 +314,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   background: none;
   padding: 4px 0;
   font: 600 12.5px/1 var(--fuente-cuerpo);
-  color: var(--naranja);
+  color: var(--enlace);
   cursor: pointer;
 }
 
@@ -712,7 +712,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   border: none; background: none; text-align: left;
   font: 600 11px/1.2 var(--fuente-display);
   letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--naranja);
+  color: var(--enlace);
   cursor: pointer;
 }
 .categoria-editable .mover {
@@ -747,7 +747,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   border-top: 1px solid var(--borde-suave);
 }
 .item-plantilla.abierto { border-color: var(--naranja); }
-.item-plantilla .sin-guardar { color: var(--naranja); }
+.item-plantilla .sin-guardar { color: var(--enlace); }
 
 /* Guardar de la plantilla: uno solo, siempre a la vista al pie. */
 .pie-plantilla { z-index: 2; flex-wrap: wrap; align-items: center; }
@@ -848,7 +848,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   font: 400 11px/1.3 var(--fuente-cuerpo);
   color: var(--texto-tenue);
 }
-.persona .tu { color: var(--naranja); font-weight: 400; }
+.persona .tu { color: var(--enlace); font-weight: 400; }
 .persona .flecha { font-size: 16px; color: var(--texto-tenue); }
 .persona .detalle { padding: 4px 14px 14px; border-top: 1px solid var(--borde-suave); }
 
@@ -882,7 +882,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   font: 700 9.5px/1 var(--fuente-display);
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--naranja);
+  color: var(--enlace);
 }
 .categoria-titulo.en-pregunta {
   align-items: center;
@@ -1006,7 +1006,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   padding: 3px 2px;
   border: 0;
   background: transparent;
-  color: var(--naranja);
+  color: var(--enlace);
   font: 600 9.5px/1 var(--fuente-display);
   letter-spacing: .10em;
   text-transform: uppercase;
@@ -1300,7 +1300,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
-  color: var(--naranja);
+  color: var(--enlace);
 }
 
 /* ---------------------------------------------------------------- Rejilla */
@@ -1343,7 +1343,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .plantilla-previa { padding: 14px 16px; }
 .plantilla-previa .dato-chico { margin: 0; }
 .plantilla-previa > p { margin: 2px 0 0; }
-.plantilla-previa summary { margin-top: 10px; cursor: pointer; color: var(--naranja); font-weight: 600; }
+.plantilla-previa summary { margin-top: 10px; cursor: pointer; color: var(--enlace); font-weight: 600; }
 .categoria-previa { margin-top: 12px; }
 .categoria-previa .etiqueta-campo { margin-bottom: 4px; }
 .categoria-previa ol { margin: 0; padding-left: 20px; }
@@ -1454,7 +1454,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   font: 600 10px/1.3 var(--fuente-display);
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--naranja);
+  color: var(--enlace);
 }
 .ayuda-lateral:hover { color: var(--texto-titulo); }
 
@@ -1543,7 +1543,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 }
 .tutorial-instruccion {
   margin: -4px 0 12px;
-  color: var(--naranja);
+  color: var(--enlace);
   font-weight: 600;
 }
 .tutorial-espera .tutorial-tarjeta {
@@ -1584,7 +1584,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   width: 100%; min-width: 0; border: 0; outline: 0; background: transparent;
   color: var(--texto-cuerpo); font: inherit;
 }
-.filtro-toggle.activo { border-color: var(--naranja); color: var(--naranja); }
+.filtro-toggle.activo { border-color: var(--naranja); color: var(--enlace); }
 
 .proveedores-estados {
   display: flex; gap: 6px; overflow-x: auto;
@@ -1732,7 +1732,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .ayuda-inicio-movil { margin-top: 22px; text-align: center; }
 .ayuda-inicio-movil a {
   font: 600 10px/1 var(--fuente-display); letter-spacing: .1em;
-  text-transform: uppercase; color: var(--naranja);
+  text-transform: uppercase; color: var(--enlace);
 }
 
 .barra-area-movil {
@@ -1870,7 +1870,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   border: 1px solid var(--naranja);
   border-radius: 50%;
   background: transparent;
-  color: var(--naranja);
+  color: var(--enlace);
   font: 700 14px/1 var(--fuente-display);
   cursor: pointer;
 }
@@ -1880,7 +1880,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--naranja);
+  color: var(--enlace);
   font: 600 10px/1.3 var(--fuente-display);
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -2063,7 +2063,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   }
 
   .nav-movil-item.activo {
-    color: var(--naranja);
+    color: var(--enlace);
     font-weight: 700;
   }
 
@@ -2525,7 +2525,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     border: 0;
     border-radius: 2px;
     background: transparent;
-    color: var(--naranja);
+    color: var(--enlace);
     font: 650 9.5px/1.2 var(--fuente-display);
     letter-spacing: .1em;
     text-align: left;
@@ -2585,7 +2585,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   .encabezado .navegacion-interna > a {
     min-height: 24px;
     padding: 0 !important;
-    color: var(--naranja);
+    color: var(--enlace);
     font: 650 9.5px/1 var(--fuente-display);
     letter-spacing: .1em;
     text-transform: uppercase;
@@ -3253,7 +3253,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   padding: 0 11px;
   border: 1px solid transparent;
   border-bottom-color: var(--borde);
-  color: var(--naranja);
+  color: var(--enlace);
   font: 600 10px/1 var(--fuente-display);
   letter-spacing: .04em;
   text-decoration: none;
@@ -3414,7 +3414,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   margin-top: 10px;
 }
 .proveedores-correo-links a {
-  color: var(--naranja);
+  color: var(--enlace);
   font: 600 10.5px/1.3 var(--fuente-display);
 }
 .proveedores-clasificacion {
@@ -3486,7 +3486,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 .proveedores-postulante-nombre {
   min-height: 0 !important;
   padding: 0 !important;
-  color: var(--naranja) !important;
+  color: var(--enlace) !important;
   font-size: 10px !important;
 }
 .proveedores-postulantes-buscar {

@@ -87,7 +87,7 @@
   min-height: 40px;
   transition: background-color .15s ease,border-color .15s ease;
 }
-.modulo-unificado :is(.boton,.seo-pestanas button,.contabilidad-nav a,.wa-tabs a):focus-visible,
+.modulo-unificado .boton:focus-visible,
 .modulo-unificado :is(input,select,textarea,button,a):focus-visible {
   outline: 2px solid var(--borde-foco);
   outline-offset: 2px;
@@ -114,31 +114,65 @@
   gap: var(--modulo-espacio-sm);
 }
 
-/* Navegación secundaria: mismo subrayado naranja, legibilidad en móvil */
-.modulo-unificado :is(.seo-pestanas,.contabilidad-nav,.wa-tabs) {
+/* Navegación secundaria: UN SOLO patrón compartido.
+ * Se activa con .ui-pestanas en SEO, Contabilidad, Proveedores y WhatsApp.
+ * El estado se obtiene de React Router (aria-current) o vista seleccionada.
+ */
+.modulo-unificado .ui-pestanas {
   display: flex;
+  align-items: stretch;
   flex-wrap: nowrap;
+  gap: 4px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   border-bottom: 1px solid var(--borde-suave);
-  gap: 4px;
 }
-.modulo-unificado :is(.seo-pestanas button,.contabilidad-nav a,.wa-tabs a) {
+.modulo-unificado .ui-pestanas > :is(a,button) {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tactil);
+  padding: 10px 12px;
+  border: 0;
   border-bottom: 3px solid transparent;
   border-radius: 0;
+  background: transparent;
   color: var(--texto-apagado);
-  font: 650 13px/1.2 var(--fuente-cuerpo);
+  font: 650 13px/1.25 var(--fuente-cuerpo);
   text-transform: none;
   letter-spacing: 0;
   white-space: nowrap;
-  padding: 11px 12px;
+  text-decoration: none;
+  cursor: pointer;
 }
-.modulo-unificado :is(.seo-pestanas button.activo,.contabilidad-nav a.activo,.wa-tabs a[aria-current="page"]) {
+.modulo-unificado .ui-pestanas > :is(a,button):is(.activo,[aria-current="page"],[aria-selected="true"]) {
   color: var(--texto-titulo);
   border-bottom-color: var(--naranja);
+  background: transparent;
 }
+.modulo-unificado .ui-pestanas > :is(a,button):hover:not(:disabled) {
+  color: var(--enlace);
+  background: var(--hover);
+}
+.modulo-unificado .ui-pestanas > :is(a,button):focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: -3px;
+}
+/* Estados informativos con palabras, no etiquetas superpuestas. */
+.modulo-unificado .ui-estado {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: .78rem;
+  line-height: 1.35;
+  color: var(--texto-apagado);
+}
+.modulo-unificado .ui-estado--ok { color: var(--ok-texto); }
+.modulo-unificado .ui-estado--alerta { color: var(--alerta-texto); }
+.modulo-unificado .ui-estado--critico { color: var(--critico-texto); }
 
 /* Tablas: no cortar columnas ni forzar ancho superior al móvil */
 .modulo-unificado :is(.tabla-contenedor,.tabla-scroll,.contabilidad-tabla-scroll) {
@@ -178,7 +212,6 @@
     font-size: 16px;
   }
   .modulo-unificado :is(.boton,.seo-impacto button,.seo-inventario-item > button) { min-height: 44px; }
-  .modulo-unificado :is(.seo-pestanas button,.contabilidad-nav a,.wa-tabs a) { min-height: 44px; }
   .modulo-unificado :is(.seo-exec-kpi,.seo-reco-card,.seo-impacto-card) { padding: 13px; }
   .modulo-unificado .wa-layout { min-width: 0; }
   .modulo-unificado .wa-detail { padding: 15px; }
@@ -200,12 +233,6 @@
 .wa-page.modulo-unificado :is(.wa-filters input,.wa-page select,.wa-page textarea) {
   border-color:var(--borde);border-radius:var(--radio-control);
   background:var(--tarjeta);color:var(--texto-cuerpo);
-}
-.wa-page.modulo-unificado .wa-tabs a {
-  color:var(--texto-apagado);border-bottom-color:transparent;
-}
-.wa-page.modulo-unificado .wa-tabs a[aria-current="page"] {
-  color:var(--texto-titulo);border-bottom-color:var(--naranja);
 }
 @media(max-width:860px){
   .wa-page.modulo-unificado :is(input,select,textarea){font-size:16px}
