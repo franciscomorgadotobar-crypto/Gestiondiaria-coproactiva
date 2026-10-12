@@ -274,7 +274,7 @@ export default function Programar() {
 
   const enviado = control?.estado === 'enviado';
   return (
-    <div className="pantalla pantalla-angosta programar-pantalla">
+    <div className="pantalla pantalla-angosta programar-pantalla modulo-unificado">
       {pedirMotivoReapertura && (
         <DialogoCampos
           titulo="Reabrir levantamiento"
@@ -292,7 +292,7 @@ export default function Programar() {
           onConfirmar={({ motivo }) => reabrir(motivo)}
         />
       )}
-      <header className="encabezado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={volver}>
