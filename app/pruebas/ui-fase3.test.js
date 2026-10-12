@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import { destinoVolverPorJerarquia } from '../src/lib/jerarquia.js';
 
 const read=r=>readFileSync(new URL('../src/'+r,import.meta.url),'utf8');
 const panel=read('componentes/PanelEscritorio.jsx');
@@ -41,4 +42,42 @@ test('el móvil respeta teclado virtual, desplazamiento y objetivos táctiles',(
   assert.match(css,/env\(safe-area-inset-bottom\)/);
   assert.match(css,/\.modal-accesible \.fila-botones/);
   assert.match(css,/min-height:\s*var\(--tactil\)/);
+});
+
+test('Volver por niveles termina en selección de área, no sale de la PWA',()=>{
+  const verificar = (rutas, inicio='/inicio') => {
+    for (let i=0; i<rutas.length-1; i++)
+      assert.equal(destinoVolverPorJerarquia(rutas[i], inicio), rutas[i+1],
+        'desde ' + rutas[i] + ' debe retroceder a ' + rutas[i+1]);
+  };
+  verificar(['/comunidades/123','/comunidades','/inicio','/']);
+  verificar(['/control/123/editar','/control/123','/inicio','/']);
+  verificar(['/bitacora/nueva','/bitacora','/inicio','/']);
+  verificar(['/plantillas/importar','/plantillas','/inicio','/']);
+  verificar(['/proveedores/comunicaciones','/proveedores','/']);
+  verificar(['/contabilidad/reportes','/contabilidad','/']);
+  verificar(['/propiedades/abc','/propiedades','/']);
+  verificar(['/whatsapp/conversaciones','/whatsapp','/']);
+  verificar(['/equipo','/configuracion','/']);
+  verificar(['/ayuda/practica-levantamiento','/ayuda','/inicio','/']);
+  for(const raiz of ['/pipeline','/seo','/proveedores','/propiedades',
+                     '/whatsapp','/contabilidad','/configuracion'])
+    assert.equal(destinoVolverPorJerarquia(raiz),'/');
+});
+test('cuenta y notificaciones regresan al inicio del área correcta',()=>{
+  for(const raiz of ['/pipeline','/seo','/contabilidad','/whatsapp','/inicio']){
+    assert.equal(destinoVolverPorJerarquia('/mi-cuenta',raiz),raiz);
+    assert.equal(destinoVolverPorJerarquia('/notificaciones',raiz),raiz);
+  }
+});
+test('portal cliente y entrada no pasan por selector interno',()=>{
+  for(const ruta of ['/','/portal','/portal/comunidades/123','/ingreso','/clave'])
+    assert.equal(destinoVolverPorJerarquia(ruta),null);
+});
+test('Volver distingue perfiles y marca explícitamente el selector',()=>{
+  const nav=read('lib/navegacion.jsx');
+  assert.match(nav,/if \(!puedeCambiarArea\) return/);
+  assert.match(nav,/replace: true, state: \{ selectorCoproactiva: true \}/);
+  assert.match(nav,/limpiarArea\(\)/);
+  assert.doesNotMatch(nav,/return navegar\(-1\)/);
 });
