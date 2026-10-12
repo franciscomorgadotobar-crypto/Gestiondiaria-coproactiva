@@ -125,8 +125,7 @@ function TopPaginas({ga,sc,onNavigate}) {
     <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate(usarGA?'analytics':'consultas')}>Analizar páginas →</button>
   </section>;
 }
-function Prioridades({gestionSEO,onNavigate,onAnalyze,sc,auditoriaInicio,paginasRevisadas,paginasPendientes,revisandoPaginas,onRevisarPaginas}) {
-  const totalPrioritarias=(gestionSEO?.nuevas || []).filter(x=>x.prioridad!=='Pendiente').length;
+function Prioridades({gestionSEO,onNavigate,onAnalyze,sc,auditoriaInicio,paginasRevisadas,paginasPendientes,revisandoPaginas}) {
   const acciones=(gestionSEO?.nuevas || []).filter(x=>x.prioridad!=='Pendiente').slice(0,4);
   const gestionadas=[...(gestionSEO?.enGestion||[])].sort((a,b)=>
     Number(b.estado==='publicada')-Number(a.estado==='publicada'));
@@ -169,19 +168,16 @@ function Prioridades({gestionSEO,onNavigate,onAnalyze,sc,auditoriaInicio,paginas
       </div> : <div className="seo-exec-sin-sugerencias" role="status">
         <span aria-hidden="true">✓</span>
         <div>
-          <strong>{sc?.disponible && auditoriaInicio && gestionSEO?.disponibles
-            ? 'SEO al día en lo revisado' : 'Sin nuevas sugerencias confirmadas'}</strong>
-          <small>{sc?.disponible && auditoriaInicio
-            ? 'No se detectaron mejoras prioritarias en '+paginasRevisadas+' página(s) revisada(s).'
+          <strong>{sc?.disponible && auditoriaInicio?.status===200
+            ? 'Sin sugerencias SEO prioritarias' : 'Análisis SEO incompleto'}</strong>
+          <small>{sc?.disponible && auditoriaInicio?.status===200
+            ? 'SEO al día en '+paginasRevisadas+' página(s) revisada(s); aún pueden existir otras mejoras.'
             : 'Faltan fuentes o auditorías para confirmar el estado.'}</small>
         </div>
       </div>}
-      {!!paginasPendientes && <button type="button" className="seo-exec-enlace"
-        disabled={revisandoPaginas} onClick={()=>onNavigate('oportunidades')}>
-        {revisandoPaginas?'Revisando otras páginas…':'Buscar mejoras en otras páginas →'}
-      </button>}
-      <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('oportunidades')}>
-        Ver sugerencias y análisis →
+      <button type="button" className="seo-exec-enlace"
+        onClick={()=>onNavigate('oportunidades')}>
+        {paginasPendientes>0 ? 'Analizar más páginas y ver sugerencias →' : 'Ver análisis SEO →'}
       </button>
     </>}
   </section>;
@@ -241,7 +237,7 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       <TopPaginas ga={ga} sc={sc} onNavigate={onNavigate}/>
       <Prioridades gestionSEO={gestionSEO} onNavigate={onNavigate} onAnalyze={onAnalyze} sc={sc} auditoriaInicio={auditoriaInicio}
         paginasRevisadas={paginasRevisadas} paginasPendientes={paginasPendientes}
-        revisandoPaginas={revisandoPaginas} onRevisarPaginas={onRevisarPaginas} />
+        revisandoPaginas={revisandoPaginas} />
     </div>
     <div className="seo-exec-grid-pares seo-exec-resumen-final">
       <section className="seo-exec-superficie">
