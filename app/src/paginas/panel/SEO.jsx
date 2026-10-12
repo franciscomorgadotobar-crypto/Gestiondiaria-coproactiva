@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { usePestanaHistorial } from '../../lib/pestanasHistorial';
 import { useSesion } from '../../lib/sesion';
-import { construirOportunidades } from '../../lib/seoOportunidades';
+import { construirOportunidades, destinoOportunidadSEO } from '../../lib/seoOportunidades';
 import { clasificarOportunidadesSEO } from '../../lib/seoEstadoOportunidades';
 import SEORecomendaciones from './SEORecomendaciones';
 import SEODashboard from './SEODashboard';
@@ -240,8 +240,29 @@ function SEOInterno() {
   const perfilClicks = perfilEmpresa?.disponible ? perfilEmpresa.resumen?.clicsWeb : null;
   const variacionClics = sc?.disponible && sc?.anterior?.clics > 0
     ? ((sc.totales.clics - sc.anterior.clics) / sc.anterior.clics) * 100 : null;
-  function abrirAccion(item) {
-    setAccionSeleccionada(item); setVista('oportunidades');
+  async function abrirAccion(item) {
+    const destino = destinoOportunidadSEO(item);
+    setAccionSeleccionada(item);
+    const rutaDetectada = item?.ruta || '/';
+    if (destino === 'tecnico') {
+      setRuta(rutaDetectada);
+      setAuditoria(null);
+      setInspeccion(null);
+      setAccionActiva('auditoria');
+      irVista('tecnico');
+      // La incidencia técnica abre SU página y hace una nueva auditoría del HTML.
+      // No se confunde con una consulta de Search Console ni con un PR existente.
+      try {
+        const resultado = await invocar('auditoria', { ruta: rutaDetectada });
+        setAuditoria(resultado);
+      } catch (err) {
+        setError(err.message || 'No fue posible verificar esta incidencia.');
+      } finally {
+        setAccionActiva('');
+      }
+      return;
+    }
+    irVista(destino);
   }
   function irVista(vistaNueva, rutaNueva) {
     if (rutaNueva) setRuta(rutaNueva);
@@ -367,6 +388,22 @@ function SEOInterno() {
       {(vista === 'tecnico' || vista === 'velocidad') && <section>
         <h2 className="h4">{vista === 'tecnico' ? 'Auditoría técnica e indexación' : 'PageSpeed y experiencia web'}</h2>
         <p className="chico apagado">Analiza páginas de www.coproactiva.cl. El servidor verifica el dominio y no acepta URLs externas.</p>
+        {vista === 'tecnico' && accionSeleccionada?.clase === 'tecnico' && (
+          <div className="seo-hallazgo-dirigido" role="region" aria-label="Incidencia SEO técnica seleccionada">
+            <span className="seo-hallazgo-dirigido-categoria">Auditoría de HTML · Incidencia seleccionada</span>
+            <h3>{accionSeleccionada.titulo}</h3>
+            <p><strong>Página:</strong> {accionSeleccionada.ruta || '/'}</p>
+            {accionActiva === 'auditoria' && <p>Verificando el HTML publicado…</p>}
+            {auditoria && <div className="seo-hallazgo-dirigido-resultado">
+              <span><strong>Título actual:</strong> {auditoria.titulo || 'Sin título'}</span>
+              <span><strong>Longitud:</strong> {(auditoria.titulo || '').length} caracteres.</span>
+              <small>Es una señal técnica que debe revisarse por separado. No significa que la mejora SEO anterior haya fallado ni autoriza otro cambio automático.</small>
+            </div>}
+            <p className="seo-hallazgo-dirigido-ayuda">
+              {accionSeleccionada.detalle} Revisa el contenido y decide si conviene ajustar el título.
+            </p>
+          </div>
+        )}
         <div className="seo-herramientas">
           <label>URL del sitio
             <select value={alternativas.includes(ruta) ? ruta : '__otra'} onChange={e => { if (e.target.value !== '__otra') { setRuta(e.target.value); setInspeccion(null); setVelocidad(null); setAuditoria(null); } }}>

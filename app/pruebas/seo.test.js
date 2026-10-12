@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { construirOportunidades, propuestaEditorial } from '../src/lib/seoOportunidades.js';
+import { construirOportunidades, propuestaEditorial, destinoOportunidadSEO } from '../src/lib/seoOportunidades.js';
 
 test('solo señala consultas que cumplen las 3 reglas y explica métricas', () => {
   const search = { disponible: true, consultas: [
@@ -50,4 +50,22 @@ test('los problemas de auditoría se muestran y pueden abrirse', () => {
   assert.equal(result[0].ruta, '/servicios/auditoria-de-condominios/');
   assert.equal(result[0].prioridad, 'Alta');
   assert.equal(result[0].clase, 'tecnico');
+});
+
+test('título extenso abre auditoría técnica de la URL específica y no propuesta previa', () => {
+  const audit = {url:'https://www.coproactiva.cl/', problemas:[
+    {nivel:'medio',texto:'Título extenso (67 caracteres).'}
+  ]};
+  const resultado = construirOportunidades(null,audit,null);
+  assert.equal(resultado[0].clase,'tecnico');
+  assert.equal(resultado[0].ruta,'/');
+  assert.equal(destinoOportunidadSEO(resultado[0]),'tecnico');
+});
+
+test('recomendación de búsqueda sí abre propuesta editorial',()=>{
+  assert.equal(destinoOportunidadSEO({clase:'consulta',consulta:'administracion'}),'oportunidades');
+});
+test('alertas de Analytics y conexión nunca abren una propuesta editorial',()=>{
+  assert.equal(destinoOportunidadSEO({clase:'analytics'}),'analytics');
+  assert.equal(destinoOportunidadSEO({clase:'conexiones'}),'conexiones');
 });

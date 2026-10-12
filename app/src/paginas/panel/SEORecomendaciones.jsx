@@ -124,7 +124,7 @@ function estadosDisponibles(actual) {
     integrada:'Fusionada en GitHub · esperando publicación en la web',
     ajustes_solicitados:'Se solicitaron ajustes',
     descartada:'Recomendación descartada',
-    publicada:'PR integrado · esperando/validando despliegue',
+    publicada:'Publicación verificada · seguimiento de resultados disponible',
     error_preparacion:'Aprobación guardada · error al preparar PR'
   }[actual.estado]||actual.estado;
 }

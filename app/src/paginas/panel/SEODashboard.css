@@ -94,3 +94,16 @@ button.seo-exec-kpi.accion:hover { background:var(--hover); border-color:var(--n
 .seo-exec-mejora-curso>.seo-exec-enlace{align-self:flex-start}
 .seo-exec-otras-titulo{font-size:.87rem;margin:14px 0 0;color:var(--texto-titulo)}
 .seo-exec-historial-aviso{border:1px solid #e9d4b4;background:#fff8ef;color:#7c5430;border-radius:8px;padding:13px;font-size:.83rem;line-height:1.5}
+
+/* Registro resumido: el detalle de la mejora vive exclusivamente en Seguimiento. */
+.seo-exec-mejora-curso{
+  display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:6px 12px;padding:11px 12px;
+  background:#f7faf5;border-color:#d7e5d0;
+}
+.seo-exec-mejora-identidad{display:flex;align-items:center;gap:9px;min-width:0}
+.seo-exec-mejora-identidad>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.seo-exec-mejora-identidad strong{font-size:.83rem;color:#386f3d;line-height:1.25}
+.seo-exec-mejora-identidad small{font-size:.73rem;color:#657763;line-height:1.2}
+.seo-exec-mejora-curso .seo-exec-mejora-icono{width:25px;height:25px;font-size:.82rem;flex:none}
+.seo-exec-mejora-curso>.seo-exec-enlace{align-self:auto;margin:0;padding:4px 0;font-size:.78rem}

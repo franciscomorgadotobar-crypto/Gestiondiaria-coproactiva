@@ -139,24 +139,20 @@ function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
     </div>}
     {gestionSEO?.disponibles && <>
       {primeras.map(p=><div className="seo-exec-mejora-curso" key={p.id}>
-        <div className="seo-exec-mejora-encabezado">
+        <div className="seo-exec-mejora-identidad">
           <span className="seo-exec-mejora-icono" aria-hidden="true">✓</span>
-          <span className="seo-exec-mejora-badge">
-            {p.estado==='publicada'?'Publicada · En seguimiento':
-              p.estado==='integrada'?'Integrada · Verificar publicación':
-              p.estado==='preparada'?'En revisión':'Aprobada · En preparación'}
-          </span>
+          <div>
+            <strong>{p.estado==='publicada'?'Mejora SEO publicada':
+              p.estado==='integrada'?'Mejora SEO integrada':
+              p.estado==='preparada'?'Propuesta SEO en revisión':'Mejora SEO aprobada'}</strong>
+            <small>{p.ruta==='/'?'Portada':p.ruta} · {
+              p.estado==='publicada'?'En seguimiento':
+              p.estado==='integrada'?'Verificar web':'Pendiente de publicación'
+            }</small>
+          </div>
         </div>
-        <strong>{p.estado==='publicada'?'Ya implementamos una mejora SEO':'Ya existe una mejora para esta página'}</strong>
-        <p>{p.ruta==='/'?'Portada de Coproactiva':p.ruta}: {p.consulta_principal}.
-          {' '}{Array.isArray(p.consultas) ? p.consultas.length : 1} búsquedas asociadas ya se gestionan
-          en esa propuesta; no corresponde repetirlas como recomendaciones nuevas.</p>
-        <small>{p.estado==='publicada'&&p.verificada_en
-          ? 'Publicación comprobada el '+new Date(p.verificada_en).toLocaleDateString('es-CL')+'.'
-          : 'Consulta el estado de esta modificación en Seguimiento.'}
-          {' '}Las métricas históricas todavía pueden reflejar el período anterior al cambio.</small>
         <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('seguimiento')}>
-          {p.estado==='publicada'?'Ver evolución de resultados →':'Ver estado de la propuesta →'}
+          {p.estado==='publicada'?'Ver resultados →':'Ver estado →'}
         </button>
       </div>)}
       {gestionadas.length>1&&<button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('seguimiento')}>
