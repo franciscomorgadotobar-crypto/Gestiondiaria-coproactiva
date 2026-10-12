@@ -11,8 +11,8 @@ export default function Levantamientos() {
   const puedeEditarPlantillas = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
 
   return (
-    <div className="pantalla levantamientos-pantalla">
-      <header className="encabezado">
+    <div className="pantalla levantamientos-pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto levantamientos-volver" onClick={() => navegar('/inicio')}>
             ‹ Inicio
@@ -24,7 +24,7 @@ export default function Levantamientos() {
         </p>
       </header>
 
-      <div className="cuerpo levantamientos-cuerpo">
+      <div className="cuerpo levantamientos-cuerpo modulo-contenido">
         <div className="levantamientos-opciones">
           <Link to="/nuevo" className="tarjeta levantamientos-opcion">
             <span className="levantamientos-icono" aria-hidden="true">☑</span>
