@@ -8,8 +8,8 @@ export default function Ayuda() {
   const { disponibles, estadoDe, iniciar } = useTutoriales();
 
   return (
-    <div className="pantalla">
-      <header className="encabezado">
+    <div className="pantalla modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <h1 className="h3">Ayuda y tutoriales</h1>
         <p className="chico apagado" style={{ margin: '3px 0 0' }}>
           Aprende una tarea y repítela cuando lo necesites
