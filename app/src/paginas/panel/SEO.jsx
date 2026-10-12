@@ -400,12 +400,26 @@ function SEOInterno() {
             <p><strong>Página:</strong> {accionSeleccionada.ruta || '/'}</p>
             {accionActiva === 'auditoria' && <p>Verificando el HTML publicado…</p>}
             {auditoria && <div className="seo-hallazgo-dirigido-resultado">
+              {(() => {
+                const tituloAlerta = /t[ií]tulo (extenso|muy largo)/i.test(accionSeleccionada.titulo);
+                const vigente = (auditoria.problemas || []).some(problema =>
+                  tituloAlerta
+                    ? /t[ií]tulo (extenso|muy largo)/i.test(problema.texto)
+                    : problema.texto === accionSeleccionada.titulo
+                );
+                return <strong className={vigente?'seo-hallazgo-vigente':'seo-hallazgo-resuelto'}>
+                  {vigente?'Incidencia confirmada en el HTML actual':'La incidencia anterior ya no se detecta'}
+                </strong>;
+              })()}
               <span><strong>Título actual:</strong> {auditoria.titulo || 'Sin título'}</span>
               <span><strong>Longitud:</strong> {(auditoria.titulo || '').length} caracteres.</span>
-              <small>Es una señal técnica que debe revisarse por separado. No significa que la mejora SEO anterior haya fallado ni autoriza otro cambio automático.</small>
+              <small>La longitud por sí sola no constituye una penalización SEO.
+                Si un hallazgo ya no aparece, no corresponde recomendar otra modificación.
+                Los resultados comerciales se comprueban en Seguimiento.</small>
             </div>}
             <p className="seo-hallazgo-dirigido-ayuda">
-              {accionSeleccionada.detalle} Revisa el contenido y decide si conviene ajustar el título.
+              Se revisó automáticamente el HTML de {accionSeleccionada.ruta || '/'}.
+              Para el detalle técnico completo, consulta los resultados de la auditoría más abajo.
             </p>
           </div>
         )}
