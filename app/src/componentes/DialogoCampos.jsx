@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useAtrasCierraDialogo } from '../lib/dialogoHistorial';
+import { useFocoDialogo } from '../lib/focoDialogo';
 
 /*
  * Diálogo visual para pedir uno o varios datos sin recurrir a prompt()/alert().
@@ -16,6 +17,8 @@ export default function DialogoCampos({
   onCancelar
 }) {
   useAtrasCierraDialogo(onCancelar);
+  const modalRef = useRef(null);
+  useFocoDialogo(modalRef,onCancelar);
   const inicial = useMemo(
     () => Object.fromEntries(campos.map(c => [c.id, c.valor ?? ''])),
     [campos]
@@ -40,6 +43,8 @@ export default function DialogoCampos({
     <div className="modal-fondo" role="presentation" onClick={onCancelar}>
       <form
         className="modal"
+        ref={modalRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="dialogo-campos-titulo"
