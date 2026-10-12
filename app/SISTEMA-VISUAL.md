@@ -81,3 +81,14 @@ La cobertura estática se comprueba en `app/pruebas/visual.test.js` y la compila
 
 ### Revisión visual pendiente
 Verificar con sesión autenticada y capturas de 360, 390, 768 y 1280 px: fichas de comunidades y checklists, filtros de proveedores, libro diario y balance, editor de asientos con varias líneas, importación Excel, guardado en editor y tutorial/práctica. Las pruebas estáticas no equivalen a revisar las pantallas en ejecución.
+
+## Fase 3 — Navegación, modales y pruebas por resolución (12-10-2026)
+
+- **Cambiar de área** utiliza React Router y el estado `selectorCoproactiva`. Deja de recargar el documento/PWA y conserva el historial del navegador.
+- **Confirmar** y **DialogoCampos** usan `useFocoDialogo`, con Escape para cerrar, Tab contenido dentro de la ventana y devolución de foco al botón anterior. Se conserva el gesto Atrás de Android gestionado por `useAtrasCierraDialogo`.
+- **Modal móvil:** respeta altura dinámica de pantalla, teclado virtual, áreas seguras y acciones con tamaño táctil mínimo.
+- **QA navegador:** GitHub Actions ejecuta Chromium/Playwright sobre Vite, verificando `/ingreso` y redirecciones protegidas a 360, 390, 768 y 1280 px, sin usar credenciales. Adjunta capturas en artefacto `capturas-ui-sin-sesion` durante 7 días. Pruebas de navegación/teclado adicionales en `pruebas/ui-fase3.test.js`.
+
+**Límite verificado:** el entorno CI no usa sesiones reales, por lo que las fichas privadas de Comunidades, Proveedores, Contabilidad y Levantamientos **no se han inspeccionado visualmente en ejecución**. Para completar esa auditoría, se necesitan pruebas autenticadas con una cuenta de QA autorizada y datos de ensayo, sin credenciales incrustadas en código ni capturas de información privada.
+
+**Pendiente de QA con cuenta de prueba:** a 360/390/768/1280 px abrir, registrar y cancelar ventanas; formulario largo con teclado móvil; tabla de libro diario, balance y asientos; ficha con pestañas de comunidad; filtros y comunicación a proveedores sin enviar; editor de plantillas; verificar que gestos Atrás cierren modales antes de cambiar ruta. No efectuar operaciones destructivas sobre datos reales.
