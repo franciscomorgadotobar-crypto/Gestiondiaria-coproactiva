@@ -23,3 +23,28 @@
 .seo-inventario-observada small{font-size:.76rem;color:var(--texto-apagado)}
 .seo-inventario-aviso,.seo-inventario-vacio{background:#fff8eb;border:1px solid #e3cba7;padding:13px;border-radius:8px;font-size:.83rem;color:#79542e;line-height:1.5;margin:0}
 @media(max-width:640px){.seo-inventario-item>button{padding-left:41px}.seo-inventario-filtros button{padding:10px 3px}}
+
+/* Resumen ejecutivo: contadores en la barra, sin tarjetas de KPIs exageradas */
+.seo-inventario-cabecera{align-items:center;gap:6px 12px}
+.seo-inventario-cabecera h2{font-size:1.17rem;margin:0}
+.seo-inventario-filtros{display:flex;gap:5px;padding:3px;border:1px solid var(--borde);
+  border-radius:8px;background:var(--tarjeta);overflow-x:auto}
+.seo-inventario-filtros button{flex:1 0 auto;display:flex;flex-direction:row;
+  justify-content:center;align-items:center;gap:6px;background:transparent;
+  border:0;border-radius:6px;min-width:0;padding:9px 6px;min-height:43px}
+.seo-inventario-filtros button.activo{border:0;background:#f5ece0}
+.seo-inventario-filtros button span{font-size:.78rem;font-weight:600;color:var(--texto-cuerpo)}
+.seo-inventario-filtros button strong{font:700 .83rem var(--fuente-cuerpo);color:var(--texto-titulo)}
+.seo-inventario-item{padding:10px 4px;border:0;border-bottom:1px solid var(--borde);
+  border-radius:0;box-shadow:none;background:transparent}
+.seo-inventario-chips{gap:5px}
+.seo-inventario-item h3{font-size:.87rem;margin:4px 0}
+.seo-inventario-vacio{background:none;border:0;padding:10px 0;color:var(--texto-apagado)}
+.seo-inventario-item>button{padding:4px 0}
+.seo-inventario{gap:13px}
+@media(max-width:480px){
+ .seo-inventario-filtros button span{font-size:.69rem}
+ .seo-inventario-filtros button strong{font-size:.76rem}
+ .seo-inventario-filtros button{padding:8px 3px}
+ .seo-inventario-item>button{padding:4px 0 4px 41px}
+}
