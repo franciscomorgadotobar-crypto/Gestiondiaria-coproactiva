@@ -669,7 +669,7 @@ export default function Proveedores() {
           ))}
         </div>
 
-        <div className="proveedores-tabla-wrap ui-tabla-scroll">
+        <div className="proveedores-tabla-wrap ui-tabla-scroll" role="region" aria-label="Tabla de proveedores, desplazamiento horizontal" tabIndex={0}>
           <table className="proveedores-tabla">
             <thead>
               <tr>
