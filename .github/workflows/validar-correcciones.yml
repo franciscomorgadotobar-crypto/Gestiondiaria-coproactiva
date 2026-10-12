@@ -42,6 +42,9 @@ jobs:
       - name: Verificar nombres de mejoras SEO
         working-directory: app
         run: node --test pruebas/seo-nombres-mejoras.test.js
+      - name: Probar recuperación SEO ante HTTP 503
+        working-directory: app
+        run: node --test pruebas/seo-recuperacion.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build

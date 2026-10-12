@@ -275,3 +275,7 @@
 .seo-hallazgo-resuelto{color:#2f733b;font-size:.9rem}
 .seo-hallazgo-vigente{color:#986125;font-size:.9rem}
 .seo-volver-oportunidades{align-self:flex-start;text-align:left;min-height:38px;font-size:.82rem}
+
+.seo-error-recuperable{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.seo-error-recuperable span{font-size:.84rem;line-height:1.45}
+.seo-error-recuperable button{flex:none;min-height:40px}

@@ -5,6 +5,7 @@ import { usePestanaHistorial } from '../../lib/pestanasHistorial';
 import { useSesion } from '../../lib/sesion';
 import { construirOportunidades, destinoOportunidadSEO } from '../../lib/seoOportunidades';
 import { clasificarOportunidadesSEO } from '../../lib/seoEstadoOportunidades';
+import { ejecutarConReintentosSEO } from '../../lib/seoRecuperacion';
 import SEORecomendaciones from './SEORecomendaciones';
 import SEOInventarioOportunidades from './SEOInventarioOportunidades';
 import SEODashboard from './SEODashboard';
@@ -128,18 +129,23 @@ function SEOInterno() {
   const [accionSeleccionada, setAccionSeleccionada] = useState(null);
   const [propuestasSEO, setPropuestasSEO] = useState(null);
 
-  const invocar = useCallback(async (accion, extras = {}) => {
+  const invocar = useCallback((accion, extras = {}) => ejecutarConReintentosSEO(async () => {
     const { data, error: err } = await supabase.functions.invoke('seo-analitica', { body: { accion, ...extras } });
     if (err) {
+      const status = Number(err.context?.status || 0);
       let detalle = err.message || 'No se pudo consultar el servicio SEO.';
-      if (err.context?.json) {
+      if (err.context?.json && status !== 503) {
         try { const json = await err.context.json(); detalle = json.error || detalle; } catch { /* respuesta vacía */ }
       }
-      throw new Error(detalle);
+      const problema = new Error(status === 503
+        ? 'El servicio SEO está temporalmente ocupado. Vuelve a actualizar.'
+        : detalle);
+      problema.status = status;
+      throw problema;
     }
     if (data?.error) throw new Error(data.error);
     return data;
-  }, []);
+  }), []);
 
   const cargarHistorialSEO = useCallback(async () => {
     try {
@@ -161,10 +167,19 @@ function SEOInterno() {
         invocar('business-profile', { dias }), invocar('ga4-tiempo-real'),
         cargarHistorialSEO()
       ]);
-      if (resultados[0].status !== 'fulfilled') throw resultados[0].reason;
-      if (resultados[1].status !== 'fulfilled') throw resultados[1].reason;
-      const e = resultados[0].value, resumen = resultados[1].value;
-      setEstado(e); setDatos(resumen);
+      // Cada fuente se recupera independientemente. Un 503 no debe vaciar
+      // métricas ya visibles ni impedir cargar otros paneles.
+      const estadoOk = resultados[0].status === 'fulfilled';
+      const resumenOk = resultados[1].status === 'fulfilled';
+      const e = estadoOk ? resultados[0].value : null;
+      const resumen = resumenOk ? resultados[1].value : null;
+      if (estadoOk) setEstado(e);
+      if (resumenOk) setDatos(resumen);
+      if (!resumenOk) {
+        setError('No se pudieron actualizar los datos de Google. Intenta nuevamente.');
+      } else if (!estadoOk) {
+        setError('No se pudo actualizar el estado de las conexiones. Las métricas siguen disponibles.');
+      }
       if (resultados[2].status === 'fulfilled') {
         setTagManager(resultados[2].value); setTagError('');
       } else setTagError('La verificación de Tag Manager no pudo completarse.');
@@ -181,14 +196,15 @@ function SEOInterno() {
         const sinConexion = [
           !resumen?.searchConsole?.disponible && 'Search Console',
           !resumen?.analytics?.disponible && 'Analytics 4',
-          !resultados[4]?.value?.disponible && 'Business Profile',
-          !resultados[2]?.value?.version?.conectado && 'Tag Manager API'
+          !(resultados[4]?.status === 'fulfilled' && resultados[4].value?.disponible) && 'Business Profile',
+          !(resultados[2]?.status === 'fulfilled' && resultados[2].value?.version?.conectado) && 'Tag Manager API'
         ].filter(Boolean);
         const hora = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-        setAvisoActualizacion(sinConexion.length
-          ? { tipo: 'pendiente', texto: 'Consulta realizada a las ' + hora + '. Sin conexión a ' +
-              'Actualización de fuentes disponibles a las ' + hora + '. Algunas integraciones están pendientes; revísalas en Configuración.' }
-          : { tipo: 'correcto', texto: 'Datos de Google actualizados correctamente a las ' + hora + '.' });
+        setAvisoActualizacion(!resumenOk
+          ? { tipo: 'error', texto: 'La consulta principal no respondió. Puedes reintentar sin perder los datos previos.' }
+          : sinConexion.length
+            ? { tipo: 'pendiente', texto: 'Actualización a las ' + hora + '. Fuentes pendientes: ' + sinConexion.join(', ') + '.' }
+            : { tipo: 'correcto', texto: 'Datos de Google actualizados a las ' + hora + '.' });
       }
     } catch (err) {
       setError(err.message || 'No fue posible recuperar las métricas.');
@@ -310,7 +326,11 @@ function SEOInterno() {
             e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
           }}>{label}</button>
       )}</nav>
-      {!!error && <div className="aviso aviso-critico" role="alert">{error}</div>}
+      {!!error && <div className="aviso aviso-critico seo-error-recuperable" role="alert">
+        <span>{error}</span>
+        <button type="button" className="boton boton-secundario"
+          disabled={cargando} onClick={()=>recargar(true)}>Reintentar</button>
+      </div>}
       {avisoActualizacion && <div className={'seo-aviso seo-aviso-' + avisoActualizacion.tipo + ' seo-aviso-sincronizacion'} role="status">
         <span>{avisoActualizacion.texto}</span>
         {avisoActualizacion.tipo === 'pendiente' &&
@@ -320,7 +340,15 @@ function SEOInterno() {
       </div>}
       {!estado && cargando && <p className="chico apagado">Cargando fuentes e indicadores…</p>}
 
-      {vista === 'resumen' && <SEODashboard
+      {vista === 'resumen' && !datos && !cargando
+        ? <div className="seo-vacio" role="status">
+            <strong>No hay métricas disponibles en este momento.</strong>
+            <p>El servicio de Google puede estar temporalmente ocupado. Reintenta para consultar las cifras actuales.</p>
+            <button type="button" className="boton boton-primario"
+              onClick={()=>recargar(true)}>Volver a consultar</button>
+          </div>
+        : null}
+      {vista === 'resumen' && (datos || cargando) && <SEODashboard
         sc={sc} ga={ga} perfilEmpresa={perfilEmpresa} tiempoReal={tiempoReal}
         auditoriaInicio={auditoriaInicio} lista={lista} gestionSEO={gestionSEO}
         dias={dias} datosHasta={sc?.hasta} consultadoEn={estado?.consultadoEn}
