@@ -6,7 +6,9 @@
 const frase = valor => typeof valor === 'string' ? valor.trim().replace(/\s+/g, ' ') : null;
 
 const humanizar = slug => {
-  const limpio=decodeURIComponent(slug).replace(/\.html?$/i,'')
+  let visible=String(slug || '');
+  try { visible=decodeURIComponent(visible); } catch { /* rutas legadas */ }
+  const limpio=visible.replace(/\.html?$/i,'')
     .replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toLocaleLowerCase('es-CL');
   return limpio ? limpio[0].toLocaleUpperCase('es-CL')+limpio.slice(1) : '';
 };
@@ -19,11 +21,11 @@ export function ubicacionMejoraSEO(ruta) {
   const titulo=humanizar(ultimo);
   const primera=segmentos[0]?.toLowerCase()||'';
 
-  if(primera==='blog')return segmentos.length===1?'Blog':`Artículo: ${titulo}`;
+  if(primera==='blog')return segmentos.length===1?'Blog':`Artículo (${titulo})`;
   if(primera==='servicios'||primera==='servicio')
-    return segmentos.length===1?'Servicios':`Servicio: ${titulo}`;
+    return segmentos.length===1?'Servicios':`Servicio (${titulo})`;
   if(primera==='propiedades'||primera==='propiedad')
-    return segmentos.length===1?'Propiedades':`Propiedad: ${titulo}`;
+    return segmentos.length===1?'Propiedades':`Propiedad (${titulo})`;
   if(primera==='contacto')return 'Contacto';
   if(primera==='nosotros'||primera==='quienes-somos')return 'Nosotros';
   if(titulo.toLowerCase()==='index')return humanizar(segmentos.at(-2)||'pagina');
