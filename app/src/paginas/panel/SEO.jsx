@@ -340,14 +340,14 @@ function SEOInterno() {
         <button className="boton boton-secundario" type="button" onClick={() => recargar(true)} disabled={cargando}>
           {cargando ? 'Consultando…' : 'Actualizar'}
         </button>
-        <button className="boton boton-texto seo-boton-configuracion" type="button" onClick={() => irVista('conexiones')}>
+        <button className="boton boton-texto seo-boton-configuracion" type="button" aria-label="Configuración SEO" title="Configuración SEO" onClick={() => irVista('conexiones')}>
           <span aria-hidden="true">⚙</span> <span className="seo-ajustes-etiqueta">Configuración</span>
         </button>
       </div>
     </header>
 
     <div className="cuerpo seo-cuerpo modulo-contenido">
-      <nav id="seo-navegacion" className="seo-pestanas" aria-label="Secciones SEO" role="tablist">{SECCIONES.map(([id, label]) =>
+      <nav id="seo-navegacion" className="seo-pestanas ui-pestanas" aria-label="Secciones SEO" role="tablist">{SECCIONES.map(([id, label]) =>
         <button key={id} type="button" role="tab" aria-selected={vista === id}
           className={vista === id ? 'activo' : ''}
           onClick={e => {
