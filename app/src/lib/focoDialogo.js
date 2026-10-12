@@ -38,7 +38,7 @@ export function useFocoDialogo(referencia, alCerrar) {
         return;
       }
       const primero=elementos[0], ultimo=elementos.at(-1);
-      if(e.shiftKey && (document.activeElement===primero || !elemento.contains(document.activeElement))){
+      if(e.shiftKey && (document.activeElement===primero || document.activeElement===elemento || !elemento.contains(document.activeElement))){
         e.preventDefault();ultimo.focus();
       }else if(!e.shiftKey && (document.activeElement===ultimo || !elemento.contains(document.activeElement))){
         e.preventDefault();primero.focus();
