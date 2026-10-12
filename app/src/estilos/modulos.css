@@ -354,3 +354,34 @@
   .proveedores-pantalla.modulo-unificado .ui-acciones .boton { min-height: var(--tactil); }
   .proveedores-pantalla.modulo-unificado .ui-formulario { gap: 10px; }
 }
+
+/* Fase 3: ventanas compartidas accesibles, también con teclado virtual móvil. */
+.modal-fondo-accesible { overscroll-behavior: contain; }
+.modal-accesible:focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: -2px;
+}
+.modal-accesible :is(input,select,textarea,button):focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: 2px;
+}
+@media (max-width: 559px) {
+  .modal-fondo-accesible {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .modal-fondo-accesible .modal-accesible {
+    max-height: min(86dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+    overscroll-behavior-y: contain;
+    overflow-y: auto;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .modal-accesible :is(input,select,textarea) { font-size: 16px; }
+  .modal-accesible .fila-botones {
+    position: sticky;
+    bottom: 0;
+    padding: 10px 0 0;
+    background: var(--tarjeta);
+  }
+  .modal-accesible .fila-botones .boton { min-height: var(--tactil); }
+}
