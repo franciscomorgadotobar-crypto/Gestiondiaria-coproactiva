@@ -43,3 +43,24 @@ Las pantallas especializadas de terreno o editores de contenido ya comparten las
 8. Navegación Atrás Android, modal y PWA instalable continúan funcionando; la homologación no intercepta eventos.
 
 La cobertura estática se comprueba en `app/pruebas/visual.test.js` y la compilación en el CI. Validaciones visuales reales (capturas móvil/escritorio) son una comprobación independiente y no deben confundirse con pasar tests unitarios.
+
+## Fase 1 — Accesibilidad y componentes de navegación (12-10-2026)
+
+- Conservamos `--naranja` como acento de marca, pero el texto enlazado usa `--enlace: #955123`, que alcanza contraste AA sobre superficies claras.
+- El texto secundario tenue se oscurece para permitir lectura en pantallas móviles.
+- Unificamos las pestañas en `ui-pestanas`, con un único patrón de estado seleccionado para SEO, Contabilidad, Proveedores y WhatsApp. React Router marca automáticamente `aria-current="page"` en WhatsApp y Proveedores.
+- Configuración de SEO tiene nombre accesible aunque su etiqueta visual esté oculta en móviles.
+- `ui-estado`, `ui-estado--ok`, `ui-estado--alerta`, `ui-estado--critico` son clases compartidas para sustituir estados decorativos de futuras migraciones.
+- Se incorporan pruebas de contraste y navegación como puerta de calidad del CI.
+
+**Alcance:** Esta fase corrige estilos base y pestañas, sin modificar APIs, roles, permisos ni flujos contables/operacionales. No significa que se haya realizado una inspección visual de todas las pantallas autenticadas.
+
+### Fase 2 — Pendiente, por área
+1. Comunidades, Proveedores y formularios: sustituir estilos en línea, alinear acciones y validaciones.
+2. Contabilidad: unificar tablas, KPIs y reportes en móvil sin recortar datos.
+3. Levantamientos, editores, práctica y terreno: incorporar de manera segura las vistas omitidas por la primera homologación.
+4. SEO y WhatsApp: migrar colores CSS específicos a tokens de marca, limpiar reglas obsoletas y simplificar cuadros informativos.
+5. Portal, Propiedades, Pipeline y Configuración: revisión final del sistema y pruebas por rol.
+6. Comprobación de pantallas reales Android/PWA y escritorio; accesibilidad teclado, lector de pantalla, Atrás y estado vacío/error.
+
+**No usar selectores globales indiscriminados para forzar el aspecto de todas las entradas:** las pantallas de alta densidad y el trabajo de terreno necesitan migraciones específicas y regresiones visuales.
