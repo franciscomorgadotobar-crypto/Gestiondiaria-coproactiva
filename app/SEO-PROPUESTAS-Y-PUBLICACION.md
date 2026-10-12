@@ -16,7 +16,7 @@ Se muestra la evidencia (consultas, impresiones, clics, CTR, posición), URL rea
 
 La sincronización verifica merges desde GitHub cuando hay token secreto autorizado, y verifica despliegue web incluso sin token cuando existe un merge validado en base de datos. El registro histórico #1 fue reconciliado con PR #1 del repositorio web-coproactiva tras comprobar la fusión en la API GitHub.
 
-**Publicación del sitio:** actualmente no se ha encontrado workflow de despliegue de web-coproactiva y el repositorio no tiene GitHub Pages habilitado. No se puede afirmar que merge en main publique automáticamente en el hosting. La automatización de despliegue requiere identificar el hosting real y conceder permisos adecuados de forma segura (sin pegar credenciales en el código ni en un chat).
+**Publicación del sitio:** coproactiva.cl utiliza **Netlify** con GitHub. Netlify puede desplegar automáticamente la rama principal sin GitHub Actions, pero la vinculación efectiva y los eventos de despliegue deben comprobarse con su API. Una fusión en main no demuestra por sí sola que la web esté actualizada.
 
 ## Configuración requerida
 
@@ -43,3 +43,19 @@ Sin token GitHub la decisión permanece guardada como aprobada y el PR pendiente
 5. Cambio en main desde el diagnóstico: detener preparación por HTML obsoleto.
 6. Admin no publica; superadmin necesita confirmar PUBLICAR.
 7. Verificar móvil, contraste, botones, compilación y tests.
+
+## Integración Netlify (sin GitHub Actions adicionales)
+
+1. Acceder al proyecto correcto en Netlify, en **Project configuration → Build & deploy → Continuous deployment**. Verificar que el repositorio conectado sea `franciscomorgadotobar-crypto/web-coproactiva`, que la rama de producción sea `main`, que los despliegues automáticos estén habilitados y que la carpeta de publicación sea la raíz del sitio estático (o su ruta real de salida). No cambiar el repositorio de la **app** por el de la **web**.
+2. Crear un token personal de acceso de Netlify con el menor alcance disponible para ese proyecto. Guardarlo en **Supabase → Edge Functions → Secrets** como `NETLIFY_ACCESS_TOKEN`. Nunca enviarlo por chat ni añadirlo a archivos GitHub. Opcional: configurar `NETLIFY_SITE_ID` con el Project ID real de Netlify. Si está ausente se intentará resolver el proyecto mediante `www.coproactiva.cl`.
+3. La Edge Function `seo-propuestas` utiliza Netlify API para consultar los **últimos deploys de producción**, rama conectada, repositorio, SHA del último despliegue y estado. No se confunde `ready` con SEO publicado: debe comprobar que el HTML real de `www.coproactiva.cl` entrega el `<title>` y la meta descripción aprobados.
+4. Si el PR está fusionado pero no publicado, la pestaña **Seguimiento** indica el diagnóstico de Netlify. Sólo los superadministradores pueden solicitar reconstruir la rama `main`, escribiendo `DESPLEGAR`. Esta acción usa `POST /sites/{site_id}/builds` y **sólo está habilitada si la API verificó el repositorio y rama correctos**. No se realiza automáticamente.
+5. Cuando la web finalmente muestra los textos propuestos, se registra la primera verificación y comienza el seguimiento Search Console a 7/28/90 días. La fecha registrada es de comprobación, no una suposición acerca del inicio real del despliegue.
+
+### Señales de problemas
+- API Netlify 401: token no autorizado; 404: sitio equivocado o sin acceso.
+- `repoCorrecto = false` o `ramaCorrecta = false`: no relanzar, primero corregir conexión del proyecto Netlify.
+- Último deploy `error` o en `building`: revisar registro de compilación en Netlify.
+- Netlify indica `ready`, pero HTML público aún es anterior: revisar dominio personalizado, branch de producción, configuración de publicación, caché, redirecciones o si la última versión corresponde a otro commit.
+
+Las credenciales de Netlify y GitHub se configuran **por separado**; la conexión a GitHub que utiliza este chat no se transfiere automáticamente a la aplicación.
