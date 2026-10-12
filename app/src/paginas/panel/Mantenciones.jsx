@@ -188,7 +188,7 @@ export default function Mantenciones() {
   }
 
   return (
-    <div className="pantalla mantenciones-pantalla">
+    <div className="pantalla mantenciones-pantalla modulo-unificado">
       {porEliminar && (
         <Confirmar
           titulo="Eliminar mantención"
@@ -202,7 +202,7 @@ export default function Mantenciones() {
         />
       )}
 
-      <header className="encabezado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar('/inicio')}>
             ‹ Inicio
