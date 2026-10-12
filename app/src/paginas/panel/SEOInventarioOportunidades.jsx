@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { normalizarConsultaSEO } from '../../lib/seoEstadoOportunidades';
+import { nombreMejoraSEO } from '../../lib/seoNombresMejoras';
 import './SEOInventarioOportunidades.css';
 
 const n = valor => Number(valor || 0).toLocaleString('es-CL', {maximumFractionDigits:0});
@@ -81,8 +82,8 @@ export default function SEOInventarioOportunidades({
       {gestionadas.map(p=><article key={p.id} className="seo-inventario-item">
         <div className="seo-inventario-item-cuerpo"><Icono nombre="check"/>
           <div><div className="seo-inventario-chips"><small>{ESTADOS[p.estado]||p.estado}</small></div>
-            <h3>{p.consulta_principal}</h3>
-            <p>{p.ruta==='/'?'Portada':p.ruta} · {Array.isArray(p.consultas)?p.consultas.length:1} búsquedas vinculadas</p>
+            <h3>{nombreMejoraSEO(p)}</h3>
+            <p>{Array.isArray(p.consultas)?p.consultas.length:1} búsquedas relacionadas</p>
           </div>
         </div>
         <button type="button" onClick={onVerSeguimiento}>Ver seguimiento →</button>
