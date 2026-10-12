@@ -332,6 +332,39 @@ export default {
         const result=await verificarPublicacion(admin,actual);
         return json({...result,propuesta:result.propuesta,integracionGithubHabilitada:Boolean(gitToken)});
       }
+      if(accion==='reintentar_despliegue') {
+        if(perfil.rol!=='superadmin')return mensaje('Solo superadministradores pueden ordenar un despliegue.',403);
+        if(body.confirmacion!=='DESPLEGAR')return mensaje('Escribe DESPLEGAR para confirmar.',400);
+        if(!NETLIFY_TOKEN)return mensaje('Netlify aún no está autorizado en Supabase.',409);
+        const id=String(body.id||'');
+        if(!/^[a-f0-9-]{36}$/i.test(id))return mensaje('ID de propuesta inválido.',400);
+        const {data:p,error}=await admin.from('seo_propuestas').select('*').eq('id',id).maybeSingle();
+        if(error||!p)return mensaje('Propuesta no encontrada.',404);
+        if(p.estado!=='integrada'||!p.fusionada_en)
+          return mensaje('Sólo se puede relanzar un despliegue de un PR ya fusionado y no confirmado en web.',409);
+        const comprobada=await verificarPublicacion(admin,p);
+        if(comprobada.propuesta.estado==='publicada')
+          return json({propuesta:comprobada.propuesta,aviso:'El contenido ya está publicado. No se inició un despliegue.'});
+        const info=comprobada.propuesta.netlify_detalle||{};
+        if(!info.conectado||info.repoCorrecto!==true||info.ramaCorrecta!==true)
+          return mensaje('Netlify no confirmó que este sitio esté conectado a web-coproactiva en main. Revisa la integración antes de desplegar.',409);
+        const endpoint='https://api.netlify.com/api/v1/sites/'+encodeURIComponent(NETLIFY_SITE_ID)+'/builds';
+        const response=await fetch(endpoint,{
+          method:'POST',headers:{Authorization:'Bearer '+NETLIFY_TOKEN,
+            Accept:'application/json','Content-Type':'application/json'},
+          body:'{}',signal:AbortSignal.timeout(15000)
+        });
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok)throw Error('Netlify no inició la compilación ('+response.status+').');
+        await admin.from('seo_propuestas').update({
+          verificacion_detalle:'Reconstrucción de producción solicitada a Netlify. Aún no confirmada en el dominio.',
+          editada_en:new Date().toISOString()
+        }).eq('id',id).eq('estado','integrada');
+        return json({propuesta:{...comprobada.propuesta,
+          verificacion_detalle:'Reconstrucción solicitada a Netlify; aún no publicada.'},
+          buildId:String(result.id||'').slice(0,120),
+          aviso:'Netlify recibió la solicitud de compilación. Verifica el deploy y el HTML antes de iniciar seguimiento.'});
+      }
       if(accion==='preparar') {
         if(!clean(body.id,100))return mensaje('ID de propuesta requerido.');
         const {data:propuesta}=await admin.from('seo_propuestas').select('*')
