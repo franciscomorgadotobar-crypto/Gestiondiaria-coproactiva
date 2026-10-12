@@ -125,6 +125,7 @@ function TopPaginas({ga,sc,onNavigate}) {
   </section>;
 }
 function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
+  const totalPrioritarias=(gestionSEO?.nuevas || []).filter(x=>x.prioridad!=='Pendiente').length;
   const acciones=(gestionSEO?.nuevas || []).filter(x=>x.prioridad!=='Pendiente').slice(0,4);
   const gestionadas=[...(gestionSEO?.enGestion||[])].sort((a,b)=>
     Number(b.estado==='publicada')-Number(a.estado==='publicada'));
@@ -132,7 +133,9 @@ function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
   const primeras=publicada ? [publicada] : gestionadas.slice(0,1);
   return <section className="seo-exec-superficie">
     <div className="seo-exec-seccion-cabecera"><div><h3>Qué debemos mejorar</h3>
-      <p>Recomendaciones nuevas y cambios que ya están en seguimiento.</p></div></div>
+      <p>{gestionSEO?.disponibles
+        ? totalPrioritarias+' oportunidades priorizadas · '+gestionadas.length+' mejoras en gestión.'
+        : 'Comprobando nuevas oportunidades y el historial de cambios.'}</p></div></div>
     {!gestionSEO?.disponibles && <div className="seo-exec-historial-aviso" role="status">
       No fue posible cruzar Search Console con el historial de mejoras. Para evitar duplicar
       recomendaciones, vuelve a actualizar o revisa Seguimiento.
@@ -168,7 +171,7 @@ function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
         </button>)}
       </div>:<p className="seo-exec-ayuda">No hay otras oportunidades nuevas priorizadas con los datos procesados disponibles. Seguimos midiendo los cambios anteriores.</p>}
       <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('oportunidades')}>
-        Ver otras oportunidades →
+        Ver catálogo completo de oportunidades →
       </button>
     </>}
   </section>;
