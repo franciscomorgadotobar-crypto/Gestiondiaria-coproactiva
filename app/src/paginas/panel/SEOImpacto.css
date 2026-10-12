@@ -67,3 +67,10 @@
 .seo-impacto-netlify-grid strong{font-size:.85rem;overflow-wrap:anywhere}
 .seo-impacto-netlify a{font-size:.8rem;color:#965022;font-weight:700}
 @media(max-width:440px){.seo-impacto-netlify-grid{grid-template-columns:1fr}}
+
+.seo-impacto-despliegue-manual{background:#fff8ee;border:1px solid #dfc5a1;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.seo-impacto-despliegue-manual strong{color:#7a4c1e;font-size:.88rem}
+.seo-impacto-despliegue-manual p{font-size:.79rem;line-height:1.45}
+.seo-impacto-despliegue-manual label{display:flex;flex-direction:column;gap:5px;font-size:.77rem;font-weight:700}
+.seo-impacto-despliegue-manual input{max-width:260px;border:1px solid #dbb68b;border-radius:5px;background:#fff;min-height:40px;padding:8px 11px;font:inherit}
+.seo-impacto-despliegue-manual button{align-self:flex-start}
