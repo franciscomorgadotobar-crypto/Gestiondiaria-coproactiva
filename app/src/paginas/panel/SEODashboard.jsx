@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { nombreMejoraSEO } from '../../lib/seoNombresMejoras';
 import './SEODashboard.css';
 
 const numero = n => Number(n ?? 0).toLocaleString('es-CL', {maximumFractionDigits:0});
@@ -145,12 +146,11 @@ function Prioridades({gestionSEO,onNavigate,onAnalyze}) {
         <div className="seo-exec-mejora-identidad">
           <span className="seo-exec-mejora-icono" aria-hidden="true">✓</span>
           <div>
-            <strong>{p.estado==='publicada'?'Mejora SEO publicada':
-              p.estado==='integrada'?'Mejora SEO integrada':
-              p.estado==='preparada'?'Propuesta SEO en revisión':'Mejora SEO aprobada'}</strong>
-            <small>{p.ruta==='/'?'Portada':p.ruta} · {
-              p.estado==='publicada'?'En seguimiento':
-              p.estado==='integrada'?'Verificar web':'Pendiente de publicación'
+            <strong>{nombreMejoraSEO(p)}</strong>
+            <small>{
+              p.estado==='publicada'?'Publicada · En seguimiento':
+              p.estado==='integrada'?'Integrada · Verificar web':
+              p.estado==='preparada'?'En revisión':'Aprobada · Pendiente de publicación'
             }</small>
           </div>
         </div>

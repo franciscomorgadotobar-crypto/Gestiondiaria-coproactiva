@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { nombreMejoraSEO } from '../../lib/seoNombresMejoras';
 import './SEOImpacto.css';
 
 const numero = v => Number(v ?? 0).toLocaleString('es-CL',{maximumFractionDigits:0});
@@ -135,7 +136,7 @@ function Mejora({item,invocar,onActualizada}) {
     <button type="button" className="seo-impacto-mejora-cabecera"
       onClick={()=>setAbierto(v=>!v)} aria-expanded={abierto}>
       <div className="seo-impacto-mejora-texto">
-        <strong>{item.ruta==='/'?'Portada':item.ruta} · {item.consulta_principal}</strong>
+        <strong>{nombreMejoraSEO(item)}</strong>
         <small>{estado}{publicada?' · '+fecha(item.verificada_en):''}</small>
       </div>
       <span className="seo-impacto-flecha" aria-hidden="true">{abierto?'⌃':'⌄'}</span>
