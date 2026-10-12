@@ -11,7 +11,7 @@ const SECCIONES = [
 
 export default function ProveedoresNavegacion() {
   return (
-    <nav className="proveedores-subnav" aria-label="Secciones de proveedores">
+    <nav className="proveedores-subnav ui-pestanas" aria-label="Secciones de proveedores">
       {SECCIONES.map(([ruta, titulo, exacta]) => (
         <NavLink key={ruta} to={ruta} end={exacta}>
           {titulo}
