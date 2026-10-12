@@ -39,3 +39,24 @@ Los tests unitarios verifican lectura/escritura de parámetros URL y que no se b
 ## Selector de áreas
 
 Cuando se selecciona un área desde la pantalla de selección, React Router conserva esa pantalla en el historial antes de abrir CRM, Operación, Propiedades, Proveedores, WhatsApp, Contabilidad o SEO. El gesto Atrás desde el primer nivel del área regresa a la selección y permite elegir otra, aunque exista un área guardada previamente. Esto evita el bucle anterior que redirigía inmediatamente a la misma área al volver a `/`. El portal cliente y entradas externas directas conservan su comportamiento normal.
+
+## Volver dentro de la aplicación: jerarquía reforzada (12-10-2026)
+
+El control **«‹ Volver» de la barra de la app** aplica un recorrido funcional predecible:
+**detalle/edición → listado o módulo → inicio del área → selector de área**.
+Esto incluye controles de levantamientos, postulantes y comunicaciones de proveedores,
+fichas de comunidades y propiedades, reportes contables y secciones de ayuda.
+Desde Mi cuenta y Notificaciones regresa al inicio del **área elegida** (CRM,
+SEO, Contabilidad, WhatsApp u Operación), y no salta incorrectamente a Operación.
+
+El selector es el último retroceso **solo si el perfil tiene acceso a varias áreas**.
+Usuarios con una sola área permanecen en el inicio de su área.
+El último paso limpia únicamente la **preferencia de área** guardada; no cierra
+sesión ni modifica datos de las comunidades. Se marca el selector explícitamente
+en el estado de navegación para evitar redirecciones inmediatas.
+
+**Diferencia importante:** el gesto físico Atrás de Android conserva el historial
+real de React Router y cierra previamente pestañas o diálogos registrados en ese
+historial. Al entrar desde el selector, ese historial lo conserva como destino
+de regreso. Las entradas externas directas sin historial conservan la salida
+normal de Android (no se bloquea ni se crea un historial artificial).
