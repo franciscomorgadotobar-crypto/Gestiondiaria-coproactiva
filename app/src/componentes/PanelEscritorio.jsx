@@ -5,6 +5,9 @@ import { supabase } from '../lib/supabase';
 import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
+import { usePestanaHistorial } from '../lib/pestanasHistorial';
+
+const ESTADOS_MENU = ['cerrado', 'mas'];
 
 function activa(pathname, ruta) {
   return pathname === ruta || pathname.startsWith(ruta + '/');
@@ -33,7 +36,15 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { iniciar } = useTutoriales();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
   const [alertasGenerales, setAlertasGenerales] = useState(0);
-  const [masAbierto, setMasAbierto] = useState(false);
+  const [menu, cambiarMenu] = usePestanaHistorial('menu', 'cerrado', ESTADOS_MENU);
+  const masAbierto = menu === 'mas';
+  function setMasAbierto(proximo, { alNavegar = false } = {}) {
+    const abrir = typeof proximo === 'function' ? proximo(masAbierto) : proximo;
+    if (abrir === masAbierto) return;
+    if (abrir) cambiarMenu('mas');
+    else if (alNavegar) cambiarMenu('cerrado', { replace: true });
+    else navegar(-1); // Volver quita la entrada que abrió el menú.
+  }
 
   useEffect(() => {
     if (!perfil?.id) return;
@@ -194,7 +205,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   function irLevantamientos() {
-    setMasAbierto(false);
     if (pathname === '/inicio') {
       document.getElementById('por-hacer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       if (window.history?.replaceState) window.history.replaceState(null, '', '#por-hacer');
@@ -237,9 +247,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   function ejecutarItemMovil(item) {
-    setMasAbierto(false);
+    // Se reemplaza la entrada del menú al navegar; Atrás lleva al módulo
+    // anterior sin regresar a un menú abierto.
+    setMasAbierto(false, { alNavegar: true });
     if (item.accion) return item.accion();
-    if (item.ruta) navegar(item.ruta);
+    if (item.ruta) navegar(item.ruta, { replace: true });
   }
 
   return (
@@ -385,11 +397,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                       <span>›</span>
                     </button>
                   ))}
-                  <Link to="/mi-cuenta" onClick={() => setMasAbierto(false)}>
+                  <Link to="/mi-cuenta" onClick={() => setMasAbierto(false, { alNavegar: true })}>
                     Mi cuenta <span>›</span>
                   </Link>
                   {puedeCambiarArea && (
-                    <button type="button" onClick={() => { setMasAbierto(false); cambiarArea(); }}>
+                    <button type="button" onClick={() => { setMasAbierto(false, { alNavegar: true }); cambiarArea(); }}>
                       Cambiar de área <span>›</span>
                     </button>
                   )}
