@@ -10,6 +10,7 @@ import SEORecomendaciones from './SEORecomendaciones';
 import SEOInventarioOportunidades from './SEOInventarioOportunidades';
 import SEODashboard from './SEODashboard';
 import SEOImpacto from './SEOImpacto';
+import BarraNavegacionSEO from '../../componentes/BarraNavegacionSEO';
 import './SEO.css';
 
 const SECCIONES = [
@@ -320,6 +321,12 @@ function SEOInterno() {
     setVista(vistaNueva);
     if (vistaNueva === 'resumen') void cargarHistorialSEO();
     requestAnimationFrame(() => {
+      if (window.matchMedia('(max-width: 899px)').matches) {
+        document.querySelector('.seo-cuerpo')?.scrollIntoView({
+          behavior: 'smooth', block: 'start'
+        });
+        return;
+      }
       const nav = document.getElementById('seo-navegacion');
       nav?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       nav?.querySelector('[aria-selected="true"]')?.scrollIntoView({
@@ -715,6 +722,12 @@ function SEOInterno() {
 
 
     </div>
+    <BarraNavegacionSEO
+      vista={vista}
+      secciones={SECCIONES}
+      vistasValidas={VISTAS_SEO}
+      onSeleccionar={id => { if (id === 'resumen') void cargarHistorialSEO(); }}
+    />
   </div>;
 }
 export default function SEO() {
