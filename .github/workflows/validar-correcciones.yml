@@ -57,6 +57,9 @@ jobs:
       - name: Verificar navegación y diálogos accesibles fase 3
         working-directory: app
         run: node --test pruebas/ui-fase3.test.js
+      - name: Probar menú SEO móvil, accesos e historial
+        working-directory: app
+        run: node --test pruebas/seo-navegacion-movil.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
