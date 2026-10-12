@@ -327,3 +327,37 @@
     padding: 7px 10px 7px 13px;
   }
 }
+
+/* UI fase 2: KPIs y listas con las mismas superficies y foco que el resto. */
+.comunidades-pantalla .comunidades-kpis > div {
+  border-radius: var(--radio-tarjeta);
+  overflow: hidden;
+}
+.comunidades-pantalla .comunidades-herramientas {
+  border-radius: var(--radio-tarjeta);
+  min-width: 0;
+}
+.comunidades-pantalla .comunidades-herramientas :is(.campo,input) {
+  min-width: 0;
+}
+.comunidades-pantalla .comunidad-card-pie > span:last-child {
+  color: var(--enlace);
+}
+.comunidad-card:focus-visible,
+.comunidad-alerta-link:focus-visible,
+.comunidad-sugerencia:focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: 2px;
+}
+@media (max-width: 680px) {
+  .comunidades-pantalla .comunidades-kpis > div {
+    min-height: 72px;
+    padding: 12px;
+  }
+  .comunidades-pantalla .comunidades-kpis strong { font-size: 22px; }
+  .comunidad-sugerencia { min-height: var(--tactil); }
+  .comunidades-pantalla .comunidades-herramientas {
+    padding: 12px;
+    align-items: stretch;
+  }
+}

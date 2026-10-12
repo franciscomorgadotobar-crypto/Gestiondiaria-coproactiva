@@ -1574,3 +1574,61 @@
   flex: none;
   font-size: 11px;
 }
+
+/* UI fase 2: cifras legibles, reportes sin recortes y superficies homogéneas. */
+.contabilidad-pantalla :is(
+  .contabilidad-reporte-resumen > div,
+  .contabilidad-mayor-resumen > div,
+  .contabilidad-bg-columna,
+  .contabilidad-operaciones,
+  .contabilidad-reporte-panel
+) {
+  border-radius: var(--radio-tarjeta);
+}
+.contabilidad-pantalla .contabilidad-operaciones {
+  background: var(--papel);
+  border-color: var(--borde);
+}
+.contabilidad-pantalla :is(
+  .contabilidad-reporte-resumen,
+  .contabilidad-mayor-resumen,
+  .contabilidad-filtros-reporte,
+  .contabilidad-asiento-datos,
+  .contabilidad-lineas,
+  .contabilidad-cuadre
+) { min-width: 0; }
+.contabilidad-pantalla :is(.contabilidad-reporte-resumen,.contabilidad-mayor-resumen) strong {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.contabilidad-pantalla .ui-tabla-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.contabilidad-pantalla .ui-tabla-scroll > table {
+  width: max-content;
+  min-width: 100%;
+}
+.contabilidad-pantalla :is(.contabilidad-linea,.contabilidad-asiento-cabecera,.contabilidad-kpi-principal) {
+  border-radius: var(--radio-control);
+}
+.contabilidad-pantalla .contabilidad-linea { background: var(--hover); }
+.contabilidad-pantalla .contabilidad-filtros-reporte :is(input,select) {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 760px) {
+  .contabilidad-pantalla .contabilidad-editor {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .contabilidad-pantalla :is(.contabilidad-editor input,.contabilidad-editor select,
+    .contabilidad-editor textarea,.contabilidad-entidad-selector select) {
+    font-size: 16px;
+  }
+  .contabilidad-pantalla .contabilidad-asiento-lineas-vista,
+  .contabilidad-pantalla .contabilidad-reporte {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

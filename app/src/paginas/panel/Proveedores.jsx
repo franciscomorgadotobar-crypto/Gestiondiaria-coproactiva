@@ -523,7 +523,7 @@ export default function Proveedores() {
             Proveedores registrados por administración a partir de presentaciones de servicios y contactos.
           </p>
         </div>
-        <div className="acciones-proveedores-cabecera">
+        <div className="acciones-proveedores-cabecera ui-acciones">
           <button type="button" className="boton" onClick={() => abrirComunicacion()}>
             Nueva comunicación
           </button>
@@ -577,7 +577,7 @@ export default function Proveedores() {
           </div>
         )}
 
-        <div className="proveedores-busqueda-fila">
+        <div className="proveedores-busqueda-fila ui-toolbar">
           <label className="buscador-proveedores crece">
             <span aria-hidden="true">⌕</span>
             <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
@@ -590,7 +590,7 @@ export default function Proveedores() {
         </div>
 
         {filtrosAbiertos && (
-          <div className="tarjeta proveedores-filtros">
+          <div className="tarjeta proveedores-filtros ui-panel">
             <div className="campo">
               <label className="etiqueta-campo">Rubro</label>
               <select value={rubro} onChange={e => setRubro(e.target.value)}>
@@ -669,7 +669,7 @@ export default function Proveedores() {
           ))}
         </div>
 
-        <div className="proveedores-tabla-wrap">
+        <div className="proveedores-tabla-wrap ui-tabla-scroll" role="region" aria-label="Tabla de proveedores, desplazamiento horizontal" tabIndex={0}>
           <table className="proveedores-tabla">
             <thead>
               <tr>
@@ -1044,7 +1044,7 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
     <div className="proveedor-modal proveedor-formulario">
       <button className="modal-cerrar" onClick={onCancelar} aria-label="Cerrar">×</button>
       <h2 className="h3">{datos.id ? 'Editar proveedor' : 'Agregar proveedor'}</h2>
-      <div className="formulario-grid">
+      <div className="formulario-grid ui-formulario">
         <div className="campo ancho-total">
           <label className="etiqueta-campo">Empresa *</label>
           <input value={datos.empresa} onChange={e => cambiar('empresa', e.target.value)} placeholder="Nombre de la empresa" />

@@ -78,7 +78,7 @@ export default function ProveedoresComunicaciones() {
             Historial de comunicaciones enviadas a proveedores y resultado por destinatario.
           </p>
         </div>
-        <div className="acciones-proveedores-cabecera">
+        <div className="acciones-proveedores-cabecera ui-acciones">
           <button type="button" className="boton" onClick={() => navegar('/proveedores')}>
             Nueva comunicación
           </button>
@@ -150,7 +150,7 @@ export default function ProveedoresComunicaciones() {
                     <div><strong>{seleccionada.fallidos}</strong><span>Error</span></div>
                   </div>
 
-                  <div className="tabla-responsive">
+                  <div className="tabla-responsive ui-tabla-scroll" role="region" aria-label="Tabla de destinatarios, desplazamiento horizontal" tabIndex={0}>
                     <table className="tabla comunicaciones-destinatarios">
                       <thead><tr><th>Proveedor</th><th>Contacto</th><th>Correo</th><th>Estado</th></tr></thead>
                       <tbody>

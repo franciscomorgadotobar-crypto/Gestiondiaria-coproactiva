@@ -46,8 +46,8 @@ export default function PracticaLevantamiento() {
   const volverLista = () => setPregunta(null);
 
   return (
-    <div className="pantalla pantalla-angosta practica-levantamiento">
-      <header className="encabezado encabezado-levantamiento" data-tutorial="practica-intro">
+    <div className="pantalla pantalla-angosta practica-levantamiento modulo-unificado">
+      <header className="encabezado encabezado-levantamiento modulo-cabecera" data-tutorial="practica-intro">
         <div className="fila" style={{ marginBottom: 6 }}>
           <span className="crece" />
           <span className="chip chip-alerta">Modo práctica</span>
@@ -64,7 +64,7 @@ export default function PracticaLevantamiento() {
         </div>
       </header>
 
-      <div className="cuerpo">
+      <div className="cuerpo modulo-contenido">
         <section className="categoria">
           <button
             type="button"

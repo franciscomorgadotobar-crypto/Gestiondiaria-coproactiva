@@ -734,7 +734,7 @@ function ReporteBalance({ balance }) {
             <p>Sumas, saldos, inventario y resultado de todas las cuentas.</p>
           </div>
         </div>
-        <div className="tabla-responsive">
+        <div className="tabla-responsive ui-tabla-scroll" role="region" aria-label="Tabla contable, desplazamiento horizontal" tabIndex={0}>
           <table className="tabla contabilidad-balance-tabla contabilidad-tabla-reporte">
             <thead>
               <tr>
@@ -1455,7 +1455,7 @@ export default function Contabilidad() {
         </nav>
       </header>
 
-      <div className="cuerpo contabilidad-cuerpo">
+      <div className="cuerpo contabilidad-cuerpo modulo-contenido">
         {error && <div className="aviso aviso-critico">{error}</div>}
         {aviso && (
           <div className="aviso aviso-ok">
@@ -1589,7 +1589,7 @@ export default function Contabilidad() {
                 <Link to="/contabilidad/configuracion" className="boton boton-secundario">Configurar plan</Link>
               </div>
             )}
-            <div className="contabilidad-toolbar">
+            <div className="contabilidad-toolbar ui-toolbar">
               <label className="campo crece">
                 <span className="etiqueta-campo">Buscar asiento</span>
                 <input type="search" value={busquedaAsiento}
@@ -1672,7 +1672,7 @@ export default function Contabilidad() {
               </div>
             )}
 
-            <div className="contabilidad-toolbar">
+            <div className="contabilidad-toolbar ui-toolbar">
               <label className="campo crece">
                 <span className="etiqueta-campo">Buscar cuenta</span>
                 <input type="search" value={busquedaCuenta}
@@ -1702,7 +1702,7 @@ export default function Contabilidad() {
               </div>
             )}
 
-            <div className="tabla-responsive">
+            <div className="tabla-responsive ui-tabla-scroll" role="region" aria-label="Tabla contable, desplazamiento horizontal" tabIndex={0}>
               <table className="tabla contabilidad-plan-tabla">
                 <thead>
                   <tr>
@@ -1895,7 +1895,7 @@ export default function Contabilidad() {
                       <p>Una fila por asiento, con sus cuentas involucradas y la glosa registrada una sola vez.</p>
                     </div>
                   </div>
-                  <div className="tabla-responsive">
+                  <div className="tabla-responsive ui-tabla-scroll" role="region" aria-label="Tabla contable, desplazamiento horizontal" tabIndex={0}>
                     <table className="tabla contabilidad-diario-tabla contabilidad-tabla-reporte contabilidad-diario-agrupado">
                       <thead>
                         <tr><th>N° Asiento</th><th>Fecha</th><th>Cuentas involucradas</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr>
@@ -1970,7 +1970,7 @@ export default function Contabilidad() {
                       <p>Detalle de cargos y abonos del período seleccionado.</p>
                     </div>
                   </div>
-                  <div className="tabla-responsive">
+                  <div className="tabla-responsive ui-tabla-scroll" role="region" aria-label="Tabla contable, desplazamiento horizontal" tabIndex={0}>
                     <table className="tabla contabilidad-tabla-reporte">
                       <thead><tr><th>N° Asiento</th><th>Fecha</th><th>Cuenta</th><th>Debe</th><th>Haber</th><th>Glosa</th></tr></thead>
                       <tbody>
@@ -1993,7 +1993,7 @@ export default function Contabilidad() {
 
         {!cargando && vista === 'entidades' && (
           <>
-            <div className="contabilidad-toolbar">
+            <div className="contabilidad-toolbar ui-toolbar">
               <div className="crece">
                 <h2 className="h3">Entidades contables</h2>
                 <p className="micro apagado" style={{ margin: '3px 0 0' }}>

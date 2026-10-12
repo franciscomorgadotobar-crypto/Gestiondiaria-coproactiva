@@ -237,3 +237,120 @@
 @media(max-width:860px){
   .wa-page.modulo-unificado :is(input,select,textarea){font-size:16px}
 }
+
+/* Fase 2: patrones transversales opt-in. El diseño común no debe alterar
+   el tamaño de columnas contables ni las interacciones específicas de cada módulo. */
+.modulo-unificado .ui-panel {
+  min-width: 0;
+  max-width: 100%;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-tarjeta);
+}
+.modulo-unificado .ui-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--modulo-espacio-sm);
+  min-width: 0;
+}
+.modulo-unificado .ui-toolbar > * { min-width: 0; }
+.modulo-unificado .ui-formulario {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  min-width: 0;
+}
+.modulo-unificado .ui-formulario > .ancho-total { grid-column: 1 / -1; }
+.modulo-unificado .ui-formulario .campo { min-width: 0; }
+.modulo-unificado .ui-formulario :is(input,select,textarea) {
+  max-width: 100%;
+  min-width: 0;
+}
+.modulo-unificado .ui-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.modulo-unificado .ui-tabla-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.modulo-unificado .ui-tabla-scroll > table { border-collapse: collapse; }
+.modulo-unificado .ui-tabla-scroll:focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: -2px;
+}
+.modulo-unificado :is(.ui-panel,.ui-tabla-scroll,.ui-formulario,.ui-toolbar) {
+  box-sizing: border-box;
+}
+@media (max-width: 760px) {
+  .modulo-unificado .ui-formulario { grid-template-columns: minmax(0,1fr); }
+  .modulo-unificado .ui-toolbar { align-items: stretch; }
+  .modulo-unificado .ui-toolbar :is(input,select,textarea) { min-width: 0; }
+  .modulo-unificado .ui-acciones > .boton { min-height: var(--tactil); }
+}
+
+/* Fase 2 / Proveedores: bandejas, búsqueda, fichas y formularios. */
+.proveedores-pantalla.modulo-unificado .proveedores-busqueda-fila.ui-toolbar {
+  align-items: stretch;
+}
+.proveedores-pantalla.modulo-unificado .proveedores-busqueda-fila .buscador-proveedores {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.proveedores-pantalla.modulo-unificado .proveedores-busqueda-fila .boton {
+  flex: 0 0 auto;
+  min-height: var(--tactil);
+}
+.proveedores-pantalla.modulo-unificado :is(
+  .proveedores-filtros,.proveedores-recepcion-toolbar,.proveedores-postulante-form
+) {
+  border-radius: var(--radio-tarjeta);
+  min-width: 0;
+  max-width: 100%;
+}
+.proveedores-pantalla.modulo-unificado :is(
+  .proveedor-tarjeta,.proveedores-correo-lista,.proveedores-correo-detalle,
+  .comunicaciones-listado,.comunicaciones-detalle,.proveedores-postulantes-tabla
+) {
+  border-radius: var(--radio-tarjeta);
+  min-width: 0;
+}
+.proveedores-pantalla.modulo-unificado :is(
+  .proveedor-tarjeta-principal,.proveedores-correo-item,.comunicacion-fila
+):focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: -2px;
+}
+.proveedores-pantalla.modulo-unificado .proveedores-tabla-wrap.ui-tabla-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.proveedores-pantalla.modulo-unificado .proveedores-tabla-wrap.ui-tabla-scroll > table {
+  min-width: 740px;
+}
+.proveedores-pantalla.modulo-unificado .ui-formulario .campo {
+  margin-bottom: 0;
+}
+.proveedores-pantalla.modulo-unificado .ui-acciones .boton {
+  min-height: 40px;
+}
+@media (max-width: 760px) {
+  .proveedores-pantalla.modulo-unificado .proveedores-busqueda-fila.ui-toolbar {
+    flex-wrap: nowrap;
+  }
+  .proveedores-pantalla.modulo-unificado .proveedores-busqueda-fila .buscador-proveedores {
+    flex: 1 1 auto;
+  }
+  .proveedores-pantalla.modulo-unificado .proveedores-busqueda-fila .boton {
+    flex: 0 0 auto;
+  }
+  .proveedores-pantalla.modulo-unificado .ui-acciones .boton { min-height: var(--tactil); }
+  .proveedores-pantalla.modulo-unificado .ui-formulario { gap: 10px; }
+}

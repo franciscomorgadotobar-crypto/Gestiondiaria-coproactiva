@@ -193,7 +193,7 @@ function Recepcion({ vista }) {
               Clasifica los antecedentes recibidos en contacto@coproactiva.cl. Los archivos permanecen disponibles en Gmail.
             </p>
           </div>
-          <div className="acciones-proveedores-cabecera">
+          <div className="acciones-proveedores-cabecera ui-acciones">
             <button className="boton" disabled={busy} onClick={sync}>
               {busy ? 'Sincronizando…' : 'Sincronizar correos'}
             </button>
@@ -212,7 +212,7 @@ function Recepcion({ vista }) {
             <div><strong>{resumenCorreos.otros}</strong><span>Otros</span></div>
           </section>
 
-          <section className="tarjeta proveedores-recepcion-toolbar">
+          <section className="tarjeta proveedores-recepcion-toolbar ui-toolbar">
             <label className="campo">
               <span className="etiqueta-campo">Estado</span>
               <select aria-label="Filtrar correos" value={filter} onChange={e=>setFilter(e.target.value)}>
@@ -276,7 +276,7 @@ function Recepcion({ vista }) {
                   {!email.clasificacion && (
                     <div className="proveedores-clasificacion">
                       <h3 className="h4">Clasificar correo</h3>
-                      <div className="formulario-grid">
+                      <div className="formulario-grid ui-formulario">
                         <label className="campo">
                           <span className="etiqueta-campo">Clasificación</span>
                           <select value={classification} onChange={e=>{
@@ -369,7 +369,7 @@ function Recepcion({ vista }) {
             Postulaciones y antecedentes laborales recibidos por correo o ingresados manualmente.
           </p>
         </div>
-        <div className="acciones-proveedores-cabecera">
+        <div className="acciones-proveedores-cabecera ui-acciones">
           <button className="boton" onClick={()=>setForm({
             nombre:'',email:'',telefono:'',comuna:'',cargo_propuesto:'',estado:'nuevo',notas:''
           })}>
@@ -391,7 +391,7 @@ function Recepcion({ vista }) {
         </section>
 
         {!form && (
-          <section className="tarjeta proveedores-recepcion-toolbar">
+          <section className="tarjeta proveedores-recepcion-toolbar ui-toolbar">
             <label className="campo proveedores-postulantes-buscar">
               <span className="etiqueta-campo">Buscar</span>
               <input type="search" value={search}
@@ -410,7 +410,7 @@ function Recepcion({ vista }) {
                 <h2 className="h4">{form.id ? 'Editar postulante' : 'Nuevo postulante'}</h2>
               </div>
             </div>
-            <div className="formulario-grid">
+            <div className="formulario-grid ui-formulario">
               {[['nombre','Nombre'],['comuna','Comuna'],['cargo_propuesto','Área o cargo'],['email','Correo'],['telefono','Teléfono']]
                 .map(([key,label])=>(
                   <label className="campo" key={key}>
@@ -452,7 +452,7 @@ function Recepcion({ vista }) {
           </form>
         ) : (
           <section className="tarjeta proveedores-postulantes-tabla">
-            <div className="tabla-responsive">
+            <div className="tabla-responsive ui-tabla-scroll" role="region" aria-label="Tabla de postulantes, desplazamiento horizontal" tabIndex={0}>
               <table className="tabla">
                 <thead>
                   <tr><th>Nombre</th><th>Comuna</th><th>Área</th><th>Estado</th><th>Ingreso</th><th>Contacto</th></tr>

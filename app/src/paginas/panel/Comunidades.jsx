@@ -296,7 +296,7 @@ function ListadoComunidades() {
         </div>
       </header>
 
-      <div className="cuerpo comunidades-cuerpo">
+      <div className="cuerpo comunidades-cuerpo modulo-contenido">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
 
         {comunidades !== null && (
@@ -311,13 +311,13 @@ function ListadoComunidades() {
         )}
 
         {nueva && (
-          <div className="comunidad-form">
+          <div className="comunidad-form ui-panel">
             <h2 className="h4">Nueva comunidad</h2>
             <p className="micro" style={{ margin: '-4px 0 12px' }}>
               Para un cliente que no pasa por el Pipeline. Si viene de un prospecto,
               márcalo como Ganado ahí: la comunidad se crea sola con sus datos.
             </p>
-            <div className="formulario-grid">
+            <div className="formulario-grid ui-formulario">
               <div className="campo ancho-total">
                 <label className="etiqueta-campo" htmlFor="nueva-nombre">Nombre</label>
                 <input id="nueva-nombre" value={nueva.nombre} autoFocus
@@ -379,7 +379,7 @@ function ListadoComunidades() {
           </section>
         )}
 
-        <section className="tarjeta comunidades-herramientas">
+        <section className="tarjeta comunidades-herramientas ui-toolbar">
         <div className="campo comunidades-buscador">
           <label className="etiqueta-campo" htmlFor="buscar-comunidad">Buscar comunidad</label>
           <input
@@ -985,10 +985,10 @@ function DetalleComunidad({ id }) {
     setNotificaciones(xs => xs.map(x => x.id === n.id ? { ...x, leida: true } : x));
   }
 
-  if (cargando) return <div className="pantalla"><p className="cargando">Cargando…</p></div>;
+  if (cargando) return <div className="pantalla modulo-unificado"><p className="cargando">Cargando…</p></div>;
   if (!comunidad) {
     return (
-      <div className="pantalla"><div className="cuerpo">
+      <div className="pantalla modulo-unificado"><div className="cuerpo modulo-contenido">
         <div className="aviso aviso-critico">{error ?? 'Esta comunidad no existe o no tienes acceso.'}</div>
         <button className="boton boton-texto" onClick={() => navegar('/comunidades')}>‹ Comunidades</button>
       </div></div>
@@ -996,7 +996,7 @@ function DetalleComunidad({ id }) {
   }
 
   return (
-    <div className="pantalla">
+    <div className="pantalla modulo-unificado">
       {datosEditando && (
         <DialogoCampos
           titulo="Editar comunidad"
@@ -1096,7 +1096,7 @@ function DetalleComunidad({ id }) {
         </div>
       </header>
 
-      <div className="cuerpo">
+      <div className="cuerpo modulo-contenido">
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 12 }}>{error}</div>}
         {aviso && (
           <div className="aviso aviso-ok" style={{ marginBottom: 12 }}>
@@ -1105,7 +1105,7 @@ function DetalleComunidad({ id }) {
           </div>
         )}
 
-        <div className="pestanas" role="tablist" aria-label="Secciones de la comunidad">
+        <div className="pestanas ui-pestanas" role="tablist" aria-label="Secciones de la comunidad">
           {SECCIONES.map(([clave, nombre]) => (
             <button key={clave} type="button" role="tab" aria-selected={seccion === clave}
                     className={seccion === clave ? 'activo' : ''}
@@ -1142,7 +1142,7 @@ function DetalleComunidad({ id }) {
             </div>
 
             {puedeGestionar && (
-              <div className="comunidad-form">
+              <div className="comunidad-form ui-panel">
                 <h3 className="h4" style={{ marginTop: 0 }}>Agregar activo</h3>
                 <div className="comunidad-grid-2">
                   <Campo label="Nombre" valor={nuevoActivo.nombre} onChange={v => setNuevoActivo(x => ({ ...x, nombre: v }))} />
@@ -1201,7 +1201,7 @@ function DetalleComunidad({ id }) {
             <p className="chico apagado">El plan define qué debe hacerse y con qué frecuencia. Agendar una visita es una ejecución distinta del plan.</p>
 
             {puedeGestionar && activos.length > 0 && (
-              <div className="comunidad-form">
+              <div className="comunidad-form ui-panel">
                 <h3 className="h4" style={{ marginTop: 0 }}>Agregar actividad al plan</h3>
                 <div className="campo">
                   <label className="etiqueta-campo">Activo</label>
@@ -1347,7 +1347,7 @@ function DetalleComunidad({ id }) {
                     </select>
                   </div> : a.plantilla_id && <p className="micro apagado">Formulario: {formularioPorId.get(a.plantilla_id)?.nombre || 'Asignado'}</p>}
                   {puedeGestionar && (
-                    <div className="comunidad-acciones" style={{ marginTop: 8 }}>
+                    <div className="comunidad-acciones ui-acciones" style={{ marginTop: 8 }}>
                       {a.plantilla_id && <button className="boton boton-secundario" disabled={guardando} onClick={()=>abrirFormulario(a.id,agenda.find(g=>g.actividad_id===a.id && ['agendada','en_curso'].includes(g.estado))?.id || null)}>Abrir formulario</button>}
                       <button
                         type="button"
@@ -1391,7 +1391,7 @@ function DetalleComunidad({ id }) {
 
             <h3 className="h4" style={{ marginTop: 22 }}>Mantenciones</h3>
             {puedeGestionar && actividades.length > 0 && (
-              <div className="comunidad-form">
+              <div className="comunidad-form ui-panel">
                 <h3 className="h4" style={{ marginTop: 0 }}>Agendar mantención</h3>
                 <div className="campo">
                   <label className="etiqueta-campo">Actividad</label>
@@ -1457,7 +1457,7 @@ function DetalleComunidad({ id }) {
                     </div>
                   )}
                   {puedeGestionar && !['completada', 'cancelada'].includes(item.estado) && (
-                    <div className="comunidad-acciones">
+                    <div className="comunidad-acciones ui-acciones">
                       {actividad?.plantilla_id && <button className="boton boton-secundario" disabled={guardando} onClick={()=>abrirFormulario(actividad.id,item.id)}>Abrir formulario</button>}
                       <button className="boton boton-texto" onClick={() => reprogramar(item)}>Reprogramar</button>
                       <button className="boton boton-texto" onClick={() => registrarEjecucion(item)} disabled={guardando}>Registrar ejecución</button>
@@ -1475,7 +1475,7 @@ function DetalleComunidad({ id }) {
 
             {puedeGestionar ? (
               <>
-                <div className="comunidad-form">
+                <div className="comunidad-form ui-panel">
                   <h3 className="h4" style={{ marginTop: 0 }}>Ubicación de la comunidad</h3>
                   <p className="micro apagado">Esta ubicación pertenece al edificio y no depende de que ya exista un check-in.</p>
                   <div className="comunidad-grid-2">
@@ -1487,7 +1487,7 @@ function DetalleComunidad({ id }) {
                   <button className="boton boton-movil" onClick={guardarUbicacion} disabled={guardando}>Guardar ubicación</button>
                 </div>
 
-                <div className="comunidad-form">
+                <div className="comunidad-form ui-panel">
                   <h3 className="h4" style={{ marginTop: 0 }}>Alertas de mantención</h3>
                   <div className="campo">
                     <label className="etiqueta-campo">Actividad</label>
