@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from './lib/sesion';
 import Ingreso from './paginas/Ingreso';
@@ -133,9 +133,13 @@ function ProtegerHomeFinal() {
   const { pathname, search, hash } = useLocation();
   const navegar = useNavigate();
   const idUsuario = sesion?.user?.id;
+  const idAnterior = useRef(undefined);
 
   useEffect(() => {
-    reiniciarHistorialSelector();
+    if (idAnterior.current !== idUsuario) {
+      reiniciarHistorialSelector();
+      idAnterior.current = idUsuario;
+    }
   }, [idUsuario]);
 
   useEffect(() => {
