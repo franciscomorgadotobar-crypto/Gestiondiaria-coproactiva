@@ -63,6 +63,9 @@ jobs:
       - name: Comprobar SEO, selector y salida con Atrás Android
         working-directory: app
         run: node --test pruebas/volver-selector-android.test.js
+      - name: Probar PWA con Home real antes de salir en Android
+        working-directory: app
+        run: node --test pruebas/pwa-home-real.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
@@ -94,6 +97,9 @@ jobs:
       - name: Validar resoluciones, formularios y protección de rutas
         working-directory: app
         run: node pruebas/ui-browser-smoke.mjs
+      - name: Reproducir Atrás Android desde SEO con sesión local simulada
+        working-directory: app
+        run: node pruebas/ui-pwa-atras-autenticado.mjs
       - name: Adjuntar capturas de QA
         if: always()
         uses: actions/upload-artifact@v4
