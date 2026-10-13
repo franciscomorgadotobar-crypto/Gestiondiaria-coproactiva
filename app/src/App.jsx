@@ -88,6 +88,8 @@ function tieneCRM(perfil) {
  */
 function Entrada() {
   const { perfil } = useSesion();
+  // La raíz es SIEMPRE el Home autorizado. No restaurar automáticamente
+  // el último módulo: Android Atrás debe terminar aquí antes de salir.
   if (perfil?.rol === 'cliente') return <Navigate to="/portal" replace />;
   if (!tieneCRM(perfil)) return <PanelEscritorio><Inicio /></PanelEscritorio>;
   return <SeleccionArea />;
