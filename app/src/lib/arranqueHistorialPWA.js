@@ -11,7 +11,7 @@
  * BrowserRouter adopta estos índices sin desincronizarse. No se captura
  * popstate ni se bloquea Atrás físico.
  */
-import { esRutaInterna } from './historialSelector';
+import { esRutaInterna } from './historialSelector.js';
 
 export function prepararArranqueConHome(historial, ubicacion, base = '/') {
   const prefijo = base === '/' ? '' : String(base).replace(/\/+$/, '');
