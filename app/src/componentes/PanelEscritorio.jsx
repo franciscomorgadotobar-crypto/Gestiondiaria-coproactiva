@@ -5,7 +5,8 @@ import { supabase } from '../lib/supabase';
 import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
-import { prepararHistorialSelector } from '../lib/historialSelector';
+import { pasosHastaSelector } from '../lib/historialSelector';
+
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
 
 const ESTADOS_MENU = ['cerrado', 'mas'];
@@ -22,13 +23,17 @@ function activaPropiedades(pathname) {
 
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
-  const { pathname, search, hash } = useLocation();
+  const { pathname, hash } = useLocation();
   const navegar = useNavigate();
   // Cambiar de área no debe reiniciar React ni interrumpir la PWA.
   // Entrada interpreta este estado incluso al navegar desde la misma ruta '/'.
   function cambiarArea() {
     limpiarArea();
-    navegar('/', { state: { selectorCoproactiva: true } });
+    // La selección ya es el último destino: no debe quedar una copia nueva
+    // encima de una pantalla de trabajo al pulsar «Cambiar de área».
+    const pasos = pasosHastaSelector(window.history.state);
+    if (pasos !== null) return navegar(pasos);
+    navegar('/', { replace: true, state: { selectorCoproactiva: true } });
   }
   const { iniciar } = useTutoriales();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
@@ -78,15 +83,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
 
-  // PWA/Android: si la sesión reabre directamente el inicio de un área
-  // (incluido SEO) con índice 0, Atrás debe encontrar el selector antes
-  // de abandonar la aplicación. Solo para perfiles con varias áreas.
-  useEffect(() => {
-    if (!puedeCambiarArea) return;
-    prepararHistorialSelector(
-      navegar, { pathname, search, hash }, window.history.state?.idx, true
-    );
-  }, [puedeCambiarArea, pathname, search, hash, navegar]);
+
 
   // La barra muestra solo el área en la que se está, igual que en el
   // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
