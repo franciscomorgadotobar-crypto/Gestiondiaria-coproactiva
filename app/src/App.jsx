@@ -93,11 +93,11 @@ function Entrada() {
   const area = areaGuardada();
   if (area === 'crm') return <Navigate to="/pipeline" replace />;
   if (area === 'propiedades') return <Navigate to="/propiedades" replace />;
-  if (area === 'proveedores') return <Navigate to="/proveedores" replace />;
+  if (area === 'proveedores' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/proveedores" replace />;
   if (area === 'whatsapp' && ['superadmin','admin'].includes(perfil?.rol)) return <Navigate to="/whatsapp" replace />;
   if (area === 'contabilidad' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/contabilidad" replace />;
   if (area === 'seo' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/seo" replace />;
-  if (area === 'operacion') return <PanelEscritorio><Inicio /></PanelEscritorio>;
+  if (area === 'operacion') return <Navigate to="/inicio" replace />;
   return <SeleccionArea />;
 }
 
