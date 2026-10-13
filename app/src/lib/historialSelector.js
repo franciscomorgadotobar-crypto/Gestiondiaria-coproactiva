@@ -31,38 +31,42 @@ export function pasosHastaSelector(estado) {
   return null;
 }
 
-export function esRutaInterna(ruta) {
+export function esRutaInterna(ruta, esCliente = false) {
   const path = String(ruta || '').replace(/\/+$/, '') || '/';
+  if (esCliente) return path === '/portal' || path.startsWith('/portal/');
   return RAICES_CON_SELECTOR.some(base => path === base || path.startsWith(base + '/'));
 }
 
-export function homePermitido(puedeCambiarArea) {
-  return puedeCambiarArea ? '/' : '/inicio';
+export function homePermitido(puedeCambiarArea, esCliente = false) {
+  return esCliente ? '/portal' : puedeCambiarArea ? '/' : '/inicio';
 }
 
-export function debePrepararHistorialSelector(ruta, indice, accesoInterno, puedeCambiarArea = true) {
+export function debePrepararHistorialSelector(ruta, indice, accesoInterno, puedeCambiarArea = true, esCliente = false) {
   const path = String(ruta || '').replace(/\/+$/, '') || '/';
   return Boolean(accesoInterno)
     && indice === 0
-    && path !== homePermitido(puedeCambiarArea)
-    && esRutaInterna(path);
+    && path !== homePermitido(puedeCambiarArea, esCliente)
+    && esRutaInterna(path, esCliente);
 }
 
-export function prepararHistorialSelector(navegar, ubicacion, indice, accesoInterno = false, puedeCambiarArea = true) {
+export function prepararHistorialSelector(navegar, ubicacion, indice, accesoInterno = false, puedeCambiarArea = true, esCliente = false) {
   const ruta = ubicacion.pathname;
-  if (!debePrepararHistorialSelector(ruta, indice, accesoInterno, puedeCambiarArea)) return false;
+  if (!debePrepararHistorialSelector(ruta, indice, accesoInterno, puedeCambiarArea, esCliente)) return false;
   if (regresoPendiente) return false;
-  const home = homePermitido(puedeCambiarArea);
+  const home = homePermitido(puedeCambiarArea, esCliente);
   regresoPendiente = {
     home,
     destino: ruta + (ubicacion.search || '') + (ubicacion.hash || ''),
-    puedeCambiarArea
+    puedeCambiarArea,
+    esCliente
   };
   navegar(home, {
     replace: true,
-    state: puedeCambiarArea
-      ? { selectorCoproactiva: true }
-      : { homeAreaCoproactiva: true },
+    state: esCliente
+      ? { homePortalCoproactiva: true }
+      : puedeCambiarArea
+        ? { selectorCoproactiva: true }
+        : { homeAreaCoproactiva: true },
     preventScrollReset: true
   });
   return true;
