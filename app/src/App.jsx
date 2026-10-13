@@ -21,7 +21,7 @@ import PracticaLevantamiento from './paginas/panel/PracticaLevantamiento';
 import Proveedores from './paginas/panel/Proveedores';
 import SeleccionArea from './paginas/SeleccionArea';
 import PanelEscritorio from './componentes/PanelEscritorio';
-import { areaGuardada } from './lib/area';
+import { limpiarArea } from './lib/area';
 import { prepararHistorialSelector, consumirRegresoPendiente, reiniciarHistorialSelector } from './lib/historialSelector';
 
 const Mapa = lazy(() => import('./paginas/panel/Mapa'));
@@ -81,46 +81,15 @@ function tieneCRM(perfil) {
 }
 
 /*
- * La restauración automática del último módulo es un PUSH, nunca un REPLACE:
- * la entrada / queda debajo en el historial nativo de Android.
- * Se hace una sola vez por documento. Al volver al Home, no autoabre
- * otra vez el área recordada (evita el bucle Home → SEO → Atrás → SEO).
+ * Pantalla inicial determinada exclusivamente por el perfil AUTORIZADO.
+ * Nunca abrir el área que quedó guardada en una sesión anterior.
+ * La elección de un módulo sigue guardándose durante la navegación activa,
+ * pero no determina qué se muestra en la próxima apertura de la PWA.
  */
-let restauracionAutomaticaEjecutada = false;
-function RestaurarAreaGuardada({ destino }) {
-  const navegar = useNavigate();
-  useEffect(() => {
-    if (restauracionAutomaticaEjecutada) return;
-    restauracionAutomaticaEjecutada = true;
-    navegar(destino, {
-      state: { desdeSelectorCoproactiva: true },
-      preventScrollReset: true
-    });
-  }, [destino, navegar]);
-  return <p className="cargando">Abriendo área…</p>;
-}
-
 function Entrada() {
   const { perfil } = useSesion();
-  const location = useLocation();
   if (perfil?.rol === 'cliente') return <Navigate to="/portal" replace />;
-  // Si el usuario regresó mediante Atrás desde un área elegida en esta sesión,
-  // mostrar nuevamente el selector, aunque exista un área guardada.
-  if (location.state?.selectorCoproactiva === true && tieneCRM(perfil))
-    return <SeleccionArea />;
   if (!tieneCRM(perfil)) return <PanelEscritorio><Inicio /></PanelEscritorio>;
-
-  const area = areaGuardada();
-  const destino = area === 'crm' ? '/pipeline'
-    : area === 'propiedades' ? '/propiedades'
-    : area === 'operacion' ? '/inicio'
-    : ['superadmin', 'admin'].includes(perfil?.rol)
-      ? { proveedores: '/proveedores', whatsapp: '/whatsapp',
-          contabilidad: '/contabilidad', seo: '/seo' }[area]
-      : null;
-
-  if (destino && !restauracionAutomaticaEjecutada)
-    return <RestaurarAreaGuardada destino={destino} />;
   return <SeleccionArea />;
 }
 
@@ -161,6 +130,7 @@ function ProtegerHomeFinal() {
   useEffect(() => {
     if (idAnterior.current !== idUsuario) {
       reiniciarHistorialSelector();
+      if (idUsuario) limpiarArea(); // La selección anterior nunca se restaura.
       idAnterior.current = idUsuario;
     }
   }, [idUsuario]);

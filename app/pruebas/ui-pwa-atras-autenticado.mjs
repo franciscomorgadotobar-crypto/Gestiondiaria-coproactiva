@@ -1,9 +1,9 @@
 /*
- * Regresión autenticada REAL en Chromium móvil.
- * Perfil y respuestas Supabase se simulan dentro del navegador local
- * (no se usan credenciales reales ni se modifica la base de producción).
- * Detecta el bug observado en Android: al entrar por la PWA en SEO,
- * Retroceder debe abrir / con el Home de módulos, NO salir al escritorio.
+ * Regresión en Chromium móvil con perfil Supabase simulado:
+ * no se consulta ni modifica la base real.
+ *
+ * Nueva regla: abrir/reabrir la PWA siempre muestra el Home que corresponda
+ * al rol. Solo una selección EXPLÍCITA abre SEO/CRM/otros módulos.
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
@@ -29,21 +29,21 @@ const session = {
 
 const navegador = await chromium.launch({headless:true});
 try {
-  async function crearPagina() {
+  async function crearPagina(rol='superadmin') {
     const ctx = await navegador.newContext({
       viewport:{width:390,height:844},deviceScaleFactor:1,
       isMobile:true,hasTouch:true,serviceWorkers:'block'
     });
     await ctx.addInitScript(({session,userId})=>{
       localStorage.setItem('sb-sin-configurar-auth-token',JSON.stringify(session));
-      localStorage.setItem('coproactiva_area:'+userId,'seo');
+      localStorage.setItem('coproactiva_area:'+userId,'seo'); // preferencia antigua: NO debe autorestaurarse
     },{session,userId});
     await ctx.route('https://sin-configurar.supabase.co/**',async route=>{
       const url=route.request().url();
       if(url.includes('/rest/v1/perfiles?')) return route.fulfill({
         status:200,contentType:'application/json',
         body:JSON.stringify({
-          id:userId,nombre:'QA Coproactiva',rol:'superadmin',
+          id:userId,nombre:'QA Coproactiva',rol,
           activo:true,bottom_nav:[],email:'qa-local@coproactiva.test'
         })
       });
@@ -56,53 +56,81 @@ try {
       });
       return route.fulfill({status:200,contentType:'application/json',body:'[]'});
     });
-    const page = await ctx.newPage();
+    const page=await ctx.newPage();
     page.on('pageerror',e=>console.error('QA pageerror:',e.message));
     return {ctx,page};
   }
 
-  // Escenario exacto del video: PWA inicia en / (icono del escritorio), el
-  // área recordada la lleva automáticamente a SEO y Android hace Atrás.
+  // Al tocar el ícono, SEO guardado no puede abrirse automáticamente.
   {
     const {ctx,page}=await crearPagina();
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+    await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
+    await page.getByRole('button',{name:/SEO y Analítica/}).waitFor({timeout:15000});
+    assert.equal(new URL(page.url()).pathname,'/');
+    assert.equal(await page.locator('.seo-pantalla').count(),0);
+    const area=await page.evaluate(({userId})=>localStorage.getItem('coproactiva_area:'+userId),{userId});
+    assert.equal(area,null,'el área recordada se elimina al abrir');
+
+    // Solo al elegir el módulo debe entrar en SEO; Atrás retorna al Home.
+    await page.getByRole('button',{name:/SEO y Analítica/}).click();
     await page.waitForURL(/\/seo(?:\?|$)/,{timeout:20000});
     await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
-    const antes=await page.evaluate(()=>({
-      url:location.pathname,idx:history.state?.idx,history:history.length
-    }));
-    assert.ok(antes.idx>=1,'SEO necesita Home real detrás: '+JSON.stringify(antes));
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/',{timeout:10000});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:10000});
-    assert.ok(await page.getByRole('button',{name:/SEO y Analítica/}).count()>0,
-      'Atrás debe mostrar el selector de módulos, no /ingreso ni el escritorio');
-    console.log('PWA entrada / → SEO recordado → ATRÁS → Home: OK');
+    console.log('PWA Home primero → selección de SEO → Atrás → Home: OK');
     await ctx.close();
   }
 
-  // PWA restaurada en URL /seo con un idx VIEJO de sesión anterior. El
-  // arranque debe crear historial nuevo ANTES de montar el router.
+  // Chrome/PWA reabre el documento de un módulo con estado de historial viejo.
+  // La URL se sustituye por el Home ANTES de montar BrowserRouter.
   {
     const {ctx,page}=await crearPagina();
     await ctx.addInitScript(()=>{
       if(location.pathname==='/seo'){
-        history.replaceState({
-          idx:13,key:'sesion-antigua',usr:{desdeSelectorCoproactiva:true}
-        },'',location.href);
+        history.replaceState({idx:13,key:'sesion-antigua',usr:{desdeSelectorCoproactiva:true}},'',location.href);
       }
     });
     await page.goto(base+'/seo',{waitUntil:'domcontentloaded'});
-    await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
-    const antes=await page.evaluate(()=>({
-      url:location.pathname,idx:history.state?.idx,
-      state:history.state,history:history.length
-    }));
-    assert.equal(antes.idx,1,'El arranque debería reinicializar el stack: '+JSON.stringify(antes));
-    await page.goBack();
-    await page.waitForURL(url=>url.pathname==='/',{timeout:10000});
-    await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:10000});
-    console.log('PWA ruta /seo con estado antiguo → ATRÁS → Home: OK');
+    await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
+    assert.equal(new URL(page.url()).pathname,'/');
+    assert.equal(await page.locator('.seo-pantalla').count(),0);
+    assert.equal(await page.evaluate(()=>history.state?.idx),0);
+    console.log('PWA restaurada en /seo → Home directo sin reabrir SEO: OK');
+    await ctx.close();
+  }
+
+  // Jefatura ve el selector con sus áreas autorizadas y nunca SEO ni Contabilidad.
+  {
+    const {ctx,page}=await crearPagina('jefatura');
+    await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+    await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
+    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
+    assert.ok(await page.getByRole('button',{name:/Gestión comercial/}).count()>0);
+    console.log('Jefatura → selector filtrado por permisos: OK');
+    await ctx.close();
+  }
+
+  // Un usuario de terreno no recibe nunca el selector administrativo.
+  {
+    const {ctx,page}=await crearPagina('terreno');
+    await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+    await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
+    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),0);
+    assert.equal(new URL(page.url()).pathname,'/');
+    console.log('Terreno → Inicio propio sin selector de módulos: OK');
+    await ctx.close();
+  }
+
+  // El perfil cliente comienza en su portal, aunque la URL anterior fuera SEO.
+  {
+    const {ctx,page}=await crearPagina('cliente');
+    await page.goto(base+'/seo',{waitUntil:'domcontentloaded'});
+    await page.waitForURL(url=>url.pathname==='/portal',{timeout:20000});
+    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
+    console.log('Cliente → portal propio sin selector administrativo: OK');
     await ctx.close();
   }
 } finally {
