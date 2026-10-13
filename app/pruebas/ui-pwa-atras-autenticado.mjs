@@ -68,7 +68,7 @@ try {
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
     await page.getByRole('button',{name:/SEO y Analítica/}).waitFor({timeout:15000});
     assert.equal(new URL(page.url()).pathname,'/');
-    assert.equal(await page.getByRole('heading',{name:'SEO y Analítica'}).count(),0);
+    assert.equal(await page.locator('.seo-pantalla').count(),0);
     const area=await page.evaluate(({userId})=>localStorage.getItem('coproactiva_area:'+userId),{userId});
     assert.equal(area,null,'el área recordada se elimina al abrir');
 
@@ -95,7 +95,7 @@ try {
     await page.goto(base+'/seo',{waitUntil:'domcontentloaded'});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
     assert.equal(new URL(page.url()).pathname,'/');
-    assert.equal(await page.getByRole('heading',{name:'SEO y Analítica'}).count(),0);
+    assert.equal(await page.locator('.seo-pantalla').count(),0);
     assert.equal(await page.evaluate(()=>history.state?.idx),0);
     console.log('PWA restaurada en /seo → Home directo sin reabrir SEO: OK');
     await ctx.close();
