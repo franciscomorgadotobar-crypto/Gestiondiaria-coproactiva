@@ -69,6 +69,9 @@ jobs:
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
+      - name: Verificar isotipo Android y pantalla de apertura
+        working-directory: app
+        run: node --test pruebas/pwa-icono-splash.test.js
 
   validar-navegador:
     name: UX móvil en navegador real (sin autenticación)
@@ -100,6 +103,9 @@ jobs:
       - name: Reproducir Atrás Android desde SEO con sesión local simulada
         working-directory: app
         run: node pruebas/ui-pwa-atras-autenticado.mjs
+      - name: Validar pantalla de apertura real en Chromium móvil
+        working-directory: app
+        run: node pruebas/ui-splash-pwa.mjs
       - name: Adjuntar capturas de QA
         if: always()
         uses: actions/upload-artifact@v4
