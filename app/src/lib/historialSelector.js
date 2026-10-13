@@ -14,6 +14,21 @@ export const RAICES_CON_SELECTOR = [
 ];
 
 const MARCADOR_ORIGEN = '__coproAreaConSelectorAnterior';
+let ultimoIndiceSelector = null;
+
+export function registrarIndiceSelector(indice) {
+  if (Number.isInteger(indice) && indice >= 0) ultimoIndiceSelector = indice;
+}
+
+export function pasosHastaSelector(estado) {
+  const actual = estado?.idx;
+  if (Number.isInteger(actual) && Number.isInteger(ultimoIndiceSelector)
+    && actual > ultimoIndiceSelector) return ultimoIndiceSelector - actual;
+  if (actual === 1 && (vieneDeSelectorPreparado(estado)
+    || estado?.usr?.desdeSelectorCoproactiva === true)) return -1;
+  return null;
+}
+
 
 export function debePrepararHistorialSelector(ruta, indice, puedeCambiarArea) {
   return Boolean(puedeCambiarArea)
@@ -52,6 +67,7 @@ export function prepararHistorialSelector(historial, ubicacion, raiz = '/', pued
     historial.replaceState(anterior, '', origen);
     throw error;
   }
+  registrarIndiceSelector(0);
   return true;
 }
 
