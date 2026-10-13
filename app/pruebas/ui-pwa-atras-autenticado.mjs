@@ -116,9 +116,9 @@ try {
   {
     const {ctx,page}=await crearPagina('terreno');
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
-    await page.waitForTimeout(800);
-    assert.equal(await page.getByRole('heading',{name:/Hola/}).count(),0);
+    await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),0);
     assert.equal(new URL(page.url()).pathname,'/');
     console.log('Terreno → Inicio propio sin selector de módulos: OK');
     await ctx.close();
