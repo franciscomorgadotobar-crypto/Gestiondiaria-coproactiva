@@ -12,6 +12,7 @@ import SEODashboard from './SEODashboard';
 import SEOImpacto from './SEOImpacto';
 import BarraNavegacionSEO from '../../componentes/BarraNavegacionSEO';
 import './SEO.css';
+import { nombrePaisSEO, nombreDispositivoSEO } from '../../lib/seoEtiquetas';
 
 const SECCIONES = [
   ['resumen', 'Dashboard'],
@@ -58,7 +59,7 @@ function EstadoIntegracion({ nombre, disponible, mensaje, onClick, accion }) {
 function Vacio({ titulo, descripcion }) {
   return <div className="seo-vacio"><strong>{titulo}</strong><p>{descripcion}</p></div>;
 }
-function Tabla({ columnas, filas, sinDatos = 'No hay registros en el período.', archivo }) {
+function Tabla({ columnas, filas, sinDatos = 'No hay registros en el período.', archivo, nota = 'Google puede limitar el detalle disponible.' }) {
   const [buscar, setBuscar] = useState('');
   const filtradas = filas.filter(f => Object.values(f).some(v => String(v ?? '').toLowerCase().includes(buscar.toLowerCase())));
   function csv() {
@@ -78,7 +79,7 @@ function Tabla({ columnas, filas, sinDatos = 'No hay registros en el período.',
       <tbody>{filtradas.map((f, i) => <tr key={i}>{columnas.map(c => <td key={c.id} className={c.id === 'clave' ? 'seo-texto-clave' : ''}>{c.texto ? c.texto(f[c.id], f) : f[c.id]}</td>)}</tr>)}</tbody>
     </table></div>
     {!filtradas.length && <p className="chico apagado" style={{ padding: 12 }}>{sinDatos}</p>}
-    <span className="micro">{numeral(filtradas.length)} resultados visibles. Las API de Google pueden limitar el detalle de consultas.</span>
+    <span className="micro">{numeral(filtradas.length)} resultados visibles. {nota}</span>
   </div>;
 }
 function Evolucion({ filas, atributo = 'clicks', titulo = 'Evolución diaria' }) {
@@ -98,10 +99,10 @@ function Evolucion({ filas, atributo = 'clicks', titulo = 'Evolución diaria' })
     {!!filas.length && <div className="seo-fila-separada micro"><span>{filas[0]?.clave}</span><span>{filas[filas.length - 1]?.clave}</span></div>}
   </section>;
 }
-const COL_SC = [
-  { id: 'clave', etiqueta: 'Consulta / página' }, { id: 'clicks', etiqueta: 'Clics', texto: numeral },
-  { id: 'impresiones', etiqueta: 'Impresiones', texto: numeral },
-  { id: 'ctr', etiqueta: 'CTR', texto: porcentaje }, { id: 'posicion', etiqueta: 'Posición media', texto: n => decimal(n, 1) }
+const columnasBusqueda = etiqueta => [
+  { id: 'clave', etiqueta }, { id: 'clicks', etiqueta: 'Clics hacia el sitio', texto: numeral },
+  { id: 'impresiones', etiqueta: 'Apariciones en Google (impresiones)', texto: numeral },
+  { id: 'ctr', etiqueta: 'Porcentaje de clics (CTR)', texto: porcentaje }, { id: 'posicion', etiqueta: 'Posición promedio en Google (posición media)', texto: n => decimal(n, 1) }
 ];
 function Barra({ titulo, valor, max, detalle }) {
   return <div className="seo-barra-item"><div className="seo-fila-separada"><span>{titulo}</span><strong>{detalle || numeral(valor)}</strong></div>
@@ -394,24 +395,27 @@ function SEOInterno() {
         onNavigate={irVista} onAnalyze={abrirAccion} />}
 
       {vista === 'consultas' && <section>
-        <h2 className="h4">Rendimiento en Google Search</h2>
+        <h2 className="h4">Cómo aparece tu sitio en las búsquedas de Google</h2>
         {!sc?.disponible ? <Vacio titulo="Falta conectar Search Console" descripcion={sc?.error || 'Sin datos.'} /> : <>
           <div className="seo-kpis">
-            <KPI titulo="Clics" valor={numeral(sc.totales?.clics)} nota={'Período previo: ' + numeral(sc.anterior?.clics)} />
-            <KPI titulo="Impresiones" valor={numeral(sc.totales?.impresiones)} nota={'Período previo: ' + numeral(sc.anterior?.impresiones)} />
-            <KPI titulo="CTR" valor={porcentaje(sc.totales?.ctr)} />
-            <KPI titulo="Posición media" valor={decimal(sc.totales?.posicion)} />
+            <KPI titulo="Clics desde Google hacia el sitio" valor={numeral(sc.totales?.clics)} nota={'Período previo: ' + numeral(sc.anterior?.clics)} />
+            <KPI titulo="Apariciones del sitio en Google (impresiones)" valor={numeral(sc.totales?.impresiones)} nota={'Período previo: ' + numeral(sc.anterior?.impresiones)} />
+            <KPI titulo="Porcentaje de apariciones que generan clics (CTR)" valor={porcentaje(sc.totales?.ctr)} nota="Clics divididos por apariciones." />
+            <KPI titulo="Posición promedio del sitio en Google (posición media)" valor={decimal(sc.totales?.posicion)} nota="Un número menor indica una posición más alta en los resultados." />
           </div>
-          <h3 className="seo-subtitulo">Consultas principales</h3>
-          <Tabla columnas={COL_SC} filas={sc.consultas || []} archivo="coproactiva-search-console-consultas.csv" />
-          <h3 className="seo-subtitulo">Páginas en búsqueda</h3>
-          <Tabla columnas={COL_SC} filas={sc.paginas || []} archivo="coproactiva-search-console-paginas.csv" />
+          <h3 className="seo-subtitulo">Qué buscaron para que apareciéramos en Google (consultas)</h3>
+          <p className="chico apagado">Estas búsquedas mostraron tu sitio en Google. Los clics indican cuántas veces entraron desde esos resultados.</p>
+          <Tabla columnas={columnasBusqueda('Búsqueda realizada (consulta)')} nota="Google no muestra todas las búsquedas por motivos de privacidad." filas={sc.consultas || []} archivo="coproactiva-search-console-consultas.csv" />
+          <h3 className="seo-subtitulo">Páginas del sitio que aparecen en Google</h3>
+          <p className="chico apagado">Direcciones de tu sitio mostradas en los resultados y los clics que recibió cada una.</p>
+          <Tabla columnas={columnasBusqueda('Dirección de la página del sitio')} filas={sc.paginas || []} archivo="coproactiva-search-console-paginas.csv" />
           <div className="seo-dos-columnas">
-            <div className="tarjeta seo-mini-card"><h3 className="h4">Dispositivos</h3>
-              {(sc.dispositivos || []).map(d => <Barra key={d.clave} titulo={d.clave} valor={d.clicks} max={Math.max(...sc.dispositivos.map(x => x.clicks),1)} />)}
+            <div className="tarjeta seo-mini-card"><h3 className="h4">Clics desde Google por dispositivo</h3>
+              {(sc.dispositivos || []).map(d => <Barra key={d.clave} titulo={nombreDispositivoSEO(d.clave)} detalle={numeral(d.clicks) + (Number(d.clicks) === 1 ? ' clic' : ' clics')} valor={d.clicks} max={Math.max(...sc.dispositivos.map(x => x.clicks),1)} />)}
             </div>
-            <div className="tarjeta seo-mini-card"><h3 className="h4">Países principales</h3>
-              {(sc.paises || []).slice(0, 8).map(d => <Barra key={d.clave} titulo={d.clave} valor={d.clicks} max={Math.max(...sc.paises.map(x => x.clicks),1)} />)}
+            <div className="tarjeta seo-mini-card"><h3 className="h4">Clics desde Google por país</h3>
+              <p className="chico apagado">País desde donde se realizó la búsqueda.</p>
+              {(sc.paises || []).slice(0, 8).map(d => <Barra key={d.clave} titulo={nombrePaisSEO(d.clave)} detalle={numeral(d.clicks) + (Number(d.clicks) === 1 ? ' clic' : ' clics')} valor={d.clicks} max={Math.max(...sc.paises.map(x => x.clicks),1)} />)}
             </div>
           </div>
           <p className="micro">{sc.nota}</p>

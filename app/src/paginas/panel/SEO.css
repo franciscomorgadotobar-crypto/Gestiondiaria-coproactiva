@@ -55,6 +55,8 @@
 .seo-tabla td.seo-texto-clave { max-width: 360px; text-align: left; word-break: break-word; }
 .seo-tabla-contenedor .micro { display: block; margin-top: 11px; }
 .seo-barra-item { font-size: .86rem; padding: 6px 0; }
+.seo-barra-item .seo-fila-separada > span { min-width: 0; overflow-wrap: anywhere; }
+.seo-barra-item .seo-fila-separada > strong { flex-shrink: 0; }
 .seo-barra-fondo { height: 8px; border-radius: 20px; background: var(--niebla); margin-top: 8px; overflow: hidden; }
 .seo-barra-fondo span { display: block; height: 100%; background: var(--naranja); border-radius: 20px; }
 .seo-herramientas { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 18px 0 12px; }
