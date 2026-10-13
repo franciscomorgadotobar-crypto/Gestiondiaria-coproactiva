@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { guardarArea } from '../lib/area';
+import { registrarIndiceSelector } from '../lib/historialSelector';
 
 /* Capa previa a entrar a la app, para roles que tienen acceso tanto al CRM
  * como a la operación (admin, jefatura, superadmin). Sin esto el Pipeline
@@ -22,6 +23,7 @@ export default function SeleccionArea() {
   const location = useLocation();
 
   useEffect(() => {
+    registrarIndiceSelector(window.history.state?.idx);
     if (location.state?.selectorCoproactiva === true) return;
     // Esta entrada representa el selector en el historial, para que
     // Android Atrás vuelva aquí desde el módulo que se elija después.
@@ -38,7 +40,7 @@ export default function SeleccionArea() {
     // Nunca "/": esta pantalla ya está montada ahí, y navegar a la misma
     // ruta en la que se está no vuelve a renderizar nada en React Router.
     const destino = { crm: '/pipeline', propiedades: '/propiedades', proveedores: '/proveedores', contabilidad: '/contabilidad', whatsapp: '/whatsapp', seo: '/seo' }[area] ?? '/inicio';
-    navegar(destino); // Push: Atrás regresa a la selección de áreas.
+    navegar(destino, { state: { desdeSelectorCoproactiva: true } }); // Push: Atrás regresa a la selección.
   }
 
   return (
