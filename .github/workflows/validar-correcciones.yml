@@ -60,6 +60,9 @@ jobs:
       - name: Probar menú SEO móvil, accesos e historial
         working-directory: app
         run: node --test pruebas/seo-navegacion-movil.test.js
+      - name: Comprobar SEO, selector y salida con Atrás Android
+        working-directory: app
+        run: node --test pruebas/volver-selector-android.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build

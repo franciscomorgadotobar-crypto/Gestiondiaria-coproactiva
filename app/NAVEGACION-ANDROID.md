@@ -19,7 +19,7 @@ El botón físico o gesto Atrás debe utilizar el historial real de React Router
 
 - La navegación Atrás **no guarda ni elimina datos por sí sola**. Un diálogo de confirmación se cancela, no confirma la operación.
 - Los formularios con cambios sin guardar conservan sus propios avisos, pero cada pantalla puede requerir pruebas de negocio adicionales.
-- No se fuerza el regreso al Home cuando la persona abre una URL directamente desde un enlace externo: el sistema conserva el comportamiento natural del navegador.
+- Las entradas autenticadas directas a un **inicio de área** de perfiles con selector reciben una entrada de selector previa. Los enlaces externos a otras rutas y el portal cliente mantienen el comportamiento normal del navegador.
 - No se registran scrolls, contraseñas ni contenido de formularios en parámetros URL. Solo IDs de pestaña/etapa/menú.
 - Se respetan parámetros existentes, por ejemplo `?comunidad=...`.
 
@@ -32,7 +32,7 @@ El botón físico o gesto Atrás debe utilizar el historial real de React Router
 5. Abrir un `Confirmar` o `DialogoCampos` → Atrás: cancelar diálogo sin confirmar borrado/acción.
 6. En Portal Cliente, alternar Incidencias/Documentos → Atrás restaura pestaña.
 7. Navegar de un módulo a otro mediante un enlace y pulsar Atrás: vuelve al módulo previo.
-8. Abrir la app directamente en una ruta profunda sin historial: se permite la acción normal de Android; no se crea un bucle de salida.
+8. Abrir la app directamente en `/seo`: Atrás llega al selector de módulos; un segundo Atrás deja la app en PWA o vuelve al navegador anterior. En rutas profundas sin selector no se crea un bucle de salida.
 
 Los tests unitarios verifican lectura/escritura de parámetros URL y que no se borren parámetros ajenos. Los recorridos completos deben validarse en Android real o emulador PWA para todos los componentes de terceros.
 
@@ -60,3 +60,30 @@ real de React Router y cierra previamente pestañas o diálogos registrados en e
 historial. Al entrar desde el selector, ese historial lo conserva como destino
 de regreso. Las entradas externas directas sin historial conservan la salida
 normal de Android (no se bloquea ni se crea un historial artificial).
+
+## Corrección de entrada y salida desde SEO / PWA (12-10-2026)
+
+**Problema:** al abrir SEO como área recordada, la redirección `/ → /seo`
+utilizaba replace y podía eliminar del historial la pantalla inicial.
+En Android, el primer Atrás desde el Dashboard SEO cerraba la PWA.
+
+**Solución:** en los inicios de área de perfiles internos con selector, cuando
+el historial React Router comienza en `idx=0`, se registra una única
+entrada real para `/` (con `selectorCoproactiva: true`) inmediatamente
+antes de la vista mediante `navigate` de React Router (`replace` + `push`). La pantalla SEO conserva sus parámetros URL.
+Se hace después de validar sesión y perfil. No afecta Portal Cliente,
+Ingreso ni a usuarios con una sola área y no bloquea el botón físico.
+
+El botón **‹ Volver** usa la entrada del selector cuando está disponible,
+en vez de duplicarlo con un `replace`. La secuencia deseada es:
+
+1. Abrir SEO como área guardada → **Atrás**: selector de módulos.
+2. En selector → **Atrás**: salir de PWA de forma natural (o volver a la página anterior del navegador si hay una).
+3. Si hay pestañas SEO visitadas, **Atrás** recorre su historial real;
+   el botón superior **‹ Volver** lleva directamente al selector conocido.
+4. **Cambiar de área** conserva su función; **Salir** del selector sigue
+   cerrando la sesión, que es distinto de cerrar la ventana de una PWA.
+
+**Limitación:** los navegadores móviles controlan el cierre físico de la
+ventana; no existe una API web confiable para cerrar programáticamente
+una pestaña que no abrió la aplicación.
