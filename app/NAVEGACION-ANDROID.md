@@ -60,3 +60,30 @@ real de React Router y cierra previamente pestañas o diálogos registrados en e
 historial. Al entrar desde el selector, ese historial lo conserva como destino
 de regreso. Las entradas externas directas sin historial conservan la salida
 normal de Android (no se bloquea ni se crea un historial artificial).
+
+## Corrección de entrada y salida desde SEO / PWA (12-10-2026)
+
+**Problema:** al abrir SEO como área recordada, la redirección `/ → /seo`
+utilizaba replace y podía eliminar del historial la pantalla inicial.
+En Android, el primer Atrás desde el Dashboard SEO cerraba la PWA.
+
+**Solución:** en los inicios de área de perfiles internos con selector, cuando
+el historial React Router comienza en `idx=0`, se registra una única
+entrada real para `/` (con `selectorCoproactiva: true`) inmediatamente
+antes de la vista. La pantalla SEO conserva sus parámetros URL.
+Se hace después de validar sesión y perfil. No afecta Portal Cliente,
+Ingreso ni a usuarios con una sola área y no bloquea el botón físico.
+
+El botón **‹ Volver** usa la entrada del selector cuando está disponible,
+en vez de duplicarlo con un `replace`. La secuencia deseada es:
+
+1. Abrir SEO como área guardada → **Atrás**: selector de módulos.
+2. En selector → **Atrás**: salir de PWA de forma natural (o volver a la página anterior del navegador si hay una).
+3. Si hay pestañas SEO visitadas, **Atrás** recorre su historial real;
+   el botón superior **‹ Volver** lleva directamente al selector conocido.
+4. **Cambiar de área** conserva su función; **Salir** del selector sigue
+   cerrando la sesión, que es distinto de cerrar la ventana de una PWA.
+
+**Limitación:** los navegadores móviles controlan el cierre físico de la
+ventana; no existe una API web confiable para cerrar programáticamente
+una pestaña que no abrió la aplicación.
