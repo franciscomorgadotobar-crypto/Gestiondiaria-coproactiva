@@ -3,83 +3,76 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { prepararArranqueConHome } from '../src/lib/arranqueHistorialPWA.js';
 
-function historialSimulado(url, estado = { idx: 9, usr: { anterior: 'recordado' } }) {
-  const urls = [{url,estado}];
-  let activo = 0;
+function simularHistorial(url, estado = { idx: 9, usr: { anterior: 'recordado' } }) {
+  const entradas = [{url,estado}];
   const api = {
-    get state() { return urls[activo].estado; },
-    replaceState(s, _t, u) { urls[activo]={url:u,estado:s}; },
-    pushState(s, _t, u) { urls.splice(++activo,urls.length-activo,{url:u,estado:s}); },
-    retroceder() { if(activo>0) activo--; return urls[activo]; }
+    get state() { return entradas.at(-1).estado; },
+    replaceState(s, _t, u) { entradas[entradas.length-1] = {url:u,estado:s}; },
+    pushState(s, _t, u) { entradas.push({url:u,estado:s}); }
   };
-  return {api,urls,retroceder:api.retroceder};
+  return {api,entradas};
 }
 
-test('PWA restaurada en SEO: un Atrás nativo muestra Home y otro sale',()=>{
-  const h=historialSimulado('/seo?vista=seguimiento#detalle',{idx:7,usr:null});
+test('una PWA restaurada desde SEO empieza directamente en el Home sin apilar SEO detrás',()=>{
+  const h=simularHistorial('/seo?vista=seguimiento#detalle',{idx:7,usr:null});
   assert.equal(prepararArranqueConHome(h.api,{
     pathname:'/seo',search:'?vista=seguimiento',hash:'#detalle'},'/'),true);
-  assert.equal(h.urls.length,2);
-  assert.equal(h.urls[0].url,'/');
-  assert.equal(h.urls[0].estado.idx,0);
-  assert.deepEqual(h.urls[0].estado.usr,{selectorCoproactiva:true});
-  assert.equal(h.urls[1].url,'/seo?vista=seguimiento#detalle');
-  assert.equal(h.urls[1].estado.idx,1);
-  assert.equal(h.urls[1].estado.usr.desdeSelectorCoproactiva,true);
-  assert.equal(h.retroceder().url,'/');
-  assert.equal(h.retroceder().url,'/');
+  assert.equal(h.entradas.length,1);
+  assert.equal(h.entradas[0].url,'/');
+  assert.equal(h.api.state.idx,0);
+  assert.deepEqual(h.api.state.usr,{selectorCoproactiva:true});
 });
 
-test('el Home real también se garantiza desde fichas y submódulos',()=>{
+test('CRM, operación y pantallas profundas también vuelven al Home de acceso',()=>{
   for(const ruta of [
     '/pipeline','/inicio','/comunidades/abc','/control/321/editar',
     '/proveedores/comunicaciones','/contabilidad/reportes','/whatsapp',
-    '/propiedades/13','/mantenciones','/configuracion','/notificaciones'
+    '/propiedades/13','/mantenciones','/configuracion','/notificaciones',
+    '/seo'
   ]) {
-    const h=historialSimulado(ruta);
-    assert.equal(prepararArranqueConHome(h.api,{pathname:ruta,search:'',hash:''},'/'),
-      true,'ruta protegida '+ruta);
-    assert.equal(h.urls[0].url,'/','home de módulos para '+ruta);
-    assert.equal(h.urls[1].url,ruta);
+    const h=simularHistorial(ruta);
+    assert.equal(prepararArranqueConHome(h.api,{pathname:ruta,search:'',hash:''},'/'),true,ruta);
+    assert.equal(h.entradas.length,1,'sin vista antigua en el historial');
+    assert.equal(h.entradas[0].url,'/',ruta);
   }
 });
 
-test('portal cliente dispone de su propio Home sin módulos administrativos',()=>{
-  const h=historialSimulado('/portal/comunidades/21');
+test('portal cliente restaurado inicia en la raíz que resuelve el perfil',()=>{
+  const h=simularHistorial('/portal/comunidades/21');
   assert.equal(prepararArranqueConHome(h.api,{
     pathname:'/portal/comunidades/21',search:'',hash:''},'/'),true);
-  assert.equal(h.urls[0].url,'/portal');
-  assert.deepEqual(h.urls[0].estado.usr,{homePortalCoproactiva:true});
-  assert.equal(h.urls[1].estado.usr.desdePortalCoproactiva,true);
+  assert.equal(h.entradas.length,1);
+  assert.equal(h.entradas[0].url,'/');
 });
 
-test('no toca el inicio, ingreso, enlaces públicos ni las rutas desconocidas',()=>{
-  for(const ruta of ['/','/ingreso','/clave','/portal','/otro-sitio']) {
-    const h=historialSimulado(ruta);
+test('no toca Home, ingreso, recuperación ni rutas ajenas a Coproactiva',()=>{
+  for(const ruta of ['/','/ingreso','/clave','/otro-sitio']) {
+    const h=simularHistorial(ruta);
     assert.equal(prepararArranqueConHome(h.api,{
       pathname:ruta,search:'',hash:''},'/'),false);
-    assert.equal(h.urls.length,1);
-    assert.equal(h.urls[0].url,ruta);
+    assert.equal(h.entradas.length,1);
+    assert.equal(h.entradas[0].url,ruta);
   }
 });
 
-test('mantiene basename de GitHub Pages cuando se publica bajo subcarpeta',()=>{
-  const h=historialSimulado('/coproactiva/seo?vista=analytics');
+test('basename de GitHub Pages conserva el Home en subcarpeta',()=>{
+  const h=simularHistorial('/coproactiva/seo?vista=analytics');
   assert.equal(prepararArranqueConHome(h.api,{
     pathname:'/coproactiva/seo',search:'?vista=analytics',hash:''},'/coproactiva/'),true);
-  assert.equal(h.urls[0].url,'/coproactiva/');
-  assert.equal(h.urls[1].url,'/coproactiva/seo?vista=analytics');
+  assert.equal(h.entradas.length,1);
+  assert.equal(h.entradas[0].url,'/coproactiva/');
 });
 
-test('arranque inicial precede a BrowserRouter; restauración no reemplaza Home',()=>{
+test('el inicio siempre usa perfil actual, no la preferencia recordada',()=>{
   const main=readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8');
   const app=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
   assert.ok(main.indexOf('prepararArranqueConHome(window.history')<
     main.indexOf('createRoot(document.getElementById('));
-  assert.match(app,/function RestaurarAreaGuardada/);
-  assert.match(app,/restauracionAutomaticaEjecutada = true/);
-  assert.match(app,/navegar\(destino, \{/);
-  assert.match(app,/if \(destino && !restauracionAutomaticaEjecutada\)/);
-  assert.doesNotMatch(app,/<Navigate to="\/seo" replace \/>/);
-  assert.doesNotMatch(app,/<Navigate to="\/pipeline" replace \/>/);
+  assert.match(app,/if \(perfil\?\.rol === 'cliente'\) return <Navigate to="\/portal" replace \/>/);
+  assert.match(app,/if \(!tieneCRM\(perfil\)\) return <PanelEscritorio><Inicio \/><\/PanelEscritorio>/);
+  assert.match(app,/return <SeleccionArea \/>/);
+  assert.match(app,/if \(idUsuario\) limpiarArea\(\)/);
+  assert.doesNotMatch(app,/RestaurarAreaGuardada|restauracionAutomaticaEjecutada/);
+  assert.doesNotMatch(app,/areaGuardada\(\)/);
+  assert.match(app,/\['superadmin', 'admin', 'jefatura'\]\.includes\(perfil\.rol\)/);
 });
