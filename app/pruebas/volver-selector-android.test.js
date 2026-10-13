@@ -114,14 +114,16 @@ test('guardia global no depende de SEO ni del panel y respeta permisos',()=>{
   assert.match(app,/idAnterior\.current !== idUsuario/);
 });
 
-test('área guardada y selector respetan permisos actuales, nunca roles antiguos',()=>{
+test('el Home se determina por permisos, nunca por un área guardada',()=>{
   const app=read('App.jsx');
   const selector=read('paginas/SeleccionArea.jsx');
-  assert.match(app,/\['superadmin', 'admin'\].includes\(perfil\?\.rol\)/);
-  assert.match(app,/proveedores: '\/proveedores'/);
-  assert.match(app,/area === 'operacion' \? '\/inicio'/);
-  assert.match(selector,/const puedeConfigurar = \['superadmin', 'admin'\].includes\(perfil\?\.rol\)/);
-  assert.match(app,/\['superadmin', 'admin', 'jefatura'\].includes\(perfil\.rol\)/);
+  assert.match(app,/\['superadmin', 'admin', 'jefatura'\]\.includes\(perfil\.rol\)/);
+  assert.match(app,/if \(perfil\?\.rol === 'cliente'\) return <Navigate to="\/portal" replace \/>/);
+  assert.match(app,/if \(!tieneCRM\(perfil\)\) return <PanelEscritorio><Inicio \/><\/PanelEscritorio>/);
+  assert.match(app,/return <SeleccionArea \/>/);
+  assert.match(app,/if \(idUsuario\) limpiarArea\(\)/);
+  assert.doesNotMatch(app,/RestaurarAreaGuardada|restauracionAutomaticaEjecutada/);
+  assert.match(selector,/const puedeConfigurar = \['superadmin', 'admin'\]\.includes\(perfil\?\.rol\)/);
 });
 
 test('perfil cliente: detalle del portal vuelve al inicio del portal, sin selector administrativo',()=>{
