@@ -12,7 +12,10 @@ const foco=read('lib/focoDialogo.js');
 const css=read('estilos/modulos.css');
 
 test('cambiar de área navega a selector sin reiniciar la PWA',()=>{
-  assert.match(panel,/function cambiarArea\(\)\s*\{\s*limpiarArea\(\);\s*navegar\('\/',\s*\{\s*state:\s*\{\s*selectorCoproactiva:\s*true/);
+  assert.match(panel,/function cambiarArea\(\)\s*\{\s*limpiarArea\(\);/);
+  assert.match(panel,/const pasos = pasosHastaSelector\(window\.history\.state\)/);
+  assert.match(panel,/if \(pasos !== null\) return navegar\(pasos\)/);
+  assert.match(panel,/navegar\('\/', \{ replace: true, state: \{ selectorCoproactiva: true \} \}\)/);
   assert.doesNotMatch(panel,/window\.location\.href\s*=\s*import\.meta\.env\.BASE_URL/);
   assert.match(router,/location\.state\?\.selectorCoproactiva === true/);
   assert.ok((panel.match(/onClick=\{cambiarArea\}/g)||[]).length>=2);
