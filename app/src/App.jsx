@@ -158,7 +158,20 @@ function ProtegerHomeFinal() {
 }
 
 export default function App() {
-  const { sesion } = useSesion();
+  const { sesion, cargando } = useSesion();
+
+  useEffect(() => {
+    if (cargando) return;
+    // La apertura se muestra desde index.html ANTES de que React cargue.
+    // Solo se retira al terminar la validación de la sesión y del perfil;
+    // no se impone un retardo artificial al usuario.
+    const splash = document.getElementById('splash-inicial');
+    if (!splash) return;
+    splash.classList.add('splash-finalizando');
+    const quitar = window.setTimeout(() => splash.remove(), 260);
+    return () => window.clearTimeout(quitar);
+  }, [cargando]);
+
   return (
     <>
     <ProtegerHomeFinal />
