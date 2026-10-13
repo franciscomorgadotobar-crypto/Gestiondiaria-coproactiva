@@ -18,7 +18,7 @@ try {
     await new Promise(resolve => setTimeout(resolve, 1000));
     await route.continue();
   });
-  await page.goto(base + '/ingreso', { waitUntil: 'domcontentloaded' });
+  await page.goto(base + '/ingreso', { waitUntil: 'commit' });
   const splash = page.locator('#splash-inicial');
   await splash.waitFor({ state: 'visible', timeout: 5000 });
   assert.equal(await page.locator('.splash-logo').count(),1);
