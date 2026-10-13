@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-El botón físico o gesto Atrás debe utilizar el historial real de React Router, tanto en Chrome Android como en PWA instalada. No se bloquea el botón del sistema ni se crean pantallas fantasma para impedir salir.
+El botón físico o gesto Atrás debe utilizar el historial real de React Router, tanto en Chrome Android como en PWA instalada. No se bloquea el botón del sistema. Se prepara una sola entrada real del Home autorizado únicamente cuando se abre directamente una ruta interna sin historial.
 
 ## Cobertura implementada
 
@@ -19,7 +19,7 @@ El botón físico o gesto Atrás debe utilizar el historial real de React Router
 
 - La navegación Atrás **no guarda ni elimina datos por sí sola**. Un diálogo de confirmación se cancela, no confirma la operación.
 - Los formularios con cambios sin guardar conservan sus propios avisos, pero cada pantalla puede requerir pruebas de negocio adicionales.
-- Las entradas autenticadas directas a un **inicio de área** de perfiles con selector reciben una entrada de selector previa. Los enlaces externos a otras rutas y el portal cliente mantienen el comportamiento normal del navegador.
+- Las entradas autenticadas directas a **cualquier ruta interna** (inicios, fichas, reportes, levantamientos, configuración, notificaciones) reciben una entrada previa del Home autorizado cuando parten sin historial. El portal cliente y el login no se alteran.
 - No se registran scrolls, contraseñas ni contenido de formularios en parámetros URL. Solo IDs de pestaña/etapa/menú.
 - Se respetan parámetros existentes, por ejemplo `?comunidad=...`.
 
@@ -32,7 +32,7 @@ El botón físico o gesto Atrás debe utilizar el historial real de React Router
 5. Abrir un `Confirmar` o `DialogoCampos` → Atrás: cancelar diálogo sin confirmar borrado/acción.
 6. En Portal Cliente, alternar Incidencias/Documentos → Atrás restaura pestaña.
 7. Navegar de un módulo a otro mediante un enlace y pulsar Atrás: vuelve al módulo previo.
-8. Abrir la app directamente en `/seo`: Atrás llega al selector de módulos; un segundo Atrás deja la app en PWA o vuelve al navegador anterior. En rutas profundas sin selector no se crea un bucle de salida.
+8. Abrir directamente `/seo` o `/control/123` como administrador: Atrás llega al selector de módulos; otro Atrás deja la PWA o vuelve al navegador anterior. Como rol de una sola área, un enlace a `/comunidades/123` regresa a `/inicio` y luego sale.
 
 Los tests unitarios verifican lectura/escritura de parámetros URL y que no se borren parámetros ajenos. Los recorridos completos deben validarse en Android real o emulador PWA para todos los componentes de terceros.
 
@@ -87,3 +87,19 @@ en vez de duplicarlo con un `replace`. La secuencia deseada es:
 **Limitación:** los navegadores móviles controlan el cierre físico de la
 ventana; no existe una API web confiable para cerrar programáticamente
 una pestaña que no abrió la aplicación.
+
+
+## Alcance GLOBAL según permisos (ampliación)
+
+**Regla para todos los módulos internos:** desde cualquier recorrido de SEO, CRM, Operación, Propiedades, Proveedores, WhatsApp, Contabilidad, Configuración, Comunidades, Mantenciones, Levantamientos y pantallas auxiliares, el último destino interno es el Home autorizado.
+
+- **Superadmin / admin / jefatura:** Home de módulos (selector `/`), con únicamente las tarjetas permitidas por rol. Jefatura no ve los módulos reservados a administración.
+- **Rol con una sola área operativa:** inicio de su área (`/inicio`).
+- **Cliente:** portal propio; nunca el selector administrativo.
+- **Sin sesión:** pantalla de ingreso, sin historial artificial.
+
+La protección se ejecuta en `App.jsx` antes de todas las rutas autenticadas; también cubre `/control/:id` y URLs profundas abiertas como favoritos o desde una PWA restaurada.
+
+Android conserva el historial real de pestañas y modales. Solo si una URL interna se abre con índice cero, se crea una entrada Home usando dos renders de React Router para evitar perder la primera transición.
+
+Al llegar al Home, un siguiente gesto Atrás permite abandonar la PWA o regresar a la página anterior de Chrome. El botón «Salir» del selector cierra sesión: es una acción diferente.
