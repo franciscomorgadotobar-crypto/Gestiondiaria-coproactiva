@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
+import { pasosHastaSelector } from '../lib/historialSelector';
 
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
 
@@ -28,7 +29,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // Entrada interpreta este estado incluso al navegar desde la misma ruta '/'.
   function cambiarArea() {
     limpiarArea();
-    navegar('/', { state: { selectorCoproactiva: true } });
+    // La selección ya es el último destino: no debe quedar una copia nueva
+    // encima de una pantalla de trabajo al pulsar «Cambiar de área».
+    const pasos = pasosHastaSelector(window.history.state);
+    if (pasos !== null) return navegar(pasos);
+    navegar('/', { replace: true, state: { selectorCoproactiva: true } });
   }
   const { iniciar } = useTutoriales();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
