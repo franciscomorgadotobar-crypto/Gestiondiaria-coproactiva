@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { limpiarArea, inicioSegunArea } from './area';
 import { destinoVolverPorJerarquia } from './jerarquia';
+import { pasosHastaSelector } from './historialSelector';
 
 /*
  * Las pantallas con lógica especial al salir (cambios sin guardar, origen
@@ -32,7 +33,12 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
   if (destino === '/') {
     if (!puedeCambiarArea) return;
     limpiarArea();
-    // El estado explícito evita redireccionar al área guardada al retroceder.
+    // Volver al selector real ya guardado evita dos copias consecutivas.
+    // Si la app se abrió directamente en SEO, el selector fue preparado
+    // antes de esa pantalla por PanelEscritorio.
+    const pasos = pasosHastaSelector(window.history.state);
+    if (pasos !== null) return navegar(pasos);
+    // Sin entrada previa verificable, mostrar selector sin crear bucles.
     return navegar('/', { replace: true, state: { selectorCoproactiva: true } });
   }
   return navegar(destino);
