@@ -18,9 +18,11 @@ export default defineConfig({
       includeAssets: ['iconos/icono-app-20261013-64.png', 'brand/imagologo-vertical.svg', 'iconos/iso.svg'],
 
       manifest: {
-        name: 'Coproactiva App Diaria',
+        name: 'CoproActiva — Levantamiento en terreno',
         short_name: 'CoproActiva',
-        description: 'Gestión diaria de comunidades, operación, mantenimiento y administración.',
+        description:
+          'Levantamiento técnico de comunidades: recorrido por categorías, fotos con pie y ' +
+          'generación del informe. Funciona sin señal.',
         lang: 'es-CL',
         start_url: base,
         scope: base,
