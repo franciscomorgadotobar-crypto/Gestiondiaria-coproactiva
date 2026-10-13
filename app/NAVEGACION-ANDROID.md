@@ -19,7 +19,7 @@ El botón físico o gesto Atrás debe utilizar el historial real de React Router
 
 - La navegación Atrás **no guarda ni elimina datos por sí sola**. Un diálogo de confirmación se cancela, no confirma la operación.
 - Los formularios con cambios sin guardar conservan sus propios avisos, pero cada pantalla puede requerir pruebas de negocio adicionales.
-- No se fuerza el regreso al Home cuando la persona abre una URL directamente desde un enlace externo: el sistema conserva el comportamiento natural del navegador.
+- Las entradas autenticadas directas a un **inicio de área** de perfiles con selector reciben una entrada de selector previa. Los enlaces externos a otras rutas y el portal cliente mantienen el comportamiento normal del navegador.
 - No se registran scrolls, contraseñas ni contenido de formularios en parámetros URL. Solo IDs de pestaña/etapa/menú.
 - Se respetan parámetros existentes, por ejemplo `?comunidad=...`.
 
@@ -32,7 +32,7 @@ El botón físico o gesto Atrás debe utilizar el historial real de React Router
 5. Abrir un `Confirmar` o `DialogoCampos` → Atrás: cancelar diálogo sin confirmar borrado/acción.
 6. En Portal Cliente, alternar Incidencias/Documentos → Atrás restaura pestaña.
 7. Navegar de un módulo a otro mediante un enlace y pulsar Atrás: vuelve al módulo previo.
-8. Abrir la app directamente en una ruta profunda sin historial: se permite la acción normal de Android; no se crea un bucle de salida.
+8. Abrir la app directamente en `/seo`: Atrás llega al selector de módulos; un segundo Atrás deja la app en PWA o vuelve al navegador anterior. En rutas profundas sin selector no se crea un bucle de salida.
 
 Los tests unitarios verifican lectura/escritura de parámetros URL y que no se borren parámetros ajenos. Los recorridos completos deben validarse en Android real o emulador PWA para todos los componentes de terceros.
 
