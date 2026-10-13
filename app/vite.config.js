@@ -15,14 +15,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['iconos/favicon-64.png', 'logo-coproactiva.svg'],
+      includeAssets: ['iconos/icono-app-20261013-64.png', 'brand/imagologo-vertical.svg', 'iconos/iso.svg'],
 
       manifest: {
-        name: 'CoproActiva — Levantamiento en terreno',
+        name: 'Coproactiva App Diaria',
         short_name: 'CoproActiva',
-        description:
-          'Levantamiento técnico de comunidades: recorrido por categorías, fotos con pie y ' +
-          'generación del informe. Funciona sin señal.',
+        description: 'Gestión diaria de comunidades, operación, mantenimiento y administración.',
         lang: 'es-CL',
         start_url: base,
         scope: base,
@@ -30,14 +28,14 @@ export default defineConfig({
         // En terreno el teléfono se sostiene con una mano mientras la otra abre
         // una puerta o sujeta una linterna. Nunca se usa horizontal.
         orientation: 'portrait',
-        background_color: '#f7f4f0',
-        theme_color: '#2b3138',
+        background_color: '#fffaf6',
+        theme_color: '#fffaf6',
         icons: [
-          { src: 'iconos/icono-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'iconos/icono-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'iconos/icono-app-20261013-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'iconos/icono-app-20261013-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           // Android recorta el icono a la forma del lanzador; el maskable trae
           // el margen que necesita para no quedar cortado.
-          { src: 'iconos/icono-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: 'iconos/icono-app-20261013-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
 
