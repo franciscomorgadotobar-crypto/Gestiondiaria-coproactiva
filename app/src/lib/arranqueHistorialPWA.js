@@ -1,15 +1,17 @@
 /*
- * Preparación del historial ANTES de montar BrowserRouter.
+ * Inicio de documento de Coproactiva (incluye reapertura desde icono PWA).
  *
- * Una PWA instalada puede restaurarse en /seo, /pipeline o una ficha como
- * documento nuevo. history.state.idx puede conservar un índice anterior,
- * aunque Android NO tenga ninguna pantalla de regreso en el proceso actual.
- * Por ello no basta comprobar idx === 0 dentro de React.
+ * Chrome/Android puede recuperar la URL visitada por última vez. Esa URL
+ * NO representa la elección del usuario para el nuevo arranque: toda entrada
+ * nueva debe empezar en el Home según el rol autenticado, nunca abrir SEO,
+ * CRM u otra pantalla automáticamente.
  *
- * Aquí, cuando el documento inicial es una ruta interna, se crea realmente:
- * Home autorizado → ruta solicitada. El router se monta después, por lo que
- * BrowserRouter adopta estos índices sin desincronizarse. No se captura
- * popstate ni se bloquea Atrás físico.
+ * Antes de montar BrowserRouter se normaliza una ruta interna restaurada a
+ * "/". La pantalla raíz resuelve los permisos reales una vez que se carga
+ * el perfil: selector de módulos / Inicio de Operación / portal cliente.
+ *
+ * Se usa REPLACE, no push: la vista restaurada NO queda debajo de Home,
+ * evitando que Atrás de Android abra nuevamente el módulo anterior.
  */
 import { esRutaInterna } from './historialSelector.js';
 
@@ -18,35 +20,20 @@ export function prepararArranqueConHome(historial, ubicacion, base = '/') {
   const pathname = ubicacion.pathname || '/';
   if (prefijo && !pathname.startsWith(prefijo + '/')) return false;
   const ruta = (prefijo ? pathname.slice(prefijo.length) : pathname) || '/';
-  const esPortal = ruta.startsWith('/portal/');
+  const esPortal = ruta === '/portal' || ruta.startsWith('/portal/');
   if (!(esPortal || esRutaInterna(ruta))) return false;
 
-  const home = prefijo + (esPortal ? '/portal' : '/');
-  const original = pathname + (ubicacion.search || '') + (ubicacion.hash || '');
+  const home = prefijo + '/';
   const anterior = historial.state || {};
-  const estadoHome = {
-    idx: 0, key: 'copro-home-inicial',
-    usr: esPortal
-      ? { homePortalCoproactiva: true }
-      : { selectorCoproactiva: true }
-  };
-  const estadoDestino = {
-    ...anterior,
-    idx: 1, key: 'copro-vista-inicial',
-    usr: {
-      ...(anterior.usr || {}),
-      ...(esPortal
-        ? { desdePortalCoproactiva: true }
-        : { desdeSelectorCoproactiva: true })
-    }
-  };
   try {
-    historial.replaceState(estadoHome, '', home);
-    historial.pushState(estadoDestino, '', original);
+    historial.replaceState({
+      ...anterior,
+      idx: 0,
+      key: 'copro-home-arranque',
+      usr: { selectorCoproactiva: true }
+    }, '', home);
     return true;
-  } catch (error) {
-    // No dejar un enlace profundo apuntando al Home si la API falla.
-    try { historial.replaceState(anterior, '', original); } catch { /* No disponible */ }
+  } catch {
     return false;
   }
 }
