@@ -80,6 +80,26 @@ function tieneCRM(perfil) {
   return Boolean(perfil) && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
 }
 
+/*
+ * La restauración automática del último módulo es un PUSH, nunca un REPLACE:
+ * la entrada / queda debajo en el historial nativo de Android.
+ * Se hace una sola vez por documento. Al volver al Home, no autoabre
+ * otra vez el área recordada (evita el bucle Home → SEO → Atrás → SEO).
+ */
+let restauracionAutomaticaEjecutada = false;
+function RestaurarAreaGuardada({ destino }) {
+  const navegar = useNavigate();
+  useEffect(() => {
+    if (restauracionAutomaticaEjecutada) return;
+    restauracionAutomaticaEjecutada = true;
+    navegar(destino, {
+      state: { desdeSelectorCoproactiva: true },
+      preventScrollReset: true
+    });
+  }, [destino, navegar]);
+  return <p className="cargando">Abriendo área…</p>;
+}
+
 function Entrada() {
   const { perfil } = useSesion();
   const location = useLocation();
@@ -91,13 +111,16 @@ function Entrada() {
   if (!tieneCRM(perfil)) return <PanelEscritorio><Inicio /></PanelEscritorio>;
 
   const area = areaGuardada();
-  if (area === 'crm') return <Navigate to="/pipeline" replace />;
-  if (area === 'propiedades') return <Navigate to="/propiedades" replace />;
-  if (area === 'proveedores' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/proveedores" replace />;
-  if (area === 'whatsapp' && ['superadmin','admin'].includes(perfil?.rol)) return <Navigate to="/whatsapp" replace />;
-  if (area === 'contabilidad' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/contabilidad" replace />;
-  if (area === 'seo' && ['superadmin', 'admin'].includes(perfil?.rol)) return <Navigate to="/seo" replace />;
-  if (area === 'operacion') return <Navigate to="/inicio" replace />;
+  const destino = area === 'crm' ? '/pipeline'
+    : area === 'propiedades' ? '/propiedades'
+    : area === 'operacion' ? '/inicio'
+    : ['superadmin', 'admin'].includes(perfil?.rol)
+      ? { proveedores: '/proveedores', whatsapp: '/whatsapp',
+          contabilidad: '/contabilidad', seo: '/seo' }[area]
+      : null;
+
+  if (destino && !restauracionAutomaticaEjecutada)
+    return <RestaurarAreaGuardada destino={destino} />;
   return <SeleccionArea />;
 }
 
