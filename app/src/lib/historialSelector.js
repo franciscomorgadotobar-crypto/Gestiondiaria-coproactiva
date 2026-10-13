@@ -13,7 +13,7 @@ export const RAICES_CON_SELECTOR = [
   '/inicio', '/pipeline', '/propiedades', '/proveedores', '/contabilidad',
   '/seo', '/configuracion', '/whatsapp', '/comunidades', '/mantenciones',
   '/bitacora', '/plantillas', '/mapa', '/ayuda', '/nuevo', '/equipo',
-  '/clientes', '/mi-cuenta', '/notificaciones', '/control', '/historico'
+  '/clientes', '/mi-cuenta', '/notificaciones', '/control'
 ];
 
 let ultimoIndiceSelector = null;
