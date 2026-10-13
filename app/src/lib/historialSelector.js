@@ -1,19 +1,16 @@
 /* Historial de entrada de áreas para Android y PWA.
  *
- * Si React Router entró directamente en el inicio de un área (idx === 0),
- * no existe un selector detrás: Atrás abandonaría la aplicación.
- * Insertar UN selector real antes de la vista existente permite que Atrás
- * avance a /, y que un siguiente Atrás salga naturalmente de la PWA.
- *
- * No se ejecuta con roles sin selector, portales clientes, formularios ni
- * navegaciones ya iniciadas (idx > 0), para evitar pantallas fantasma.
+ * Si se abre directamente un inicio de área con idx = 0, la navegación
+ * automática desde "/" lo ha reemplazado; no existe selector detrás.
+ * React Router debe insertar el selector antes de esa vista, con DOS
+ * navegaciones de su propio historial (replace + push).
+ * Nunca usar history.pushState manual: desincroniza el índice del router.
  */
 export const RAICES_CON_SELECTOR = [
   '/seo', '/pipeline', '/inicio', '/propiedades',
   '/proveedores', '/contabilidad', '/whatsapp', '/configuracion'
 ];
 
-const MARCADOR_ORIGEN = '__coproAreaConSelectorAnterior';
 let ultimoIndiceSelector = null;
 
 export function registrarIndiceSelector(indice) {
@@ -24,11 +21,9 @@ export function pasosHastaSelector(estado) {
   const actual = estado?.idx;
   if (Number.isInteger(actual) && Number.isInteger(ultimoIndiceSelector)
     && actual > ultimoIndiceSelector) return ultimoIndiceSelector - actual;
-  if (actual === 1 && (vieneDeSelectorPreparado(estado)
-    || estado?.usr?.desdeSelectorCoproactiva === true)) return -1;
+  if (actual === 1 && estado?.usr?.desdeSelectorCoproactiva === true) return -1;
   return null;
 }
-
 
 export function debePrepararHistorialSelector(ruta, indice, puedeCambiarArea) {
   return Boolean(puedeCambiarArea)
@@ -37,40 +32,25 @@ export function debePrepararHistorialSelector(ruta, indice, puedeCambiarArea) {
 }
 
 /*
- * Usa únicamente la History API y se ejecuta desde el panel autenticado;
- * no interfiere con el estado de React Router en otra navegación.
- * Conserva search/hash, para no perder la pestaña SEO actual.
+ * Ejecutar solamente después de comprobar que la sesión pertenece a un rol
+ * que puede elegir distintas áreas. Las URLs son relativas al basename
+ * administrado por BrowserRouter; se conserva search y hash sin resetear
+ * filtros, pestañas ni información de formularios.
  */
-export function prepararHistorialSelector(historial, ubicacion, raiz = '/', puedeCambiarArea = false) {
-  const anterior = historial.state || {};
-  const indice = anterior.idx;
-  const prefijo = raiz === '/' ? '' : raiz.replace(/\/$/, '');
-  const ruta = ubicacion.pathname.startsWith(prefijo + '/')
-    ? ubicacion.pathname.slice(prefijo.length) || '/'
-    : ubicacion.pathname;
+export function prepararHistorialSelector(navegar, ubicacion, indice, puedeCambiarArea = false) {
+  const ruta = ubicacion.pathname;
   if (!debePrepararHistorialSelector(ruta, indice, puedeCambiarArea)) return false;
-  if (anterior[MARCADOR_ORIGEN]) return false;
 
-  const origen = ubicacion.pathname + ubicacion.search + ubicacion.hash;
-  const base = raiz.endsWith('/') ? raiz : raiz + '/';
-
-  // React Router interpreta usr como location.state y idx como índice.
-  historial.replaceState({
-    ...anterior, idx: 0, key: 'selector-coproactiva',
-    usr: { selectorCoproactiva: true }
-  }, '', base);
-  try {
-    historial.pushState({
-      ...anterior, idx: 1, [MARCADOR_ORIGEN]: true
-    }, '', origen);
-  } catch (error) {
-    historial.replaceState(anterior, '', origen);
-    throw error;
-  }
-  registrarIndiceSelector(0);
+  const destino = ruta + (ubicacion.search || '') + (ubicacion.hash || '');
+  registrarIndiceSelector(indice);
+  navegar('/', {
+    replace: true,
+    state: { selectorCoproactiva: true },
+    preventScrollReset: true
+  });
+  navegar(destino, {
+    state: { desdeSelectorCoproactiva: true },
+    preventScrollReset: true
+  });
   return true;
-}
-
-export function vieneDeSelectorPreparado(estadoHistorial) {
-  return estadoHistorial?.[MARCADOR_ORIGEN] === true;
 }
