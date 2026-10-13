@@ -122,3 +122,19 @@ test('área guardada y selector respetan permisos actuales, nunca roles antiguos
   assert.match(selector,/const puedeConfigurar = \['superadmin', 'admin'\].includes\(perfil\?\.rol\)/);
   assert.match(app,/\['superadmin', 'admin', 'jefatura'\].includes\(perfil\.rol\)/);
 });
+
+test('perfil cliente: detalle del portal vuelve al inicio del portal, sin selector administrativo',()=>{
+  reiniciarHistorialSelector();
+  const x=simular('/portal/comunidades/123','?seccion=documentos',0);
+  assert.equal(homePermitido(false,true),'/portal');
+  assert.equal(debePrepararHistorialSelector('/portal/comunidades/123',0,true,false,true),true);
+  assert.equal(debePrepararHistorialSelector('/portal',0,true,false,true),false);
+  assert.equal(prepararHistorialSelector(x.navegar,x.ubicacion,0,true,false,true),true);
+  assert.equal(x.acciones[0].destino,'/portal');
+  assert.deepEqual(x.acciones[0].opciones.state,{homePortalCoproactiva:true});
+  const regreso=consumirRegresoPendiente('/portal');
+  assert.equal(regreso.esCliente,true);
+  assert.equal(regreso.destino,'/portal/comunidades/123?seccion=documentos');
+  const app=read('App.jsx');
+  assert.match(app,/desdePortalCoproactiva: true/);
+});
