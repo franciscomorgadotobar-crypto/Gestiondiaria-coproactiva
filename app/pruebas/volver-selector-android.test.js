@@ -117,8 +117,9 @@ test('guardia global no depende de SEO ni del panel y respeta permisos',()=>{
 test('área guardada y selector respetan permisos actuales, nunca roles antiguos',()=>{
   const app=read('App.jsx');
   const selector=read('paginas/SeleccionArea.jsx');
-  assert.match(app,/area === 'proveedores' && \['superadmin', 'admin'\].includes\(perfil\?\.rol\)/);
-  assert.match(app,/area === 'operacion'\) return <Navigate to="\/inicio" replace \/>/);
+  assert.match(app,/\['superadmin', 'admin'\].includes\(perfil\?\.rol\)/);
+  assert.match(app,/proveedores: '\/proveedores'/);
+  assert.match(app,/area === 'operacion' \? '\/inicio'/);
   assert.match(selector,/const puedeConfigurar = \['superadmin', 'admin'\].includes\(perfil\?\.rol\)/);
   assert.match(app,/\['superadmin', 'admin', 'jefatura'\].includes\(perfil\.rol\)/);
 });
