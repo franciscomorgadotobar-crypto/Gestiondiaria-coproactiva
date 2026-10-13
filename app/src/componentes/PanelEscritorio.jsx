@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
+import { prepararHistorialSelector } from '../lib/historialSelector';
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
 
 const ESTADOS_MENU = ['cerrado', 'mas'];
@@ -76,6 +77,16 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const puedeCambiarArea = Boolean(puedeConfigurar);
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
+
+  // PWA/Android: si la sesión reabre directamente el inicio de un área
+  // (incluido SEO) con índice 0, Atrás debe encontrar el selector antes
+  // de abandonar la aplicación. Solo para perfiles con varias áreas.
+  useEffect(() => {
+    if (!puedeCambiarArea) return;
+    prepararHistorialSelector(
+      window.history, window.location, import.meta.env.BASE_URL, true
+    );
+  }, [puedeCambiarArea, pathname]);
 
   // La barra muestra solo el área en la que se está, igual que en el
   // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
