@@ -143,20 +143,22 @@ function ProtegerHomeFinal() {
   }, [idUsuario]);
 
   useEffect(() => {
-    if (cargando || !sesion || !perfil?.activo || perfil.rol === 'cliente') return;
+    if (cargando || !sesion || !perfil?.activo) return;
     const regreso = consumirRegresoPendiente(pathname);
     if (regreso) {
       navegar(regreso.destino, {
-        state: regreso.puedeCambiarArea
-          ? { desdeSelectorCoproactiva: true }
-          : { desdeHomeAreaCoproactiva: true },
+        state: regreso.esCliente
+          ? { desdePortalCoproactiva: true }
+          : regreso.puedeCambiarArea
+            ? { desdeSelectorCoproactiva: true }
+            : { desdeHomeAreaCoproactiva: true },
         preventScrollReset: true
       });
       return;
     }
     prepararHistorialSelector(
       navegar, { pathname, search, hash },
-      window.history.state?.idx, true, tieneCRM(perfil)
+      window.history.state?.idx, true, tieneCRM(perfil), perfil.rol === 'cliente'
     );
   }, [cargando, sesion, perfil, pathname, search, hash, navegar]);
   return null;
