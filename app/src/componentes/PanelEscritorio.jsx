@@ -22,7 +22,7 @@ function activaPropiedades(pathname) {
 
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
-  const { pathname, hash } = useLocation();
+  const { pathname, search, hash } = useLocation();
   const navegar = useNavigate();
   // Cambiar de área no debe reiniciar React ni interrumpir la PWA.
   // Entrada interpreta este estado incluso al navegar desde la misma ruta '/'.
@@ -84,9 +84,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   useEffect(() => {
     if (!puedeCambiarArea) return;
     prepararHistorialSelector(
-      window.history, window.location, import.meta.env.BASE_URL, true
+      navegar, { pathname, search, hash }, window.history.state?.idx, true
     );
-  }, [puedeCambiarArea, pathname]);
+  }, [puedeCambiarArea, pathname, search, hash, navegar]);
 
   // La barra muestra solo el área en la que se está, igual que en el
   // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
