@@ -17,7 +17,9 @@ test('cambiar de área navega a selector sin reiniciar la PWA',()=>{
   assert.match(panel,/if \(pasos !== null\) return navegar\(pasos\)/);
   assert.match(panel,/navegar\('\/', \{ replace: true, state: \{ selectorCoproactiva: true \} \}\)/);
   assert.doesNotMatch(panel,/window\.location\.href\s*=\s*import\.meta\.env\.BASE_URL/);
-  assert.match(router,/location\.state\?\.selectorCoproactiva === true/);
+  assert.match(router,/if \(!tieneCRM\(perfil\)\) return <PanelEscritorio><Inicio \/><\/PanelEscritorio>/);
+  assert.match(router,/return <SeleccionArea \/>/);
+  assert.doesNotMatch(router,/function RestaurarAreaGuardada/);
   assert.ok((panel.match(/onClick=\{cambiarArea\}/g)||[]).length>=2);
 });
 test('los dos diálogos comparten foco accesible y respetan Atrás Android',()=>{
