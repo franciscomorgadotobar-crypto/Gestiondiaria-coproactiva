@@ -1,5 +1,5 @@
-import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from './lib/sesion';
 import Ingreso from './paginas/Ingreso';
 import Clave from './paginas/Clave';
@@ -22,6 +22,7 @@ import Proveedores from './paginas/panel/Proveedores';
 import SeleccionArea from './paginas/SeleccionArea';
 import PanelEscritorio from './componentes/PanelEscritorio';
 import { areaGuardada } from './lib/area';
+import { prepararHistorialSelector, consumirRegresoPendiente, reiniciarHistorialSelector } from './lib/historialSelector';
 
 const Mapa = lazy(() => import('./paginas/panel/Mapa'));
 // El portal de cliente arrastra el mismo Leaflet que el mapa interno —de
@@ -120,9 +121,48 @@ function Cliente({ children }) {
   );
 }
 
+/*
+ * Reglas de Atrás de toda la aplicación, antes de todas las Routes.
+ * Se aplica también a rutas profundas sin PanelEscritorio (levantamientos,
+ * diagnósticos), desde enlaces directos o una PWA restaurada.
+ * El primer Atrás vuelve al Home permitido; el siguiente usa la salida
+ * normal de Android. No fuerza cerrar sesión ni bloquea el navegador.
+ */
+function ProtegerHomeFinal() {
+  const { sesion, perfil, cargando } = useSesion();
+  const { pathname, search, hash } = useLocation();
+  const navegar = useNavigate();
+  const idUsuario = sesion?.user?.id;
+
+  useEffect(() => {
+    reiniciarHistorialSelector();
+  }, [idUsuario]);
+
+  useEffect(() => {
+    if (cargando || !sesion || !perfil?.activo || perfil.rol === 'cliente') return;
+    const regreso = consumirRegresoPendiente(pathname);
+    if (regreso) {
+      navegar(regreso.destino, {
+        state: regreso.puedeCambiarArea
+          ? { desdeSelectorCoproactiva: true }
+          : { desdeHomeAreaCoproactiva: true },
+        preventScrollReset: true
+      });
+      return;
+    }
+    prepararHistorialSelector(
+      navegar, { pathname, search, hash },
+      window.history.state?.idx, true, tieneCRM(perfil)
+    );
+  }, [cargando, sesion, perfil, pathname, search, hash, navegar]);
+  return null;
+}
+
 export default function App() {
   const { sesion } = useSesion();
   return (
+    <>
+    <ProtegerHomeFinal />
     <Routes>
       <Route path="/clave" element={<Clave />} />
       <Route path="/ingreso" element={sesion ? <Navigate to="/" replace /> : <Ingreso />} />
@@ -211,6 +251,7 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
 
