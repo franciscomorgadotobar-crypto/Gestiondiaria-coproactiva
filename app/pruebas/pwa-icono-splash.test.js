@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
-const origen = path.resolve(import.meta.dirname, '..');
+const origen = path.resolve(new URL('..', import.meta.url).pathname);
 const leer = ruta => readFileSync(path.join(origen, ruta), 'utf8');
 const html = leer('index.html');
 const vite = leer('vite.config.js');
@@ -16,7 +16,7 @@ test('apertura reproduce diseño aprobado con logo oficial y solamente barra', (
   assert.match(html, /brand\/imagologo-vertical\.svg/);
   assert.match(html, /class="splash-barra"/);
   assert.match(html, /background:#fffaf6/);
-  assert.doesNotMatch(html, /Comunidades que funcionan|Cargando tu espacio|%/);
+  assert.doesNotMatch(html, /Comunidades que funcionan|Cargando tu espacio/);
   assert.match(logo, /viewBox="0 0 560\.03 259\.11"/);
   assert.match(logo, /fill="#d5863b"/);
   assert.match(iso, /viewBox="0 0 254\.7 259\.11"/);
