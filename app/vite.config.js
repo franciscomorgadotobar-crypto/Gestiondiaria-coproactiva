@@ -13,7 +13,7 @@ export default defineConfig({
   base,
   plugins: [
     react(),
-    VitePWA({
+    ...(process.env.CAPACITOR_BUILD === 'true' ? [] : [VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['iconos/icono-app-20261013-64.png', 'brand/imagologo-vertical.svg', 'iconos/iso.svg'],
 
@@ -62,7 +62,7 @@ export default defineConfig({
       },
 
       devOptions: { enabled: false }
-    })
+    })] )
   ],
   server: { port: 5173 }
 });
