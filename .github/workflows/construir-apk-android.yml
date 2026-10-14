@@ -1,0 +1,109 @@
+name: Construir APK Android con Capacitor
+
+on:
+  pull_request:
+    branches:
+      - claude/figma-coproactiva-interface-9y82xq
+    paths:
+      - "app/**"
+      - ".github/workflows/construir-apk-android.yml"
+      - ".github/workflows/publicar-app.yml"
+  push:
+    branches:
+      - claude/figma-coproactiva-interface-9y82xq
+    paths:
+      - "app/**"
+      - ".github/workflows/construir-apk-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk-debug:
+    name: APK de prueba · Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Node para Capacitor 8
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Java 21 para Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Preparar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Android SDK 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Instalar dependencias de aplicación
+        working-directory: app
+        run: npm install --no-audit --no-fund
+
+      - name: Recuperar configuración pública del despliegue web
+        working-directory: app
+        run: node scripts/cargar-configuracion-publica-android.mjs
+
+      - name: Construir React para WebView local
+        working-directory: app
+        env:
+          CAPACITOR_BUILD: "true"
+        run: npm run build
+
+      - name: Crear plataforma Android con Capacitor
+        working-directory: app
+        run: |
+          npx cap add android
+          npx cap sync android
+          node scripts/configurar-iconos-android.mjs
+
+      - name: Comprobar permisos, iconos y configuración Android
+        working-directory: app
+        run: node --test pruebas/capacitor-android.test.js
+
+      - name: Compilar APK de prueba
+        working-directory: app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Comprobar archivo APK compilado
+        run: test -s app/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Entregar APK para pruebas
+        uses: actions/upload-artifact@v4
+        with:
+          name: coproactiva-apk-debug-${{ github.run_number }}
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 21
+          if-no-files-found: error
+
+      - name: Entregar proyecto Android generado
+        uses: actions/upload-artifact@v4
+        with:
+          name: coproactiva-proyecto-android-${{ github.run_number }}
+          path: |
+            app/android/gradle/
+            app/android/gradlew
+            app/android/gradlew.bat
+            app/android/build.gradle
+            app/android/settings.gradle
+            app/android/variables.gradle
+            app/android/app/build.gradle
+            app/android/app/src/main/
+            app/android/capacitor.settings.gradle
+          retention-days: 21
+          if-no-files-found: warn
