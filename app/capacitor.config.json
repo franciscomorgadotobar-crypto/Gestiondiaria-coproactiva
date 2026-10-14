@@ -1,0 +1,11 @@
+{
+  "appId": "cl.coproactiva.appdiaria",
+  "appName": "Coproactiva App Diaria",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -21,6 +21,7 @@ import PracticaLevantamiento from './paginas/panel/PracticaLevantamiento';
 import Proveedores from './paginas/panel/Proveedores';
 import SeleccionArea from './paginas/SeleccionArea';
 import PanelEscritorio from './componentes/PanelEscritorio';
+import AtrasNativoAndroid from './componentes/AtrasNativoAndroid';
 import { limpiarArea } from './lib/area';
 import { prepararHistorialSelector, consumirRegresoPendiente, reiniciarHistorialSelector } from './lib/historialSelector';
 
@@ -175,6 +176,7 @@ export default function App() {
   return (
     <>
     <ProtegerHomeFinal />
+    <AtrasNativoAndroid />
     <Routes>
       <Route path="/clave" element={<Clave />} />
       <Route path="/ingreso" element={sesion ? <Navigate to="/" replace /> : <Ingreso />} />

@@ -8,7 +8,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "prebuild": "node scripts/generar-iconos.mjs",
-    "predev": "node scripts/generar-iconos.mjs"
+    "predev": "node scripts/generar-iconos.mjs",
+    "android:init": "cap add android",
+    "android:sync": "npm run build && cap sync android",
+    "android:icons": "node scripts/configurar-iconos-android.mjs",
+    "android:debug": "npm run android:sync && npm run android:icons && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
@@ -20,12 +24,16 @@
     "react-router-dom": "^6.28.0",
     "jspdf": "latest",
     "jspdf-autotable": "latest",
-    "pptxgenjs": "latest"
+    "pptxgenjs": "latest",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^6.0.7",
     "vite-plugin-pwa": "^1.3.0",
-    "sharp": "^0.34.4"
+    "sharp": "^0.34.4",
+    "@capacitor/cli": "8.5.3"
   }
 }
