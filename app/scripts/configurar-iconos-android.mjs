@@ -75,4 +75,15 @@ for (const d of await readdir(res,{withFileTypes:true})) {
   await writeFile(path.join(carpeta,'splash.png'),buffer);
   splashCount++;
 }
+// A la app interna no le conviene respaldar tokens/caché de usuarios en
+// copias automáticas del teléfono. Tampoco habilitar HTTP no cifrado.
+const manifestPath = path.join(root, 'android','app','src','main','AndroidManifest.xml');
+let manifest = await readFile(manifestPath,'utf8');
+if (!/<application\b/.test(manifest)) throw Error('AndroidManifest inválido.');
+manifest = manifest.replace(/android:allowBackup="[^"]*"/g,'');
+manifest = manifest.replace(/android:usesCleartextTraffic="[^"]*"/g,'');
+manifest = manifest.replace(/<application\b/, '<application android:allowBackup="false" android:usesCleartextTraffic="false"');
+await writeFile(manifestPath,manifest);
+
 console.log('Íconos nativos y',splashCount,'variantes del splash preparadas.');
+
