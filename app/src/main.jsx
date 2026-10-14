@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { ProveedorSesion } from './lib/sesion';
 import { ProveedorTutoriales } from './lib/tutorialesContexto';
 import { iniciarSincronizacion } from './lib/sincronizacion';
@@ -34,7 +35,7 @@ iniciarSincronizacion();
  * Forzamos una comprobación al abrir la app y recargamos una sola vez cuando el
  * nuevo service worker toma control. Así el usuario no tiene que limpiar caché
  * ni adivinar si está viendo una versión antigua. */
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !Capacitor.isNativePlatform()) {
   let recargandoPorActualizacion = false;
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
