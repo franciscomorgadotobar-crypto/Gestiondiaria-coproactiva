@@ -66,6 +66,9 @@ jobs:
       - name: Probar PWA con Home real antes de salir en Android
         working-directory: app
         run: node --test pruebas/pwa-home-real.test.js
+      - name: Probar descarga completa de BD de proveedores
+        working-directory: app
+        run: node --test pruebas/proveedores-exportar-bd.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
