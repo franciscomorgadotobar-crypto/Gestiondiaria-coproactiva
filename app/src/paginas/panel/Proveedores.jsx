@@ -6,6 +6,7 @@ import { limpiarArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
+import { consultarBaseCompletaProveedores, generarCsvProveedores, nombreArchivoProveedores } from '../../lib/exportarProveedores';
 import './WhatsApp.css';
 
 const MOTIVOS_LISTA_NEGRA = [
@@ -77,6 +78,7 @@ export default function Proveedores() {
   const [blacklist, setBlacklist] = useState(null);
   const [porEliminar, setPorEliminar] = useState(null);
   const [sincronizando, setSincronizando] = useState(false);
+  const [exportandoBD, setExportandoBD] = useState(false);
   const [resultadoSync, setResultadoSync] = useState(null);
   const [error, setError] = useState(null);
   const [aviso, setAviso] = useState(null);
@@ -407,6 +409,38 @@ export default function Proveedores() {
     }
   }
 
+  async function descargarBaseProveedores() {
+    if (!puedeGestionar || exportandoBD) return;
+    setExportandoBD(true);
+    setError(null);
+    setAviso(null);
+    try {
+      const datos = await consultarBaseCompletaProveedores(supabase);
+      if (!datos.length) {
+        setAviso('No hay proveedores registrados para descargar.');
+        return;
+      }
+      const csv = generarCsvProveedores(datos);
+      const archivo = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(archivo);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = nombreArchivoProveedores();
+      enlace.style.display = 'none';
+      document.body.appendChild(enlace);
+      try { enlace.click(); }
+      finally {
+        enlace.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+      }
+      setAviso('Descarga preparada: ' + datos.length + ' proveedores en CSV.');
+    } catch (e) {
+      setError(e?.message || 'No se pudo descargar la base de proveedores.');
+    } finally {
+      setExportandoBD(false);
+    }
+  }
+
   async function sincronizarGmail() {
     setSincronizando(true);
     setError(null);
@@ -533,6 +567,12 @@ export default function Proveedores() {
           <button type="button" className="boton boton-secundario"
                   disabled={sincronizando} onClick={() => cargar({ mostrarResultado: true })}>
             {sincronizando ? 'Actualizando…' : 'Actualizar datos'}
+          </button>
+          <button type="button" className="boton boton-secundario"
+                  disabled={exportandoBD} onClick={descargarBaseProveedores}
+                  title="Descargar todos los proveedores, incluidos los de lista negra"
+                  aria-label="Descargar base completa de proveedores en CSV">
+            {exportandoBD ? 'Preparando descarga…' : '↓ Descargar BD (CSV)'}
           </button>
           <button type="button" className="boton boton-secundario"
                   disabled={sincronizando} onClick={sincronizarGmail}>
