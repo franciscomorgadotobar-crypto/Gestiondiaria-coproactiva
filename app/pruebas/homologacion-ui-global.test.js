@@ -68,7 +68,7 @@ test('ingreso y recuperación tienen un único estilo y acceso conservado', () =
     const fuente=leer('paginas/'+ruta);
     assert.match(fuente,/pantalla acceso-pantalla/);
     assert.match(fuente,/className="acceso-panel"/);
-    assert.match(fuente,/logo-coproactiva\.svg/);
+    assert.match(fuente,/brand\/imagologo-horizontal-naranja\.svg/);
     assert.match(fuente,/onSubmit=/);
   }
   assert.match(leer('paginas/Ingreso.jsx'),/signInWithPassword/);
@@ -77,6 +77,7 @@ test('ingreso y recuperación tienen un único estilo y acceso conservado', () =
 
 test('barra lateral usa iconos para cada área con rutas y permisos intactos', () => {
   assert.match(panel,/IconoNavegacion, \{ iconoRutaCoproactiva \}/);
+  assert.match(panel,/brand\/imagologo-horizontal-naranja\.svg/);
   assert.match(panel,/iconoRutaCoproactiva\(a.ruta\)/);
   assert.match(panel,/accesos\.filter\(a => a.mostrar\)/);
   assert.match(panel,/className=\{'enlace-lateral'/);
