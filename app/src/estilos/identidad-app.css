@@ -1,0 +1,290 @@
+/**
+ * COPROACTIVA · IDENTIDAD COMPARTIDA 2026
+ *
+ * Derivada del Home de módulos aprobado: superficie clara, tarjetas blancas,
+ * bordes suaves, acento cobrizo y pictogramas lineales.
+ *
+ * Capa VISUAL sobre tokens/base/modulos.css. Queda dentro de áreas y pantallas,
+ * para NO modificar ni sustituir el selector de áreas que el usuario ya editó.
+ * No tocar estados de negocios (mantención, finanzas, levantamientos).
+ */
+:root {
+  --ca-cobre: #bc672c;
+  --ca-cobre-oscuro: #985123;
+  --ca-fondo: #f7f4f0;
+  --ca-blanco: #fffefd;
+  --ca-borde: #e8e1d9;
+  --ca-subtle: #fdf9f5;
+  --ca-sombra: 0 3px 14px rgba(40, 36, 33, .045);
+  --ca-sombra-hover: 0 8px 24px rgba(40, 36, 33, .075);
+  --ca-radio: 16px;
+  --ca-radio-control: 11px;
+  --ca-transition: 160ms ease;
+}
+
+/* La interfaz de trabajo comparte identidad sin rediseñar el Home existente. */
+.area-escritorio,
+.pantalla.modulo-unificado,
+.wa-page.modulo-unificado {
+  --fondo-app: var(--ca-fondo);
+  --papel: #f9f6f2;
+  --hover: #fff9f3;
+  --tarjeta: var(--ca-blanco);
+  --borde: var(--ca-borde);
+  --borde-suave: #ede6e0;
+  --radio-tarjeta: var(--ca-radio);
+  --radio-control: var(--ca-radio-control);
+  --modulo-radio: var(--ca-radio);
+  --modulo-borde: var(--ca-borde);
+  --modulo-sombra: var(--ca-sombra);
+  --enlace: var(--ca-cobre-oscuro);
+  --texto-apagado: #626972;
+}
+
+.layout-escritorio,
+.area-escritorio { min-width:0; background:var(--ca-fondo); }
+.pantalla.modulo-unificado { background:var(--ca-fondo); }
+
+/* Encabezados: misma jerarquía y aire que el saludo del Home. */
+.modulo-unificado > .encabezado.modulo-cabecera {
+  background:var(--ca-blanco);
+  border-bottom:1px solid var(--ca-borde);
+  padding:24px clamp(18px,2.5vw,34px);
+  box-shadow:0 1px 1px rgba(35,36,38,.02);
+}
+.modulo-unificado .modulo-cabecera :is(h1.h2,h1.h3,h1),
+.wa-page.modulo-unificado .wa-header h1 {
+  font-family:var(--fuente-display);
+  font-size:clamp(20px,2.2vw,27px);
+  line-height:1.25;
+  letter-spacing:-.025em;
+  font-weight:700;
+  color:var(--tinta);
+}
+.modulo-unificado .modulo-cabecera :is(.seleccion-area-etiqueta,.etiqueta-grupo) {
+  font-size:11px;
+  line-height:1.4;
+  color:var(--ca-cobre-oscuro);
+  letter-spacing:.12em;
+}
+.modulo-unificado .modulo-cabecera :is(.chico.apagado,.propiedades-descripcion,.seo-cabecera p),
+.wa-page.modulo-unificado .wa-header p {
+  font-size:14px;
+  line-height:1.55;
+  color:#677078;
+}
+.modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido {
+  padding:22px clamp(18px,2.5vw,34px);
+  min-width:0;
+}
+.modulo-unificado .cuerpo { min-width:0; }
+.modulo-unificado :is(.grupo-titulo,.comunidad-seccion-titulo,.seo-titulo-seccion)
+  :is(h2,h3,h4),
+.modulo-unificado :is(.h4,.modulo-seccion-titulo) {
+  letter-spacing:-.008em;
+}
+.modulo-unificado .grupo-titulo .etiqueta-grupo {
+  color:var(--ca-cobre-oscuro);
+  letter-spacing:.12em;
+}
+
+/* Superficies: misma tarjeta limpia para CRM, Operación, Proveedores, etc. */
+.modulo-unificado :is(
+  .tarjeta,.ui-panel,.pipeline-tarjeta,.comunidad-card,.propiedad-card,
+  .propiedad-seccion,.proveedor-tarjeta,.comunidades-herramientas,
+  .contabilidad-reporte-card,.contabilidad-kpi-principal,
+  .seo-exec-kpi,.seo-exec-superficie,.seo-kpi,.seo-tabla-contenedor,
+  .seo-reco-card,.seo-inventario-item,.seo-impacto-card,
+  .wa-box,.wa-layout,.wa-detail,.mantencion-tarjeta,
+  .portal-tarjeta,.criterio-inspeccion
+) {
+  background:var(--ca-blanco);
+  border-color:var(--ca-borde);
+  border-radius:var(--ca-radio);
+  box-shadow:var(--ca-sombra);
+}
+.modulo-unificado :is(.tarjeta,.ui-panel,.pipeline-tarjeta,.comunidad-card,
+  .propiedad-card,.proveedor-tarjeta,.seo-exec-kpi,.seo-exec-superficie) {
+  transition:border-color var(--ca-transition),box-shadow var(--ca-transition);
+}
+.modulo-unificado :is(
+  a.tarjeta,button.tarjeta,button.seo-exec-kpi,
+  .pipeline-tarjeta,.proveedor-tarjeta-principal
+):hover {
+  border-color:#d8ae90;
+  box-shadow:var(--ca-sombra-hover);
+}
+.modulo-unificado :is(.seo-exec-kpi,.seo-exec-superficie) { min-width:0; }
+.modulo-unificado .ui-panel { padding:18px; }
+
+/* Acción primaria (pizarra), secundaria (blanco) y enlace (cobre). */
+.modulo-unificado .boton:not(.boton-texto),
+.wa-page.modulo-unificado .boton:not(.boton-texto) {
+  min-height:44px;
+  border-radius:var(--ca-radio-control);
+  font-weight:700;
+  letter-spacing:.09em;
+  transition:background-color var(--ca-transition),border-color var(--ca-transition),box-shadow var(--ca-transition);
+}
+.modulo-unificado .boton:not(.boton-secundario):not(.boton-texto) {
+  background:var(--tinta);
+  border-color:var(--tinta);
+  color:#fff;
+}
+.modulo-unificado .boton:not(.boton-secundario):not(.boton-texto):hover:not(:disabled) {
+  background:#3c4147;
+  box-shadow:var(--ca-sombra-hover);
+}
+.modulo-unificado .boton-secundario:not(.boton-texto) {
+  background:var(--ca-blanco);
+  border-color:var(--ca-borde);
+  color:#505963;
+}
+.modulo-unificado .boton-secundario:not(.boton-texto):hover:not(:disabled) {
+  background:#fff8f1;
+  border-color:#d9b18f;
+  color:var(--ca-cobre-oscuro);
+}
+.modulo-unificado .boton-texto,
+.modulo-unificado .seo-exec-enlace { color:var(--ca-cobre-oscuro); }
+
+/* Campos: un mismo contorno, radio y objetivos táctiles. */
+.modulo-unificado :is(.campo input,.campo select,.campo textarea,
+  .seo-cabecera select,.seo-herramientas input,.seo-herramientas select,
+  .wa-page input,.wa-page select,.wa-page textarea,
+  .proveedores-busqueda-fila input) {
+  min-width:0;
+  max-width:100%;
+  border:1px solid var(--ca-borde);
+  border-radius:var(--ca-radio-control);
+  background:var(--ca-blanco);
+  color:var(--tinta);
+  min-height:44px;
+}
+.modulo-unificado :is(input,textarea,select)::placeholder { color:#858990; }
+.modulo-unificado :is(input,textarea,select):focus-visible,
+.modulo-unificado :is(button,a,[role="tab"]):focus-visible {
+  outline:2px solid var(--ca-cobre);
+  outline-offset:2px;
+}
+.modulo-unificado :is(.chip,.seo-prioridad,.seo-impacto-estado) { border-radius:999px; }
+
+/* Pestañas y filtros conservan selección, navegación horizontal y estado. */
+.modulo-unificado :is(.pestanas,.ui-pestanas,.proveedores-subnav) {
+  overscroll-behavior-x:contain;
+  scrollbar-width:thin;
+}
+.modulo-unificado .ui-pestanas > :is(button,a):is(.activo,[aria-selected="true"],[aria-current="page"]) {
+  border-bottom-color:var(--ca-cobre);
+  color:var(--tinta);
+}
+.modulo-unificado :is(.pestanas,.filtros-rango) button:is(.activo,[aria-pressed="true"],[aria-current="step"]) {
+  border-color:#d8a879;
+  background:#fff3e7;
+  color:#955123;
+}
+
+/* Navegación persistente: misma marca, jerarquía y estados para cada módulo. */
+@media(min-width:900px) {
+  .layout-escritorio .barra-lateral {
+    width:244px;
+    padding:26px 17px;
+    background:#fffefd;
+    border-right:1px solid var(--ca-borde);
+  }
+  .layout-escritorio .marca-lateral {
+    padding:6px 11px 10px;
+    margin-bottom:19px;
+    min-height:44px;
+  }
+  .layout-escritorio .marca-lateral img {
+    width:auto;
+    max-width:172px;
+    height:32px;
+    object-fit:contain;
+    object-position:left center;
+  }
+  .layout-escritorio .etiqueta-lateral {
+    margin:12px 11px 9px;
+    color:var(--ca-cobre-oscuro);
+    font-size:11px;
+    font-weight:750;
+    letter-spacing:.12em;
+  }
+  .layout-escritorio .enlaces-lateral { gap:5px; }
+  .layout-escritorio .enlace-lateral {
+    display:flex;align-items:center;gap:11px;
+    min-height:46px;
+    border-radius:12px;
+    padding:10px 12px;
+    color:#56606a;
+    font-size:14px;
+    font-weight:600;
+    transition:background var(--ca-transition),color var(--ca-transition);
+  }
+  .layout-escritorio .enlace-lateral-icono {
+    display:inline-flex;align-items:center;justify-content:center;
+    color:#a16337; flex:none;
+  }
+  .layout-escritorio .enlace-lateral:hover {
+    background:#fff5ec;color:var(--tinta);
+  }
+  .layout-escritorio .enlace-lateral.activo {
+    background:#fff0e4;
+    color:#9b4f1c;
+    font-weight:750;
+    box-shadow:inset 3px 0 #cf7c35;
+  }
+  .layout-escritorio .usuario-lateral {
+    background:#fffefd;
+    border-top:1px solid var(--ca-borde);
+  }
+}
+@media(max-width:899px) {
+  .area-escritorio { background:var(--ca-fondo); }
+  .barra-area-movil {
+    display:flex; align-items:center;justify-content:space-between;
+    gap:12px;
+    padding:8px 16px;
+    min-height:58px;
+    background:var(--ca-blanco);
+    border-bottom:1px solid var(--ca-borde);
+  }
+  .barra-area-movil button { color:var(--ca-cobre-oscuro); font-weight:700; }
+  .barra-area-movil .barra-area-volver {
+    min-height:40px;display:inline-flex;align-items:center;padding:8px 5px;
+  }
+  .barra-area-movil .barra-area-cambiar {
+    border:1px solid #eddfd3;
+    border-radius:999px;
+    padding:11px 14px;
+    background:#fff8f1;
+    box-shadow:0 2px 8px rgba(131,77,36,.035);
+  }
+  .barra-area-movil .barra-area-derecha { min-width:0; }
+  .modulo-unificado > .encabezado.modulo-cabecera { padding:20px 18px; }
+  .modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido {
+    padding:18px 16px;
+  }
+  .barra-inferior-movil {
+    background:rgba(255,254,253,.98);
+    border-top:1px solid var(--ca-borde);
+    box-shadow:0 -4px 18px rgba(47,40,32,.055);
+  }
+  .barra-inferior-movil .nav-movil-item.activo {
+    color:var(--ca-cobre-oscuro);
+  }
+  .barra-inferior-movil .nav-movil-icono-wrap {
+    border-radius:11px;
+  }
+  .modulo-unificado :is(.ui-panel,.tarjeta,.seo-exec-kpi,.seo-exec-superficie) { min-width:0; }
+}
+@media(max-width:390px) {
+  .barra-area-movil .barra-area-cambiar { padding:10px 12px; }
+  .modulo-unificado > .encabezado.modulo-cabecera { padding:17px 16px; }
+}
+/* No convertir la transición visual en carga extra ni animar a quien lo evita. */
+@media(prefers-reduced-motion:reduce) {
+  .modulo-unificado :is(.tarjeta,.boton,.seo-exec-kpi,.seo-exec-superficie),
+  .layout-escritorio .enlace-lateral { transition:none; }
+}
