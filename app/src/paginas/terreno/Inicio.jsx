@@ -56,10 +56,10 @@ export default function InicioTerreno() {
   });
 
   return (
-    <div className="pantalla">
+    <div className="pantalla modulo-unificado">
       <AvisoConexion />
 
-      <header className="encabezado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila">
           <div className="crece">
             <h1 className="h3">Hola, {perfil?.nombre?.split(' ')[0] ?? ''}</h1>
