@@ -1,14 +1,11 @@
 import { useMemo, useState } from 'react';
 import { nombreMejoraSEO } from '../../lib/seoNombresMejoras';
+import { datosPerfilGoogle } from '../../lib/seoGoogleMaps';
 import './SEODashboard.css';
 
 const numero = n => Number(n ?? 0).toLocaleString('es-CL', {maximumFractionDigits:0});
 const porcentaje = n => (Number(n ?? 0) * 100).toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
 const decimal = n => Number(n ?? 0).toLocaleString('es-CL',{maximumFractionDigits:1});
-// En GBP un campo ausente NO equivale a cero; evita presentar un 0 engañoso.
-export const numeroPerfilEmpresa = valor =>
-  valor == null || valor === '' || !Number.isFinite(Number(valor)) ? '—' : numero(valor);
-
 const fechaCL = valor => {
   const v = String(valor || '');
   const normal = /^\d{8}$/.test(v) ? v.slice(0,4)+'-'+v.slice(4,6)+'-'+v.slice(6,8) : v;
@@ -235,32 +232,19 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       {perfil && perfilEmpresa.inicio && perfilEmpresa.fin &&
         <p className="seo-exec-maps-fechas">Período de Business Profile: {perfilEmpresa.inicio} al {perfilEmpresa.fin}. Datos procesados, no en tiempo real.</p>}
       {!perfil && <div className="seo-exec-maps-pendiente" role="status">
-        <span>{perfilEmpresa?.error || 'Google Business Profile no está conectado o no entregó datos disponibles.'}</span>
+        <span>{'Google Business Profile no está conectado o no entregó datos para estas métricas.'}</span>
         <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('conexiones')}>
           Revisar conexión →
         </button>
       </div>}
       <div className="seo-exec-grid-kpis seo-exec-maps-kpis">
-        <Metrica nombre="Apariciones en Google Maps"
-          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.impresionesMaps) : '—'}
-          detalle="Visualizaciones de la ficha en Maps · móvil y escritorio"
-          onClick={()=>onNavigate('business')} />
-        <Metrica nombre="Apariciones en Búsqueda"
-          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.impresionesBusqueda) : '—'}
-          detalle="Visualizaciones de la ficha en Google Search; no son impresiones SEO del sitio"
-          onClick={()=>onNavigate('business')} />
-        <Metrica nombre="Clics hacia el sitio"
-          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.clicsWeb) : '—'}
-          detalle="Accesos al sitio desde la ficha · no sesiones GA4"
-          onClick={()=>onNavigate('business')} />
-        <Metrica nombre="Clics para llamar"
-          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.clicsTelefono) : '—'}
-          detalle="Clics en el teléfono; no llamadas atendidas"
-          onClick={()=>onNavigate('business')} />
-        <Metrica nombre="Solicitudes de indicaciones"
-          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.indicaciones) : '—'}
-          detalle="Peticiones de ruta desde la ficha de Google"
-          onClick={()=>onNavigate('business')} />
+        {datosPerfilGoogle(perfilEmpresa).map(indicador => (
+          <Metrica key={indicador.campo}
+            nombre={indicador.titulo}
+            valor={indicador.valor == null ? '—' : numero(indicador.valor)}
+            detalle={indicador.detalle}
+            onClick={()=>onNavigate('business')} />
+        ))}
       </div>
       <p className="seo-exec-maps-nota">Fuente: Google Business Profile Performance API. Sus cifras no se suman a Search Console ni Google Analytics.</p>
     </section>
