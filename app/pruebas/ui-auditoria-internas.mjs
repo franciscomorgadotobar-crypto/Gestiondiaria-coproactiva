@@ -215,6 +215,57 @@ try {
          fullPage:false
        });
      }
+     // Verificar subpantallas interactivas sin guardar ni borrar registros:
+     // dimensiones reales de los campos y reportes en el teléfono.
+     if(vista.slug==='comunidades-lista') {
+       const crear=page.getByRole('button',{name:'Nueva comunidad',exact:true});
+       if(await crear.count()) {
+         await crear.click();
+         await page.getByLabel('Nombre',{exact:true}).waitFor({timeout:4000});
+         const caja=page.locator('.comunidad-form').first();
+         const medidas=await caja.evaluate(el=>({
+           ancho:el.getBoundingClientRect().width,
+           derecha:el.getBoundingClientRect().right,
+           filas:getComputedStyle(el.querySelector('.formulario-grid')).gridTemplateColumns
+         }));
+         assert.ok(medidas.derecha<=width+3,
+           'Formulario de nueva comunidad desbordado '+JSON.stringify(medidas));
+         assert.ok(medidas.ancho>0);
+         await page.screenshot({path:'artifacts/ui/internas/comunidad-form-'+width+'.png'});
+       }
+     }
+     if(vista.slug==='comunidad-detalle') {
+       const tabs=page.getByRole('tablist',{name:'Secciones de la comunidad'});
+       await tabs.getByRole('tab',{name:'Activos'}).click();
+       await page.getByRole('heading',{name:'Agregar activo'}).waitFor({timeout:4000});
+       const formulario=page.locator('.comunidad-form:visible').first();
+       assert.ok(await formulario.count(), 'Falta formulario de activos');
+       const tam=await formulario.evaluate(el=>el.getBoundingClientRect().right);
+       assert.ok(tam<=width+3,'Formulario de activos desbordado');
+       await page.screenshot({path:'artifacts/ui/internas/comunidad-activos-'+width+'.png'});
+       await tabs.getByRole('tab',{name:'Plan de mantención'}).click();
+       assert.ok((await page.locator('.pantalla').innerText()).includes('Plan de mantención'));
+     }
+     if(vista.slug==='contabilidad-reportes') {
+       const filtro=page.locator('.contabilidad-filtros-reporte:visible').first();
+       assert.ok(await filtro.count(),'Filtros contables no visibles');
+       const bounds=await filtro.evaluate(el=>{
+         const r=el.getBoundingClientRect();
+         return {left:r.left,right:r.right,width:r.width};
+       });
+       assert.ok(bounds.right<=width+3,'Filtros contables desbordados '+JSON.stringify(bounds));
+       if(width<=760) {
+         const selector=page.locator('.contabilidad-reporte-selector-movil select:visible');
+         await selector.waitFor({timeout:4000});
+         await selector.selectOption('balance_general');
+         assert.equal(await selector.inputValue(),'balance_general');
+         await page.screenshot({path:'artifacts/ui/internas/contabilidad-balance-'+width+'.png'});
+       }
+       const pdf=page.getByRole('button',{name:'PDF',exact:true});
+       const ppt=page.getByRole('button',{name:'PPT',exact:true});
+       assert.ok(await pdf.count()&&await ppt.count(),'Exportaciones PDF/PPT ausentes');
+     }
+
      console.log('OK '+vista.slug+' '+width+'px');
    }
    assert.deepEqual(failures,[],width+' px JS errors');
