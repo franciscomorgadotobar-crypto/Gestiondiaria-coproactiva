@@ -620,7 +620,7 @@ export default function Levantamiento() {
   const cerrado = control.estado === 'enviado' || control.estado === 'anulado';
 
   return (
-    <div className="pantalla pantalla-angosta">
+    <div className="pantalla pantalla-angosta modulo-unificado">
       {pedirMotivoPausa && (
         <DialogoCampos
           titulo="Pausar levantamiento"
@@ -641,7 +641,7 @@ export default function Levantamiento() {
 
       <AvisoConexion />
 
-      <header className="encabezado encabezado-levantamiento">
+      <header className="encabezado encabezado-levantamiento modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 6 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
                   onClick={() => navegar(inicioSegunArea())} aria-label="Volver">
