@@ -2,7 +2,7 @@
  * Auditoría UI/UX profunda: pantallas internas, editores, detalle, informes.
  * Mock del API remoto y sesión local para NO tocar datos productivos.
  *
- * Valida 360/390/768/1280px, sin recorte global, contenidos presentes y
+ * Valida 14 vistas en 360/390/768/1280px; SEO tiene QA propia en ui-seo-google-maps.mjs., sin recorte global, contenidos presentes y
  * capturas de las vistas que más trabajo concentran.
  */
 import { chromium } from 'playwright';
@@ -49,9 +49,7 @@ const vistas=[
   {slug:'contabilidad-plan',ruta:'/contabilidad/plan',texto:'Contabilidad'},
   {slug:'propiedad-nueva',ruta:'/propiedades/nueva',texto:'Nueva propiedad'},
   {slug:'proveedores-correos',ruta:'/proveedores/correos',texto:'Correos por clasificar'},
-  {slug:'proveedores-postulantes',ruta:'/proveedores/postulantes',texto:'Postulantes'},
-  {slug:'seo-audiencia',ruta:'/seo?vista=analytics',texto:'SEO y Analítica'},
-  {slug:'seo-google-maps',ruta:'/seo?vista=business',texto:'SEO y Analítica'}
+  {slug:'proveedores-postulantes',ruta:'/proveedores/postulantes',texto:'Postulantes'}
 ];
 
 async function clickDestino(page,ruta,etiqueta) {
