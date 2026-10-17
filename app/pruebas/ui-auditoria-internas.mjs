@@ -97,10 +97,21 @@ try {
    const page=await ctx.newPage();
    const failures=[];
    page.on('pageerror',e=>failures.push(e.message));
+   // El arranque PWA siempre lleva a Home por diseño (permiso/historial).
+   // Para auditar subrutas se ingresa primero y se cambia la ruta DENTRO del
+   // SPA. Evita un falso fallo causado por la redirección de arranque.
+   await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:22000});
+   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:15000});
    for(const vista of vistas) {
-     await page.goto(base+vista.ruta,{waitUntil:'domcontentloaded',timeout:22000});
+     console.log('AUDIT '+vista.slug+' @ '+width+'px');
+     await page.evaluate((ruta)=>{
+       const actual=window.history.state || {};
+       const state={...actual, idx:Number(actual.idx || 0)+1};
+       history.pushState(state,'',ruta);
+       window.dispatchEvent(new PopStateEvent('popstate',{state}));
+     }, vista.ruta);
      await page.locator('.pantalla.modulo-unificado, .wa-page.modulo-unificado').first()
-       .waitFor({timeout:15000});
+       .waitFor({timeout:12000});
      // Lazy modules and simulated data may require an extra render.
      await page.waitForTimeout(250);
      const metrics=await page.evaluate(()=>{
