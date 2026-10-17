@@ -385,3 +385,49 @@
   }
   .modal-accesible .fila-botones .boton { min-height: var(--tactil); }
 }
+
+/* Fase 3 — refinamiento táctil y contención de contenido operativo. */
+.modulo-unificado :is(.ui-panel,.ui-toolbar,.ui-formulario,.ui-tabla-scroll) {
+  min-width: 0;
+}
+.modulo-unificado .ui-tabla-scroll {
+  scrollbar-gutter: stable;
+}
+.modulo-unificado .ui-tabla-scroll > table {
+  max-width: none;
+}
+.modulo-unificado .ui-toolbar :is(input,select,textarea) {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.modulo-unificado :is(.ui-panel,.ui-formulario) :is(input,select,textarea):focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: 1px;
+}
+@media (max-width: 760px) {
+  .modulo-unificado .ui-toolbar {
+    max-width: 100%;
+    gap: 10px;
+  }
+  .modulo-unificado .ui-formulario > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .modulo-unificado .ui-formulario :is(input,select,textarea) {
+    font-size: 16px;
+  }
+  .modulo-unificado .ui-acciones {
+    align-items: stretch;
+  }
+  .modulo-unificado .ui-acciones > :is(button,a.boton) {
+    min-height: var(--tactil);
+  }
+}
+@media (max-width: 390px) {
+  .modulo-unificado .ui-toolbar > .campo {
+    flex: 1 1 100%;
+  }
+  .modulo-unificado .ui-toolbar > .campo :is(input,select) {
+    width: 100%;
+  }
+}
