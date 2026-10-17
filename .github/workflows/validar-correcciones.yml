@@ -72,6 +72,9 @@ jobs:
       - name: Probar Google Maps en Dashboard y navegación SEO móvil
         working-directory: app
         run: node --test pruebas/seo-maps-dashboard.test.js
+      - name: Verificar sistema visual unificado en todos los módulos
+        working-directory: app
+        run: node --test pruebas/homologacion-ui-global.test.js
       - name: Compilar aplicación React / Vite
         working-directory: app
         run: npm run build
@@ -115,6 +118,9 @@ jobs:
       - name: Verificar Google Maps y sus métricas en Android simulado
         working-directory: app
         run: node pruebas/ui-seo-google-maps.mjs
+      - name: Revisar pantallas homologadas en navegador móvil y escritorio
+        working-directory: app
+        run: node pruebas/ui-homologacion-modulos.mjs
       - name: Adjuntar capturas de QA
         if: always()
         uses: actions/upload-artifact@v4

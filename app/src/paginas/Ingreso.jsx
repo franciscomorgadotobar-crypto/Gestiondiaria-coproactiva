@@ -27,11 +27,11 @@ export default function Ingreso() {
   }
 
   return (
-    <div className="pantalla" style={{ justifyContent: 'center', padding: '24px 20px' }}>
-      <div style={{ width: '100%', maxWidth: 380, margin: '0 auto' }}>
+    <div className="pantalla acceso-pantalla" style={{ justifyContent: 'center', padding: '24px 20px' }}>
+      <div className="acceso-panel" style={{ width: '100%', maxWidth: 420, margin: '0 auto' }}>
         {/* BASE_URL, no una ruta absoluta: si la app se publica bajo una
             subcarpeta, "/logo…" apuntaría fuera del proyecto. */}
-        <img src={import.meta.env.BASE_URL + 'logo-coproactiva.svg'}
+        <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'}
              alt="CoproActiva" style={{ height: 26, marginBottom: 28 }} />
 
         <h1 className="h2" style={{ marginBottom: 6 }}>Ingresar</h1>

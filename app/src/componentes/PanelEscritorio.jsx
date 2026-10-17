@@ -8,6 +8,7 @@ import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
 
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
+import IconoNavegacion, { iconoRutaCoproactiva } from './IconoNavegacion';
 
 const ESTADOS_MENU = ['cerrado', 'mas'];
 
@@ -263,14 +264,15 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     <div className="layout-escritorio">
       <nav className="barra-lateral" aria-label="Navegación">
         <Link to={inicio} className="marca-lateral" aria-label="CoproActiva">
-          <img src={import.meta.env.BASE_URL + 'logo-coproactiva.svg'} alt="CoproActiva" />
+          <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva" />
         </Link>
         <div className="enlaces-lateral">
           {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
           {accesos.filter(a => a.mostrar).map(a => (
             <Link key={a.ruta} to={a.ruta}
                   className={'enlace-lateral' + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
-              {a.etiqueta}
+              <span className="enlace-lateral-icono"><IconoNavegacion tipo={iconoRutaCoproactiva(a.ruta)} /></span>
+              <span>{a.etiqueta}</span>
             </Link>
           ))}
         </div>
