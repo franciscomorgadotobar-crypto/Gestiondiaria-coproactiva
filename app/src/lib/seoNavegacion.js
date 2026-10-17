@@ -1,4 +1,4 @@
-export const SEO_ACCESOS_DIRECTOS = ['resumen', 'consultas', 'oportunidades', 'seguimiento'];
+export const SEO_ACCESOS_DIRECTOS = ['resumen', 'consultas', 'analytics', 'business'];
 export const SEO_MENU_PARAMETRO = 'seoMenu';
 
 export function abrirMenuSEO(search) {

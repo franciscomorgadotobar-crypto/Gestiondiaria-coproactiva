@@ -118,3 +118,30 @@ button.seo-exec-kpi.accion:hover { background:var(--hover); border-color:var(--n
 .seo-exec-sin-sugerencias>div{display:flex;flex-direction:column;gap:4px;min-width:0}
 .seo-exec-sin-sugerencias strong{font-size:.85rem;color:#35683c;line-height:1.3}
 .seo-exec-sin-sugerencias small{font-size:.76rem;color:#67746a;line-height:1.4}
+
+/* La presencia en Google Maps aparece cerca de las métricas ejecutivas.
+   Cinco indicadores sin mezclar cifras de Search Console ni GA4. */
+.seo-exec-maps { display:flex; flex-direction:column; gap:11px; min-width:0; padding-top:16px; border-top:1px solid var(--borde-suave); }
+.seo-exec-maps-encabezado { align-items:center; }
+.seo-exec-maps-encabezado h3 { font-size:1.04rem; }
+.seo-exec-maps .seo-exec-enlace { margin:0; padding:4px 0; flex:none; align-self:center; }
+.seo-exec-maps-fechas, .seo-exec-maps-nota { margin:0; color:var(--texto-apagado); font-size:.76rem; line-height:1.5; }
+.seo-exec-maps-fechas { color:#835d36; }
+.seo-exec-maps-pendiente { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px 14px; font-size:.82rem; color:var(--texto-apagado); }
+.seo-exec-maps-pendiente .seo-exec-enlace { color:#955123; }
+.seo-exec-maps-kpis { gap:10px; }
+.seo-exec-maps-kpis .seo-exec-kpi { min-height:126px; }
+.seo-exec-resumen-final { display:grid; grid-template-columns:1fr; }
+@media(max-width:800px) {
+  .seo-exec-maps-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .seo-exec-maps-kpis .seo-exec-kpi:last-child { grid-column:span 2; }
+}
+@media(max-width:520px) {
+  .seo-exec-maps { gap:9px; }
+  .seo-exec-maps-encabezado { align-items:flex-start; }
+  .seo-exec-maps-kpis { gap:9px; }
+}
+@media(max-width:345px) {
+  .seo-exec-maps-kpis { grid-template-columns:1fr; }
+  .seo-exec-maps-kpis .seo-exec-kpi:last-child { grid-column:auto; }
+}

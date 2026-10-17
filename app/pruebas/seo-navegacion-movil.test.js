@@ -13,11 +13,17 @@ const estilos = read('paginas/panel/SEO.css');
 const validadas = ['resumen','consultas','analytics','business','oportunidades','seguimiento',
   'tecnico','velocidad','tagmanager','conexiones','diagnostico'];
 
-test('los cuatro accesos prioritarios SEO se visualizan como barra de cinco botones', () => {
-  assert.deepEqual(SEO_ACCESOS_DIRECTOS, ['resumen','consultas','oportunidades','seguimiento']);
+test('menú inferior: Dashboard, Búsquedas, Audiencia, Google Maps y Más', () => {
+  assert.deepEqual(SEO_ACCESOS_DIRECTOS, ['resumen','consultas','analytics','business']);
   assert.match(barra, /className="barra-inferior-movil seo-barra-inferior"/);
   assert.match(barra, /principales\.map\(item =>/);
   assert.match(barra, /<span>Más<\/span>/);
+  assert.match(seo, /\['business', 'Google Maps'\]/);
+  assert.match(seo, /\['analytics', 'Audiencia'\]/);
+  assert.ok(!SEO_ACCESOS_DIRECTOS.includes('oportunidades'));
+  assert.ok(!SEO_ACCESOS_DIRECTOS.includes('seguimiento'));
+  assert.match(barra, /if \(tipo === 'business'\)/);
+  assert.match(barra, /if \(tipo === 'analytics'\)/);
   assert.match(barra, /<IconoSEO tipo=\{item\.id\}/);
   assert.match(barra, /aria-current=\{vista === item\.id \? 'page' : undefined\}/);
 });
