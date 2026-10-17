@@ -105,7 +105,7 @@ export default function Clave() {
   return (
     <div className="pantalla acceso-pantalla" style={{ justifyContent: 'center', padding: '24px 20px' }}>
       <div className="acceso-panel" style={{ width: '100%', maxWidth: 420, margin: '0 auto' }}>
-        <img src={import.meta.env.BASE_URL + 'logo-coproactiva.svg'}
+        <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'}
              alt="CoproActiva" style={{ height: 26, marginBottom: 28 }} />
 
         {estado === 'validando' && <p className="cargando">Comprobando el enlace…</p>}
