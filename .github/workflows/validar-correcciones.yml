@@ -112,6 +112,9 @@ jobs:
       - name: Validar pantalla de apertura real en Chromium móvil
         working-directory: app
         run: node pruebas/ui-splash-pwa.mjs
+      - name: Verificar Google Maps y sus métricas en Android simulado
+        working-directory: app
+        run: node pruebas/ui-seo-google-maps.mjs
       - name: Adjuntar capturas de QA
         if: always()
         uses: actions/upload-artifact@v4
