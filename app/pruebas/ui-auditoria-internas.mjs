@@ -191,6 +191,19 @@ try {
          bottomNav:fixed.length
        };
      });
+     if(metrics.scrollWidth>metrics.viewport+3) {
+       const culpables=await page.evaluate(()=>{
+         const max=innerWidth;
+         return [...document.querySelectorAll('body *')].map(el=>{
+           const r=el.getBoundingClientRect();
+           return {tag:el.tagName,clase:String(el.className?.baseVal ?? el.className).slice(0,120),
+             right:Math.round(r.right),width:Math.round(r.width),
+             scrollWidth:el.scrollWidth,overflow:getComputedStyle(el).overflowX};
+         }).filter(x=>x.right>max+3&&x.width>0)
+           .sort((a,b)=>b.right-a.right).slice(0,16);
+       });
+       console.log('DESBORDE '+vista.slug+' '+width+'px '+JSON.stringify(culpables));
+     }
      assert.ok(metrics.scrollWidth<=metrics.viewport+3,
        vista.slug+' ancho '+width+' desborde '+JSON.stringify(metrics));
      assert.ok(metrics.contentText.includes(vista.texto),
