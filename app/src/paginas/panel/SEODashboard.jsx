@@ -5,6 +5,10 @@ import './SEODashboard.css';
 const numero = n => Number(n ?? 0).toLocaleString('es-CL', {maximumFractionDigits:0});
 const porcentaje = n => (Number(n ?? 0) * 100).toLocaleString('es-CL',{maximumFractionDigits:1})+'%';
 const decimal = n => Number(n ?? 0).toLocaleString('es-CL',{maximumFractionDigits:1});
+// En GBP un campo ausente NO equivale a cero; evita presentar un 0 engañoso.
+export const numeroPerfilEmpresa = valor =>
+  valor == null || valor === '' || !Number.isFinite(Number(valor)) ? '—' : numero(valor);
+
 const fechaCL = valor => {
   const v = String(valor || '');
   const normal = /^\d{8}$/.test(v) ? v.slice(0,4)+'-'+v.slice(4,6)+'-'+v.slice(6,8) : v;
@@ -218,6 +222,48 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       <Metrica nombre="Formularios registrados" valor={leads!==null?numero(leads):'—'}
         detalle="Eventos generate_lead · GA4, no ventas" onClick={()=>onNavigate('analytics')} />
     </div>
+    <section className="seo-exec-maps" aria-label="Indicadores de Google Maps y Perfil de Empresa">
+      <div className="seo-exec-seccion-cabecera seo-exec-maps-encabezado">
+        <div>
+          <h3>Google Maps · Perfil de Empresa</h3>
+          <p>Cómo encuentran y contactan a Coproactiva desde su ficha en Google.</p>
+        </div>
+        <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('business')}>
+          Ver todas las métricas →
+        </button>
+      </div>
+      {perfil && perfilEmpresa.inicio && perfilEmpresa.fin &&
+        <p className="seo-exec-maps-fechas">Período de Business Profile: {perfilEmpresa.inicio} al {perfilEmpresa.fin}. Datos procesados, no en tiempo real.</p>}
+      {!perfil && <div className="seo-exec-maps-pendiente" role="status">
+        <span>{perfilEmpresa?.error || 'Google Business Profile no está conectado o no entregó datos disponibles.'}</span>
+        <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('conexiones')}>
+          Revisar conexión →
+        </button>
+      </div>}
+      <div className="seo-exec-grid-kpis seo-exec-maps-kpis">
+        <Metrica nombre="Apariciones en Google Maps"
+          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.impresionesMaps) : '—'}
+          detalle="Visualizaciones de la ficha en Maps · móvil y escritorio"
+          onClick={()=>onNavigate('business')} />
+        <Metrica nombre="Apariciones en Búsqueda"
+          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.impresionesBusqueda) : '—'}
+          detalle="Visualizaciones de la ficha en Google Search; no son impresiones SEO del sitio"
+          onClick={()=>onNavigate('business')} />
+        <Metrica nombre="Clics hacia el sitio"
+          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.clicsWeb) : '—'}
+          detalle="Accesos al sitio desde la ficha · no sesiones GA4"
+          onClick={()=>onNavigate('business')} />
+        <Metrica nombre="Clics para llamar"
+          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.clicsTelefono) : '—'}
+          detalle="Clics en el teléfono; no llamadas atendidas"
+          onClick={()=>onNavigate('business')} />
+        <Metrica nombre="Solicitudes de indicaciones"
+          valor={perfil ? numeroPerfilEmpresa(perfilEmpresa.resumen?.indicaciones) : '—'}
+          detalle="Peticiones de ruta desde la ficha de Google"
+          onClick={()=>onNavigate('business')} />
+      </div>
+      <p className="seo-exec-maps-nota">Fuente: Google Business Profile Performance API. Sus cifras no se suman a Search Console ni Google Analytics.</p>
+    </section>
     <div className="seo-exec-principal">
       <SerieInteractiva sc={sc} ga={ga}/>
       <section className="seo-exec-superficie seo-exec-actividad">
@@ -239,17 +285,7 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
         paginasRevisadas={paginasRevisadas} paginasPendientes={paginasPendientes}
         revisandoPaginas={revisandoPaginas} />
     </div>
-    <div className="seo-exec-grid-pares seo-exec-resumen-final">
-      <section className="seo-exec-superficie">
-        <div className="seo-exec-seccion-cabecera"><div><h3>Presencia en Google Maps</h3>
-          <p>Actividad del Perfil de Empresa · Google Business Profile.</p></div></div>
-        {perfil?<div className="seo-exec-mini-metricas">
-          <div><strong>{numero(perfilEmpresa.resumen?.impresionesMaps)}</strong><small>Impresiones en Maps</small></div>
-          <div><strong>{numero(perfilEmpresa.resumen?.clicsWeb)}</strong><small>Clics al sitio</small></div>
-          <div><strong>{numero(perfilEmpresa.resumen?.clicsTelefono)}</strong><small>Clics de llamada</small></div>
-        </div>:<p className="seo-exec-ayuda">Los indicadores del perfil estarán disponibles al autorizar su API. No se mezclan cifras de informes antiguos.</p>}
-        <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('business')}>Ver Perfil de Empresa →</button>
-      </section>
+    <div className="seo-exec-resumen-final">
       <section className="seo-exec-superficie">
         <div className="seo-exec-seccion-cabecera"><div><h3>Salud técnica de la web</h3><p>Revisión técnica inicial de la portada.</p></div></div>
         <div className="seo-exec-mini-metricas">
