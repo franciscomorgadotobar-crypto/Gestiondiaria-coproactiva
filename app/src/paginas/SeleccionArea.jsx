@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { guardarArea } from '../lib/area';
 import { registrarIndiceSelector } from '../lib/historialSelector';
-import IconoNavegacion from '../componentes/IconoNavegacion';
 import './SeleccionArea.css';
 
 /* Capa previa a entrar a la app, para roles que tienen acceso tanto al CRM
@@ -65,42 +64,35 @@ export default function SeleccionArea() {
   const modulos = [
     {
       area: 'crm', etiqueta: 'CRM', titulo: 'Gestión comercial',
-      descripcion: 'Leads, pipeline y diagnóstico comercial de prospectos.',
-      icono: 'comercial', visible: true
+      descripcion: 'Leads, pipeline y diagnóstico comercial de prospectos.', visible: true
     },
     {
       area: 'operacion', etiqueta: 'OPERACIONES', titulo: 'Levantamientos',
-      descripcion: 'Comunidades administradas, levantamientos y mantención.',
-      icono: 'comunidades', visible: true
+      descripcion: 'Comunidades administradas, levantamientos y mantención.', visible: true
     },
     {
       area: 'propiedades', etiqueta: 'PROPIEDADES', titulo: 'Arriendos y ventas',
-      descripcion: 'Lo que se publica en coproactiva.cl/propiedades.',
-      icono: 'propiedades', visible: true
+      descripcion: 'Lo que se publica en coproactiva.cl/propiedades.', visible: true
     },
     {
       area: 'proveedores', etiqueta: 'PROVEEDORES', titulo: 'Red de proveedores',
-      descripcion: 'Buscar, contactar y administrar proveedores para las comunidades.',
-      icono: 'proveedores', visible: puedeConfigurar
+      descripcion: 'Buscar, contactar y administrar proveedores para las comunidades.', visible: puedeConfigurar
     },
     {
       area: 'whatsapp', etiqueta: 'WHATSAPP', titulo: 'Recepción y atención',
-      descripcion: 'Solicitudes, cotizaciones y conversaciones con administración.',
-      icono: 'whatsapp', visible: puedeConfigurar
+      descripcion: 'Solicitudes, cotizaciones y conversaciones con administración.', visible: puedeConfigurar
     },
     {
       area: 'contabilidad', etiqueta: 'CONTABILIDAD', titulo: 'Gestión contable',
-      descripcion: 'Asientos, libros, estados financieros e informes por entidad.',
-      icono: 'contabilidad', visible: puedeConfigurar
+      descripcion: 'Asientos, libros, estados financieros e informes por entidad.', visible: puedeConfigurar
     },
     {
       area: 'seo', etiqueta: 'MARKETING', titulo: 'SEO y Analítica',
-      descripcion: 'Search Console, Analytics, indexación, velocidad y oportunidades web.',
-      icono: 'seo', visible: puedeConfigurar
+      descripcion: 'Search Console, Analytics, indexación, velocidad y oportunidades web.', visible: puedeConfigurar
     },
     {
       area: 'configuracion', etiqueta: 'AJUSTES', titulo: 'Configuración',
-      descripcion: 'Equipo y clientes.', icono: 'configuracion', visible: puedeConfigurar
+      descripcion: 'Equipo y clientes.', visible: puedeConfigurar
     }
   ].filter(modulo => modulo.visible);
 
@@ -151,9 +143,6 @@ export default function SeleccionArea() {
                 ? navegar('/configuracion')
                 : elegir(modulo.area)}
             >
-              <span className="seleccion-home__icono">
-                <IconoNavegacion tipo={modulo.icono} size={30} />
-              </span>
               <span className="seleccion-home__detalle">
                 <span className="seleccion-area-etiqueta">{modulo.etiqueta}</span>
                 <span className="seleccion-home__titulo">{modulo.titulo}</span>
