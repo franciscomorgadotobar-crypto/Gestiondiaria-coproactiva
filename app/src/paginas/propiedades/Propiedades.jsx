@@ -234,7 +234,7 @@ function ListadoPropiedades() {
   }
 
   return (
-    <div className="pantalla">
+    <div className="pantalla modulo-unificado">
       <header className="encabezado propiedades-encabezado modulo-cabecera">
         <div className="propiedades-encabezado-contenido">
           <div className="crece">
@@ -584,7 +584,7 @@ function FichaPropiedad({ id = null }) {
 
   if (noExiste) {
     return (
-      <div className="pantalla">
+      <div className="pantalla modulo-unificado">
         <div className="cuerpo">
           <p className="vacio">
             Esta propiedad no existe o fue eliminada. <Link to="/propiedades">Volver a propiedades</Link>
