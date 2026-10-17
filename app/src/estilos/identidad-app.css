@@ -450,3 +450,97 @@
   .pantalla.modulo-unificado .campo :is(input,select,textarea) { font-size:16px; }
   .pantalla.modulo-unificado .ui-tabla-scroll { scrollbar-width:thin; }
 }
+
+
+/* Auditoría de subpantallas: formulario largo, detalle y reportes.
+ * Respetar nombres de clases y CSS funcional de cada módulo. */
+.pantalla.modulo-unificado :is(
+  .comunidad-form, .contabilidad-filtros-reporte,
+  .contabilidad-reporte-card, .contabilidad-reporte-panel,
+  .contabilidad-editor, .comunidad-linea
+) { min-width:0; max-width:100%; }
+.pantalla.modulo-unificado :is(
+  .comunidad-form,.contabilidad-filtros-reporte,
+  .contabilidad-reporte-card,.contabilidad-reporte-panel
+) {
+  border-color:var(--ca-borde);
+  border-radius:var(--ca-radio);
+}
+.pantalla.modulo-unificado .comunidad-form {
+  padding:clamp(15px,2.5vw,22px);
+  background:var(--ca-blanco);
+  box-shadow:var(--ca-sombra);
+}
+.pantalla.modulo-unificado .comunidad-grid-2 > *,
+.pantalla.modulo-unificado .contabilidad-filtros-reporte > *,
+.pantalla.modulo-unificado .contabilidad-reportes-cabecera > *,
+.pantalla.modulo-unificado .comunidad-cabecera-acciones > * {
+  min-width:0;
+}
+.pantalla.modulo-unificado .comunidad-linea-cabecera {
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.pantalla.modulo-unificado .comunidad-cabecera-acciones .boton {
+  white-space:normal;
+  line-height:1.25;
+}
+.pantalla.modulo-unificado .contabilidad-reporte-card {
+  background:var(--ca-blanco);
+  box-shadow:var(--ca-sombra);
+}
+.pantalla.modulo-unificado .contabilidad-reporte-resumen {
+  min-width:0;
+  max-width:100%;
+}
+.pantalla.modulo-unificado .contabilidad-exportaciones .boton {
+  min-width:64px;
+}
+.pantalla.modulo-unificado .contabilidad-editor {
+  background:var(--ca-blanco);
+  border-radius:var(--ca-radio);
+}
+@media(max-width:760px) {
+  .pantalla.modulo-unificado .contabilidad-filtros-reporte {
+    grid-template-columns:minmax(0,1fr);
+    align-items:stretch;
+    padding:16px;
+  }
+  .pantalla.modulo-unificado .contabilidad-reportes-cabecera {
+    align-items:stretch;
+    flex-wrap:wrap;
+  }
+  .pantalla.modulo-unificado .contabilidad-reporte-selector-movil {
+    flex:1 1 100%;
+  }
+  .pantalla.modulo-unificado .contabilidad-exportaciones {
+    flex:1 1 auto;
+    display:flex;
+    gap:8px;
+  }
+  .pantalla.modulo-unificado .contabilidad-exportaciones .boton {
+    flex:1 1 0;
+  }
+  .pantalla.modulo-unificado .comunidad-linea-cabecera > :first-child {
+    min-width:0;
+    flex:1 1 100%;
+  }
+  .pantalla.modulo-unificado .comunidad-form .comunidad-grid-2 {
+    grid-template-columns:minmax(0,1fr);
+  }
+  .pantalla.modulo-unificado .contabilidad-editor {
+    width:calc(100vw - 24px);
+    margin:12px auto;
+  }
+}
+@media(max-width:390px) {
+  .pantalla.modulo-unificado .comunidad-cabecera-acciones > .boton {
+    flex:1 1 100%;
+  }
+  .pantalla.modulo-unificado .contabilidad-filtros-reporte :is(input,select),
+  .pantalla.modulo-unificado .comunidad-form :is(input,select,textarea) {
+    width:100%;
+    min-width:0;
+  }
+}
