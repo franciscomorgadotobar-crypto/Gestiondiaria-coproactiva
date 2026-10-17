@@ -62,3 +62,13 @@ test('Reglas de formularios y scroll mantienen diseños especiales en móvil',()
   assert.match(global,/\.ui-formulario \{ grid-template-columns: minmax\(0,1fr\); \}/);
   assert.match(global,/focus-visible/);
 });
+
+test('Fase 3 mantiene campos táctiles y reportes legibles sin ocultar columnas',()=>{
+  const css = read('estilos/modulos.css');
+  const reportes = read('paginas/panel/Contabilidad.css');
+  assert.match(css,/\.ui-formulario :is\(input,select,textarea\) \{\s*font-size: 16px;/);
+  assert.match(css,/\.ui-tabla-scroll \{\s*scrollbar-gutter: stable;/);
+  assert.match(reportes,/\.ui-tabla-scroll > table th,/);
+  assert.match(reportes,/font-variant-numeric: tabular-nums/);
+  assert.match(reportes,/overscroll-behavior-x: contain/);
+});
