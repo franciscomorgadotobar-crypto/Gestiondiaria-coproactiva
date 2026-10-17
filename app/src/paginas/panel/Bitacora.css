@@ -628,3 +628,64 @@
     margin-top: 11px;
   }
 }
+
+
+/* Auditoría tablet 768px: el formulario en grid no debe imponer el ancho
+   mínimo intrínseco de fieldset/controles, ni desplazar toda la página. */
+.bitacora-pantalla .bitacora-formulario,
+.bitacora-pantalla .bitacora-formulario > *,
+.bitacora-pantalla .bitacora-niveles,
+.bitacora-pantalla .bitacora-nivel-opcion {
+  min-width: 0;
+  max-width: 100%;
+}
+.bitacora-pantalla .bitacora-niveles {
+  width:100%;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.bitacora-pantalla .bitacora-nivel-opcion span {
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.bitacora-pantalla .bitacora-formulario .campo :is(input,select,textarea) {
+  min-width:0;
+  max-width:100%;
+}
+@media (max-width:620px) {
+  .bitacora-pantalla .bitacora-form-acciones {
+    min-width:0;
+    gap:8px;
+  }
+  .bitacora-pantalla .bitacora-form-acciones .boton {
+    min-width:0;
+    white-space:normal;
+  }
+}
+
+
+/* El control de archivo/radio está oculto VISUALMENTE dentro de su label.
+   En tablet heredaba width:100% y ensanchaba el documento 33px.
+   Mantenerlo accesible al teclado sin afectar la anchura de la página. */
+.bitacora-pantalla .bitacora-adjuntar,
+.bitacora-pantalla .bitacora-nivel-opcion { position:relative; }
+.bitacora-pantalla .bitacora-formulario .bitacora-adjuntar input[type="file"],
+.bitacora-pantalla .bitacora-formulario .bitacora-nivel-opcion input[type="radio"] {
+  position:absolute;
+  top:0;
+  left:0;
+  width:1px;
+  height:1px;
+  min-width:1px;
+  max-width:1px;
+  min-height:1px;
+  padding:0;
+  margin:0;
+  border:0;
+  opacity:0;
+  overflow:hidden;
+  clip-path:inset(50%);
+}
+.bitacora-pantalla :is(.bitacora-adjuntar,.bitacora-nivel-opcion):focus-within {
+  outline:2px solid var(--borde-foco);
+  outline-offset:2px;
+}

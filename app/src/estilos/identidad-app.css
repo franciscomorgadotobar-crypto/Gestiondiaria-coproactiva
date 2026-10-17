@@ -386,3 +386,67 @@
 @media(max-width:520px) {
   .acceso-panel { padding:22px 18px; }
 }
+
+
+/*
+ * AUDITORÍA DE SUBPANTALLAS — Estados semánticos de alta importancia.
+ * El diseño corporativo NO puede reemplazar la señal de error contable ni
+ * transformar acciones destructivas en botones primarios neutros.
+ */
+.modulo-unificado .boton.boton-peligro:not(:disabled) {
+  background:var(--critico-texto);
+  border-color:var(--critico-texto);
+  color:var(--texto-inverso);
+}
+.modulo-unificado .boton.boton-peligro:hover:not(:disabled) {
+  background:#792b23;
+  border-color:#792b23;
+}
+.modulo-unificado .boton.boton-peligro:disabled {
+  border-color:var(--critico-texto);
+  background:var(--critico-texto);
+  color:#fff;
+}
+.pantalla.modulo-unificado .contabilidad-kpi-principal.descuadrado {
+  background:var(--critico-fondo);
+  border-color:var(--critico-texto);
+}
+.pantalla.modulo-unificado .contabilidad-kpi-principal.cuadrado {
+  border-color:var(--ok-borde);
+}
+.pantalla.modulo-unificado .contabilidad-kpi-principal .contabilidad-cuadratura-estado.error {
+  color:var(--critico-texto);
+}
+/* Los pequeños módulos de listas conservan tonos propios cuando reflejan
+ * advertencias, pendientes o una tarea finalizada. */
+.modulo-unificado :is(.chip-critico,.chip-alerta,.chip-cumple,.chip-pendiente) {
+  box-shadow:none;
+}
+
+/* Fichas y editores largos: el teléfono debe desplazarse VERTICALMENTE;
+ * solo las tablas tienen desplazamiento horizontal. */
+.pantalla.modulo-unificado :is(
+  .formulario-grid,.programar-grid,.comunidad-grid-2,
+  .propiedad-seccion,.proveedor-ficha-grid,
+  .contabilidad-reporte-panel,.contabilidad-reporte-controles
+) { min-width:0; max-width:100%; }
+.pantalla.modulo-unificado :is(
+  .formulario-grid,.programar-grid,.comunidad-grid-2
+) > * { min-width:0; }
+.pantalla.modulo-unificado :is(
+  .tabla-responsive,.tabla-scroll,.ui-tabla-scroll,
+  .seo-tabla-scroll,.contabilidad-tabla-scroll,
+  .proveedores-tabla-wrap
+) { max-width:100%; overflow-x:auto; overscroll-behavior-x:contain; }
+/* En reportes con cantidades grandes, nunca perder dígitos por truncado. */
+.pantalla.modulo-unificado :is(
+  .contabilidad-reporte-resumen,.contabilidad-kpi-principal,
+  .contabilidad-bg-total,.contabilidad-bg-gran-total
+) strong { overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+@media (max-width:599px) {
+  .pantalla.modulo-unificado :is(
+    .formulario-grid,.programar-grid,.comunidad-grid-2
+  ) { grid-template-columns:minmax(0,1fr); }
+  .pantalla.modulo-unificado .campo :is(input,select,textarea) { font-size:16px; }
+  .pantalla.modulo-unificado .ui-tabla-scroll { scrollbar-width:thin; }
+}
