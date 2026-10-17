@@ -288,3 +288,101 @@
   .modulo-unificado :is(.tarjeta,.boton,.seo-exec-kpi,.seo-exec-superficie),
   .layout-escritorio .enlace-lateral { transition:none; }
 }
+
+/* Patrones especializados también adoptan la misma superficie que el Home. */
+.pantalla.modulo-unificado .tablero { gap:10px; }
+.pantalla.modulo-unificado .tablero > div {
+  border:1px solid var(--ca-borde);
+  border-radius:var(--ca-radio);
+  background:var(--ca-blanco);
+  box-shadow:var(--ca-sombra);
+  padding:14px 12px;
+}
+.pantalla.modulo-unificado .grupo-trabajador .cabecera-trabajador {
+  background:var(--ca-blanco);
+  border-color:var(--ca-borde);
+  border-radius:var(--ca-radio-control);
+  font-family:var(--fuente-display);
+  font-weight:700;
+  letter-spacing:.085em;
+  min-height:52px;
+}
+.pantalla.modulo-unificado .grupo-trabajador .cabecera-trabajador.abierta {
+  border-color:#d2a67e;
+  box-shadow:0 0 0 1px rgba(205,120,55,.13);
+}
+.pantalla.modulo-unificado :is(.visita,.lugar,.pipeline-pendiente,.portal-kpi,
+  .portal-card,.criterio-inspeccion) {
+  border-radius:var(--ca-radio-control);
+  border-color:var(--ca-borde);
+  background:var(--ca-blanco);
+}
+.pantalla.modulo-unificado .criterio-opcion {
+  border-radius:var(--ca-radio-control);
+}
+.pantalla.modulo-unificado .lienzo-mapa {
+  border-bottom:1px solid var(--ca-borde);
+}
+.pantalla.modulo-unificado .panel-mapa {
+  background:var(--ca-fondo);
+}
+.pantalla.modulo-unificado .panel-mapa .lugar {
+  overflow:hidden;
+}
+.pantalla.modulo-unificado .portal-resumen { gap:10px; }
+.pantalla.modulo-unificado .portal-kpi { padding:15px 12px; box-shadow:var(--ca-sombra); }
+.pantalla.modulo-unificado .portal-kpi strong { font-size:clamp(21px,2.4vw,28px); }
+.pantalla.modulo-unificado .portal-kpi span { font-size:10px; letter-spacing:.06em; }
+.pantalla.modulo-unificado :is(.pipeline-tarjeta,.seo-exec-superficie,
+  .comunidad-card,.propiedad-card,.proveedor-tarjeta,.portal-kpi) {
+  overflow-wrap:break-word;
+}
+@media(max-width:699px) {
+  .pantalla.modulo-unificado .tablero { gap:8px; }
+  .pantalla.modulo-unificado .tablero > div { padding:12px 10px; }
+  .pantalla.modulo-unificado .portal-resumen { gap:7px; }
+}
+
+/* Autenticación: una sola tarjeta centrada, sin alterar el Home de módulos. */
+.pantalla.acceso-pantalla {
+  background:radial-gradient(circle at -10% -10%, #fff0e5 0, transparent 37%),
+    radial-gradient(circle at 120% 100%, #fff5ec 0, transparent 36%),
+    #fffaf6;
+}
+.acceso-panel {
+  padding:clamp(22px,4vw,34px);
+  border:1px solid var(--ca-borde);
+  background:var(--ca-blanco);
+  border-radius:20px;
+  box-shadow:0 12px 45px rgba(64,48,34,.045);
+}
+.acceso-panel > img {
+  width:min(100%,210px);
+  height:auto!important;
+  max-height:45px;
+  object-fit:contain;
+  object-position:left center;
+}
+.acceso-panel > h1 {
+  color:var(--tinta);
+  font-family:var(--fuente-display);
+  font-size:clamp(22px,2.5vw,29px);
+  font-weight:700;
+}
+.acceso-panel .campo :is(input,select,textarea) {
+  min-height:46px;
+  border:1px solid var(--ca-borde);
+  border-radius:var(--ca-radio-control);
+  background:#fff;
+}
+.acceso-panel .boton:not(.boton-texto) {
+  min-height:48px;
+  border-radius:var(--ca-radio-control);
+}
+.acceso-panel :is(input,button,a):focus-visible {
+  outline:2px solid var(--ca-cobre);
+  outline-offset:2px;
+}
+@media(max-width:520px) {
+  .acceso-panel { padding:22px 18px; }
+}
