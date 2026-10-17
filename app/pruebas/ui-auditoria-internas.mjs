@@ -54,6 +54,69 @@ const vistas=[
   {slug:'seo-google-maps',ruta:'/seo?vista=business',texto:'SEO y Analítica'}
 ];
 
+async function clickDestino(page,ruta,etiqueta) {
+  const link=page.locator('a[href="'+ruta+'"]:visible').first();
+  if(await link.count()) {
+    await link.click();
+    return;
+  }
+  // Móvil de Operación: opciones de baja frecuencia dentro de «Más».
+  const mas=page.getByRole('button',{name:'Más',exact:true}).last();
+  if(await mas.count()) {
+    await mas.click();
+    const menu=page.getByRole('dialog',{name:'Más opciones'});
+    await menu.getByRole('button',{name:new RegExp(etiqueta,'i')}).click();
+    return;
+  }
+  throw Error('No existe acceso visible a '+ruta);
+}
+
+async function irPantalla(page,vista) {
+  // La PWA reabre SIEMPRE el Home de áreas, por lo que una URL profunda
+  // cargada desde cero no equivale a navegar a esa pantalla.
+  await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:22000});
+  await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:12000});
+  const ruta=vista.ruta;
+  const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
+  const area=operacion ? /Operación/
+    : ruta.startsWith('/contabilidad') ? /Gestión contable/
+    : ruta.startsWith('/propiedades') ? /Arriendos y ventas/
+    : ruta.startsWith('/proveedores') ? /Red de proveedores/
+    : /SEO y Analítica/;
+  await page.getByRole('button',{name:area}).first().click();
+
+  if(operacion) {
+    if(ruta==='/nuevo') await clickDestino(page,'/nuevo','Nuevo levantamiento');
+    else if(ruta.startsWith('/comunidades')) {
+      await clickDestino(page,'/comunidades','Comunidades');
+      if(ruta!=='/comunidades')
+        await page.locator('a[href="'+ruta+'"]:visible').first().click();
+    } else if(ruta.startsWith('/plantillas')) {
+      await clickDestino(page,'/plantillas','Plantillas');
+      if(ruta!=='/plantillas')
+        await page.locator('a[href="'+ruta+'"]:visible').first().click();
+    } else if(ruta.startsWith('/bitacora')) {
+      await clickDestino(page,'/bitacora','Bitácora');
+      if(ruta!=='/bitacora')
+        await page.locator('a[href="'+ruta+'"]:visible').first().click();
+    } else if(ruta.startsWith('/mantenciones'))
+      await clickDestino(page,'/mantenciones','Mantenciones');
+  } else if(ruta.startsWith('/contabilidad/')) {
+    await page.locator('a[href="'+ruta+'"]:visible').first().click();
+  } else if(ruta.startsWith('/propiedades/')) {
+    await page.locator('a[href^="/propiedades/nueva"]:visible').first().click();
+  } else if(ruta.startsWith('/proveedores/')) {
+    await page.locator('a[href="'+ruta+'"]:visible').first().click();
+  } else if(ruta.startsWith('/seo?')) {
+    const destino=new URLSearchParams(ruta.split('?')[1]).get('vista');
+    const nombre=destino==='analytics' ? 'Audiencia' : 'Google Maps';
+    const nav=page.locator('button[aria-label="Ir a '+nombre+'"]:visible').first();
+    if(await nav.count()) await nav.click();
+    else await page.getByRole('button',{name:nombre,exact:true}).first().click();
+  }
+  await page.waitForTimeout(120);
+}
+
 await mkdir('artifacts/ui/internas',{recursive:true});
 const browser=await chromium.launch({headless:true});
 try {
@@ -97,21 +160,11 @@ try {
    const page=await ctx.newPage();
    const failures=[];
    page.on('pageerror',e=>failures.push(e.message));
-   // El arranque PWA siempre lleva a Home por diseño (permiso/historial).
-   // Para auditar subrutas se ingresa primero y se cambia la ruta DENTRO del
-   // SPA. Evita un falso fallo causado por la redirección de arranque.
-   await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:22000});
-   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:15000});
    for(const vista of vistas) {
      console.log('AUDIT '+vista.slug+' @ '+width+'px');
-     await page.evaluate((ruta)=>{
-       const actual=window.history.state || {};
-       const state={...actual, idx:Number(actual.idx || 0)+1};
-       history.pushState(state,'',ruta);
-       window.dispatchEvent(new PopStateEvent('popstate',{state}));
-     }, vista.ruta);
+     await irPantalla(page,vista);
      await page.locator('.pantalla.modulo-unificado, .wa-page.modulo-unificado').first()
-       .waitFor({timeout:12000});
+       .waitFor({timeout:10000});
      // Lazy modules and simulated data may require an extra render.
      await page.waitForTimeout(250);
      const metrics=await page.evaluate(()=>{
