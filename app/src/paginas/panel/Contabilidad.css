@@ -1632,3 +1632,30 @@
     max-width: 100%;
   }
 }
+
+/* Fase 3: permitir lectura íntegra de importes en pantallas estrechas. */
+.contabilidad-pantalla .ui-tabla-scroll {
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.contabilidad-pantalla .ui-tabla-scroll:focus-visible {
+  outline: 2px solid var(--borde-foco);
+  outline-offset: -2px;
+}
+.contabilidad-pantalla .ui-tabla-scroll > table th,
+.contabilidad-pantalla .ui-tabla-scroll > table td {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 760px) {
+  .contabilidad-pantalla .contabilidad-toolbar > .campo {
+    width: 100%;
+  }
+  .contabilidad-pantalla .contabilidad-toolbar > .campo input {
+    width: 100%;
+    max-width: 100%;
+  }
+  .contabilidad-pantalla .contabilidad-linea :is(input,select,textarea) {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
