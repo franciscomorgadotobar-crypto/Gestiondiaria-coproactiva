@@ -121,6 +121,9 @@ jobs:
       - name: Revisar pantallas homologadas en navegador móvil y escritorio
         working-directory: app
         run: node pruebas/ui-homologacion-modulos.mjs
+      - name: Auditar formularios, fichas e informes internos en cuatro resoluciones
+        working-directory: app
+        run: node pruebas/ui-auditoria-internas.mjs
       - name: Adjuntar capturas de QA
         if: always()
         uses: actions/upload-artifact@v4
