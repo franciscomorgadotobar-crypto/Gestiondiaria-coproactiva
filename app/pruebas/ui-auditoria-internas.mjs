@@ -136,10 +136,13 @@ try {
        body:JSON.stringify(body)
      });
      if(p.includes('/auth/v1/user'))return json(session.user);
-     if(p.includes('/rest/v1/perfiles'))return json({
-       id:userId,nombre:'QA Coproactiva',rol:'superadmin',activo:true,
-       bottom_nav:[],email:'qa-ui@coproactiva.test'
-     });
+     if(p.includes('/rest/v1/perfiles')) {
+       const perfil={id:userId,nombre:'QA Coproactiva',rol:'superadmin',
+         activo:true,bottom_nav:[],email:'qa-ui@coproactiva.test'};
+       // getPerfil() pide objeto singular por id; listas de responsables
+       // (Programar, Mantenciones) piden un ARRAY, no un objeto.
+       return json(url.searchParams.has('id') ? perfil : [perfil]);
+     }
      if(p.includes('/rest/v1/comunidades')) {
        if(url.searchParams.has('id'))return json(comunidad);
        return json([comunidad]);
@@ -163,8 +166,15 @@ try {
    for(const vista of vistas) {
      console.log('AUDIT '+vista.slug+' @ '+width+'px');
      await irPantalla(page,vista);
-     await page.locator('.pantalla.modulo-unificado, .wa-page.modulo-unificado').first()
-       .waitFor({timeout:10000});
+     try {
+       await page.locator('.pantalla.modulo-unificado, .wa-page.modulo-unificado').first()
+         .waitFor({timeout:8000});
+     } catch(error) {
+       console.log('FALLO RUTA '+vista.ruta, 'url='+page.url());
+       console.log('FALLO CONTENIDO '+(await page.locator('body').innerText()).slice(0,1200));
+       console.log('FALLO JS '+failures.slice(-4).join(' // '));
+       throw error;
+     }
      // Lazy modules and simulated data may require an extra render.
      await page.waitForTimeout(250);
      const metrics=await page.evaluate(()=>{
