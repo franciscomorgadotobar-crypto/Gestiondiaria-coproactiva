@@ -297,8 +297,8 @@ export default function DiagnosticoComercial({ id }) {
   }
 
   return (
-    <div className="pantalla pantalla-angosta">
-      <header className="encabezado">
+    <div className="pantalla pantalla-angosta modulo-unificado">
+      <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           {/* Ganado el prospecto, el diagnóstico se consulta desde su comunidad. */}
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
