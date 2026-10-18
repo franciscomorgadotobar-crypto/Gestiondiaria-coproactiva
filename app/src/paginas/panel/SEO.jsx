@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { usePestanaHistorial } from '../../lib/pestanasHistorial';
 import { useSesion } from '../../lib/sesion';
@@ -110,7 +110,21 @@ function Barra({ titulo, valor, max, detalle }) {
 }
 function SEOInterno() {
   const [vista, setVista] = usePestanaHistorial('vista', 'resumen', VISTAS_SEO);
-  const [dias, setDias] = useState(28);
+  // El período es parte de la URL, igual que la pestaña. Sobrevive a
+  // actualizar, restaurar la PWA y navegar entre vistas del módulo.
+  const [parametrosPeriodo, setParametrosPeriodo] = useSearchParams();
+  const periodoURL = Number(parametrosPeriodo.get('dias'));
+  const dias = [7, 28, 90].includes(periodoURL) ? periodoURL : 28;
+  const setDias = useCallback(nuevo => {
+    const valor = Number(nuevo);
+    if (![7, 28, 90].includes(valor)) return;
+    setParametrosPeriodo(actual => {
+      const siguientes = new URLSearchParams(actual);
+      if (valor === 28) siguientes.delete('dias');
+      else siguientes.set('dias', String(valor));
+      return siguientes;
+    }, { replace: true, preventScrollReset: true });
+  }, [setParametrosPeriodo]);
   const [estado, setEstado] = useState(null);
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState('');
