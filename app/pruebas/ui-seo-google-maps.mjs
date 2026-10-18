@@ -25,13 +25,18 @@ const session = {
 const respuestaPerfil = {
   disponible:true,inicio:'2026-09-17',fin:'2026-10-14',consultadoEn:new Date().toISOString(),
   resumen:{impresionesMaps:101,impresionesBusqueda:202,clicsWeb:9,
-    clicsTelefono:3,indicaciones:7},metricas:{},palabras:[],nota:'Datos locales QA'
+    clicsTelefono:3,indicaciones:7},
+  anterior:{inicio:'2026-08-20',fin:'2026-09-16',
+    resumen:{impresionesMaps:80,impresionesBusqueda:180,clicsWeb:6,clicsTelefono:2,indicaciones:5}},
+  metricas:{},palabras:[],nota:'Datos locales QA'
 };
 const resumen = {
   searchConsole:{disponible:true,totales:{clics:64,impresiones:3822,ctr:0.017,posicion:9.1},
-    anterior:{clics:50,impresiones:3000},tendencia:[],consultas:[],paginas:[],hasta:'2026-10-14'},
+    anterior:{clics:50,impresiones:3000,ctr:0.013,posicion:11.2},tendencia:[],consultas:[],paginas:[],hasta:'2026-10-14'},
   analytics:{disponible:true,totales:{sesiones:68,usuarios:31},
-    eventos:[],tendencia:[],canales:[],paginas:[]}
+    anterior:{sesiones:50,usuarios:25},eventos:[{clave:'generate_lead',valores:[3,0]}],
+    eventosAnteriores:[{clave:'generate_lead',valores:[2,0]}],
+    tendencia:[],canales:[],paginas:[]}
 };
 const browser = await chromium.launch({headless:true});
 try {
@@ -82,6 +87,11 @@ try {
   await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
   await page.getByRole('button',{name:/Apariciones en Google Maps.*Fuente: Business Profile/}).waitFor({timeout:20000});
   await page.getByText('101',{exact:true}).waitFor({timeout:20000});
+  // Confirmar variaciones de las tres APIs sin alterar el diseño móvil.
+  await page.getByText('+0,4 pp',{exact:true}).waitFor({timeout:10000});
+  await page.getByText('-2,1 posiciones',{exact:false}).waitFor({timeout:10000});
+  await page.getByText('+36,0%',{exact:true}).waitFor({timeout:10000});
+  await page.getByText('+26,3%',{exact:true}).waitFor({timeout:10000});
 
   for(const title of [
     'Apariciones en Google Maps','Apariciones en Búsqueda','Clics hacia el sitio',
