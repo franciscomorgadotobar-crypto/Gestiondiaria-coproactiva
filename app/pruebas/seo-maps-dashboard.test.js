@@ -40,11 +40,13 @@ test('cinco indicadores GBP distintos de Search Console y GA4 están definidos',
   assert.equal(INDICADORES_PERFIL_GOOGLE.length,5);
   assert.equal(new Set(INDICADORES_PERFIL_GOOGLE.map(i=>i.campo)).size,5);
   assert.ok(INDICADORES_PERFIL_GOOGLE.every(i=>i.titulo&&i.detalle));
-  assert.match(dashboard,/Google Maps · Perfil de Empresa/);
+  assert.doesNotMatch(dashboard,/<h3>Google Maps · Perfil de Empresa<\/h3>/);
+  assert.doesNotMatch(dashboard,/<h2>Así va coproactiva\.cl<\/h2>/);
+  assert.match(dashboard,/seo-exec-kpi-fuente/);
   assert.match(dashboard,/datosPerfilGoogle\(perfilEmpresa\)\.map/);
   assert.match(dashboard,/nombre=\{indicador.titulo\}/);
   assert.match(dashboard,/onClick=\{\(\)=>onNavigate\('business'\)\}/);
-  const posMaps=dashboard.indexOf('seo-exec-maps"');
+  const posMaps=dashboard.indexOf('datosPerfilGoogle(perfilEmpresa).map');
   const posGrafico=dashboard.indexOf('<SerieInteractiva');
   assert.ok(posMaps>=0&&posMaps<posGrafico,'Maps aparece antes de los gráficos largos');
 });
@@ -66,10 +68,10 @@ test('sin integración ni campo, el dashboard nunca reporta cero falso', () => {
 });
 
 test('responde a móviles y evita duplicar presencia Maps en el pie', () => {
-  assert.match(estilos,/\.seo-exec-maps-kpis/);
-  assert.match(estilos,/\.seo-exec-maps-kpis \.seo-exec-kpi:last-child \{ grid-column:span 2; \}/);
+  assert.match(estilos,/\.seo-exec-kpi-fuente-business/);
+  assert.match(estilos,/\.seo-exec-kpi-superior/);
   assert.match(estilos,/@media\(max-width:345px\)/);
   assert.doesNotMatch(dashboard,/<h3>Presencia en Google Maps<\/h3>/);
   assert.match(seo,/perfilEmpresa=\{perfilEmpresa\}/);
-  assert.match(dashboard,/Fuente: Google Business Profile Performance API/);
+  assert.match(seo,/Datos de Search Console, GA4 y Business Profile/);
 });

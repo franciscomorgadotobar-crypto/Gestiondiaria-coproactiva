@@ -145,3 +145,45 @@ button.seo-exec-kpi.accion:hover { background:var(--hover); border-color:var(--n
   .seo-exec-maps-kpis { grid-template-columns:1fr; }
   .seo-exec-maps-kpis .seo-exec-kpi:last-child { grid-column:auto; }
 }
+
+/* Dashboard SEO aprobado: cuadrícula continua y fuente explícita por tarjeta. */
+.seo-exec-dashboard{gap:16px}
+.seo-exec-grid-kpis{gap:12px}
+.seo-pantalla.modulo-unificado .seo-exec-kpi{min-height:169px;padding:16px;gap:9px;border-radius:16px;overflow:hidden;background:#fff}
+.seo-exec-kpi-superior{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+.seo-exec-kpi-fuente{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;width:max-content;padding:6px 9px;border-radius:999px;background:#edf4fc;color:#22558b;font-size:.69rem;font-weight:650;white-space:nowrap;line-height:1.15}
+.seo-exec-kpi-fuente-analytics{background:#f2f5fb;color:#245889}
+.seo-exec-kpi-fuente-business{background:#eef5fb;color:#245383}
+.seo-exec-kpi-marca{display:inline-block;flex:none;font-size:1rem;font-weight:800;line-height:1}
+.seo-exec-kpi-marca.marca-search{background:conic-gradient(#4285f4 0 28%,#34a853 28% 47%,#fbbc05 47% 67%,#ea4335 67% 80%,#4285f4 80%);color:transparent;background-clip:text;-webkit-background-clip:text}
+.seo-exec-kpi-marca.marca-analytics{color:#e88b08;letter-spacing:-4px;padding-right:4px}
+.seo-exec-kpi-marca.marca-business{color:#3489e0;font-size:.9rem}
+.seo-exec-kpi-icono{flex:none;width:31px;height:31px;display:grid;place-items:center;border-radius:50%;background:#fcf5ee;color:#a35220;font-size:1.05rem}
+.seo-exec-kpi-etiqueta{color:var(--texto-titulo);font-size:.9rem;font-weight:700;line-height:1.35}
+.seo-exec-kpi-numero{font-size:clamp(1.75rem,3.2vw,2.5rem);color:var(--texto-titulo)}
+.seo-exec-cambio{display:flex;flex-direction:column;gap:3px;font-size:.77rem;font-weight:400;line-height:1.35}
+.seo-exec-cambio strong{font-size:.91rem;font-weight:750}
+.seo-exec-cambio span{color:var(--texto-apagado)}
+.seo-exec-kpi small{font-size:.75rem;line-height:1.45}
+.seo-exec-kpi .seo-exec-link{margin-top:auto;padding-top:4px;font-size:.72rem}
+.seo-exec-maps-pendiente{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:.8rem;color:var(--texto-apagado)}
+@media(max-width:800px){.seo-exec-grid-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){
+.seo-exec-dashboard{gap:12px}
+.seo-exec-grid-kpis{gap:9px}
+.seo-pantalla.modulo-unificado .seo-exec-kpi{padding:12px 10px;min-height:176px;gap:8px;border-radius:15px}
+.seo-exec-kpi-superior{gap:3px}
+.seo-exec-kpi-icono{width:25px;height:25px;font-size:.9rem}
+.seo-exec-kpi-fuente{font-size:clamp(.53rem,2.6vw,.68rem);padding:6px 5px;gap:4px}
+.seo-exec-kpi-marca{font-size:.87rem}
+.seo-exec-kpi-etiqueta{font-size:.82rem}
+.seo-exec-kpi-numero{font-size:1.9rem}
+.seo-exec-cambio{font-size:.72rem}
+.seo-exec-kpi .seo-exec-link{font-size:.69rem}
+}
+@media(max-width:345px){
+.seo-exec-grid-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+.seo-pantalla.modulo-unificado .seo-exec-kpi{padding:9px 7px}
+.seo-exec-kpi-icono{display:none}
+.seo-exec-kpi-fuente{font-size:.59rem}
+}

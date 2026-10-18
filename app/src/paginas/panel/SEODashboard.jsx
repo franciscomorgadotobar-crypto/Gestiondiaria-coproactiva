@@ -12,18 +12,46 @@ const fechaCL = valor => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(normal)) return v;
   return new Date(normal+'T12:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
 };
-function Metrica({nombre, valor, detalle, cambio, onClick}) {
-  const contenido = <>
+const FUENTES={search:{nombre:'Search Console',marca:'G'},analytics:{nombre:'GA4',marca:'▂▆'},business:{nombre:'Business Profile',marca:'●'}};
+function IconoMetrica({tipo}) {
+  const trazos={
+    clics:<><path d="m5 3 13 9-6 1-2 6-5-16Z"/><path d="m13 15 4 5"/></>,
+    impresiones:<><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></>,
+    ctr:<path d="M4 20v-6m5 6V9m5 11V4m5 16v-9"/>,
+    sesiones:<><path d="m3 17 6-6 4 4 8-9"/><path d="M16 6h5v5"/></>,
+    usuarios:<><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2"/><path d="M17 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 5"/></>,
+    formularios:<><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6m-6 4h6m-6 4h3"/></>,
+    busqueda:<><circle cx="10" cy="10" r="6"/><path d="m14.5 14.5 6 6"/></>,
+    telefono:<path d="M5 3h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4c0 1-2 2-4 2A16 16 0 0 1 3 7c0-2 1-4 2-4Z"/>,
+    indicaciones:<path d="m3 12 18-9-7 18-3-8-8-1Z"/>
+  };
+  return <span className="seo-exec-kpi-icono" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+      strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{trazos[tipo]||trazos.clics}</svg>
+  </span>;
+}
+function Metrica({nombre,valor,detalle,cambio,fuente='search',icono='clics',onClick}){
+  const origen=FUENTES[fuente]||FUENTES.search;
+  const contenido=<>
+    <div className="seo-exec-kpi-superior">
+      <span className={'seo-exec-kpi-fuente seo-exec-kpi-fuente-'+fuente}>
+        <span className={'seo-exec-kpi-marca marca-'+fuente} aria-hidden="true">{origen.marca}</span>
+        {origen.nombre}
+      </span>
+      <IconoMetrica tipo={icono}/>
+    </div>
     <span className="seo-exec-kpi-etiqueta">{nombre}</span>
     <strong className="seo-exec-kpi-numero">{valor}</strong>
-    {cambio != null && <span className={'seo-exec-cambio '+(cambio >= 0 ? 'sube':'baja')}>
-      {cambio > 0 ? '+':''}{decimal(cambio)}% frente al período anterior
+    {cambio!=null&&<span className={'seo-exec-cambio '+(cambio>=0?'sube':'baja')}>
+      <strong>{cambio>0?'↗ +':cambio<0?'↘ ':''}{decimal(cambio)}%</strong>
+      <span>frente al período anterior</span>
     </span>}
-    {detalle && <small>{detalle}</small>}
+    {detalle&&<small>{detalle}</small>}
   </>;
-  return onClick
-    ? <button type="button" className="seo-exec-kpi accion" onClick={onClick}>{contenido}<span className="seo-exec-link">Ver detalles →</span></button>
-    : <div className="seo-exec-kpi">{contenido}</div>;
+  return onClick?<button type="button" className="seo-exec-kpi accion" onClick={onClick}
+    aria-label={nombre+', '+valor+'. Fuente: '+origen.nombre+'. Ver detalles'}>
+    {contenido}<span className="seo-exec-link">Ver detalles →</span>
+  </button>:<div className="seo-exec-kpi">{contenido}</div>;
 }
 function SerieInteractiva({sc,ga}) {
   const [metrica,setMetrica] = useState('clicks');
@@ -192,62 +220,31 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
     ? 100*(total.clics-anterior.clics)/anterior.clics : null;
   const cambioImpresiones=sc?.disponible && anterior.impresiones>0
     ? 100*(total.impresiones-anterior.impresiones)/anterior.impresiones : null;
-  const last=consultadoEn ? new Date(consultadoEn).toLocaleString('es-CL',{dateStyle:'short',timeStyle:'short'}) : null;
   const perfil=perfilEmpresa?.disponible;
   return <div className="seo-exec-dashboard">
-    <div className="seo-exec-encabezado">
-      <div><span className="seleccion-area-etiqueta">VISIÓN EJECUTIVA</span>
-        <h2>Así va coproactiva.cl</h2>
-        <p>{dias} días de rendimiento web, visibilidad en Google y oportunidades comerciales.</p>
-        {datosHasta && <p className="seo-exec-ventana">Search Console: datos finalizados hasta el
-          {' '}{new Date(datosHasta+'T12:00:00').toLocaleDateString('es-CL')}.
-          No son indicadores en tiempo real.</p>}
-      </div>
-      {last && <span className="seo-exec-actualizado">Última consulta: {last}</span>}
-    </div>
-    <div className="seo-exec-grid-kpis">
-      <Metrica nombre="Clics desde Google" valor={sc?.disponible?numero(total.clics):'—'}
-        cambio={cambioClics} detalle="Search Console · búsqueda orgánica" onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="Impresiones en Google" valor={sc?.disponible?numero(total.impresiones):'—'}
-        cambio={cambioImpresiones} detalle="Veces que aparecimos en resultados" onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="CTR orgánico" valor={sc?.disponible?porcentaje(total.ctr):'—'}
+    <div className="seo-exec-grid-kpis" aria-label="Indicadores de Search Console, Google Analytics y Business Profile">
+      <Metrica nombre="Clics desde Google" fuente="search" icono="clics" valor={sc?.disponible?numero(total.clics):'—'}
+        cambio={cambioClics} onClick={()=>onNavigate('consultas')} />
+      <Metrica nombre="Impresiones en Google" fuente="search" icono="impresiones" valor={sc?.disponible?numero(total.impresiones):'—'}
+        cambio={cambioImpresiones} onClick={()=>onNavigate('consultas')} />
+      <Metrica nombre="CTR orgánico" fuente="search" icono="ctr" valor={sc?.disponible?porcentaje(total.ctr):'—'}
         detalle={'Posición media: '+(sc?.disponible?decimal(total.posicion):'—')} onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="Sesiones del sitio" valor={ga?.disponible?numero(ga.totales?.sesiones):'—'}
-        detalle="Todas las fuentes · Google Analytics 4" onClick={()=>onNavigate('analytics')} />
-      <Metrica nombre="Usuarios del sitio" valor={ga?.disponible?numero(ga.totales?.usuarios):'—'}
-        detalle="Usuarios en el período · GA4" onClick={()=>onNavigate('analytics')} />
-      <Metrica nombre="Formularios registrados" valor={leads!==null?numero(leads):'—'}
-        detalle="Eventos generate_lead · GA4, no ventas" onClick={()=>onNavigate('analytics')} />
+      <Metrica nombre="Sesiones del sitio" fuente="analytics" icono="sesiones" valor={ga?.disponible?numero(ga.totales?.sesiones):'—'}
+        onClick={()=>onNavigate('analytics')} />
+      <Metrica nombre="Usuarios del sitio" fuente="analytics" icono="usuarios" valor={ga?.disponible?numero(ga.totales?.usuarios):'—'}
+        onClick={()=>onNavigate('analytics')} />
+      <Metrica nombre="Formularios registrados" fuente="analytics" icono="formularios" valor={leads!==null?numero(leads):'—'}
+        detalle="Evento generate_lead · no ventas" onClick={()=>onNavigate('analytics')} />
+    {datosPerfilGoogle(perfilEmpresa).map(indicador=>(
+      <Metrica key={indicador.campo} fuente="business" icono={{impresionesMaps:'impresiones',impresionesBusqueda:'busqueda',clicsWeb:'clics',clicsTelefono:'telefono',indicaciones:'indicaciones'}[indicador.campo]}
+        nombre={indicador.titulo} valor={indicador.valor == null ? '—' : numero(indicador.valor)}
+        detalle={indicador.detalle} onClick={()=>onNavigate('business')}/>
+    ))}
     </div>
-    <section className="seo-exec-maps" aria-label="Indicadores de Google Maps y Perfil de Empresa">
-      <div className="seo-exec-seccion-cabecera seo-exec-maps-encabezado">
-        <div>
-          <h3>Google Maps · Perfil de Empresa</h3>
-          <p>Cómo encuentran y contactan a Coproactiva desde su ficha en Google.</p>
-        </div>
-        <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('business')}>
-          Ver todas las métricas →
-        </button>
-      </div>
-      {perfil && perfilEmpresa.inicio && perfilEmpresa.fin &&
-        <p className="seo-exec-maps-fechas">Período de Business Profile: {perfilEmpresa.inicio} al {perfilEmpresa.fin}. Datos procesados, no en tiempo real.</p>}
-      {!perfil && <div className="seo-exec-maps-pendiente" role="status">
-        <span>{'Google Business Profile no está conectado o no entregó datos para estas métricas.'}</span>
-        <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('conexiones')}>
-          Revisar conexión →
-        </button>
-      </div>}
-      <div className="seo-exec-grid-kpis seo-exec-maps-kpis">
-        {datosPerfilGoogle(perfilEmpresa).map(indicador => (
-          <Metrica key={indicador.campo}
-            nombre={indicador.titulo}
-            valor={indicador.valor == null ? '—' : numero(indicador.valor)}
-            detalle={indicador.detalle}
-            onClick={()=>onNavigate('business')} />
-        ))}
-      </div>
-      <p className="seo-exec-maps-nota">Fuente: Google Business Profile Performance API. Sus cifras no se suman a Search Console ni Google Analytics.</p>
-    </section>
+    {!perfil && <div className="seo-exec-maps-pendiente" role="status">
+      <span>Business Profile no está conectado o no entregó datos para este período.</span>
+      <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('conexiones')}>Revisar conexión →</button>
+    </div>}
     <div className="seo-exec-principal">
       <SerieInteractiva sc={sc} ga={ga}/>
       <section className="seo-exec-superficie seo-exec-actividad">

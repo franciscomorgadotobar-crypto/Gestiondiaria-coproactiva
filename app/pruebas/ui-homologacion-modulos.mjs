@@ -25,7 +25,7 @@ const session = {
 };
 const areas=[
   {name:/Gestión comercial/,heading:/Pipeline comercial/,slug:'crm'},
-  {name:/Operación/,heading:/Hola/,slug:'operacion'},
+  {name:/OPERACIONES|Levantamientos/i,heading:/Hola/,slug:'operacion'},
   {name:/Arriendos y ventas/,heading:/Propiedades/,slug:'propiedades'},
   {name:/Red de proveedores/,heading:/Proveedores/,slug:'proveedores'},
   {name:/Recepción y atención/,heading:/WhatsApp/,slug:'whatsapp'},

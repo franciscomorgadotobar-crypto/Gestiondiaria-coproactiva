@@ -345,13 +345,21 @@ function SEOInterno() {
         <select aria-label="Período de análisis" value={dias} onChange={e => setDias(Number(e.target.value))}>
           <option value={7}>7 días</option><option value={28}>28 días</option><option value={90}>90 días</option>
         </select>
-        <button className="boton boton-secundario" type="button" onClick={() => recargar(true)} disabled={cargando}>
-          {cargando ? 'Consultando…' : 'Actualizar'}
+        <button className="boton boton-primario seo-actualizar" type="button" onClick={() => recargar(true)} disabled={cargando}>
+          <span aria-hidden="true">↻</span> {cargando ? 'Consultando…' : 'Actualizar'}
         </button>
         <button className="boton boton-texto seo-boton-configuracion" type="button" aria-label="Configuración SEO" title="Configuración SEO" onClick={() => irVista('conexiones')}>
           <span aria-hidden="true">⚙</span> <span className="seo-ajustes-etiqueta">Configuración</span>
         </button>
       </div>
+      {vista === 'resumen' && <div className="seo-cabecera-datos" role="note">
+        <span className="seo-cabecera-datos-icono" aria-hidden="true">i</span>
+        <div>
+          <span>Datos de Search Console, GA4 y Business Profile.</span>
+          {estado?.consultadoEn && <span>Última consulta: {new Date(estado.consultadoEn).toLocaleString('es-CL',{dateStyle:'short',timeStyle:'short'})}.</span>}
+          <span className="seo-cabecera-datos-aclaracion" title="Search Console y Business Profile tienen períodos procesados y pueden diferir de GA4.">Search Console y Business Profile: datos procesados.</span>
+        </div>
+      </div>}
     </header>
 
     <div className="cuerpo seo-cuerpo modulo-contenido">

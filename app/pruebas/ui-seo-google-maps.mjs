@@ -80,7 +80,7 @@ try {
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
   await page.getByRole('button',{name:/SEO y Analítica/}).click();
   await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
-  await page.getByRole('heading',{name:'Google Maps · Perfil de Empresa'}).waitFor({timeout:20000});
+  await page.getByRole('button',{name:/Apariciones en Google Maps.*Fuente: Business Profile/}).waitFor({timeout:20000});
   await page.getByText('101',{exact:true}).waitFor({timeout:20000});
 
   for(const title of [
@@ -95,7 +95,7 @@ try {
     html:document.documentElement.scrollWidth}));
   assert.ok(width.html <= width.inner+2,'Dashboard sin desbordamiento: '+JSON.stringify(width));
   await mkdir('artifacts/ui',{recursive:true});
-  await page.getByRole('heading',{name:'Google Maps · Perfil de Empresa'})
+  await page.getByRole('button',{name:/Apariciones en Google Maps.*Fuente: Business Profile/})
     .scrollIntoViewIfNeeded();
   await page.screenshot({path:'artifacts/ui/seo-google-maps-dashboard-390.png'});
 
