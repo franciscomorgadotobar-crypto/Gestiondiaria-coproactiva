@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { nombreMejoraSEO } from '../../lib/seoNombresMejoras';
 import { datosPerfilGoogle } from '../../lib/seoGoogleMaps';
+import { compararIndicador } from '../../lib/seoComparaciones';
 import './SEODashboard.css';
 
 const numero = n => Number(n ?? 0).toLocaleString('es-CL', {maximumFractionDigits:0});
@@ -42,10 +43,10 @@ function Metrica({nombre,valor,detalle,cambio,fuente='search',icono='clics',onCl
     </div>
     <span className="seo-exec-kpi-etiqueta">{nombre}</span>
     <strong className="seo-exec-kpi-numero">{valor}</strong>
-    {cambio!=null&&<span className={'seo-exec-cambio '+(cambio>=0?'sube':'baja')}>
-      <strong>{cambio>0?'↗ +':cambio<0?'↘ ':''}{decimal(cambio)}%</strong>
+    {cambio ? <span className={'seo-exec-cambio '+cambio.favorable}>
+      <strong>{cambio.flecha} {cambio.etiqueta}</strong>
       <span>frente al período anterior</span>
-    </span>}
+    </span> : <span className="seo-exec-cambio sin-datos">Sin comparación disponible</span>}
     {detalle&&<small>{detalle}</small>}
   </>;
   return onClick?<button type="button" className="seo-exec-kpi accion" onClick={onClick}
@@ -216,10 +217,13 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
   const leads=lead ? Number(lead.valores?.[0]||0) : null;
   const total=sc?.totales||{};
   const anterior=sc?.anterior||{};
-  const cambioClics=sc?.disponible && anterior.clics>0
-    ? 100*(total.clics-anterior.clics)/anterior.clics : null;
-  const cambioImpresiones=sc?.disponible && anterior.impresiones>0
-    ? 100*(total.impresiones-anterior.impresiones)/anterior.impresiones : null;
+  const scComparable=sc?.disponible && anterior.impresiones>0;
+  const cambioClics=scComparable ? compararIndicador(total.clics,anterior.clics) : null;
+  const cambioImpresiones=scComparable ? compararIndicador(total.impresiones,anterior.impresiones) : null;
+  const cambioCTR=scComparable ? compararIndicador(total.ctr,anterior.ctr,'puntos') : null;
+  const cambioPosicion=scComparable ? compararIndicador(total.posicion,anterior.posicion,'posicion') : null;
+  const gaComparable=ga?.disponible && ga?.anterior;
+  const leadAnterior=ga?.eventosAnteriores?.find(e=>e.clave==='generate_lead');
   const perfil=perfilEmpresa?.disponible;
   return <div className="seo-exec-dashboard">
     <div className="seo-exec-grid-kpis" aria-label="Indicadores de Search Console, Google Analytics y Business Profile">
@@ -228,16 +232,27 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       <Metrica nombre="Impresiones en Google" fuente="search" icono="impresiones" valor={sc?.disponible?numero(total.impresiones):'—'}
         cambio={cambioImpresiones} onClick={()=>onNavigate('consultas')} />
       <Metrica nombre="CTR orgánico" fuente="search" icono="ctr" valor={sc?.disponible?porcentaje(total.ctr):'—'}
-        detalle={'Posición media: '+(sc?.disponible?decimal(total.posicion):'—')} onClick={()=>onNavigate('consultas')} />
+        cambio={cambioCTR}
+        detalle={<span>Posición media: {sc?.disponible?decimal(total.posicion):'—'}
+          {cambioPosicion && <span className={'seo-exec-posicion-variacion '+cambioPosicion.favorable}>
+            {' '}{cambioPosicion.flecha} {cambioPosicion.etiqueta}
+          </span>}
+        </span>}
+        onClick={()=>onNavigate('consultas')} />
       <Metrica nombre="Sesiones del sitio" fuente="analytics" icono="sesiones" valor={ga?.disponible?numero(ga.totales?.sesiones):'—'}
+        cambio={gaComparable?compararIndicador(ga.totales?.sesiones,ga.anterior?.sesiones):null}
         onClick={()=>onNavigate('analytics')} />
       <Metrica nombre="Usuarios del sitio" fuente="analytics" icono="usuarios" valor={ga?.disponible?numero(ga.totales?.usuarios):'—'}
+        cambio={gaComparable?compararIndicador(ga.totales?.usuarios,ga.anterior?.usuarios):null}
         onClick={()=>onNavigate('analytics')} />
       <Metrica nombre="Formularios registrados" fuente="analytics" icono="formularios" valor={leads!==null?numero(leads):'—'}
+        cambio={leads!==null && ga?.eventosAnteriores
+          ? compararIndicador(leads,Number(leadAnterior?.valores?.[0]||0)):null}
         detalle="Evento generate_lead · no ventas" onClick={()=>onNavigate('analytics')} />
     {datosPerfilGoogle(perfilEmpresa).map(indicador=>(
       <Metrica key={indicador.campo} fuente="business" icono={{impresionesMaps:'impresiones',impresionesBusqueda:'busqueda',clicsWeb:'clics',clicsTelefono:'telefono',indicaciones:'indicaciones'}[indicador.campo]}
         nombre={indicador.titulo} valor={indicador.valor == null ? '—' : numero(indicador.valor)}
+        cambio={perfil ? compararIndicador(indicador.valor,perfilEmpresa.anterior?.resumen?.[indicador.campo]) : null}
         detalle={indicador.detalle} onClick={()=>onNavigate('business')}/>
     ))}
     </div>
