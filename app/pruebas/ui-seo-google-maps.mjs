@@ -88,10 +88,10 @@ try {
   await page.getByRole('button',{name:/Apariciones en Google Maps.*Fuente: Business Profile/}).waitFor({timeout:20000});
   await page.getByText('101',{exact:true}).waitFor({timeout:20000});
   // Confirmar variaciones de las tres APIs sin alterar el diseño móvil.
-  await page.getByText(/\\+0,4 pp/).waitFor({timeout:10000});
+  await page.getByText(/\+0,4 pp/).waitFor({timeout:10000});
   await page.getByText('-2,1 posiciones',{exact:false}).waitFor({timeout:10000});
-  await page.getByText(/\\+36,0%/).waitFor({timeout:10000});
-  await page.getByText(/\\+26,3%/).waitFor({timeout:10000});
+  await page.getByText(/\+36,0%/).waitFor({timeout:10000});
+  await page.getByText(/\+26,3%/).waitFor({timeout:10000});
 
   for(const title of [
     'Apariciones en Google Maps','Apariciones en Búsqueda','Clics hacia el sitio',
