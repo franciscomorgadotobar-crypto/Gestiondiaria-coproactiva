@@ -13,7 +13,24 @@ const fechaCL = valor => {
   return new Date(normal+'T12:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
 };
 const FUENTES={search:{nombre:'Search Console',marca:'G'},analytics:{nombre:'GA4',marca:'▂▆'},business:{nombre:'Business Profile',marca:'●'}};
-function Metrica({nombre,valor,detalle,cambio,fuente='search',icono='↗',onClick}){
+function IconoMetrica({tipo}) {
+  const trazos={
+    clics:<><path d="m5 3 13 9-6 1-2 6-5-16Z"/><path d="m13 15 4 5"/></>,
+    impresiones:<><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></>,
+    ctr:<path d="M4 20v-6m5 6V9m5 11V4m5 16v-9"/>,
+    sesiones:<><path d="m3 17 6-6 4 4 8-9"/><path d="M16 6h5v5"/></>,
+    usuarios:<><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2"/><path d="M17 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 5"/></>,
+    formularios:<><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6m-6 4h6m-6 4h3"/></>,
+    busqueda:<><circle cx="10" cy="10" r="6"/><path d="m14.5 14.5 6 6"/></>,
+    telefono:<path d="M5 3h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4c0 1-2 2-4 2A16 16 0 0 1 3 7c0-2 1-4 2-4Z"/>,
+    indicaciones:<path d="m3 12 18-9-7 18-3-8-8-1Z"/>
+  };
+  return <span className="seo-exec-kpi-icono" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+      strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{trazos[tipo]||trazos.clics}</svg>
+  </span>;
+}
+function Metrica({nombre,valor,detalle,cambio,fuente='search',icono='clics',onClick}){
   const origen=FUENTES[fuente]||FUENTES.search;
   const contenido=<>
     <div className="seo-exec-kpi-superior">
@@ -21,7 +38,7 @@ function Metrica({nombre,valor,detalle,cambio,fuente='search',icono='↗',onClic
         <span className={'seo-exec-kpi-marca marca-'+fuente} aria-hidden="true">{origen.marca}</span>
         {origen.nombre}
       </span>
-      <span className="seo-exec-kpi-icono" aria-hidden="true">{icono}</span>
+      <IconoMetrica tipo={icono}/>
     </div>
     <span className="seo-exec-kpi-etiqueta">{nombre}</span>
     <strong className="seo-exec-kpi-numero">{valor}</strong>
@@ -206,25 +223,25 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
   const perfil=perfilEmpresa?.disponible;
   return <div className="seo-exec-dashboard">
     <div className="seo-exec-grid-kpis" aria-label="Indicadores de Search Console, Google Analytics y Business Profile">
-      <Metrica nombre="Clics desde Google" fuente="search" valor={sc?.disponible?numero(total.clics):'—'}
+      <Metrica nombre="Clics desde Google" fuente="search" icono="clics" valor={sc?.disponible?numero(total.clics):'—'}
         cambio={cambioClics} onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="Impresiones en Google" fuente="search" valor={sc?.disponible?numero(total.impresiones):'—'}
+      <Metrica nombre="Impresiones en Google" fuente="search" icono="impresiones" valor={sc?.disponible?numero(total.impresiones):'—'}
         cambio={cambioImpresiones} onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="CTR orgánico" fuente="search" valor={sc?.disponible?porcentaje(total.ctr):'—'}
+      <Metrica nombre="CTR orgánico" fuente="search" icono="ctr" valor={sc?.disponible?porcentaje(total.ctr):'—'}
         detalle={'Posición media: '+(sc?.disponible?decimal(total.posicion):'—')} onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="Sesiones del sitio" fuente="analytics" valor={ga?.disponible?numero(ga.totales?.sesiones):'—'}
+      <Metrica nombre="Sesiones del sitio" fuente="analytics" icono="sesiones" valor={ga?.disponible?numero(ga.totales?.sesiones):'—'}
         onClick={()=>onNavigate('analytics')} />
-      <Metrica nombre="Usuarios del sitio" fuente="analytics" valor={ga?.disponible?numero(ga.totales?.usuarios):'—'}
+      <Metrica nombre="Usuarios del sitio" fuente="analytics" icono="usuarios" valor={ga?.disponible?numero(ga.totales?.usuarios):'—'}
         onClick={()=>onNavigate('analytics')} />
-      <Metrica nombre="Formularios registrados" fuente="analytics" valor={leads!==null?numero(leads):'—'}
+      <Metrica nombre="Formularios registrados" fuente="analytics" icono="formularios" valor={leads!==null?numero(leads):'—'}
         detalle="Evento generate_lead · no ventas" onClick={()=>onNavigate('analytics')} />
     {datosPerfilGoogle(perfilEmpresa).map(indicador=>(
-      <Metrica key={indicador.campo} fuente="business" icono={{impresionesMaps:'◎',impresionesBusqueda:'⌕',clicsWeb:'↖',clicsTelefono:'☎',indicaciones:'↗'}[indicador.campo]}
-        nombre={indicador.titulo} valor={indicador.valor==null?'—':numero(indicador.valor)}
+      <Metrica key={indicador.campo} fuente="business" icono={{impresionesMaps:'impresiones',impresionesBusqueda:'busqueda',clicsWeb:'clics',clicsTelefono:'telefono',indicaciones:'indicaciones'}[indicador.campo]}
+        nombre={indicador.titulo} valor={indicador.valor == null ? '—' : numero(indicador.valor)}
         detalle={indicador.detalle} onClick={()=>onNavigate('business')}/>
     ))}
     </div>
-    {!perfil&&<div className="seo-exec-maps-pendiente" role="status">
+    {!perfil && <div className="seo-exec-maps-pendiente" role="status">
       <span>Business Profile no está conectado o no entregó datos para este período.</span>
       <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('conexiones')}>Revisar conexión →</button>
     </div>}
