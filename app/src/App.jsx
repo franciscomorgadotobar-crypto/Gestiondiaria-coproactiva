@@ -23,6 +23,7 @@ import SeleccionArea from './paginas/SeleccionArea';
 import PanelEscritorio from './componentes/PanelEscritorio';
 import AtrasNativoAndroid from './componentes/AtrasNativoAndroid';
 import { limpiarArea } from './lib/area';
+import { esContinuacionDocumento } from './lib/arranqueHistorialPWA';
 import { prepararHistorialSelector, consumirRegresoPendiente, reiniciarHistorialSelector } from './lib/historialSelector';
 
 const Mapa = lazy(() => import('./paginas/panel/Mapa'));
@@ -131,7 +132,11 @@ function ProtegerHomeFinal() {
   useEffect(() => {
     if (idAnterior.current !== idUsuario) {
       reiniciarHistorialSelector();
-      if (idUsuario) limpiarArea(); // La selección anterior nunca se restaura.
+      // Una recarga mantiene el área elegida: no debe devolver SEO al Home
+      // ni alterar el destino del botón Volver. En un inicio nuevo sí se borra.
+      if (idUsuario && !esContinuacionDocumento(window.performance, document.wasDiscarded)) {
+        limpiarArea();
+      }
       idAnterior.current = idUsuario;
     }
   }, [idUsuario]);
