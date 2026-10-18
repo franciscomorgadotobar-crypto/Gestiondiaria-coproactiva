@@ -121,7 +121,7 @@ test('el Home se determina por permisos, nunca por un área guardada',()=>{
   assert.match(app,/if \(perfil\?\.rol === 'cliente'\) return <Navigate to="\/portal" replace \/>/);
   assert.match(app,/if \(!tieneCRM\(perfil\)\) return <PanelEscritorio><Inicio \/><\/PanelEscritorio>/);
   assert.match(app,/return <SeleccionArea \/>/);
-  assert.match(app,/if \(idUsuario\) limpiarArea\(\)/);
+  assert.match(app,/if \(idUsuario && !esContinuacionDocumento\(/);
   assert.doesNotMatch(app,/RestaurarAreaGuardada|restauracionAutomaticaEjecutada/);
   assert.match(selector,/const puedeConfigurar = \['superadmin', 'admin'\]\.includes\(perfil\?\.rol\)/);
 });

@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { ProveedorSesion } from './lib/sesion';
 import { ProveedorTutoriales } from './lib/tutorialesContexto';
 import { iniciarSincronizacion } from './lib/sincronizacion';
-import { prepararArranqueConHome } from './lib/arranqueHistorialPWA';
+import { prepararArranqueConHome, esContinuacionDocumento } from './lib/arranqueHistorialPWA';
 import App from './App';
 import './estilos/tokens.css';
 import './estilos/base.css';
@@ -18,9 +18,11 @@ import './estilos/identidad-app.css';
  * el basename queda vacío. */
 const raiz = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Antes de montar BrowserRouter: Android necesita un Home REAL detrás de una
-// PWA que se restaura directamente en SEO, CRM, fichas, etc.
-prepararArranqueConHome(window.history, window.location, import.meta.env.BASE_URL);
+// Apertura NUEVA => Home según permisos. Recarga o vuelta a una pestaña viva
+// => conservar ruta, pestaña y filtros sin reescribir la URL de la PWA.
+const continuarPantalla = esContinuacionDocumento(window.performance, document.wasDiscarded);
+prepararArranqueConHome(window.history, window.location, import.meta.env.BASE_URL,
+  { continuar: continuarPantalla });
 
 /* La cola de subida arranca con la app: si el teléfono quedó con trabajo sin
  * subir de un levantamiento anterior, se sube apenas haya señal, sin que nadie

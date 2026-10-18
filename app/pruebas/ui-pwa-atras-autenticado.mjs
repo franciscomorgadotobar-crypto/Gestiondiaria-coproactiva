@@ -2,8 +2,9 @@
  * Regresión en Chromium móvil con perfil Supabase simulado:
  * no se consulta ni modifica la base real.
  *
- * Nueva regla: abrir/reabrir la PWA siempre muestra el Home que corresponda
- * al rol. Solo una selección EXPLÍCITA abre SEO/CRM/otros módulos.
+ * Apertura nueva muestra Home según perfil. Una recarga conserva la página,
+ * la pestaña y el período de SEO. Solo una selección EXPLÍCITA abre módulos
+ * tras una apertura nueva.
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
@@ -76,6 +77,24 @@ try {
     await page.getByRole('button',{name:/SEO y Analítica/}).click();
     await page.waitForURL(/\/seo(?:\?|$)/,{timeout:20000});
     await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
+
+    // La recarga no debe hacer volver al selector ni borrar filtros.
+    await page.getByRole('combobox',{name:'Período de análisis'}).selectOption('90');
+    await page.getByRole('button',{name:'Ir a Google Maps'}).click();
+    await page.waitForURL(url=>url.pathname==='/seo'
+      && url.searchParams.get('vista')==='business'
+      && url.searchParams.get('dias')==='90',{timeout:12000});
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
+    assert.equal(new URL(page.url()).pathname,'/seo','recarga conserva SEO');
+    assert.equal(new URL(page.url()).searchParams.get('vista'),'business','recarga conserva Google Maps');
+    assert.equal(await page.getByRole('combobox',{name:'Período de análisis'}).inputValue(),'90','recarga conserva días');
+    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0,'sin selector tras recarga');
+    console.log('SEO → Google Maps · 90 días → recarga → misma vista y período: OK');
+
+    // Atrás desde la pestaña recupera primero el Dashboard y luego Home.
+    await page.goBack();
+    await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:10000});
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/',{timeout:10000});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:10000});
