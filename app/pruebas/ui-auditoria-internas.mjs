@@ -76,7 +76,7 @@ async function irPantalla(page,vista) {
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:12000});
   const ruta=vista.ruta;
   const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
-  const area=operacion ? /Operación/
+  const area=operacion ? /OPERACIONES|Levantamientos/i
     : ruta.startsWith('/contabilidad') ? /Gestión contable/
     : ruta.startsWith('/propiedades') ? /Arriendos y ventas/
     : ruta.startsWith('/proveedores') ? /Red de proveedores/
