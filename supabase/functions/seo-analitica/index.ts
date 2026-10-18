@@ -113,26 +113,41 @@ async function searchConsole(token: string, dias: number) {
 async function analytics(token: string, dias: number) {
   if (!gaProperty) throw new Error('Falta GA4_PROPERTY_ID.');
   const url = 'https://analyticsdata.googleapis.com/v1beta/properties/' + gaProperty + ':runReport';
+  // Ambos intervalos incluyen exactamente "dias" días y excluyen el día actual.
   const rango = [{ startDate: String(dias) + 'daysAgo', endDate: 'yesterday' }];
+  const rangoAnterior = [{ startDate: String(dias * 2) + 'daysAgo',
+    endDate: String(dias + 1) + 'daysAgo' }];
   const metrics = (names: string[]) => names.map(name => ({ name }));
   const dimensions = (names: string[]) => names.map(name => ({ name }));
-  const query = (d: string[], m: string[], limit = 100) =>
-    googlePost(url, { dateRanges: rango, dimensions: dimensions(d), metrics: metrics(m), limit }, token);
-  const [totales, tendencias, canales, paginas, eventos] = await Promise.all([
-    query([], ['totalUsers', 'sessions', 'screenPageViews', 'engagementRate', 'keyEvents']),
+  const query = (d: string[], m: string[], limit = 100, dateRanges = rango) =>
+    googlePost(url, { dateRanges, dimensions: dimensions(d), metrics: metrics(m), limit }, token);
+  const metricasTotales = ['totalUsers', 'sessions', 'screenPageViews', 'engagementRate', 'keyEvents'];
+  // La comparación es optativa: una falla del período previo no debe ocultar
+  // las métricas actuales que sí están disponibles.
+  const [totales, tendencias, canales, paginas, eventos, totalesPrevios, eventosPrevios] = await Promise.all([
+    query([], metricasTotales),
     query(['date'], ['sessions', 'totalUsers'], 100),
     query(['sessionDefaultChannelGroup'], ['sessions', 'totalUsers'], 20),
     query(['pagePath'], ['screenPageViews', 'totalUsers'], 75),
-    query(['eventName'], ['eventCount', 'keyEvents'], 35)
+    query(['eventName'], ['eventCount', 'keyEvents'], 35),
+    query([], metricasTotales, 1, rangoAnterior).catch(() => null),
+    query(['eventName'], ['eventCount', 'keyEvents'], 35, rangoAnterior).catch(() => null)
   ]);
-  const m = (totales.rows || [])[0]?.metricValues || [];
-  return {
-    disponible: true,
-    totales: {
+  const extraerTotales = (report: any) => {
+    if (!report) return null;
+    const m = (report.rows || [])[0]?.metricValues || [];
+    return {
       usuarios: Number(m[0]?.value || 0), sesiones: Number(m[1]?.value || 0),
       vistas: Number(m[2]?.value || 0), engagement: Number(m[3]?.value || 0),
       eventosClave: Number(m[4]?.value || 0)
-    },
+    };
+  };
+  return {
+    disponible: true,
+    totales: extraerTotales(totales),
+    // null implica error o falta de datos comparables; no se interpreta como cero.
+    anterior: extraerTotales(totalesPrevios),
+    eventosAnteriores: eventosPrevios ? gaRows(eventosPrevios) : null,
     tendencia: gaRows(tendencias),
     canales: gaRows(canales), paginas: gaRows(paginas), eventos: gaRows(eventos)
   };
@@ -326,20 +341,27 @@ async function perfilEmpresa(dias:number) {
     const token=await tokenPerfilGoogle();
     const location='locations/'+gbpLocation.replace(/^locations\//,'');
     const start=daysBefore(dias), end=daysBefore(1);
-    const [yy,mm,dd]=start.split('-').map(Number),[y2,m2,d2]=end.split('-').map(Number);
-    const params=new URLSearchParams();
+    const anteriorInicio=daysBefore(dias*2), anteriorFin=daysBefore(dias+1);
     const METRICS=[
       'BUSINESS_IMPRESSIONS_DESKTOP_MAPS','BUSINESS_IMPRESSIONS_MOBILE_MAPS',
       'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH','BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
       'WEBSITE_CLICKS','CALL_CLICKS','BUSINESS_DIRECTION_REQUESTS'
     ];
-    for(const metric of METRICS)params.append('dailyMetrics',metric);
-    const setDate=(prefix:string,y:number,m:number,d:number)=>{
-      params.set('dailyRange.'+prefix+'.year',String(y));
-      params.set('dailyRange.'+prefix+'.month',String(m));
-      params.set('dailyRange.'+prefix+'.day',String(d));
+    const paramsDiarios=(inicio:string,fin:string)=>{
+      const p=new URLSearchParams();
+      for(const metric of METRICS)p.append('dailyMetrics',metric);
+      const [yy,mm,dd]=inicio.split('-').map(Number);
+      const [y2,m2,d2]=fin.split('-').map(Number);
+      for(const [prefijo,year,month,day] of [
+        ['start_date',yy,mm,dd],['end_date',y2,m2,d2]
+      ] as Array<[string,number,number,number]>) {
+        p.set('dailyRange.'+prefijo+'.year',String(year));
+        p.set('dailyRange.'+prefijo+'.month',String(month));
+        p.set('dailyRange.'+prefijo+'.day',String(day));
+      }
+      return p;
     };
-    setDate('start_date',yy,mm,dd);setDate('end_date',y2,m2,d2);
+    const [yy,mm]=start.split('-').map(Number),[y2,m2]=end.split('-').map(Number);
     const base='https://businessprofileperformance.googleapis.com/v1/'+location;
     const monthParams=new URLSearchParams({
       'monthlyRange.start_month.year':String(yy),
@@ -348,32 +370,49 @@ async function perfilEmpresa(dias:number) {
       'monthlyRange.end_month.month':String(m2),
       pageSize:'100'
     });
-    const [daily,keywords]=await Promise.allSettled([
-      googleRead(base+':fetchMultiDailyMetricsTimeSeries?'+params,token),
+    const [daily, previo, keywords]=await Promise.allSettled([
+      googleRead(base+':fetchMultiDailyMetricsTimeSeries?'+paramsDiarios(start,end),token),
+      googleRead(base+':fetchMultiDailyMetricsTimeSeries?'+paramsDiarios(anteriorInicio,anteriorFin),token),
       googleRead(base+'/searchkeywords/impressions/monthly?'+monthParams,token)
     ]);
     if(daily.status==='rejected')throw daily.reason;
-    const byMetric:Record<string,{total:number;serie:Array<{fecha:string;valor:number}>}>={};
-    for(const series of daily.value.multiDailyMetricTimeSeries||[]) {
-      for(const metric of series.dailyMetricTimeSeries||[]) {
-        const name=String(metric.dailyMetric || '');
-        const serie=(metric.timeSeries?.datedValues || []).map((x:any)=>({
-          fecha: [x.date?.year, String(x.date?.month || 1).padStart(2,'0'),String(x.date?.day || 1).padStart(2,'0')].join('-'),
-          valor:Number(x.value || 0)
-        }));
-        byMetric[name]={total:serie.reduce((acc,row)=>acc+row.valor,0),serie};
+    const leerSeries=(respuesta:any)=>{
+      const resultado:Record<string,{total:number;serie:Array<{fecha:string;valor:number}>}>={};
+      for(const group of respuesta?.multiDailyMetricTimeSeries||[]) {
+        for(const metric of group.dailyMetricTimeSeries||[]) {
+          const name=String(metric.dailyMetric || '');
+          const serie=(metric.timeSeries?.datedValues || []).map((x:any)=>({
+            fecha:[x.date?.year,String(x.date?.month||1).padStart(2,'0'),String(x.date?.day||1).padStart(2,'0')].join('-'),
+            valor:Number(x.value || 0)
+          }));
+          resultado[name]={total:serie.reduce((acc,row)=>acc+row.valor,0),serie};
+        }
       }
-    }
-    const suma=(...keys:string[])=>keys.reduce((total,key)=>total+(byMetric[key]?.total||0),0);
-    return {
-      disponible:true, consultadoEn:new Date().toISOString(), inicio:start, fin:end,
-      ubicacion:location, metricas:byMetric,
-      resumen:{
+      return resultado;
+    };
+    const metricas=leerSeries(daily.value);
+    const anteriorMetricas=previo.status==='fulfilled' ? leerSeries(previo.value) : null;
+    const resumir=(datos:typeof metricas, exigirCompletos=false)=>{
+      const suma=(...keys:string[])=>{
+        if(exigirCompletos && keys.some(key=>!Object.hasOwn(datos,key)))return null;
+        return keys.reduce((total,key)=>total+(datos[key]?.total||0),0);
+      };
+      return {
         impresionesBusqueda:suma('BUSINESS_IMPRESSIONS_DESKTOP_SEARCH','BUSINESS_IMPRESSIONS_MOBILE_SEARCH'),
         impresionesMaps:suma('BUSINESS_IMPRESSIONS_DESKTOP_MAPS','BUSINESS_IMPRESSIONS_MOBILE_MAPS'),
         clicsWeb:suma('WEBSITE_CLICKS'),clicsTelefono:suma('CALL_CLICKS'),
         indicaciones:suma('BUSINESS_DIRECTION_REQUESTS')
-      },
+      };
+    };
+    return {
+      disponible:true, consultadoEn:new Date().toISOString(), inicio:start, fin:end,
+      ubicacion:location, metricas,
+      resumen:resumir(metricas),
+      // Se exponen solamente valores efectivamente presentes. Si el servicio
+      // omite una métrica previa, la tarjeta mostrará "Sin comparación disponible".
+      anterior:anteriorMetricas?{
+        inicio:anteriorInicio,fin:anteriorFin,resumen:resumir(anteriorMetricas,true)
+      }:null,
       palabras: keywords.status==='fulfilled'
         ? (keywords.value.searchKeywordsCounts||[]).map((p:any)=>({
             nombre:String(p.searchKeyword||''), impresiones: p.insightsValue?.value == null ? null : Number(p.insightsValue.value),
@@ -381,7 +420,7 @@ async function perfilEmpresa(dias:number) {
           }))
         : [],
       errorPalabras:keywords.status==='rejected'?'Google no entregó palabras clave mensuales en esta consulta.':null,
-      nota:'Lectura directa de Business Profile Performance API. Google procesa estas métricas por día y búsquedas por mes; no son eventos segundo a segundo.'
+      nota:'Lectura directa de Business Profile Performance API. Los períodos actuales y anteriores tienen igual número de días y no son datos en tiempo real.'
     };
   } catch(error) {
     return {disponible:false,error:error instanceof Error?error.message:'Sin acceso a Business Profile.'};

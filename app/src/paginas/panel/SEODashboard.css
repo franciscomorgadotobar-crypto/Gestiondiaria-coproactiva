@@ -187,3 +187,11 @@ button.seo-exec-kpi.accion:hover { background:var(--hover); border-color:var(--n
 .seo-exec-kpi-icono{display:none}
 .seo-exec-kpi-fuente{font-size:.59rem}
 }
+
+/* Variaciones homogéneas, incluyendo posición media (menor es mejor). */
+.seo-exec-cambio.neutro { color:var(--texto-apagado); }
+.seo-exec-cambio.sin-datos { color:var(--texto-apagado); font-size:.7rem; font-weight:400; }
+.seo-exec-posicion-variacion { font-weight:700; white-space:nowrap; }
+.seo-exec-posicion-variacion.sube { color:var(--ok-texto); }
+.seo-exec-posicion-variacion.baja { color:var(--critico-texto); }
+.seo-exec-posicion-variacion.neutro { color:var(--texto-apagado); }
