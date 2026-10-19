@@ -21,6 +21,9 @@ jobs:
       - name: Instalar dependencias
         working-directory: app
         run: npm install
+      - name: Verificar blindaje de perfiles y rollback sin desplegar SQL
+        working-directory: app
+        run: node --test pruebas/seguridad-perfiles.test.js
       - name: Probar criterios y compatibilidad histórica
         working-directory: app
         run: node --test pruebas/criterios.test.js
