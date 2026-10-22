@@ -147,7 +147,7 @@ commit;
 begin;
   set local role service_role;
   set local request.jwt.claim.role='service_role';
-  do $
+  do $$
   begin
     if not (select activo from public.perfiles where id='00000000-0000-0000-0000-000000000005') then
       raise exception 'FAIL: service_role no logra reactivar usuario';
@@ -155,7 +155,7 @@ begin;
     update public.perfiles set activo=false
       where id='00000000-0000-0000-0000-000000000005';
     raise notice 'PASS: service_role conserva la reactivación autorizada';
-  end $;
+  end $$;
 commit;
 
 -- Un cliente activo no se convierte en operador interno ni modifica el perfil.
