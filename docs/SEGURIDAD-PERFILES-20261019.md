@@ -16,9 +16,10 @@
 1. mi_rol() solo devuelve un rol si el perfil está activo.
 2. ve_comunidad(), ve_control() y puede_operar_control() requieren un perfil activo.
 3. Políticas RESTRICTIVE en controles y perfil_comunidades impiden la lectura directa por cuentas desactivadas con asignaciones antiguas.
-4. Trigger en perfiles bloquea cambiar activo de la propia cuenta y exige administración activa para modificar otra.
-5. La Edge Function equipo usa service_role y conserva sus acciones autorizadas de alta/baja de otros usuarios.
-6. Se retira el permiso RPC de ejecución del nuevo trigger, que se utiliza solo como trigger.
+4. Restricciones adicionales en notificaciones, portal_cliente_comunidades, portal_cliente_plantillas, tutorial_asignaciones y tutorial_progreso para impedir accesos residuales por titularidad de un usuario inactivo.
+5. Trigger en perfiles bloquea cambiar activo de la propia cuenta y exige administración activa para modificar otra.
+6. La Edge Function equipo usa service_role y conserva sus acciones autorizadas de alta/baja de otros usuarios.
+7. Se retira el permiso RPC de ejecución del nuevo trigger, que se utiliza solo como trigger.
 
 ## Pruebas previas al despliegue
 Los tests automáticos adjuntos verifican estructura, barreras y compatibilidad del código. **NO sustituyen pruebas de autorización reales en Postgres**.
@@ -32,6 +33,11 @@ Los tests automáticos adjuntos verifican estructura, barreras y compatibilidad 
 | Admin o superadmin inactivo intenta usar funciones de autorización | Denegado |
 | Usuario inactivo con comunidad y control asignados intenta leerlos | Denegado |
 | Usuario inactivo con control de prospecto asignado intenta leerlo | Denegado |
+| Usuario inactivo intenta leer sus notificaciones o tutoriales | Denegado |
+| Cliente inactivo intenta leer sus asociaciones o plantillas del portal | Denegado |
+| Usuario activo sigue accediendo a notificaciones y tutoriales | Permitido |
+| Cliente activo sigue accediendo a su portal | Permitido |
+| Admin activo edita Mi Cuenta y conserva los triggers de fecha/correo | Permitido |
 | Admin activo da de baja a otra persona desde Equipo | Permitido |
 | Admin activo reactiva a otra persona desde Equipo | Permitido |
 | Admin intenta modificar un superadmin | Denegado, como antes |
