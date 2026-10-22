@@ -20,7 +20,9 @@ create table public.perfiles(
   id uuid primary key,
   nombre text not null,
   rol public.rol_usuario not null,
-  activo boolean not null default true
+  activo boolean not null default true,
+  email text,
+  editado_en timestamptz
 );
 create table public.comunidades(id uuid primary key, nombre text not null);
 create table public.perfil_comunidades(
@@ -83,6 +85,29 @@ select (
 )
 and (es_admin() or mi_rol()='jefatura' or p_responsable_id=auth.uid())
 $$;
+
+-- Copia reducida y fiel de los otros dos triggers BEFORE UPDATE de producción.
+create or replace function public.tocar_editado_en()
+returns trigger language plpgsql set search_path=public as $
+begin
+  new.editado_en = now();
+  return new;
+end; $;
+create trigger perfiles_editado before update on public.perfiles
+for each row execute function public.tocar_editado_en();
+
+create or replace function public.proteger_email_perfil()
+returns trigger language plpgsql security definer set search_path=public as $
+begin
+  if new.email is distinct from old.email
+    and auth.uid() is not null
+    and not public.es_superadmin() then
+    raise exception 'El correo de acceso solo puede modificarlo un superadministrador.';
+  end if;
+  return new;
+end; $;
+create trigger trg_proteger_email_perfil before update on public.perfiles
+for each row execute function public.proteger_email_perfil();
 
 alter table public.perfiles enable row level security;
 alter table public.comunidades enable row level security;
