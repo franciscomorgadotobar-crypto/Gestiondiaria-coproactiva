@@ -106,6 +106,39 @@ on public.perfil_comunidades as restrictive for all to authenticated
 using (public.mi_rol() is not null)
 with check (public.mi_rol() is not null);
 
+-- Impedir acceso residual a registros propios de una cuenta desactivada.
+-- Las políticas permisivas existentes siguen controlando la titularidad.
+-- Esta restricción solo añade la comprobación del estado de la cuenta.
+drop policy if exists notificaciones_exigir_perfil_activo on public.notificaciones;
+create policy notificaciones_exigir_perfil_activo
+on public.notificaciones as restrictive for all to authenticated
+using (public.mi_rol() is not null)
+with check (public.mi_rol() is not null);
+
+drop policy if exists portal_cliente_comunidades_exigir_perfil_activo on public.portal_cliente_comunidades;
+create policy portal_cliente_comunidades_exigir_perfil_activo
+on public.portal_cliente_comunidades as restrictive for all to authenticated
+using (public.mi_rol() is not null)
+with check (public.mi_rol() is not null);
+
+drop policy if exists portal_cliente_plantillas_exigir_perfil_activo on public.portal_cliente_plantillas;
+create policy portal_cliente_plantillas_exigir_perfil_activo
+on public.portal_cliente_plantillas as restrictive for all to authenticated
+using (public.mi_rol() is not null)
+with check (public.mi_rol() is not null);
+
+drop policy if exists tutorial_asignaciones_exigir_perfil_activo on public.tutorial_asignaciones;
+create policy tutorial_asignaciones_exigir_perfil_activo
+on public.tutorial_asignaciones as restrictive for all to authenticated
+using (public.mi_rol() is not null)
+with check (public.mi_rol() is not null);
+
+drop policy if exists tutorial_progreso_exigir_perfil_activo on public.tutorial_progreso;
+create policy tutorial_progreso_exigir_perfil_activo
+on public.tutorial_progreso as restrictive for all to authenticated
+using (public.mi_rol() is not null)
+with check (public.mi_rol() is not null);
+
 -- RLS compara el rol, pero no impide actualizar el propio campo activo.
 -- Un trigger distingue OLD y NEW: solo un administrador activo puede cambiar
 -- el estado de otra persona. Nadie puede reactivarse ni darse de baja a sí mismo.
