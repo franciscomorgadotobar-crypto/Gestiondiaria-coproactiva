@@ -37,6 +37,11 @@ create table public.controles(
   responsable_id uuid references public.perfiles(id)
 );
 
+create table public.notificaciones(id uuid primary key,destinatario_id uuid,leida boolean default false);
+create table public.portal_cliente_comunidades(id uuid primary key,usuario_id uuid,comunidad_id uuid,activa boolean default true);
+create table public.portal_cliente_plantillas(id uuid primary key,usuario_id uuid,comunidad_id uuid);
+create table public.tutorial_asignaciones(id uuid primary key,perfil_id uuid);
+create table public.tutorial_progreso(id uuid primary key,perfil_id uuid);
 -- Definiciones vigentes ANTES del parche, derivadas de la configuración real.
 create or replace function public.mi_rol() returns public.rol_usuario
 language sql stable security definer set search_path = public
@@ -139,6 +144,30 @@ grant select, update on public.perfiles to authenticated;
 grant select on public.comunidades, public.perfil_comunidades, public.controles to authenticated;
 grant all on all tables in schema public to service_role;
 
+-- Políticas existentes equivalentes que exponen datos al propio usuario.
+alter table public.notificaciones enable row level security;
+alter table public.portal_cliente_comunidades enable row level security;
+alter table public.portal_cliente_plantillas enable row level security;
+alter table public.tutorial_asignaciones enable row level security;
+alter table public.tutorial_progreso enable row level security;
+create policy notificaciones_propias_lectura on public.notificaciones for select
+using (destinatario_id=auth.uid());
+create policy notificaciones_propias_actualizar on public.notificaciones for update
+using(destinatario_id=auth.uid()) with check(destinatario_id=auth.uid());
+create policy portal_cliente_comunidades_leer_propias on public.portal_cliente_comunidades for select
+using(usuario_id=auth.uid() or public.es_admin());
+create policy portal_cliente_plantillas_leer_propias on public.portal_cliente_plantillas for select
+using(usuario_id=auth.uid() or public.es_admin());
+create policy tutorial_asignaciones_lectura on public.tutorial_asignaciones for select
+using(perfil_id=auth.uid() or public.es_superadmin());
+create policy tutorial_progreso_lectura on public.tutorial_progreso for select
+using(perfil_id=auth.uid() or public.es_superadmin());
+create policy tutorial_progreso_edicion on public.tutorial_progreso for update
+using(perfil_id=auth.uid() or public.es_superadmin())
+with check(perfil_id=auth.uid() or public.es_superadmin());
+grant select on public.notificaciones,public.portal_cliente_comunidades,public.portal_cliente_plantillas,
+  public.tutorial_asignaciones,public.tutorial_progreso to authenticated;
+grant update on public.notificaciones,public.tutorial_progreso to authenticated;
 -- Datos íntegramente ficticios. IDs fijos para ejecutar la misma prueba siempre.
 insert into public.perfiles(id,nombre,rol,activo) values
 ('00000000-0000-0000-0000-000000000001','Superadmin de prueba','superadmin',true),
@@ -146,7 +175,8 @@ insert into public.perfiles(id,nombre,rol,activo) values
 ('00000000-0000-0000-0000-000000000003','Admin inactivo de prueba','admin',false),
 ('00000000-0000-0000-0000-000000000004','Terreno de prueba','terreno',true),
 ('00000000-0000-0000-0000-000000000005','Terreno inactivo de prueba','terreno',false),
-('00000000-0000-0000-0000-000000000006','Cliente de prueba','cliente',true);
+('00000000-0000-0000-0000-000000000006','Cliente de prueba','cliente',true),
+('00000000-0000-0000-0000-000000000007','Cliente inactivo de prueba','cliente',false);
 insert into public.comunidades(id,nombre) values
 ('10000000-0000-0000-0000-000000000001','Comunidad A ficticia'),
 ('10000000-0000-0000-0000-000000000002','Comunidad B ficticia');
@@ -159,6 +189,21 @@ insert into public.controles(id,comunidad_id,prospecto_id,responsable_id) values
 ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001',null,'00000000-0000-0000-0000-000000000004'),
 ('20000000-0000-0000-0000-000000000002',null,'30000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000005');
 
+insert into public.notificaciones(id,destinatario_id) values
+('40000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000004'),
+('40000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000005');
+insert into public.portal_cliente_comunidades(id,usuario_id,comunidad_id) values
+('50000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000006','10000000-0000-0000-0000-000000000001'),
+('50000000-0000-0000-0000-000000000007','00000000-0000-0000-0000-000000000007','10000000-0000-0000-0000-000000000001');
+insert into public.portal_cliente_plantillas(id,usuario_id,comunidad_id) values
+('60000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000006','10000000-0000-0000-0000-000000000001'),
+('60000000-0000-0000-0000-000000000007','00000000-0000-0000-0000-000000000007','10000000-0000-0000-0000-000000000001');
+insert into public.tutorial_asignaciones(id,perfil_id) values
+('70000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000004'),
+('70000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000005');
+insert into public.tutorial_progreso(id,perfil_id) values
+('80000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000004'),
+('80000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000005');
 -- Confirmación de reproducción de la falla original (cuenta inactiva propia).
 begin;
   set local role authenticated;
