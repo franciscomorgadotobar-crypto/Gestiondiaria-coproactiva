@@ -59,14 +59,14 @@ as $$ select exists(select 1 from public.perfiles where id=auth.uid() and activo
 -- Equivalentes simplificados de las comprobaciones vigentes para mantenimiento.
 create or replace function public.usuario_puede_ver_comunidad(p_comunidad uuid)
 returns boolean language sql stable set search_path=public
-as $ select exists (select 1 from public.comunidades c where c.id=p_comunidad) $;
+as $$ select exists (select 1 from public.comunidades c where c.id=p_comunidad) $$;
 create or replace function public.cliente_puede_ver_comunidad(p_comunidad uuid)
 returns boolean language sql stable security definer set search_path=public
-as $
+as $$
   select public.usuario_es_cliente_activo()
     and exists (select 1 from public.portal_cliente_comunidades pc
       where pc.usuario_id=auth.uid() and pc.comunidad_id=p_comunidad and pc.activa);
-$;
+$$;
 
 create or replace function public.ve_comunidad(cid uuid) returns boolean
 language sql stable security definer set search_path=public
