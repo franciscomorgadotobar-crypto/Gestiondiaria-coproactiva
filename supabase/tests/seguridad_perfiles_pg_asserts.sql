@@ -294,3 +294,61 @@ begin;
     raise notice 'PASS: cliente inactivo sin acceso residual al portal';
   end $$;
 commit;
+
+-- Lectura y actualización de notificaciones de mantenimiento con usuarios ficticios.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000004';
+  do $$
+  begin
+    if (select count(*) from public.notificaciones_mantenimiento) <> 1 then
+      raise exception 'FAIL: terreno activo perdió notificaciones de mantenimiento';
+    end if;
+    update public.notificaciones_mantenimiento set leida=true where destinatario_id=auth.uid();
+    if not exists (select 1 from public.notificaciones_mantenimiento where destinatario_id=auth.uid() and leida) then
+      raise exception 'FAIL: terreno activo no puede marcar notificación';
+    end if;
+    raise notice 'PASS: terreno activo lee y actualiza notificaciones de mantenimiento';
+  end $$;
+commit;
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000005';
+  do $$
+  begin
+    if (select count(*) from public.notificaciones_mantenimiento) <> 0 then
+      raise exception 'FAIL: terreno inactivo lee notificaciones de mantenimiento';
+    end if;
+    update public.notificaciones_mantenimiento set leida=true where destinatario_id=auth.uid();
+    raise notice 'PASS: terreno inactivo sin notificaciones de mantenimiento';
+  end $$;
+commit;
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000006';
+  do $$
+  begin
+    if (select count(*) from public.notificaciones_mantenimiento) <> 1 then
+      raise exception 'FAIL: cliente activo perdió notificaciones de mantenimiento';
+    end if;
+    raise notice 'PASS: cliente activo conserva notificaciones de mantenimiento';
+  end $$;
+commit;
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000007';
+  do $$
+  begin
+    if (select count(*) from public.notificaciones_mantenimiento) <> 0 then
+      raise exception 'FAIL: cliente inactivo lee notificaciones de mantenimiento';
+    end if;
+    raise notice 'PASS: cliente inactivo sin notificaciones de mantenimiento';
+  end $$;
+commit;
