@@ -144,15 +144,19 @@ begin;
   update public.perfiles set activo=true
     where id='00000000-0000-0000-0000-000000000005';
 commit;
-do $$
-begin
-  if not (select activo from public.perfiles where id='00000000-0000-0000-0000-000000000005') then
-    raise exception 'FAIL: service_role no logra reactivar usuario';
-  end if;
-  update public.perfiles set activo=false
-    where id='00000000-0000-0000-0000-000000000005';
-  raise notice 'PASS: service_role conserva la reactivación autorizada';
-end $$;
+begin;
+  set local role service_role;
+  set local request.jwt.claim.role='service_role';
+  do $
+  begin
+    if not (select activo from public.perfiles where id='00000000-0000-0000-0000-000000000005') then
+      raise exception 'FAIL: service_role no logra reactivar usuario';
+    end if;
+    update public.perfiles set activo=false
+      where id='00000000-0000-0000-0000-000000000005';
+    raise notice 'PASS: service_role conserva la reactivación autorizada';
+  end $;
+commit;
 
 -- Un cliente activo no se convierte en operador interno ni modifica el perfil.
 begin;
