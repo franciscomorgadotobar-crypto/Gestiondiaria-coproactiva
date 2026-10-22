@@ -204,3 +204,30 @@ begin
   then raise exception 'FAIL: pruebas dejaron una cuenta inactiva reactivada'; end if;
   raise notice 'PASS: cuentas de prueba mantienen su estado correcto';
 end $$;
+
+-- Compatibilidad con los dos triggers BEFORE UPDATE existentes en producción.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+  do $$
+  begin
+    update public.perfiles set nombre='Administrador validado' where id=auth.uid();
+    if not exists(
+      select 1 from public.perfiles
+      where id=auth.uid() and nombre='Administrador validado' and editado_en is not null
+    ) then
+      raise exception 'FAIL: fallo la edicion propia o el timestamp existente';
+    end if;
+    begin
+      update public.perfiles set email='email-no-autorizado@example.invalid' where id=auth.uid();
+    exception when others then null;
+    end;
+    if exists (
+      select 1 from public.perfiles where id=auth.uid() and email is not null
+    ) then
+      raise exception 'FAIL: trigger original dejo modificar correo sin ser superadmin';
+    end if;
+    raise notice 'PASS: actualizacion de datos personales y triggers antiguos compatibles';
+  end $$;
+commit;
