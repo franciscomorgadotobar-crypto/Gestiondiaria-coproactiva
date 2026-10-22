@@ -88,16 +88,16 @@ $$;
 
 -- Copia reducida y fiel de los otros dos triggers BEFORE UPDATE de producción.
 create or replace function public.tocar_editado_en()
-returns trigger language plpgsql set search_path=public as $
+returns trigger language plpgsql set search_path=public as $$
 begin
   new.editado_en = now();
   return new;
-end; $;
+end; $$;
 create trigger perfiles_editado before update on public.perfiles
 for each row execute function public.tocar_editado_en();
 
 create or replace function public.proteger_email_perfil()
-returns trigger language plpgsql security definer set search_path=public as $
+returns trigger language plpgsql security definer set search_path=public as $$
 begin
   if new.email is distinct from old.email
     and auth.uid() is not null
@@ -105,7 +105,7 @@ begin
     raise exception 'El correo de acceso solo puede modificarlo un superadministrador.';
   end if;
   return new;
-end; $;
+end; $$;
 create trigger trg_proteger_email_perfil before update on public.perfiles
 for each row execute function public.proteger_email_perfil();
 
