@@ -231,3 +231,66 @@ begin;
     raise notice 'PASS: actualizacion de datos personales y triggers antiguos compatibles';
   end $$;
 commit;
+
+-- Casos reales de acceso residual detectados en políticas de producción.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000004';
+  do $$
+  begin
+    if (select count(*) from public.notificaciones) <> 1
+      or (select count(*) from public.tutorial_asignaciones) <> 1
+      or (select count(*) from public.tutorial_progreso) <> 1 then
+      raise exception 'FAIL: usuario activo perdio sus notificaciones o tutoriales';
+    end if;
+    raise notice 'PASS: terreno activo conserva notificaciones y tutoriales';
+  end $$;
+commit;
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000005';
+  do $$
+  begin
+    if (select count(*) from public.notificaciones) <> 0
+      or (select count(*) from public.tutorial_asignaciones) <> 0
+      or (select count(*) from public.tutorial_progreso) <> 0 then
+      raise exception 'FAIL: usuario inactivo conserva datos propios';
+    end if;
+    update public.notificaciones set leida=true where destinatario_id=auth.uid();
+    if exists (select 1 from public.notificaciones where destinatario_id=auth.uid()) then
+      raise exception 'FAIL: usuario inactivo puede volver a leer notificaciones';
+    end if;
+    raise notice 'PASS: inactivo sin acceso a notificaciones ni tutoriales';
+  end $$;
+commit;
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000006';
+  do $$
+  begin
+    if (select count(*) from public.portal_cliente_comunidades) <> 1
+      or (select count(*) from public.portal_cliente_plantillas) <> 1 then
+      raise exception 'FAIL: cliente activo perdio el acceso a su portal';
+    end if;
+    raise notice 'PASS: cliente activo conserva acceso al portal';
+  end $$;
+commit;
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.role='authenticated';
+  set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000007';
+  do $$
+  begin
+    if (select count(*) from public.portal_cliente_comunidades) <> 0
+      or (select count(*) from public.portal_cliente_plantillas) <> 0 then
+      raise exception 'FAIL: cliente inactivo conserva datos del portal';
+    end if;
+    raise notice 'PASS: cliente inactivo sin acceso residual al portal';
+  end $$;
+commit;
