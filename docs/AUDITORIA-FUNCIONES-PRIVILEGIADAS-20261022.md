@@ -1,48 +1,80 @@
 # Auditoría de funciones privilegiadas — Coproactiva
-**Fecha:** 22 de octubre de 2026  
-**Estado:** propuesta para revisión y prueba; NO aplicada a Supabase de producción.
 
-## Alcance y evidencia
-En la base real se identificaron 99 funciones SECURITY DEFINER en public,
-11 ejecutables por anon y 74 ejecutables por authenticated (grupos solapados).
+**22 de octubre de 2026 · PR #45 · Estado: propuesta, NO aplicada a producción.**
 
-**Hallazgo confirmado:** `public.nombre_de_perfil(uuid)` es SECURITY DEFINER,
-no valida `auth.uid()` y devuelve un nombre para cualquier perfil existente cuyo UUID
-conozca el llamador. Una transacción READ ONLY con SET LOCAL ROLE anon confirmó
-que devuelve un nombre sin iniciar sesión. No se extrajeron nombres en el reporte.
+## 1. Inventario (consulta de solo lectura)
+- **99** funciones `SECURITY DEFINER` en el esquema `public`.
+- **11** con permiso `EXECUTE` para `anon`.
+- **74** con permiso `EXECUTE` para `authenticated`.
+- Estas categorías se superponen y son **advertencias de exposición**, no 85 vulnerabilidades.
+- No se detectó permiso `CREATE` en el esquema `public` para `anon` ni `authenticated`.
 
-**Dependencia:** la vista `public.controles_con_avance` usa
-`nombre_de_perfil(c.responsable_id)` y está configurada con
-`security_invoker=true`. Conservamos ejecución por `authenticated`.
-La vista tiene permiso SELECT para anon, pero la lectura efectiva de datos
-sigue sujeta a RLS del invocador.
+## 2. Exposiciones efectivamente demostradas
+La función `public.nombre_de_perfil(uuid)` es `SECURITY DEFINER`,
+acepta un UUID de cualquier perfil y no verifica los permisos del invocador.
 
-**Alertas de higiene:** seis funciones SECURITY DEFINER con RETURNS trigger
-tenían EXECUTE otorgado a anon y authenticated. No pueden invocarse como
-RPC ordinarias porque PostgreSQL solo permite ejecutarlas como trigger; aun
-así, la superficie de permisos se puede reducir.
+En la base de producción, con transacciones `BEGIN READ ONLY` y
+`SET LOCAL ROLE`, y sin devolver nombres personales:
 
-## Propuesta
-1. Revocar EXECUTE a `anon` para `nombre_de_perfil(uuid)`, dejando el permiso
-   de `authenticated` y `service_role`.
-2. Revocar EXECUTE a `PUBLIC`, `anon` y `authenticated` en seis funciones
-   `RETURNS trigger`, manteniendo permisos de roles internos.
-3. No modificar el cuerpo de las funciones, vistas ni datos.
-4. Mantener el resto de funciones privilegiadas en un inventario de auditoría
-   y continuar con análisis individual; las advertencias no son equivalentes
-   automáticamente a vulnerabilidades.
+- **Anónimo:** se comprobó que podía recuperar un nombre asociado a un UUID
+  existente sin autenticación.
+- **Cliente autenticado:** una cuenta cliente no veía el perfil del
+  administrador por `SELECT` y RLS (0 filas), pero sí podía obtener su
+  nombre mediante esta función.
 
-## Archivos
-- `supabase/pendientes/auditoria_funciones_definer_20261022.sql`: propuesta,
-  **NO es una migración de producción ni altera su historial**.
+## 3. Dependencias y propuesta de corrección
+`public.controles_con_avance` invoca
+`nombre_de_perfil(c.responsable_id)` y utiliza `security_invoker=true`.
+Revocar la función a todos los usuarios autenticados rompería esa vista.
+
+El SQL propuesto:
+1. Revoca `EXECUTE` de `nombre_de_perfil(uuid)` a `anon`.
+2. Reemplaza su cuerpo: `authenticated` solo recibe nombres cuando tiene
+   perfil activo y se trata del propio usuario, un administrador autorizado,
+   un perfil con comunidad compartida visible mediante `ve_comunidad`,
+   o un responsable de control visible mediante `ve_control`.
+3. Conserva los accesos del rol interno `service_role` y de administradores.
+4. Revoca la ejecución directa para `anon` y `authenticated` de seis
+   funciones internas `RETURNS trigger`; los triggers del motor PostgreSQL
+   permanecen habilitados.
+5. No modifica estructuras, vistas ni datos. Cuenta con rollback de
+   definición y permisos.
+
+## 4. Pruebas automatizadas
+Las pruebas de la PR en PostgreSQL 17 efímero comprueban:
+- La exposición anterior en datos ficticios.
+- Prohibición de invocación anónima.
+- Aislamiento de cliente activo frente al nombre de un administrador.
+- Lectura permitida del nombre del propio cliente.
+- Acceso del personal de terreno a responsables de controles visibles y
+  conservación del nombre en la vista `controles_con_avance`.
+- Acceso de administrador activo y del rol `service_role`.
+- Denegación para perfiles inactivos.
+- Funcionamiento de seis triggers pese a la revocación de `EXECUTE`.
+- Restauración de definición y privilegios mediante rollback.
+
+**La prueba sobre la base PostgreSQL temporal no reemplaza la validación
+integral en la base real antes de desplegar.**
+
+## 5. Otros resultados por investigar
+Se identificaron funciones cuya autorización se delega a otras funciones
+(`bitacora_puede_ver_comunidad`, etc.), así como funciones que devuelven
+metadatos según UUID sin que su propio cuerpo verifique `auth.uid()`
+(`bitacora_iniciales_usuario`,
+`contabilidad_entidad_tiene_movimientos`,
+`es_control_diagnostico`). Deben evaluarse individualmente antes de revocar
+permisos por el posible impacto en las consultas internas y políticas RLS.
+
+## 6. Archivos y despliegue
+- `supabase/pendientes/auditoria_funciones_definer_20261022.sql`: propuesta
+  pendiente, **NO** incluida aún en `supabase/migrations/`.
 - `supabase/pendientes/auditoria_funciones_definer_20261022_rollback.sql`.
-- `supabase/tests/auditoria_funciones_definer_20261022_*.sql` y CI efímero.
+- `supabase/tests/auditoria_funciones_definer_20261022_*.sql`:
+  escenarios de integración.
+- `.github/workflows/validar-funciones-privilegiadas.yml`: CI aislado.
 
-## Condiciones para autorizar despliegue
-- CI PostgreSQL temporal aprobado (anon denegado, autenticados conservan acceso,
-  triggers continúan disparándose, rollback validado).
-- Verificación de la vista y permisos reales en un entorno de pruebas apropiado.
-- Autorización para convertir el SQL propuesto en una migración versionada.
-- Comprobación posterior con `pg_proc` y asesores de Supabase.
-- No crear ramas pagadas, no generar costos, no fusionar ni desplegar esta PR
-  sin revisión expresa.
+Antes de instalar:
+- Obtener autorización explícita para promover y aplicar a producción.
+- Validar la compatibilidad real de la vista y operaciones de perfiles.
+- Confirmar el estado de funciones, ACL, RLS y CI, y registrar la migración.
+- Mantener costos adicionales en cero; no crear ramas Supabase de pago.
