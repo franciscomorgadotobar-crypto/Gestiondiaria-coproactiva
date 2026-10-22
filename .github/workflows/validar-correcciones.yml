@@ -161,11 +161,11 @@ jobs:
       - name: Reproducir vulnerabilidad en modelo descartable
         run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/seguridad_perfiles_pg_bootstrap.sql
       - name: Aplicar migración a PostgreSQL descartable
-        run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/migrations/202610190001_bloquear_reactivacion_y_permisos_inactivos.sql
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/migrations/20261022181513_bloquear_reactivacion_y_permisos_inactivos_20261022.sql
       - name: Validar RLS, roles y reactivación
         run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/seguridad_perfiles_pg_asserts.sql
       - name: Validar reversión
-        run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/rollbacks/202610190001_bloquear_reactivacion_y_permisos_inactivos.sql
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/rollbacks/20261022181513_bloquear_reactivacion_y_permisos_inactivos_20261022.sql
       - name: Comprobar reversión del trigger
         run: |
           docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c \
