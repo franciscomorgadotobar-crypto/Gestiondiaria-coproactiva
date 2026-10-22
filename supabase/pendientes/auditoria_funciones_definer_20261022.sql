@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION public.nombre_de_perfil(pid uuid)
 RETURNS text
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $$
   SELECT p.nombre
   FROM public.perfiles p
   WHERE p.id = pid
@@ -39,7 +39,7 @@ AS $
         )
       )
     );
-$;
+$$;
 
 -- Funciones RETURNS trigger: solamente deben invocarse mediante sus triggers.
 -- PostgreSQL comprueba EXECUTE al crear el trigger, no al ejecutarse por DML.
