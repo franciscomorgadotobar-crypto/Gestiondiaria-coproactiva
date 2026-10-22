@@ -15,6 +15,7 @@ drop policy if exists portal_cliente_plantillas_exigir_perfil_activo on public.p
 drop policy if exists tutorial_asignaciones_exigir_perfil_activo on public.tutorial_asignaciones;
 drop policy if exists tutorial_progreso_exigir_perfil_activo on public.tutorial_progreso;
 
+drop policy if exists notificaciones_mantenimiento_exigir_perfil_activo on public.notificaciones_mantenimiento;
 create or replace function public.mi_rol()
 returns public.rol_usuario
 language sql stable security definer
