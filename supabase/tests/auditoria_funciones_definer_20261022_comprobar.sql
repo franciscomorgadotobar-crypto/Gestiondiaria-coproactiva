@@ -54,3 +54,92 @@ BEGIN READ ONLY;
   END;
  END $$;
 ROLLBACK;
+
+-- Un cliente no debe acceder al nombre de un admin fuera de su RLS.
+BEGIN READ ONLY;
+ SET LOCAL ROLE authenticated;
+ SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000004',true);
+ SELECT set_config('request.jwt.claim.role','authenticated',true);
+ DO $$
+ BEGIN
+   IF (SELECT COUNT(*) FROM public.perfiles WHERE id='00000000-0000-0000-0000-000000000003') <> 0 THEN
+     RAISE EXCEPTION 'FAIL: modelo RLS permite al cliente leer admin directamente';
+   END IF;
+   IF public.nombre_de_perfil('00000000-0000-0000-0000-000000000003') IS NOT NULL THEN
+     RAISE EXCEPTION 'FAIL: cliente accede al nombre del administrador via RPC';
+   END IF;
+   IF public.nombre_de_perfil('00000000-0000-0000-0000-000000000004')
+     IS DISTINCT FROM 'Cliente prueba' THEN
+     RAISE EXCEPTION 'FAIL: cliente perdio su propio nombre';
+   END IF;
+   IF (SELECT COUNT(*) FROM public.controles_con_avance) <> 0 THEN
+     RAISE EXCEPTION 'FAIL: cliente ve controles internos';
+   END IF;
+   RAISE NOTICE 'PASS: cliente solo consulta su nombre, no admin ajeno ni controles';
+ END $$;
+ROLLBACK;
+
+-- Terreno ve responsables de controles de la comunidad que tiene asignada.
+BEGIN READ ONLY;
+ SET LOCAL ROLE authenticated;
+ SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
+ SELECT set_config('request.jwt.claim.role','authenticated',true);
+ DO $$
+ BEGIN
+   IF public.nombre_de_perfil('00000000-0000-0000-0000-000000000002')
+     IS DISTINCT FROM 'Otro técnico prueba' THEN
+     RAISE EXCEPTION 'FAIL: terreno no puede ver al responsable autorizado';
+   END IF;
+   IF (SELECT COUNT(*) FROM public.controles_con_avance
+       WHERE responsable_nombre='Otro técnico prueba') <> 1 THEN
+     RAISE EXCEPTION 'FAIL: vista de controles pierde el nombre del responsable';
+   END IF;
+   IF public.nombre_de_perfil('00000000-0000-0000-0000-000000000003') IS NOT NULL THEN
+     RAISE EXCEPTION 'FAIL: terreno ve nombre de admin sin relacion';
+   END IF;
+   RAISE NOTICE 'PASS: control conserva nombres autorizados sin exponer perfiles ajenos';
+ END $$;
+ROLLBACK;
+
+-- Administrador activo conserva la lectura autorizada de perfiles.
+BEGIN READ ONLY;
+ SET LOCAL ROLE authenticated;
+ SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',true);
+ SELECT set_config('request.jwt.claim.role','authenticated',true);
+ DO $$
+ BEGIN
+   IF public.nombre_de_perfil('00000000-0000-0000-0000-000000000002')
+      IS DISTINCT FROM 'Otro técnico prueba' THEN
+      RAISE EXCEPTION 'FAIL: admin activo perdió acceso a nombre de usuario';
+   END IF;
+   RAISE NOTICE 'PASS: administrador activo mantiene nombres autorizados';
+ END $$;
+ROLLBACK;
+
+-- Un perfil desactivado pierde acceso al nombre incluso si conoce el UUID.
+BEGIN READ ONLY;
+ SET LOCAL ROLE authenticated;
+ SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000005',true);
+ SELECT set_config('request.jwt.claim.role','authenticated',true);
+ DO $$
+ BEGIN
+   IF public.nombre_de_perfil('00000000-0000-0000-0000-000000000005') IS NOT NULL THEN
+      RAISE EXCEPTION 'FAIL: usuario inactivo obtiene nombre via RPC';
+   END IF;
+   RAISE NOTICE 'PASS: usuario inactivo sin nombres via RPC';
+ END $$;
+ROLLBACK;
+
+-- La clave privilegiada de servidor conserva su función de soporte.
+BEGIN READ ONLY;
+ SET LOCAL ROLE service_role;
+ SELECT set_config('request.jwt.claim.role','service_role',true);
+ DO $$
+ BEGIN
+   IF public.nombre_de_perfil('00000000-0000-0000-0000-000000000003')
+      IS DISTINCT FROM 'Administrador prueba' THEN
+      RAISE EXCEPTION 'FAIL: service_role no puede consultar nombre';
+   END IF;
+   RAISE NOTICE 'PASS: service_role conserva acceso operativo';
+ END $$;
+ROLLBACK;
