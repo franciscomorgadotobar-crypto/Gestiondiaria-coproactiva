@@ -38,6 +38,7 @@ create table public.controles(
 );
 
 create table public.notificaciones(id uuid primary key,destinatario_id uuid,leida boolean default false);
+create table public.notificaciones_mantenimiento(id uuid primary key,comunidad_id uuid not null,destinatario_id uuid not null,leida boolean default false);
 create table public.portal_cliente_comunidades(id uuid primary key,usuario_id uuid,comunidad_id uuid,activa boolean default true);
 create table public.portal_cliente_plantillas(id uuid primary key,usuario_id uuid,comunidad_id uuid);
 create table public.tutorial_asignaciones(id uuid primary key,perfil_id uuid);
@@ -55,6 +56,18 @@ as $$ select coalesce(mi_rol() = 'superadmin',false) $$;
 create or replace function public.usuario_es_cliente_activo() returns boolean
 language sql stable security definer set search_path=public
 as $$ select exists(select 1 from public.perfiles where id=auth.uid() and activo and rol='cliente') $$;
+-- Equivalentes simplificados de las comprobaciones vigentes para mantenimiento.
+create or replace function public.usuario_puede_ver_comunidad(p_comunidad uuid)
+returns boolean language sql stable set search_path=public
+as $ select exists (select 1 from public.comunidades c where c.id=p_comunidad) $;
+create or replace function public.cliente_puede_ver_comunidad(p_comunidad uuid)
+returns boolean language sql stable security definer set search_path=public
+as $
+  select public.usuario_es_cliente_activo()
+    and exists (select 1 from public.portal_cliente_comunidades pc
+      where pc.usuario_id=auth.uid() and pc.comunidad_id=p_comunidad and pc.activa);
+$;
+
 create or replace function public.ve_comunidad(cid uuid) returns boolean
 language sql stable security definer set search_path=public
 as $$
@@ -146,10 +159,22 @@ grant all on all tables in schema public to service_role;
 
 -- Políticas existentes equivalentes que exponen datos al propio usuario.
 alter table public.notificaciones enable row level security;
+alter table public.notificaciones_mantenimiento enable row level security;
 alter table public.portal_cliente_comunidades enable row level security;
 alter table public.portal_cliente_plantillas enable row level security;
 alter table public.tutorial_asignaciones enable row level security;
 alter table public.tutorial_progreso enable row level security;
+create policy notificaciones_mantenimiento_leer_propias on public.notificaciones_mantenimiento for select to authenticated
+using (destinatario_id=auth.uid() and
+ ((public.usuario_es_cliente_activo() and public.cliente_puede_ver_comunidad(comunidad_id))
+  or (not public.usuario_es_cliente_activo() and public.usuario_puede_ver_comunidad(comunidad_id))));
+create policy notificaciones_mantenimiento_marcar_propias on public.notificaciones_mantenimiento for update to authenticated
+using (destinatario_id=auth.uid() and
+ ((public.usuario_es_cliente_activo() and public.cliente_puede_ver_comunidad(comunidad_id))
+  or (not public.usuario_es_cliente_activo() and public.usuario_puede_ver_comunidad(comunidad_id))))
+with check (destinatario_id=auth.uid() and
+ ((public.usuario_es_cliente_activo() and public.cliente_puede_ver_comunidad(comunidad_id))
+  or (not public.usuario_es_cliente_activo() and public.usuario_puede_ver_comunidad(comunidad_id))));
 create policy notificaciones_propias_lectura on public.notificaciones for select
 using (destinatario_id=auth.uid());
 create policy notificaciones_propias_actualizar on public.notificaciones for update
@@ -165,6 +190,8 @@ using(perfil_id=auth.uid() or public.es_superadmin());
 create policy tutorial_progreso_edicion on public.tutorial_progreso for update
 using(perfil_id=auth.uid() or public.es_superadmin())
 with check(perfil_id=auth.uid() or public.es_superadmin());
+grant select on public.notificaciones_mantenimiento to authenticated;
+grant update on public.notificaciones_mantenimiento to authenticated;
 grant select on public.notificaciones,public.portal_cliente_comunidades,public.portal_cliente_plantillas,
   public.tutorial_asignaciones,public.tutorial_progreso to authenticated;
 grant update on public.notificaciones,public.tutorial_progreso to authenticated;
@@ -189,6 +216,11 @@ insert into public.controles(id,comunidad_id,prospecto_id,responsable_id) values
 ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001',null,'00000000-0000-0000-0000-000000000004'),
 ('20000000-0000-0000-0000-000000000002',null,'30000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000005');
 
+insert into public.notificaciones_mantenimiento(id,comunidad_id,destinatario_id) values
+('91000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000004'),
+('91000000-0000-0000-0000-000000000005','10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000005'),
+('91000000-0000-0000-0000-000000000006','10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000006'),
+('91000000-0000-0000-0000-000000000007','10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000007');
 insert into public.notificaciones(id,destinatario_id) values
 ('40000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000004'),
 ('40000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000005');
