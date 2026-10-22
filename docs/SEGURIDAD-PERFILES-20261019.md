@@ -16,7 +16,7 @@
 1. mi_rol() solo devuelve un rol si el perfil está activo.
 2. ve_comunidad(), ve_control() y puede_operar_control() requieren un perfil activo.
 3. Políticas RESTRICTIVE en controles y perfil_comunidades impiden la lectura directa por cuentas desactivadas con asignaciones antiguas.
-4. Restricciones adicionales en notificaciones, portal_cliente_comunidades, portal_cliente_plantillas, tutorial_asignaciones y tutorial_progreso para impedir accesos residuales por titularidad de un usuario inactivo.
+4. Restricciones adicionales en notificaciones, notificaciones_mantenimiento, portal_cliente_comunidades, portal_cliente_plantillas, tutorial_asignaciones y tutorial_progreso para impedir accesos residuales por titularidad de un usuario inactivo.
 5. Trigger en perfiles bloquea cambiar activo de la propia cuenta y exige administración activa para modificar otra.
 6. La Edge Function equipo usa service_role y conserva sus acciones autorizadas de alta/baja de otros usuarios.
 7. Se retira el permiso RPC de ejecución del nuevo trigger, que se utiliza solo como trigger.
@@ -34,6 +34,8 @@ Los tests automáticos adjuntos verifican estructura, barreras y compatibilidad 
 | Usuario inactivo con comunidad y control asignados intenta leerlos | Denegado |
 | Usuario inactivo con control de prospecto asignado intenta leerlo | Denegado |
 | Usuario inactivo intenta leer sus notificaciones o tutoriales | Denegado |
+| Usuario inactivo intenta leer notificaciones de mantenimiento | Denegado |
+| Usuarios internos y clientes activos leen sus notificaciones de mantenimiento | Permitido |
 | Cliente inactivo intenta leer sus asociaciones o plantillas del portal | Denegado |
 | Usuario activo sigue accediendo a notificaciones y tutoriales | Permitido |
 | Cliente activo sigue accediendo a su portal | Permitido |
