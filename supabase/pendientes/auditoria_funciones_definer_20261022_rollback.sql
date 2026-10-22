@@ -7,9 +7,9 @@ CREATE OR REPLACE FUNCTION public.nombre_de_perfil(pid uuid)
 RETURNS text
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public
-AS $
+AS $$
   SELECT nombre FROM perfiles WHERE id = pid;
-$;
+$$;
 
 GRANT EXECUTE ON FUNCTION public.nombre_de_perfil(uuid) TO anon;
 
