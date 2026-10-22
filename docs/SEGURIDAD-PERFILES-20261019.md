@@ -53,7 +53,7 @@ Los tests automáticos adjuntos verifican estructura, barreras y compatibilidad 
 3. Ejecutar las pruebas de GitHub Actions y compilar la aplicación.
 4. Preparar respaldo/verificación de funciones y políticas de producción antes de aplicar.
 5. Una vez autorizada la producción, aplicar la migración como unidad atómica y comprobar Equipo, Mi Cuenta y las consultas de comunidad/control.
-6. Mantener el archivo supabase/rollbacks/202610190001_bloquear_reactivacion_y_permisos_inactivos.sql disponible para una reversión administrativa inmediata si se detecta incompatibilidad.
+6. Mantener el archivo supabase/rollbacks/20261022181513_bloquear_reactivacion_y_permisos_inactivos_20261022.sql disponible para una reversión administrativa inmediata si se detecta incompatibilidad.
 
 ## Advertencias
 - La migración controla rutas prioritarias, pero no sustituye una auditoría posterior de todas las políticas RLS y RPC de public ni de todas las tablas privadas.
