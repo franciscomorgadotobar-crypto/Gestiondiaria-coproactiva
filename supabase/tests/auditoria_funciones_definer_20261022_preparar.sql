@@ -7,9 +7,9 @@ CREATE SCHEMA auth;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE SET search_path = '' AS $$
  SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;
 $$;
-CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE SET search_path = '' AS $
+CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE SET search_path = '' AS $$
  SELECT nullif(current_setting('request.jwt.claim.role',true),'');
-$;
+$$;
 GRANT USAGE ON SCHEMA public,auth TO anon,authenticated,service_role;
 CREATE TABLE public.perfiles (
  id uuid PRIMARY KEY,nombre text NOT NULL,rol text NOT NULL,activo boolean NOT NULL DEFAULT true
@@ -31,26 +31,26 @@ INSERT INTO public.controles VALUES
  ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001',
  '00000000-0000-0000-0000-000000000002');
 CREATE OR REPLACE FUNCTION public.mi_rol() RETURNS text
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
  SELECT p.rol FROM public.perfiles p WHERE p.id=auth.uid() AND p.activo;
-$;
+$$;
 CREATE OR REPLACE FUNCTION public.es_admin() RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
  SELECT coalesce(public.mi_rol() IN ('admin','superadmin'),false);
-$;
+$$;
 CREATE OR REPLACE FUNCTION public.ve_comunidad(cid uuid) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
  SELECT public.mi_rol() IS NOT NULL AND
  (public.es_admin() OR EXISTS
   (SELECT 1 FROM public.perfil_comunidades pc
    WHERE pc.perfil_id=auth.uid() AND pc.comunidad_id=cid));
-$;
+$$;
 CREATE OR REPLACE FUNCTION public.ve_control(cid uuid) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
  SELECT public.mi_rol() IS NOT NULL AND EXISTS
  (SELECT 1 FROM public.controles c
   WHERE c.id=cid AND public.ve_comunidad(c.comunidad_id));
-$;
+$$;
 CREATE FUNCTION public.nombre_de_perfil(pid uuid) RETURNS text
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO public AS $$
  SELECT nombre FROM perfiles WHERE id=pid;
