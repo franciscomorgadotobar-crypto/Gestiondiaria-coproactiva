@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const archivo = ruta => readFileSync(new URL(ruta, import.meta.url), 'utf8');
-const migracion = archivo('../../supabase/migrations/202610190001_bloquear_reactivacion_y_permisos_inactivos.sql');
-const rollback = archivo('../../supabase/rollbacks/202610190001_bloquear_reactivacion_y_permisos_inactivos.sql');
+const migracion = archivo('../../supabase/migrations/20261022181513_bloquear_reactivacion_y_permisos_inactivos_20261022.sql');
+const rollback = archivo('../../supabase/rollbacks/20261022181513_bloquear_reactivacion_y_permisos_inactivos_20261022.sql');
 const equipo = archivo('../src/paginas/panel/Equipo.jsx');
 const servidorEquipo = archivo('../../supabase/functions/equipo/index.ts');
 const cuenta = archivo('../src/paginas/panel/MiCuenta.jsx');
