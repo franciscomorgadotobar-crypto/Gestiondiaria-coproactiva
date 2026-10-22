@@ -9,6 +9,12 @@ drop function if exists public.proteger_estado_activo_perfil();
 drop policy if exists controles_exigir_perfil_activo on public.controles;
 drop policy if exists asignaciones_exigir_perfil_activo on public.perfil_comunidades;
 
+drop policy if exists notificaciones_exigir_perfil_activo on public.notificaciones;
+drop policy if exists portal_cliente_comunidades_exigir_perfil_activo on public.portal_cliente_comunidades;
+drop policy if exists portal_cliente_plantillas_exigir_perfil_activo on public.portal_cliente_plantillas;
+drop policy if exists tutorial_asignaciones_exigir_perfil_activo on public.tutorial_asignaciones;
+drop policy if exists tutorial_progreso_exigir_perfil_activo on public.tutorial_progreso;
+
 create or replace function public.mi_rol()
 returns public.rol_usuario
 language sql stable security definer
