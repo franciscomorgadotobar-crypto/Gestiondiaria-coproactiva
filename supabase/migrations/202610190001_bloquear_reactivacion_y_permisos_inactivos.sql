@@ -139,6 +139,12 @@ on public.tutorial_progreso as restrictive for all to authenticated
 using (public.mi_rol() is not null)
 with check (public.mi_rol() is not null);
 
+drop policy if exists notificaciones_mantenimiento_exigir_perfil_activo on public.notificaciones_mantenimiento;
+create policy notificaciones_mantenimiento_exigir_perfil_activo
+on public.notificaciones_mantenimiento as restrictive for all to authenticated
+using (public.mi_rol() is not null)
+with check (public.mi_rol() is not null);
+
 -- RLS compara el rol, pero no impide actualizar el propio campo activo.
 -- Un trigger distingue OLD y NEW: solo un administrador activo puede cambiar
 -- el estado de otra persona. Nadie puede reactivarse ni darse de baja a sí mismo.
