@@ -644,7 +644,7 @@ function DetalleCliente({ id }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            <nav className="pestanas" aria-label="Secciones de la comunidad">
+            <nav className="pestanas portal-pestanas-movil" aria-label="Secciones de la comunidad">
               {TABS.map(([clave, texto]) => (
                 <button key={clave} type="button" className={tab === clave ? 'activo' : ''} aria-pressed={tab === clave}
                         onClick={() => cambiarTab(clave)}>
@@ -668,12 +668,6 @@ function DetalleCliente({ id }) {
 
 function ResumenComunidad({ vista, cambiarTab }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
-  const accesos = [
-    { tab: 'compromisos', titulo: 'Compromisos y avances', detalle: 'Acuerdos, cumplimiento y evidencias' },
-    { tab: 'incidencias', titulo: 'Registros e incidencias', detalle: 'Observaciones y su resolución' },
-    { tab: 'levantamientos', titulo: 'Levantamientos', detalle: 'Inspecciones y condiciones registradas' },
-    { tab: 'documentos', titulo: 'Documentos e informes', detalle: 'Rendiciones, actas y respaldos' }
-  ];
   return (
     <div className="portal-inicio-redisenado">
       <div className="portal-inicio-intro">
@@ -690,16 +684,6 @@ function ResumenComunidad({ vista, cambiarTab }) {
         <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
         <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
       </section>
-      <section className="portal-inicio-bloque" aria-label="Secciones principales">
-        <h2 className="h4">Información y seguimiento</h2>
-        <div className="portal-accesos-grid">
-          {accesos.map(x => (
-            <button key={x.tab} type="button" className="tarjeta portal-acceso" onClick={() => cambiarTab(x.tab)}>
-              <strong>{x.titulo}</strong><span>{x.detalle}</span><b aria-hidden="true">→</b>
-            </button>
-          ))}
-        </div>
-      </section>
       {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
         <section className="portal-inicio-bloque">
           <h2 className="h4">Últimos movimientos</h2>
@@ -709,7 +693,7 @@ function ResumenComunidad({ vista, cambiarTab }) {
           {informes.length > 0 && <div className="portal-documentos-resumen">{informes.slice(0, 2).map((d, i) => <TarjetaDocumento key={`${d.id}-${i}`} documento={d} />)}</div>}
         </section>
       ) : (
-        <p className="portal-sin-movimientos">Todavía no hay movimientos publicados para esta comunidad. Puedes consultar los compromisos y documentos desde las secciones superiores.</p>
+        <p className="portal-sin-movimientos">Todavía no hay movimientos publicados. Consulta los compromisos y documentos desde el menú de navegación.</p>
       )}
     </div>
   );
