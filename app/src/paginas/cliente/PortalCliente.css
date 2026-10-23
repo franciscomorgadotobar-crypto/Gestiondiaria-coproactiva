@@ -254,3 +254,19 @@
   .portal-actividad { grid-template-columns: 1fr; }
   .portal-fecha-chip { width: auto; justify-content: flex-start; min-height: 0; }
 }
+
+/* Resumen de cliente, con colores del sistema Coproactiva. */
+.portal-inicio-redisenado{display:grid;gap:22px;min-width:0}
+.portal-inicio-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.portal-inicio-intro h2,.portal-inicio-bloque h2{margin:0 0 6px}
+.portal-inicio-intro p{margin:0;line-height:1.5}
+.portal-inicio-redisenado .portal-resumen{margin:0;gap:10px}
+.portal-inicio-bloque{display:grid;gap:12px}
+.portal-accesos-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.portal-acceso{border:1px solid var(--borde);border-radius:var(--radio-control);background:var(--tarjeta);color:var(--texto-cuerpo);text-align:left;padding:18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;cursor:pointer;font:inherit;min-height:100px}
+.portal-acceso strong{font:600 15px/1.4 var(--fuente-display);color:var(--texto-titulo)}
+.portal-acceso span{font-size:13px;color:var(--texto-apagado);grid-column:1;line-height:1.45}
+.portal-acceso b{grid-row:1/3;grid-column:2;align-self:center;color:var(--naranja);font-size:20px}
+.portal-acceso:hover,.portal-acceso:focus-visible{border-color:var(--naranja);outline-offset:2px}
+.portal-sin-movimientos{margin:0;color:var(--texto-apagado);font-size:13px;line-height:1.5}
+@media(max-width:720px){.portal-accesos-grid{grid-template-columns:1fr}.portal-inicio-redisenado{gap:16px}.portal-acceso{min-height:80px;padding:14px}}
