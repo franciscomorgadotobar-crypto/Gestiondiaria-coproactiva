@@ -9,6 +9,8 @@ import Confirmar from '../../componentes/Confirmar';
 import ModalEjecucionMantencion from '../../componentes/ModalEjecucionMantencion';
 import './Comunidades.css';
 import DriveEstado from '../../componentes/DriveEstado';
+import DriveArchivos from '../../componentes/DriveArchivos';
+import { conexionDrive, eliminarDeDrive, prepararCarpetasDrive, subirADrive, validarArchivoDrive } from '../../lib/drive';
 import Compromisos from '../cliente/Compromisos';
 
 const SECCIONES = [
@@ -18,6 +20,7 @@ const SECCIONES = [
   ['activos', 'Activos'],
   ['plan', 'Plan de mantención'],
   ['agenda', 'Agenda'],
+  ['documentos', 'Documentos'],
   ['configuracion', 'Configuración']
 ];
 
@@ -254,8 +257,8 @@ function ListadoComunidades() {
     });
     setCreando(false);
     if (e || !id) return setError(e?.message || 'No se pudo crear la comunidad.');
-    supabase.functions.invoke('drive-comunidad',{body:{action:'provision',comunidad_id:id}})
-      .catch(e=>console.warn('Drive pendiente de configurar:',e?.message));
+    // Drive nunca bloquea la creación: si falla, queda pendiente y se reintenta.
+    prepararCarpetasDrive(id);
     navegar(`/comunidades/${id}`);
   }
 
@@ -484,6 +487,7 @@ function DetalleComunidad({ id }) {
   const [guardando, setGuardando] = useState(false);
   const [reprogramacion, setReprogramacion] = useState(null);
   const [ejecucionPendiente, setEjecucionPendiente] = useState(null);
+  const [docsAgenda, setDocsAgenda] = useState(() => new Set());
   const [actividadPorEliminar, setActividadPorEliminar] = useState(null);
   const [datosEditando, setDatosEditando] = useState(false);
   const [eliminarAbierto, setEliminarAbierto] = useState(false);
@@ -823,30 +827,42 @@ function DetalleComunidad({ id }) {
     setError(null);
 
     const subidos = [];
+    const enDrive = [];
     try {
-      for (const archivo of archivos) {
-        if (archivo.size > 25 * 1024 * 1024) {
-          throw new Error(`${archivo.name} supera el límite de 25 MB.`);
+      const drive = await conexionDrive();
+      if (drive?.conectada) {
+        // Documentos nuevos: Google Drive · 03 Operaciones / Mantenciones / [ID del agendamiento]
+        const invalido = archivos.map(validarArchivoDrive).find(Boolean);
+        if (invalido) throw new Error(invalido);
+        for (const archivo of archivos) {
+          const r = await subirADrive({ comunidadId: id, origenTipo: 'mantencion', origenId: pendiente.item.id, archivo });
+          enDrive.push(r.documento.id);
         }
-        const path = [
-          id,
-          pendiente.item.actividad_id,
-          crypto.randomUUID() + '-' + nombreArchivoSeguro(archivo.name)
-        ].join('/');
+      } else {
+        for (const archivo of archivos) {
+          if (archivo.size > 25 * 1024 * 1024) {
+            throw new Error(`${archivo.name} supera el límite de 25 MB.`);
+          }
+          const path = [
+            id,
+            pendiente.item.actividad_id,
+            crypto.randomUUID() + '-' + nombreArchivoSeguro(archivo.name)
+          ].join('/');
 
-        const { error: eUpload } = await supabase.storage
-          .from('mantencion-documentos')
-          .upload(path, archivo, { contentType: archivo.type || 'application/octet-stream', upsert: false });
+          const { error: eUpload } = await supabase.storage
+            .from('mantencion-documentos')
+            .upload(path, archivo, { contentType: archivo.type || 'application/octet-stream', upsert: false });
 
-        if (eUpload) throw eUpload;
+          if (eUpload) throw eUpload;
 
-        subidos.push({
-          storage_path: path,
-          nombre_archivo: archivo.name,
-          mime_type: archivo.type || null,
-          tamanio_bytes: archivo.size,
-          tipo: tipoDocumentoMantencion(archivo)
-        });
+          subidos.push({
+            storage_path: path,
+            nombre_archivo: archivo.name,
+            mime_type: archivo.type || null,
+            tamanio_bytes: archivo.size,
+            tipo: tipoDocumentoMantencion(archivo)
+          });
+        }
       }
 
       const { data: ejecucion, error: eRegistro } = await supabase.rpc('registrar_ejecucion_mantenimiento', {
@@ -862,12 +878,14 @@ function DetalleComunidad({ id }) {
       if (!filaEjecucion?.id) throw new Error('La ejecución se registró sin identificador.');
 
       setEjecucionPendiente(null);
+      if (enDrive.length) setDocsAgenda(prev => new Set(prev).add(pendiente.item.id));
       await cargar();
     } catch (e) {
       if (subidos.length) {
         await supabase.storage.from('mantencion-documentos')
           .remove(subidos.map(x => x.storage_path));
       }
+      for (const docId of enDrive) await eliminarDeDrive(id, docId).catch(() => {});
       setError(e?.message || 'No se pudo registrar la mantención.');
     } finally {
       setGuardando(false);
@@ -1462,6 +1480,16 @@ function DetalleComunidad({ id }) {
                       )}
                     </div>
                   )}
+                  {puedeGestionar && (
+                    <button type="button" className="boton boton-texto" aria-expanded={docsAgenda.has(item.id)}
+                            onClick={() => setDocsAgenda(prev => { const n = new Set(prev); n.has(item.id) ? n.delete(item.id) : n.add(item.id); return n; })}>
+                      {docsAgenda.has(item.id) ? 'Ocultar documentos en Drive' : 'Documentos en Drive'}
+                    </button>
+                  )}
+                  {puedeGestionar && docsAgenda.has(item.id) && (
+                    <DriveArchivos comunidadId={id} origenTipo="mantencion" origenId={item.id} compacto
+                                   titulo="Documentos de la mantención · Google Drive" />
+                  )}
                   {puedeGestionar && !['completada', 'cancelada'].includes(item.estado) && (
                     <div className="comunidad-acciones ui-acciones">
                       {actividad?.plantilla_id && <button className="boton boton-secundario" disabled={guardando} onClick={()=>abrirFormulario(actividad.id,item.id)}>Abrir formulario</button>}
@@ -1472,6 +1500,25 @@ function DetalleComunidad({ id }) {
                 </article>
               );
             })}
+          </section>
+        )}
+
+        {seccion === 'documentos' && (
+          <section>
+            <h2 className="h4">Documentos</h2>
+            <p className="chico apagado">Archivos guardados en la carpeta de la comunidad en Google Drive. Ningún documento se publica al cliente sin una acción explícita.</p>
+            {puedeGestionar ? (
+              <>
+                <DriveArchivos comunidadId={id} origenTipo="administrativo" titulo="Documentos administrativos"
+                               ayuda="Contratos, reglamentos, actas y comunicaciones · 01 Administración / Documentos administrativos." />
+                <DriveArchivos comunidadId={id} origenTipo="contabilidad" titulo="Contabilidad"
+                               ayuda="Presupuestos, gastos comunes y rendiciones · 02 Finanzas / Contabilidad." />
+                <DriveArchivos comunidadId={id} origenTipo="informe" titulo="Informes"
+                               ayuda="Informes de gestión · 04 Seguimiento e informes / Informes." />
+                <DriveArchivos comunidadId={id} origenTipo={null} titulo="Historial de todos los documentos"
+                               ayuda="Incluye levantamientos, mantenciones, incidencias y compromisos. Marca “Mostrar eliminados” para ver lo enviado a la papelera." />
+              </>
+            ) : <p className="vacio">Solo administración y jefatura pueden ver los documentos de la comunidad.</p>}
           </section>
         )}
 

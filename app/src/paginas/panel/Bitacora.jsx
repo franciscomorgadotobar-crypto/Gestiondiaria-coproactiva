@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
 import './Bitacora.css';
+import DriveArchivos from '../../componentes/DriveArchivos';
+import { conexionDrive, subirADrive, validarArchivoDrive } from '../../lib/drive';
 
 const NIVEL = {
   registro: { texto: 'Registro', clase: 'registro' },
@@ -306,8 +308,17 @@ function NuevaEntrada() {
     }
 
     let advertencia = null;
+    // Personal interno con Drive conectado: 03 Operaciones / Incidencias / [ID].
+    const usarDrive = ['superadmin', 'admin', 'jefatura'].includes(perfil?.rol) && archivos.length > 0
+      && Boolean((await conexionDrive())?.conectada);
 
     for (const archivo of archivos) {
+      if (usarDrive) {
+        if (validarArchivoDrive(archivo)) { advertencia = 'El registro se guardó, pero uno o más adjuntos no son válidos para Drive.'; continue; }
+        try { await subirADrive({ comunidadId, origenTipo: 'incidencia', origenId: id, archivo }); }
+        catch { advertencia = 'El registro se guardó, pero uno o más adjuntos no pudieron guardarse en Google Drive.'; }
+        continue;
+      }
       const limpio = archivo.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
       const path = `${id}/${crypto.randomUUID()}-${limpio}`;
       const { error: eSubida } = await supabase.storage.from('bitacora').upload(path, archivo, {
@@ -640,6 +651,11 @@ function Detalle({ id }) {
           <h3>Descripción</h3>
           <p>{registro.descripcion}</p>
         </section>
+
+        {registro.comunidad_id && ['superadmin', 'admin', 'jefatura'].includes(perfil?.rol) && (
+          <DriveArchivos comunidadId={registro.comunidad_id} origenTipo="incidencia" origenId={registro.id}
+                         titulo="Documentos de la incidencia · Google Drive" />
+        )}
 
         {adjuntos.length > 0 && (
           <section className="bitacora-detalle-seccion">

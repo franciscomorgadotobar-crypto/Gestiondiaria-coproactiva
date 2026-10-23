@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import './Compromisos.css';
+import DriveArchivos from '../../componentes/DriveArchivos';
+import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '../../lib/drive';
 
 const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
@@ -25,6 +27,8 @@ export default function Compromisos({ comunidadId, administrador = false }) {
  const [estado, setEstado] = useState('en_curso');
  const [publicar, setPublicar] = useState(false);
  const [guardando, setGuardando] = useState(false);
+ const [driveConectada, setDriveConectada] = useState(false);
+ const [versionDocs, setVersionDocs] = useState(0);
  async function cargar() {
   if (!comunidadId) return;
   setCargando(true); setError('');
@@ -49,6 +53,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   setCargando(false);
  }
  useEffect(() => { cargar(); }, [comunidadId]);
+ useEffect(() => { if (administrador) conexionDrive().then(c => setDriveConectada(Boolean(c?.conectada))); }, [administrador]);
  async function crear(e) {
   e.preventDefault(); setGuardando(true); setError('');
   const { error: err } = await supabase.from('compromisos_administracion').insert({
@@ -77,6 +82,14 @@ export default function Compromisos({ comunidadId, administrador = false }) {
    if (err) throw err;
    const fallidos = [];
    for (const file of archivos) {
+    if (driveConectada) {
+     // Nuevos adjuntos: Google Drive · 04 Seguimiento e informes / Compromisos y avances / [ID]
+     const invalido = validarArchivoDrive(file);
+     if (invalido) { fallidos.push(invalido); continue; }
+     try { await subirADrive({ comunidadId, origenTipo: 'compromiso', origenId: detalle, detalleId: avance.id, archivo: file }); }
+     catch (eDrive) { fallidos.push(file.name + ': ' + eDrive.message); }
+     continue;
+    }
     if (file.size > 15728640) { fallidos.push(file.name + ' (supera 15 MB)'); continue; }
     const nombreSeguro = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const ruta = `${comunidadId}/${detalle}/${avance.id}/${crypto.randomUUID()}-${nombreSeguro}`;
@@ -91,7 +104,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
     avance:porcentajeReal, estado:subt.length?(porcentajeReal===100?'completado':porcentajeReal>0?'en_curso':'pendiente'):estado, actualizado_en:new Date().toISOString()
    }).eq('id',detalle);
    if(err2) throw err2;
-   setTexto('');setEvidencia('');setPublicar(false);setArchivos([]);
+   setTexto('');setEvidencia('');setPublicar(false);setArchivos([]);setVersionDocs(v=>v+1);
    await cargar();
    if(fallidos.length) setError('Avance guardado, pero algunos archivos no se adjuntaron: ' + fallidos.join('; '));
   } catch(err) { setError(err.message || 'No fue posible registrar el avance.'); }
@@ -203,6 +216,8 @@ export default function Compromisos({ comunidadId, administrador = false }) {
        {subtareas.filter(s=>s.compromiso_id===item.id).map(s=><div key={s.id} className="compromisos-subfila"><label><input type="checkbox" checked={s.completada} disabled={!administrador||guardando} onChange={e=>marcarSubtarea(item,s,e.target.checked)}/> {s.titulo}</label>{administrador&&<button type="button" className="boton boton-texto" disabled={guardando} onClick={()=>eliminarSubtarea(item,s)}>Eliminar</button>}</div>)}
        {administrador&&<div className="compromisos-subagregar"><input aria-label="Nueva subtarea" placeholder="Nueva subtarea" value={nuevaSubtarea[item.id]||''} onChange={e=>setNuevaSubtarea(v=>({...v,[item.id]:e.target.value}))}/><button type="button" className="boton boton-texto" disabled={guardando||!(nuevaSubtarea[item.id]||'').trim()} onClick={()=>agregarSubtarea(item)}>Añadir subtarea</button></div>}
       </div>
+      <DriveArchivos key={item.id + "-" + versionDocs} comunidadId={comunidadId} origenTipo="compromiso" origenId={item.id} compacto
+                     titulo="Documentos del compromiso · Google Drive" permitirSubir={administrador} ocultarVacio={!administrador} />
       {administrador && <div className="compromisos-acciones"><button type="button" className="boton boton-texto" disabled={guardando} onClick={()=>{setEditando(editando===item.id?null:item.id);setEditForm({titulo:item.titulo,descripcion:item.descripcion||'',referencia_contractual:item.referencia_contractual||'',fecha_limite:item.fecha_limite||'',responsable:item.responsable||''});}}>Editar</button><button type="button" className="boton boton-texto" disabled={guardando} onClick={()=>eliminarCompromiso(item)}>Eliminar</button><button type="button" className="boton boton-texto" onClick={()=>visibilidad(item)}>{item.publicado?'Retirar del portal cliente':'Publicar compromiso'}</button><button type="button" className="boton boton-texto" onClick={()=>{setDetalle(detalle===item.id?null:item.id);setPorcentaje(item.avance);setEstado(item.estado);}}>Registrar avance</button></div>}
       {administrador&&editando===item.id&&<form className="compromisos-form" onSubmit={editarCompromiso}>
        <label>Título<input required value={editForm.titulo} onChange={e=>setEditForm(v=>({...v,titulo:e.target.value}))}/></label>
@@ -215,7 +230,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
        <label>Avance realizado<textarea required rows={3} value={texto} onChange={e=>setTexto(e.target.value)} /></label>
        <div className="compromisos-grid"><label>Estado<select value={estado} onChange={e=>setEstado(e.target.value)}>{Object.entries(NOMBRES).map(([v,t])=><option value={v} key={v}>{t}</option>)}</select></label><label>Porcentaje<input type="number" min="0" max="100" disabled={subtareas.some(s=>s.compromiso_id===detalle)} value={subtareas.some(s=>s.compromiso_id===detalle)?Math.round(subtareas.filter(s=>s.compromiso_id===detalle&&s.completada).length/subtareas.filter(s=>s.compromiso_id===detalle).length*100):porcentaje} onChange={e=>setPorcentaje(e.target.value)}/></label></div>
        <label>Enlace de evidencia (opcional)<input type="url" value={evidencia} onChange={e=>setEvidencia(e.target.value)}/></label>
-       <label>Adjuntar archivos (PDF, imágenes, Word, Excel; máximo 15 MB por archivo)<input type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.txt" onChange={e=>setArchivos(Array.from(e.target.files || []))}/></label>
+       <label>{driveConectada ? 'Adjuntar archivos a Google Drive (PDF, imágenes, Word, Excel; máximo 25 MB por archivo)' : 'Adjuntar archivos (PDF, imágenes, Word, Excel; máximo 15 MB por archivo)'}<input type="file" multiple accept={driveConectada ? DRIVE_ACCEPT : '.pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.txt'} onChange={e=>setArchivos(Array.from(e.target.files || []))}/></label>
        {archivos.length > 0 && <span className="micro apagado">{archivos.length} archivo(s) seleccionado(s): {archivos.map(f=>f.name).join(', ')}</span>}
        <label className="compromisos-check"><input type="checkbox" checked={publicar} onChange={e=>setPublicar(e.target.checked)}/> Publicar este avance al cliente</label>
        <button className="boton boton-primario" disabled={guardando}>Guardar avance</button>

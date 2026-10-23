@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import MapaPortalCliente from './MapaPortalCliente';
 import Compromisos from './Compromisos';
+import DriveArchivos from '../../componentes/DriveArchivos';
 import './PortalCliente.css';
 
 const TABS = [
@@ -883,6 +884,10 @@ function DocumentosComunidad({ vista }) {
           </div>
         </div>
       )}
+
+      {/* Solo documentos que la administración publicó explícitamente desde Drive. */}
+      <DriveArchivos comunidadId={vista.comunidad?.comunidad_id} origenTipo={null} permitirSubir={false}
+                     ocultarVacio titulo="Documentos compartidos por la administración" />
     </section>
   );
 }
