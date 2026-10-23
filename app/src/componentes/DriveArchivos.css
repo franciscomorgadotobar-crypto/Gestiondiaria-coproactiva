@@ -1,0 +1,28 @@
+/* Documentos en Google Drive: usa los tokens del sistema visual de Coproactiva. */
+.drive-archivos { padding: 16px; margin-top: 16px; }
+.drive-archivos.drive-compacto { padding: 12px; margin-top: 10px; box-shadow: none; }
+.drive-archivos-cabecera { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; justify-content: space-between; }
+.drive-archivos-cabecera h3 { margin: 0; }
+.drive-carga { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0 4px; }
+.drive-carga input[type="file"] { max-width: 100%; font-size: 14px; }
+.drive-pendientes { display: grid; gap: 4px; margin: 6px 0 0; padding: 0; list-style: none; }
+.drive-pendientes li { display: flex; gap: 8px; justify-content: space-between; font-size: 13px; color: var(--texto-apagado); }
+.drive-lista { display: grid; gap: 8px; margin-top: 10px; }
+.drive-doc { border: 1px solid var(--borde-suave); border-radius: var(--radio-control); padding: 10px 12px; background: var(--tarjeta); }
+.drive-doc.drive-eliminado { opacity: .65; }
+.drive-doc-fila { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.drive-doc-nombre { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; font-weight: 600; color: var(--texto-titulo); }
+.drive-doc-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; }
+.drive-doc-acciones { display: flex; flex-wrap: wrap; gap: 2px 6px; margin-top: 6px; }
+.drive-doc-acciones .boton-texto { min-height: var(--tactil, 44px); }
+.drive-historial { margin: 8px 0 0; padding: 8px 0 0; border-top: 1px dashed var(--borde-suave); display: grid; gap: 4px; list-style: none; }
+.drive-estado-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; margin: 12px 0; }
+.drive-estado-grid > div { display: grid; gap: 2px; }
+.drive-estado-grid span:first-child { font-size: 12.5px; color: var(--texto-tenue); }
+.drive-estado-grid strong { overflow-wrap: anywhere; }
+.drive-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.drive-separador { border: 0; border-top: 1px solid var(--borde-suave); margin: 16px 0; }
+@media (max-width: 560px) {
+  .drive-doc-acciones .boton-texto { padding-left: 4px; padding-right: 4px; }
+  .drive-acciones .boton { flex: 1 1 100%; }
+}

@@ -8,6 +8,7 @@ import './Pipeline.css';
 import { useVolverGlobal, volverPorJerarquia } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
+import { prepararCarpetasDrive } from '../../lib/drive';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
  *
@@ -255,8 +256,8 @@ export default function Pipeline() {
     setGuardando(false);
     if (error || !data) return setError(error?.message || 'No se pudo actualizar el prospecto.');
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
-    if(data.comunidad_id) supabase.functions.invoke('drive-comunidad',{body:{action:'provision',comunidad_id:data.comunidad_id}})
-      .catch(e=>console.warn('Drive pendiente de configurar:',e?.message));
+    // Prospecto ganado → comunidad nueva: carpetas en Drive sin bloquear el CRM.
+    if (data.comunidad_id) prepararCarpetasDrive(data.comunidad_id);
   }
 
   return (

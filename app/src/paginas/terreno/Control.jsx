@@ -907,7 +907,7 @@ export default function Levantamiento() {
             Ver informe / Guardar PDF
           </button>
         )}
-        {control?.comunidad_id && <DriveArchivos comunidadId={control.comunidad_id} origenId={control.id} origenTipo="levantamiento" categoria="operaciones" />}
+        {control?.comunidad_id && <DriveArchivos comunidadId={control.comunidad_id} origenId={control.id} origenTipo="levantamiento" titulo="Archivos del levantamiento · Google Drive" ayuda="Se guardan en 03 Operaciones / Levantamientos / [ID del levantamiento] de la comunidad." />}
       </div>
 
       {!cerrado && items.length > 0 && (

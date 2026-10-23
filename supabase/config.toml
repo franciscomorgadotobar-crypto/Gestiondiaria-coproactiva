@@ -9,3 +9,7 @@ verify_jwt = false
 [functions.sincronizar-proveedores-gmail]
 # Existing custom Auth / Vault authentication retained.
 verify_jwt = false
+
+[functions.drive-oauth]
+# Callback OAuth de Google (sin JWT). Las acciones POST validan Auth.getUser + rol administrador.
+verify_jwt = false
