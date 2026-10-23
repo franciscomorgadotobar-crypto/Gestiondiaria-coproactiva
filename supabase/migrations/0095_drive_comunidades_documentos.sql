@@ -39,7 +39,7 @@ create policy drive_carpeta_lectura on public.drive_carpetas_comunidad for selec
 using(public.puede_gestionar_compromisos());
 drop policy if exists drive_archivos_lectura on public.drive_archivos_comunidad;
 create policy drive_archivos_lectura on public.drive_archivos_comunidad for select to authenticated
-using(public.puede_gestionar_compromisos() or (visible_cliente and exists(
+using(public.puede_gestionar_compromisos() or (origen_tipo='levantamiento' and exists(select 1 from public.controles co where co.id::text=origen_id and co.comunidad_id=drive_archivos_comunidad.comunidad_id and co.responsable_id=auth.uid())) or (visible_cliente and exists(
  select 1 from public.portal_cliente_dashboard() d where d.comunidad_id::text=drive_archivos_comunidad.comunidad_id::text
 )));
 revoke all on public.drive_carpetas_comunidad,public.drive_archivos_comunidad from anon,authenticated;
