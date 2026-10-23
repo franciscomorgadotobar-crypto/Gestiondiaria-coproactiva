@@ -47,6 +47,7 @@ export default function DriveEstado({ comunidadId }) {
   const [aviso, setAviso] = useState('');
   const [ocupado, setOcupado] = useState('');
   const [confirmarDesconexion, setConfirmarDesconexion] = useState(false);
+  const [cargado, setCargado] = useState(false);
 
   const cargar = useCallback(async () => {
     const [o, c, com] = await Promise.all([
@@ -59,6 +60,7 @@ export default function DriveEstado({ comunidadId }) {
     if (o?.error) setError(o.error); else setOauth(o);
     if (c.error) setError(c.error.message); else setCarpeta(c.data);
     setCarpetaId(com.data?.carpeta_drive_id ?? null);
+    setCargado(true);
   }, [comunidadId]);
 
   const comprobarCarpetas = useCallback(async (silencioso = false) => {
@@ -127,6 +129,16 @@ export default function DriveEstado({ comunidadId }) {
       await cargar();
     } catch (e) { setError(e.message); }
     setOcupado('');
+  }
+
+  if (!cargado) {
+    return (
+      <section className="tarjeta drive-archivos" style={{ marginTop: 0, marginBottom: 20 }} aria-label="Google Drive" aria-busy="true">
+        <h3 className="h4" style={{ margin: 0 }}>Google Drive</h3>
+        <p className="micro apagado" style={{ margin: '6px 0 0' }}>Consultando el estado de la conexión y de la carpeta…</p>
+        {error && <div role="alert" className="aviso aviso-critico">{error}</div>}
+      </section>
+    );
   }
 
   const c = oauth?.conexion;
