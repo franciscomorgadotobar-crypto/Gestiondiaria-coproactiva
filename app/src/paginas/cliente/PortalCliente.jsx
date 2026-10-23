@@ -633,9 +633,7 @@ function DetalleCliente({ id }) {
   return (
     <div className="pantalla portal-pantalla modulo-unificado">
       <header className="encabezado portal-encabezado modulo-cabecera">
-        <button className="boton boton-texto portal-volver" onClick={() => navegar('/portal')}>
-          ‹ Mis comunidades
-        </button>
+        {['jefatura'].includes(perfil?.rol) && <button className="boton boton-texto portal-volver" onClick={() => navegar('/portal')}>‹ Mis comunidades</button>}
         <h1 className="h3">{vista?.comunidad?.nombre ?? 'Comunidad'}</h1>
         <p className="chico apagado" style={{ margin: '4px 0 0' }}>
           {[vista?.comunidad?.direccion, vista?.comunidad?.comuna].filter(Boolean).join(' · ')}
@@ -670,64 +668,50 @@ function DetalleCliente({ id }) {
 
 function ResumenComunidad({ vista, cambiarTab }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
+  const accesos = [
+    { tab: 'compromisos', titulo: 'Compromisos y avances', detalle: 'Acuerdos, cumplimiento y evidencias' },
+    { tab: 'incidencias', titulo: 'Registros e incidencias', detalle: 'Observaciones y su resolución' },
+    { tab: 'levantamientos', titulo: 'Levantamientos', detalle: 'Inspecciones y condiciones registradas' },
+    { tab: 'documentos', titulo: 'Documentos e informes', detalle: 'Rendiciones, actas y respaldos' }
+  ];
   return (
-    <>
-      <section className="portal-resumen" aria-label="Resumen de la comunidad">
-        <Kpi valor={atencion.length} etiqueta="Requieren atención" tono={atencion.length ? 'alerta' : 'ok'} />
-        <Kpi valor={proximos.length} etiqueta="Próximamente" tono="proximo" />
+    <div className="portal-inicio-redisenado">
+      <div className="portal-inicio-intro">
+        <div>
+          <h2 className="h4">Gestión de tu comunidad</h2>
+          <p className="chico apagado">Consulta los compromisos de administración, la actividad operativa y sus respaldos.</p>
+        </div>
+        <span className={atencion.length ? 'portal-estado chip-alerta' : 'portal-estado chip-cumple'}>
+          {atencion.length ? `${atencion.length} asuntos por atender` : 'Sin asuntos vencidos'}
+        </span>
+      </div>
+      <section className="portal-resumen" aria-label="Indicadores de gestión">
+        <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'} />
+        <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
         <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
       </section>
-
-      <section className="portal-seccion portal-seccion-principal">
-        <button className="boton boton-texto" onClick={() => cambiarTab('compromisos')}>Ver compromisos y avances de la administración →</button>
-        <div className="portal-seccion-titulo portal-seccion-titulo-accion">
-          <div className="fila crece"><h2 className="h4">Requiere atención</h2><span className="portal-contador">{atencion.length}</span></div>
+      <section className="portal-inicio-bloque" aria-label="Secciones principales">
+        <h2 className="h4">Información y seguimiento</h2>
+        <div className="portal-accesos-grid">
+          {accesos.map(x => (
+            <button key={x.tab} type="button" className="tarjeta portal-acceso" onClick={() => cambiarTab(x.tab)}>
+              <strong>{x.titulo}</strong><span>{x.detalle}</span><b aria-hidden="true">→</b>
+            </button>
+          ))}
         </div>
-        {atencion.length === 0 ? (
-          <EstadoVacio tipo="ok" titulo="Sin asuntos vencidos" texto="No hay incidencias abiertas sin programar ni trabajos vencidos." />
-        ) : (
-          <div className="portal-lista">
-            {atencion.slice(0, 5).map(item => <TarjetaActividad key={item.id} item={item} />)}
-          </div>
-        )}
       </section>
-
-      <section className="portal-seccion">
-        <EncabezadoSeccion titulo="Qué viene" cantidad={proximos.length} />
-        {proximos.length === 0 ? (
-          <EstadoVacio titulo="Sin próximas actividades" texto="No hay intervenciones programadas para esta comunidad." />
-        ) : (
-          <div className="portal-lista">
-            {proximos.slice(0, 6).map(item => <TarjetaActividad key={item.id} item={item} fechaDestacada />)}
-          </div>
-        )}
-      </section>
-
-      <section className="portal-seccion">
-        <EncabezadoSeccion titulo="Qué se hizo" cantidad={realizados.length} />
-        {realizados.length === 0 ? (
-          <EstadoVacio titulo="Sin actividad reciente" texto="Los levantamientos, incidencias resueltas y mantenciones realizadas aparecerán aquí." />
-        ) : (
-          <div className="portal-timeline">
-            {realizados.slice(0, 6).map(item => <FilaTimeline key={item.id} item={item} />)}
-          </div>
-        )}
-      </section>
-
-      <section className="portal-seccion">
-        <div className="portal-seccion-titulo portal-seccion-titulo-accion">
-          <div className="fila crece"><h2 className="h4">Informes recientes</h2><span className="portal-contador">{informes.length}</span></div>
-          {informes.length > 0 && <button type="button" className="portal-enlace portal-enlace-boton" onClick={() => cambiarTab('documentos')}>Ver todos</button>}
-        </div>
-        {informes.length === 0 ? (
-          <EstadoVacio titulo="Sin PDF publicados" texto="Cuando exista un informe disponible para el cliente aparecerá aquí." />
-        ) : (
-          <div className="portal-documentos-resumen">
-            {informes.slice(0, 3).map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d} />)}
-          </div>
-        )}
-      </section>
-    </>
+      {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
+        <section className="portal-inicio-bloque">
+          <h2 className="h4">Últimos movimientos</h2>
+          {atencion.length > 0 && <div className="portal-lista">{atencion.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} />)}</div>}
+          {proximos.length > 0 && <div className="portal-lista">{proximos.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} fechaDestacada />)}</div>}
+          {realizados.length > 0 && <div className="portal-timeline">{realizados.slice(0, 3).map(item => <FilaTimeline key={item.id} item={item} />)}</div>}
+          {informes.length > 0 && <div className="portal-documentos-resumen">{informes.slice(0, 2).map((d, i) => <TarjetaDocumento key={`${d.id}-${i}`} documento={d} />)}</div>}
+        </section>
+      ) : (
+        <p className="portal-sin-movimientos">Todavía no hay movimientos publicados para esta comunidad. Puedes consultar los compromisos y documentos desde las secciones superiores.</p>
+      )}
+    </div>
   );
 }
 
