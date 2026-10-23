@@ -22,7 +22,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
  async function cargar() {
   if (!comunidadId) return;
   setCargando(true); setError('');
-  const { data, error: err } = await supabase.from('compromisos_administracion').select('*').eq('comunidad_id', comunidadId).order('creado_en', {ascending:false});
+  const { data, error: err } = await supabase.from('compromisos_administracion').select('*').eq('comunidad_id', comunidadId).order('orden', {ascending:true, nullsFirst:false}).order('creado_en', {ascending:true});
   if (err) { setError('No fue posible cargar compromisos: ' + err.message); setCargando(false); return; }
   setCompromisos(data || []);
   const ids = (data || []).map(x => x.id);
@@ -80,8 +80,8 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   </form>}
   {cargando ? <p className="cargando">Cargando compromisos…</p> : compromisos.length === 0
    ? <div className="portal-vacio"><strong>Sin compromisos publicados</strong><span>{administrador ? 'Registra el primer compromiso de esta comunidad.' : 'La administración aún no ha publicado compromisos para esta comunidad.'}</span></div>
-   : <div className="compromisos-lista">{compromisos.map(item => <article className="tarjeta compromisos-item" key={item.id}>
-      <div className="compromisos-fila"><div><strong>{item.titulo}</strong><p className="micro apagado">{item.descripcion}</p></div><span className="portal-estado">{NOMBRES[item.estado] || item.estado}</span></div>
+   : <div className="compromisos-lista">{compromisos.map((item, indice) => <article className="tarjeta compromisos-item" key={item.id}>
+      <div className="compromisos-fila"><div><strong>{String(indice + 1).padStart(2, '0')}. {item.titulo}</strong><p className="micro apagado">{item.descripcion}</p></div><span className="portal-estado">{NOMBRES[item.estado] || item.estado}</span></div>
       <div className="compromisos-meta"><span>Responsable: {item.responsable || 'Por asignar'}</span><span>Fecha: {fecha(item.fecha_limite)}</span>{item.referencia_contractual && <span>{item.referencia_contractual}</span>}</div>
       <div className="compromisos-progreso"><div style={{width:item.avance+'%'}}/></div><span className="micro">{item.avance}% de avance informado</span>
       {administrador && <div className="compromisos-acciones"><button type="button" className="boton boton-texto" onClick={()=>visibilidad(item)}>{item.publicado?'Retirar del portal cliente':'Publicar compromiso'}</button><button type="button" className="boton boton-texto" onClick={()=>{setDetalle(detalle===item.id?null:item.id);setPorcentaje(item.avance);setEstado(item.estado);}}>Registrar avance</button></div>}
