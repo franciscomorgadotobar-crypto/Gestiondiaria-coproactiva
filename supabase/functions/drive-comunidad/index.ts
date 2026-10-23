@@ -64,8 +64,8 @@ Deno.serve(async req=>{
  const {data:{user},error:authErr}=await sb.auth.getUser(jwt);
  if(authErr||!user)return json({ok:false,error:'Sesión inválida'},401);
  const {data:profile}=await sb.from('perfiles').select('rol,activo').eq('id',user.id).single();
- if(!profile?.activo||!['admin','superadmin','jefatura'].includes(profile.rol))
-  return json({ok:false,error:'Solo personal de administración'},403);
+ if(!profile?.activo||!['admin','superadmin','jefatura','terreno'].includes(profile.rol))
+  return json({ok:false,error:'Perfil no autorizado'},403);
  try{
   const multipart=(req.headers.get('content-type')||'').includes('multipart/form-data');
   const input=multipart?await req.formData():await req.json();
@@ -75,6 +75,17 @@ Deno.serve(async req=>{
   if(!/^[0-9a-f-]{36}$/i.test(cid))return json({ok:false,error:'Comunidad inválida'},400);
   const {data:comunidad}=await sb.from('comunidades').select('id,nombre,carpeta_drive_id').eq('id',cid).single();
   if(!comunidad)return json({ok:false,error:'Comunidad no encontrada'},404);
+  if(profile.rol==='terreno'){
+   if(!['upload','download'].includes(action))return json({ok:false,error:'Acción no autorizada'},403);
+   let controlId=String(get('origen_id')||'');
+   if(action==='download'){
+    const {data:doc}=await sb.from('drive_archivos_comunidad').select('origen_id,origen_tipo').eq('id',String(get('documento_id')||'')).eq('comunidad_id',cid).single();
+    if(doc?.origen_tipo!=='levantamiento')return json({ok:false,error:'Sin acceso al documento'},403);
+    controlId=doc.origen_id||'';
+   }else if(String(get('origen_tipo'))!=='levantamiento')return json({ok:false,error:'Solo documentos de levantamientos asignados'},403);
+   const {data:assigned}=await sb.from('controles').select('id').eq('id',controlId).eq('comunidad_id',cid).eq('responsable_id',user.id).maybeSingle();
+   if(!assigned)return json({ok:false,error:'Levantamiento no asignado'},403);
+  }
   if(!Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON')||!Deno.env.get('GOOGLE_DRIVE_ROOT_ID'))
    return json({ok:false,pendiente:true,error:'Drive pendiente de configurar: credenciales y carpeta raíz'},503);
   const token=await accessToken();
