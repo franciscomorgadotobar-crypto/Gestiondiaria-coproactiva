@@ -8,9 +8,11 @@ import DialogoCampos from '../../componentes/DialogoCampos';
 import Confirmar from '../../componentes/Confirmar';
 import ModalEjecucionMantencion from '../../componentes/ModalEjecucionMantencion';
 import './Comunidades.css';
+import Compromisos from '../cliente/Compromisos';
 
 const SECCIONES = [
   ['resumen', 'Resumen'],
+  ['compromisos', 'Compromisos y avances'],
   ['levantamientos', 'Levantamientos'],
   ['activos', 'Activos'],
   ['plan', 'Plan de mantención'],
@@ -1115,6 +1117,7 @@ function DetalleComunidad({ id }) {
           ))}
         </div>
 
+        {seccion === 'compromisos' && <Compromisos comunidadId={id} administrador={puedeGestionar} />}
         {seccion === 'resumen' && (
           <Resumen
             controles={controles}
