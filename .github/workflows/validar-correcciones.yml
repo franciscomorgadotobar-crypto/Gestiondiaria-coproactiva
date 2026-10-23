@@ -21,6 +21,9 @@ jobs:
       - name: Instalar dependencias
         working-directory: app
         run: npm install
+      - name: Verificar blindaje de perfiles y rollback sin desplegar SQL
+        working-directory: app
+        run: node --test pruebas/seguridad-perfiles.test.js
       - name: Probar criterios y compatibilidad histórica
         working-directory: app
         run: node --test pruebas/criterios.test.js
@@ -136,3 +139,34 @@ jobs:
             app/artifacts/ui/
             app/vite-ui.log
           retention-days: 7
+
+
+  prueba-postgres-temporal:
+    name: Seguridad RLS PostgreSQL temporal (sin producción)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reproducir vulnerabilidad en modelo descartable
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/seguridad_perfiles_pg_bootstrap.sql
+      - name: Aplicar migración a PostgreSQL descartable
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/migrations/20261022181513_bloquear_reactivacion_y_permisos_inactivos_20261022.sql
+      - name: Validar RLS, roles y reactivación
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/seguridad_perfiles_pg_asserts.sql
+      - name: Validar reversión
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/rollbacks/20261022181513_bloquear_reactivacion_y_permisos_inactivos_20261022.sql
+      - name: Comprobar reversión del trigger
+        run: |
+          docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c \
+            "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_proteger_estado_activo_perfil' AND NOT tgisinternal) THEN RAISE EXCEPTION 'Rollback incompleto'; END IF; RAISE NOTICE 'PASS: rollback sin trigger residual'; END \$\$;"
