@@ -1,0 +1,49 @@
+name: Validar permisos SECURITY DEFINER sin costo
+
+on:
+  pull_request:
+    branches:
+      - claude/figma-coproactiva-interface-9y82xq
+    paths:
+      - 'supabase/pendientes/auditoria_funciones_definer_20261022*.sql'
+      - 'supabase/tests/auditoria_funciones_definer_20261022*.sql'
+      - '.github/workflows/validar-funciones-privilegiadas.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  permisos-rpc:
+    name: Permisos, compatibilidad y rollback en PostgreSQL 17 temporal
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Código de la propuesta
+        uses: actions/checkout@v4
+      - name: Reproducir ACL y funciones originales con datos ficticios
+        run: |
+          docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/auditoria_funciones_definer_20261022_preparar.sql
+      - name: Aplicar SOLO en base PostgreSQL efímera
+        run: |
+          docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/pendientes/auditoria_funciones_definer_20261022.sql
+      - name: Probar privilegios, vista y seis triggers
+        run: |
+          docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/auditoria_funciones_definer_20261022_comprobar.sql
+      - name: Probar rollback temporal
+        run: |
+          docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/pendientes/auditoria_funciones_definer_20261022_rollback.sql
+      - name: Verificar ACL restituidas tras rollback
+        run: |
+          docker exec -i "${{ job.services.postgres.id }}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/auditoria_funciones_definer_20261022_rollback_comprobar.sql

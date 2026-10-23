@@ -3,10 +3,12 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import MapaPortalCliente from './MapaPortalCliente';
+import Compromisos from './Compromisos';
 import './PortalCliente.css';
 
 const TABS = [
   ['resumen', 'Resumen'],
+  ['compromisos', 'Compromisos y avances'],
   ['incidencias', 'Incidencias'],
   ['levantamientos', 'Levantamientos'],
   ['mantencion', 'Mantenciones'],
@@ -308,6 +310,7 @@ export default function PortalCliente() {
 function DashboardCliente() {
   const { perfil, salir } = useSesion();
   const [vistas, setVistas] = useState(null);
+  const navegar = useNavigate();
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -330,7 +333,10 @@ function DashboardCliente() {
           const datos = await cargarDetalleComunidad(comunidad.comunidad_id);
           return construirVista(comunidad, datos);
         }));
-        if (vigente) setVistas(detalles);
+        if (vigente) {
+          setVistas(detalles);
+          if (detalles.length === 1 && !['jefatura'].includes(perfil?.rol)) navegar(`/portal/comunidades/${detalles[0].comunidad.comunidad_id}`, { replace:true });
+        }
       } catch (e) {
         if (vigente) {
           setError(e?.message || 'No se pudo cargar el portal.');
@@ -341,7 +347,7 @@ function DashboardCliente() {
 
     cargar();
     return () => { vigente = false; };
-  }, [perfil?.id]);
+  }, [perfil?.id, perfil?.rol, navegar]);
 
   const resumen = useMemo(() => {
     const xs = vistas ?? [];
@@ -650,6 +656,7 @@ function DetalleCliente({ id }) {
             </nav>
 
             {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} />}
+            {tab === 'compromisos' && <Compromisos comunidadId={id} administrador={['admin','superadmin','jefatura'].includes(perfil?.rol)} />}
             {tab === 'incidencias' && <IncidenciasComunidad vista={vista} />}
             {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} />}
             {tab === 'mantencion' && <MantencionesComunidad vista={vista} />}
@@ -672,6 +679,7 @@ function ResumenComunidad({ vista, cambiarTab }) {
       </section>
 
       <section className="portal-seccion portal-seccion-principal">
+        <button className="boton boton-texto" onClick={() => cambiarTab('compromisos')}>Ver compromisos y avances de la administración →</button>
         <div className="portal-seccion-titulo portal-seccion-titulo-accion">
           <div className="fila crece"><h2 className="h4">Requiere atención</h2><span className="portal-contador">{atencion.length}</span></div>
         </div>
