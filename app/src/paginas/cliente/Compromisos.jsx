@@ -138,7 +138,12 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   setGuardando(true);setError('');
   const orden=subtareas.filter(s=>s.compromiso_id===item.id).length+1;
   const {error:err}=await supabase.from('compromisos_subtareas').insert({compromiso_id:item.id,titulo,orden});
-  if(err)setError(err.message);else{setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar();}
+  if(err)setError(err.message);else{
+   const items=subtareas.filter(s=>s.compromiso_id===item.id);
+   const avance=Math.round(items.filter(s=>s.completada).length/(items.length+1)*100);
+   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,estado:avance>0?'en_curso':'pendiente'}).eq('id',item.id);
+   if(err2)setError(err2.message);
+   setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar();}
   setGuardando(false);
  }
  async function marcarSubtarea(item,sub,completada) {
@@ -162,8 +167,8 @@ export default function Compromisos({ comunidadId, administrador = false }) {
    const {error:err}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
    if(err)throw err;
    const restantes=subtareas.filter(s=>s.compromiso_id===item.id&&s.id!==sub.id);
-   if(restantes.length){
-    const avance=Math.round(restantes.filter(s=>s.completada).length/restantes.length*100);
+   {
+    const avance=restantes.length?Math.round(restantes.filter(s=>s.completada).length/restantes.length*100):0;
     const estado=avance===100?'completado':avance>0?'en_curso':'pendiente';
     const {error:err2}=await supabase.from('compromisos_administracion').update({avance,estado}).eq('id',item.id);if(err2)throw err2;
    }
@@ -205,7 +210,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
        <div className="compromisos-grid"><label>Referencia contractual<input value={editForm.referencia_contractual} onChange={e=>setEditForm(v=>({...v,referencia_contractual:e.target.value}))}/></label><label>Responsable<input value={editForm.responsable} onChange={e=>setEditForm(v=>({...v,responsable:e.target.value}))}/></label><label>Fecha límite<input type="date" value={editForm.fecha_limite} onChange={e=>setEditForm(v=>({...v,fecha_limite:e.target.value}))}/></label></div>
        <button className="boton boton-primario" disabled={guardando}>Guardar cambios</button>
       </form>}
-      <div className="compromisos-historial">{avances.filter(x=>x.compromiso_id===item.id).map(a=><div key={a.id}><span className="micro apagado">{fecha(a.registrado_en)}</span><p>{a.descripcion}</p>{a.evidencia_url && /^https:\/\//i.test(a.evidencia_url) && <a href={a.evidencia_url} target="_blank" rel="noreferrer">Ver evidencia</a>}{adjuntos.filter(d=>d.avance_id===a.id).map(doc=><span key={doc.id}><button type="button" className="boton boton-texto" onClick={()=>abrirAdjunto(doc)}>📎 {doc.nombre}</button>{administrador&&<button type="button" className="boton boton-texto" disabled={guardando} onClick={()=>eliminarAdjunto(doc)}>Eliminar adjunto</button>}</span>)}}</div>)}</div>
+      <div className="compromisos-historial">{avances.filter(x=>x.compromiso_id===item.id).map(a=><div key={a.id}><span className="micro apagado">{fecha(a.registrado_en)}</span><p>{a.descripcion}</p>{a.evidencia_url && /^https:\/\//i.test(a.evidencia_url) && <a href={a.evidencia_url} target="_blank" rel="noreferrer">Ver evidencia</a>}{adjuntos.filter(d=>d.avance_id===a.id).map(doc=><span key={doc.id}><button type="button" className="boton boton-texto" onClick={()=>abrirAdjunto(doc)}>📎 {doc.nombre}</button>{administrador&&<button type="button" className="boton boton-texto" disabled={guardando} onClick={()=>eliminarAdjunto(doc)}>Eliminar adjunto</button>}</span>)}</div>)}</div>
       {administrador && detalle===item.id && <form className="compromisos-form" onSubmit={registrar}>
        <label>Avance realizado<textarea required rows={3} value={texto} onChange={e=>setTexto(e.target.value)} /></label>
        <div className="compromisos-grid"><label>Estado<select value={estado} onChange={e=>setEstado(e.target.value)}>{Object.entries(NOMBRES).map(([v,t])=><option value={v} key={v}>{t}</option>)}</select></label><label>Porcentaje<input type="number" min="0" max="100" disabled={subtareas.some(s=>s.compromiso_id===detalle)} value={subtareas.some(s=>s.compromiso_id===detalle)?Math.round(subtareas.filter(s=>s.compromiso_id===detalle&&s.completada).length/subtareas.filter(s=>s.compromiso_id===detalle).length*100):porcentaje} onChange={e=>setPorcentaje(e.target.value)}/></label></div>
