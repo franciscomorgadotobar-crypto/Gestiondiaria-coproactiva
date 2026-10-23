@@ -270,3 +270,7 @@
 .portal-acceso:hover,.portal-acceso:focus-visible{border-color:var(--naranja);outline-offset:2px}
 .portal-sin-movimientos{margin:0;color:var(--texto-apagado);font-size:13px;line-height:1.5}
 @media(max-width:720px){.portal-accesos-grid{grid-template-columns:1fr}.portal-inicio-redisenado{gap:16px}.portal-acceso{min-height:80px;padding:14px}}
+
+/* Una sola navegación visible: menú lateral en escritorio, pestañas dentro de comunidad en móvil. */
+@media (min-width: 769px) {.portal-pestanas-movil {display:none !important;}}
+@media (max-width: 768px) {.portal-pestanas-movil {display:flex;overflow-x:auto;gap:6px;scrollbar-width:thin;}}
