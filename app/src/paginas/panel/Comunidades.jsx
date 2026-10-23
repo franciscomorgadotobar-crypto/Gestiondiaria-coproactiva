@@ -8,6 +8,7 @@ import DialogoCampos from '../../componentes/DialogoCampos';
 import Confirmar from '../../componentes/Confirmar';
 import ModalEjecucionMantencion from '../../componentes/ModalEjecucionMantencion';
 import './Comunidades.css';
+import DriveEstado from '../../componentes/DriveEstado';
 import Compromisos from '../cliente/Compromisos';
 
 const SECCIONES = [
@@ -253,6 +254,8 @@ function ListadoComunidades() {
     });
     setCreando(false);
     if (e || !id) return setError(e?.message || 'No se pudo crear la comunidad.');
+    supabase.functions.invoke('drive-comunidad',{body:{action:'provision',comunidad_id:id}})
+      .catch(e=>console.warn('Drive pendiente de configurar:',e?.message));
     navegar(`/comunidades/${id}`);
   }
 
@@ -1475,6 +1478,7 @@ function DetalleComunidad({ id }) {
         {seccion === 'configuracion' && (
           <section>
             <h2 className="h4">Configuración</h2>
+            {puedeGestionar && <DriveEstado comunidadId={id} />}
 
             {puedeGestionar ? (
               <>

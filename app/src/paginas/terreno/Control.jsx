@@ -15,6 +15,7 @@ import { opcionesDe, nivelPosible } from '../../lib/opciones';
 import { criteriosDe, OPCIONES_CRITERIO, evidenciaDeCriterio, pendienteCriterio } from '../../lib/criterios';
 import { useVolverGlobal } from '../../lib/navegacion';
 import DialogoCampos from '../../componentes/DialogoCampos';
+import DriveArchivos from '../../componentes/DriveArchivos';
 
 const ESTADOS = [
   ['cumple', 'Conforme'],
@@ -906,6 +907,7 @@ export default function Levantamiento() {
             Ver informe / Guardar PDF
           </button>
         )}
+        {control?.comunidad_id && <DriveArchivos comunidadId={control.comunidad_id} origenId={control.id} origenTipo="levantamiento" categoria="operaciones" />}
       </div>
 
       {!cerrado && items.length > 0 && (

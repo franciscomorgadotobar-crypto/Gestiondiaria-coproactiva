@@ -255,6 +255,8 @@ export default function Pipeline() {
     setGuardando(false);
     if (error || !data) return setError(error?.message || 'No se pudo actualizar el prospecto.');
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
+    if(data.comunidad_id) supabase.functions.invoke('drive-comunidad',{body:{action:'provision',comunidad_id:data.comunidad_id}})
+      .catch(e=>console.warn('Drive pendiente de configurar:',e?.message));
   }
 
   return (
