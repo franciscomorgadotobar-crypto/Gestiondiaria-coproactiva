@@ -24,7 +24,7 @@ function activaPropiedades(pathname) {
 
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
-  const { pathname, hash } = useLocation();
+  const { pathname, hash, search } = useLocation();
   const navegar = useNavigate();
   // Cambiar de área no debe reiniciar React ni interrumpir la PWA.
   // Entrada interpreta este estado incluso al navegar desde la misma ruta '/'.
@@ -126,14 +126,25 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     : enCRM ? 'CRM'
     : puedeConfigurar ? 'Operación' : null;
 
+  // La comunidad seleccionada es el contexto del menú cliente.
+  // Los enlaces usan la misma URL de pestañas, sin crear pantallas duplicadas.
+  const comunidadPortalId = pathname.startsWith('/portal/comunidades/') ? pathname.split('/')[3] : null;
+  const tabPortal = new URLSearchParams(search).get('seccion') || 'resumen';
+  const enlacePortal = (seccion, etiqueta) => ({
+    ruta: `/portal/comunidades/${comunidadPortalId}${seccion === 'resumen' ? '' : '?seccion=' + seccion}`,
+    etiqueta,
+    mostrar: true,
+    activo: () => tabPortal === seccion
+  });
   const accesos = esCliente
-    ? [
-        {
-          ruta: '/portal',
-          etiqueta: alertasMantencion > 0 ? `Mi portal (${alertasMantencion})` : 'Mi portal',
-          mostrar: true
-        }
-      ]
+    ? (comunidadPortalId ? [
+        enlacePortal('resumen', 'Resumen'),
+        enlacePortal('compromisos', 'Compromisos y avances'),
+        enlacePortal('incidencias', 'Incidencias'),
+        enlacePortal('levantamientos', 'Levantamientos'),
+        enlacePortal('mantencion', 'Mantenciones'),
+        enlacePortal('documentos', 'Documentos')
+      ] : [{ ruta: '/portal', etiqueta: 'Mis comunidades', mostrar: true }])
     : enConfiguracion
     ? [
         { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: true },
