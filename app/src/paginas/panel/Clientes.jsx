@@ -49,6 +49,7 @@ export default function Clientes() {
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
   const [asignacionesGlobales, setAsignacionesGlobales] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
+  const [cargandoAcceso, setCargandoAcceso] = useState(false);
   const peticionAcceso = useRef(0);
   const [visibilidades, setVisibilidades] = useState([]);
   const [error, setError] = useState(null);
@@ -111,17 +112,18 @@ export default function Clientes() {
 
   async function cargarAcceso(usuarioId) {
     const numero = ++peticionAcceso.current;
-    if (!usuarioId) {
-      setAsignaciones([]);
-      setVisibilidades([]);
-      return;
-    }
+    setAsignaciones([]);
+    setVisibilidades([]);
+    setError(null);
+    if (!usuarioId) { setCargandoAcceso(false); return; }
+    setCargandoAcceso(true);
     const [ra, rv] = await Promise.all([
       supabase.from('portal_cliente_comunidades').select('*').eq('usuario_id', usuarioId),
       supabase.from('portal_cliente_plantillas').select('*').eq('usuario_id', usuarioId)
     ]);
     if (numero !== peticionAcceso.current) return;
     const fallo = [ra, rv].find(r => r.error)?.error;
+    setCargandoAcceso(false);
     if (fallo) return setError(fallo.message);
     setAsignaciones(ra.data ?? []);
     setVisibilidades(rv.data ?? []);
@@ -432,7 +434,9 @@ export default function Clientes() {
               ))}
             </nav>
 
-            {seccion === 'resumen' && (
+            {cargandoAcceso && <p className="cargando" role="status">Cargando permisos del cliente…</p>}
+
+            {!cargandoAcceso && seccion === 'resumen' && (
               <div className="clientes-ficha-contenido" role="tabpanel">
                 <div className="clientes-ficha-resumen">
                   <div className="tarjeta clientes-tarjeta-dato">
@@ -468,7 +472,7 @@ export default function Clientes() {
               </div>
             )}
 
-            {seccion === 'permisos' && (
+            {!cargandoAcceso && seccion === 'permisos' && (
               <div className="clientes-ficha-contenido" role="tabpanel">
                 <div className="clientes-seccion-cabecera">
                   <div>
@@ -545,7 +549,7 @@ export default function Clientes() {
               </div>
             )}
 
-            {seccion === 'actividad' && (
+            {!cargandoAcceso && seccion === 'actividad' && (
               <div className="clientes-ficha-contenido" role="tabpanel">
                 <div className="clientes-seccion-cabecera">
                   <div>
