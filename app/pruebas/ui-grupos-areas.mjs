@@ -102,16 +102,30 @@ try {
       ['Pipeline', 'Arriendos', 'SEO', 'Notificaciones', 'Más']);
     await barra.getByRole('button', { name: 'Más' }).click();
     const menu = page.getByRole('dialog', { name: 'Más opciones' });
-    for (const nombre of ['Nueva propiedad', 'Cambiar de área']) assert.equal(await menu.getByRole('button', { name: nombre }).count(), 1, nombre);
-    await menu.getByRole('button', { name: 'Nueva propiedad' }).click();
-    await page.waitForURL(u => u.pathname === '/propiedades/nueva', { timeout: 20000 });
-    await page.locator('.barra-inferior-movil').getByRole('button', { name: 'Arriendos' }).click();
+    assert.equal(await menu.getByRole('button', { name: 'Nueva propiedad' }).count(), 0,
+      'Pipeline no muestra acciones de Arriendos');
+    assert.equal(await menu.getByRole('button', { name: 'Cambiar de área' }).count(), 1);
+    await page.getByRole('button', { name: 'Cerrar menú' }).click();
+    await barra.getByRole('button', { name: 'Arriendos' }).click();
     await page.waitForURL(u => u.pathname === '/propiedades', { timeout: 20000 });
-    await page.locator('.barra-inferior-movil').getByRole('button', { name: 'SEO', exact: true }).click();
+    await barra.getByRole('button', { name: 'Más' }).click();
+    const menuArriendos = page.getByRole('dialog', { name: 'Más opciones' });
+    assert.equal(await menuArriendos.getByRole('button', { name: 'Nueva propiedad' }).count(), 1,
+      'Arriendos sí ofrece Nueva propiedad');
+    await menuArriendos.getByRole('button', { name: 'Nueva propiedad' }).click();
+    await page.waitForURL(u => u.pathname === '/propiedades/nueva', { timeout: 20000 });
+    await barra.getByRole('button', { name: 'SEO', exact: true }).click();
     await page.waitForURL(u => u.pathname === '/seo', { timeout: 20000 });
     await page.getByRole('combobox', { name: 'Sección de SEO' }).waitFor({ timeout: 20000 });
     assert.equal(await page.locator('.barra-inferior-movil').count(), 1, 'SEO mantiene barra Comercial');
     assert.equal(await page.locator('.seo-barra-inferior').count(), 0, 'sin barra SEO duplicada');
+    await barra.getByRole('button', { name: 'Más' }).click();
+    const menuSEO = page.getByRole('dialog', { name: 'Más opciones' });
+    assert.equal(await menuSEO.getByRole('button', { name: 'Nueva propiedad' }).count(), 0,
+      'SEO no debe mostrar acciones de Arriendos');
+    assert.equal(await menuSEO.getByRole('link', { name: /Mi cuenta/ }).count(), 1);
+    assert.equal(await menuSEO.getByRole('button', { name: /Cambiar de área/ }).count(), 1);
+    await page.getByRole('button', { name: 'Cerrar menú' }).click();
     assert.deepEqual((await barra.locator('.nav-movil-item').allInnerTexts()).map(x => x.trim()),
       ['Pipeline', 'Arriendos', 'SEO', 'Notificaciones', 'Más']);
     await page.getByRole('combobox', { name: 'Sección de SEO' }).selectOption('business');
