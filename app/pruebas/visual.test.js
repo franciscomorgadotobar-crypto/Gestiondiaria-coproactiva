@@ -87,3 +87,40 @@ test('Clientes separa listado, ficha individual, permisos y actividad real',()=>
   assert.match(panel,/barra-area-nombre/);
   assert.doesNotMatch(panel,/className="barra-area-cambiar"/);
 });
+
+test('cobertura visual estructural: pantallas de Operaciones, Comercial, Administración y Portal',()=>{
+  const pantallas = [
+    'paginas/propiedades/Propiedades.jsx',
+    'paginas/comercial/DiagnosticoComercial.jsx',
+    'paginas/cliente/PortalCliente.jsx',
+    'paginas/terreno/Inicio.jsx',
+    'paginas/terreno/Control.jsx',
+    'paginas/panel/ProveedoresComunicaciones.jsx',
+    'paginas/panel/ProveedoresRecepcion.jsx',
+    'paginas/panel/ImportarPlantillas.jsx',
+    'paginas/panel/PracticaLevantamiento.jsx',
+  ];
+  for(const ruta of pantallas) {
+    const fuente=read(ruta);
+    assert.match(fuente,/modulo-unificado/,ruta+' debe mantener el marco visual compartido');
+    assert.match(fuente,/modulo-cabecera/,ruta+' debe tener encabezado homologado');
+  }
+  const whatsapp=read('paginas/panel/WhatsApp.jsx');
+  assert.match(whatsapp,/wa-page modulo-unificado/);
+  assert.match(whatsapp,/wa-header/,'WhatsApp conserva cabecera propia adaptada al chat');
+});
+
+test('mismos ejes de alineación y navegación contextual en todo el sistema',()=>{
+  const identidad=read('estilos/identidad-app.css');
+  const seoEstilos=read('paginas/panel/SEO.css');
+  const base=read('estilos/base.css');
+  const panel=read('componentes/PanelEscritorio.jsx');
+  assert.match(identidad,/--ca-margen-contenido-movil:\s*16px/);
+  assert.match(identidad,/--ca-margen-contenido:\s*max\(/);
+  assert.match(identidad,/padding:20px var\(--ca-margen-contenido-movil\)/);
+  assert.match(seoEstilos,/cabecera\.modulo-cabecera\{display:flex/);
+  assert.doesNotMatch(seoEstilos,/margin:16px clamp\(16px/);
+  assert.match(panel,/menu-mas-grupo-cuenta/);
+  assert.match(panel,/Módulos y acciones/);
+  assert.match(base,/max-height: calc\(100dvh - 88px/);
+});

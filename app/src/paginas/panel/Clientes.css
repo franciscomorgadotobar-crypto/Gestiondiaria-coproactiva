@@ -118,7 +118,7 @@
 .clientes-aviso-actividad strong { display:block; font-size:14px; margin-bottom:8px; }
 .clientes-aviso-actividad p { color:var(--texto-apagado); margin:0; font-size:13px; line-height:1.6; }
 @media(max-width:899px) {
-  .clientes-pantalla .clientes-cuerpo { padding:16px 14px calc(110px + env(safe-area-inset-bottom)); }
+  .clientes-pantalla .clientes-cuerpo { padding:16px var(--ca-margen-contenido-movil) calc(110px + env(safe-area-inset-bottom)); }
   .clientes-estado { font-size:10.5px; }
   .clientes-lista-item { gap:10px; padding:15px 13px; }
   .clientes-avatar { width:42px; height:42px; }

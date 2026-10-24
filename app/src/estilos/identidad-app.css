@@ -20,6 +20,8 @@
   --ca-radio: 16px;
   --ca-radio-control: 11px;
   --ca-transition: 160ms ease;
+  --ca-margen-contenido: clamp(18px,2.5vw,34px);
+  --ca-margen-contenido-movil: 16px;
 }
 
 /* La interfaz de trabajo comparte identidad sin rediseñar el Home existente. */
@@ -49,7 +51,7 @@
 .modulo-unificado > .encabezado.modulo-cabecera {
   background:var(--ca-blanco);
   border-bottom:1px solid var(--ca-borde);
-  padding:24px clamp(18px,2.5vw,34px);
+  padding:24px var(--ca-margen-contenido);
   box-shadow:0 1px 1px rgba(35,36,38,.02);
 }
 .modulo-unificado .modulo-cabecera :is(h1.h2,h1.h3,h1),
@@ -74,7 +76,7 @@
   color:#677078;
 }
 .modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido {
-  padding:22px clamp(18px,2.5vw,34px);
+  padding:22px var(--ca-margen-contenido);
   min-width:0;
 }
 .modulo-unificado .cuerpo { min-width:0; }
@@ -148,7 +150,12 @@
 .modulo-unificado .boton-texto,
 .modulo-unificado .seo-exec-enlace { color:var(--ca-cobre-oscuro); }
 
-/* Campos: un mismo contorno, radio y objetivos táctiles. */
+/* Etiquetas y campos: lectura coherente incluso en formularios extensos. */
+.modulo-unificado .etiqueta-campo {
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: .08em;
+}
 .modulo-unificado :is(.campo input,.campo select,.campo textarea,
   .seo-cabecera select,.seo-herramientas input,.seo-herramientas select,
   .wa-page input,.wa-page select,.wa-page textarea,
@@ -182,6 +189,18 @@
   border-color:#d8a879;
   background:#fff3e7;
   color:#955123;
+}
+
+/* Alineación real escritorio: la cabecera y el contenido usan la misma
+   columna centrada. Antes el encabezado tenía 18–34 px, mientras la zona de
+   trabajo heredaba 40 px o una anchura máxima específica de la pantalla. */
+@media (min-width:900px) {
+  .pantalla.modulo-unificado {
+    --ca-margen-contenido: max(
+      var(--margen-escritorio,40px),
+      calc((100% - var(--ancho-contenido,1280px)) / 2)
+    );
+  }
 }
 
 /* Navegación persistente: misma marca, jerarquía y estados para cada módulo. */
@@ -267,9 +286,9 @@
     white-space:nowrap; text-overflow:ellipsis;
     color:#8f572e; font-size:12px; font-weight:700;
   }
-  .modulo-unificado > .encabezado.modulo-cabecera { padding:20px 18px; }
+  .modulo-unificado > .encabezado.modulo-cabecera { padding:20px var(--ca-margen-contenido-movil); }
   .modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido {
-    padding:18px 16px;
+    padding:18px var(--ca-margen-contenido-movil);
   }
   .barra-inferior-movil {
     background:#fffefd;
