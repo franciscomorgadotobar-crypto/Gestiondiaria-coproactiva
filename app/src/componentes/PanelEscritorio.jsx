@@ -275,7 +275,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
     { id: 'seo', etiqueta: 'SEO', ruta: '/seo', mostrar: esAdministracion },
     { id: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', badge: alertasTotales },
-    { id: 'nueva-propiedad', etiqueta: 'Nueva propiedad', ruta: '/propiedades/nueva' }
+    // Mantener el acceso comercial existente (incluida Jefatura), salvo
+    // dentro de SEO donde las acciones de propiedades no corresponden.
+    { id: 'nueva-propiedad', etiqueta: 'Nueva propiedad', ruta: '/propiedades/nueva',
+      mostrar: !activa(pathname, '/seo') }
   ].filter(x => x.mostrar !== false);
 
   const idsPermitidos = new Set(opcionesOperacion.map(x => x.id));
