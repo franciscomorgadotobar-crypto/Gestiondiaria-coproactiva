@@ -82,6 +82,8 @@ try {
     await page.locator('.barra-inferior-movil').getByRole('button', { name: 'Más' }).click();
     const menu = page.getByRole('dialog', { name: 'Más opciones' });
     await menu.waitFor();
+    assert.equal(await menu.getByRole('group', { name: 'Módulos y acciones de Operaciones' }).count(), 1);
+    assert.equal(await menu.getByRole('group', { name: 'Cuenta y navegación' }).count(), 1);
     for (const nombre of ['Proveedores', 'WhatsApp']) assert.equal(await menu.getByRole('button', { name: nombre }).count(), 1, nombre);
     await menu.getByRole('button', { name: 'Proveedores' }).click();
     await page.waitForURL(u => u.pathname === '/proveedores', { timeout: 20000 });
@@ -89,6 +91,28 @@ try {
     await page.locator('.barra-area-volver').click();
     await page.waitForURL(u => u.pathname === '/inicio', { timeout: 10000 });
     console.log('Teléfono · Operaciones: Más → Proveedores → Volver → Inicio: OK');
+    await ctx.close();
+  }
+
+  // Teléfono pequeño · «Más» debe caber y poder desplazar opciones largas.
+  {
+    const {ctx,page} = await crear({ancho:360,alto:550});
+    await page.getByRole('button',{name:/Operación de comunidades/}).click();
+    await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
+    const menu=page.getByRole('dialog',{name:'Más opciones'});
+    await menu.waitFor();
+    const medidas=await menu.evaluate(el=>{
+      const r=el.getBoundingClientRect(), nav=document.querySelector('.barra-inferior-movil');
+      return {top:r.top,bottom:r.bottom,navTop:nav.getBoundingClientRect().top,
+        scrollHeight:el.scrollHeight,clientHeight:el.clientHeight};
+    });
+    assert.ok(medidas.top>=-1&&medidas.bottom<=medidas.navTop+2,
+      'Menú Más no puede ocupar la barra de navegación ni salir de la pantalla: '+JSON.stringify(medidas));
+    assert.ok(medidas.scrollHeight>=medidas.clientHeight,'menú permite contenido largo');
+    await menu.getByRole('button',{name:'Cambiar de área'}).click();
+    await page.waitForURL(u=>u.pathname==='/',{timeout:15000});
+    console.log('Móvil 360x550 · Más desplazable y con navegación accesible: OK');
     await ctx.close();
   }
 
@@ -115,6 +139,9 @@ try {
     assert.equal(await page.locator('.seo-barra-inferior').count(), 0, 'sin barra SEO duplicada');
     await barra.getByRole('button', { name: 'Más' }).click();
     const menuSEO = page.getByRole('dialog', { name: 'Más opciones' });
+    assert.equal(await menuSEO.getByRole('group', { name: 'Cuenta y navegación' }).count(), 1);
+    assert.equal(await menuSEO.getByRole('group', { name: /Módulos y acciones/ }).count(), 0,
+      'SEO sin acciones ajenas no muestra un grupo vacío');
     assert.equal(await menuSEO.getByRole('button', { name: 'Nueva propiedad' }).count(), 0,
       'SEO no debe mostrar acciones de Arriendos');
     assert.equal(await menuSEO.getByRole('link', { name: /Mi cuenta/ }).count(), 1);
