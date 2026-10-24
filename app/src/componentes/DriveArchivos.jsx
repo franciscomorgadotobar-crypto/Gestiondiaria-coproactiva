@@ -114,7 +114,8 @@ export default function DriveArchivos({
       mensaje: `"${doc.nombre}" se enviará a la papelera de Google Drive y dejará de verse en la aplicación. El historial se conserva.`,
       texto: 'Enviar a la papelera',
       accion: async () => {
-        try { await eliminarDeDrive(comunidadId, doc.id); await cargar(); onCambio?.(); }
+        setOk(''); setError('');
+        try { await eliminarDeDrive(comunidadId, doc.id); setOk(`"${doc.nombre}" se envió a la papelera de Google Drive.`); await cargar(); onCambio?.(); }
         catch (e) { setError(e.message); }
       }
     });
