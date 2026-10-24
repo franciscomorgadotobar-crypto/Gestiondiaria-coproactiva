@@ -169,7 +169,7 @@ try {
     await page.waitForURL(u => u.pathname === '/contabilidad', { timeout: 15000 });
     await page.locator('.grupo-navegacion-boton').filter({ hasText: 'Administración y ajustes' }).click();
     await page.waitForURL(u => u.pathname === '/configuracion', { timeout: 15000 });
-    await page.getByRole('heading', { name: 'Configuración' }).waitFor({ timeout: 15000 });
+    await page.getByRole('heading', { name: 'Administración y ajustes' }).waitFor({ timeout: 15000 });
     console.log('Escritorio · cambio directo entre áreas, SEO y Administración: OK');
     await ctx.close();
   }
