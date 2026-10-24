@@ -78,9 +78,11 @@ test('ingreso y recuperación tienen un único estilo y acceso conservado', () =
 test('barra lateral usa iconos para cada área con rutas y permisos intactos', () => {
   assert.match(panel,/IconoNavegacion, \{ iconoRutaCoproactiva \}/);
   assert.match(panel,/brand\/imagologo-horizontal-naranja\.svg/);
-  assert.match(panel,/iconoRutaCoproactiva\(a.ruta\)/);
-  assert.match(panel,/accesos\.filter\(a => a.mostrar\)/);
+  assert.match(panel,/iconoRutaCoproactiva\(item.ruta\)/);
+  assert.match(panel,/accesos\.filter\(item => item.mostrar\)/);
   assert.match(panel,/className=\{'enlace-lateral'/);
+  assert.match(panel,/gruposLaterales\.map\(item =>/);
+  assert.match(panel,/Administración y ajustes/);
   for(const ruta of ['/pipeline','/propiedades','/proveedores','/whatsapp',
     '/seo','/contabilidad','/configuracion','/comunidades','/mantenciones',
     '/bitacora','/mapa']) assert.ok(iconos.includes(ruta),'Sin ruta '+ruta);
