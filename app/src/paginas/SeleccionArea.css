@@ -197,3 +197,39 @@
   .seleccion-home .seleccion-home__tarjeta { transition: none; }
   .seleccion-home .seleccion-home__tarjeta:hover { transform: none; }
 }
+
+
+/* Las tres áreas son la acción primaria; administración es transversal. */
+.seleccion-home__administracion {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #eee2d6;
+}
+.seleccion-home__ajustes-enlace {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 13px;
+  padding: 13px 16px;
+  border: 1px solid #eee0d3;
+  border-radius: 14px;
+  background: #fff9f4;
+  color: #704a2e;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.seleccion-home__ajustes-enlace:hover { background: #fff1e5; border-color: #e4c5ac; }
+.seleccion-home__ajustes-enlace:focus-visible { outline: 3px solid #d5863b; outline-offset: 3px; }
+.seleccion-home__ajustes-icono {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  flex: none;
+  border-radius: 11px;
+  background: #f7eadc;
+  font-size: 19px;
+}
+.seleccion-home__ajustes-titulo { font: 700 14px/1.4 var(--fuente-display); color: #5c4638; }
+.seleccion-home__ajustes-enlace > span:last-child { font-size: 25px; color: #b7794a; }
