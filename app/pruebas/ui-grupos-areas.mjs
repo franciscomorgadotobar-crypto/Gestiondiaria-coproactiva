@@ -158,7 +158,19 @@ try {
     const dentro = (await lateral.allInnerTexts()).map(t => t.trim());
     for (const nombre of ['Postulantes', 'Correos', 'Comunicaciones']) assert.ok(dentro.includes(nombre), nombre);
     assert.equal(await page.locator('.barra-lateral .grupo-navegacion-boton.activo').innerText().then(t => t.includes('Operaciones')), true);
-    console.log('Escritorio · Comercial y Operaciones con sus secciones: OK');
+    // En escritorio se cambia de área desde el propio menú, sin volver
+    // al selector; SEO conserva el menú Comercial visible.
+    await page.locator('.grupo-navegacion-boton').filter({ hasText: 'Comercial' }).click();
+    await page.waitForURL(u => u.pathname === '/pipeline', { timeout: 15000 });
+    await page.locator('.barra-lateral').getByRole('link', { name: 'SEO y analítica' }).click();
+    await page.waitForURL(u => u.pathname === '/seo', { timeout: 15000 });
+    assert.equal(await page.locator('.grupo-navegacion-boton.activo').innerText().then(t => t.includes('Comercial')), true);
+    await page.locator('.grupo-navegacion-boton').filter({ hasText: 'Finanzas' }).click();
+    await page.waitForURL(u => u.pathname === '/contabilidad', { timeout: 15000 });
+    await page.locator('.grupo-navegacion-boton').filter({ hasText: 'Administración y ajustes' }).click();
+    await page.waitForURL(u => u.pathname === '/configuracion', { timeout: 15000 });
+    await page.getByRole('heading', { name: 'Configuración' }).waitFor({ timeout: 15000 });
+    console.log('Escritorio · cambio directo entre áreas, SEO y Administración: OK');
     await ctx.close();
   }
 } finally {
