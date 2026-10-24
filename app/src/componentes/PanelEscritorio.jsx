@@ -199,6 +199,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (tipo === 'mapa') return <svg {...comun}><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>;
     if (tipo === 'proveedores' || tipo === 'whatsapp' || tipo === 'propiedades' || tipo === 'seo') return <IconoNavegacion tipo={tipo} size={21} />;
     if (tipo === 'pipeline') return <IconoNavegacion tipo="comercial" size={21} />;
+    if (tipo === 'conta-resumen') return <svg {...comun}><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>;
+    if (tipo === 'conta-asientos') return <svg {...comun}><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/><path d="M12 4v16"/></svg>;
+    if (tipo === 'conta-reportes') return <svg {...comun}><path d="M4 19V5M4 19h17M7 15l4-4 3 2 6-7"/></svg>;
+    if (tipo === 'conta-plan') return <svg {...comun}><path d="M6 4v16M6 8h6M6 14h6"/><rect x="12" y="5.5" width="8" height="5" rx="1"/><rect x="12" y="11.5" width="8" height="5" rx="1"/></svg>;
+    if (tipo === 'conta-entidades') return <svg {...comun}><path d="M4 20h16"/><path d="M6 20V7h12v13"/><path d="M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>;
+    if (tipo === 'conta-configuracion' || tipo === 'ajustes') return <svg {...comun}><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>;
+    if (tipo === 'equipo') return <svg {...comun}><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1"/></svg>;
+    if (tipo === 'clientes') return <svg {...comun}><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg>;
     if (tipo === 'nueva-propiedad') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M12 11v6M9 14h6"/></svg>;
     return <svg {...comun}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   }
@@ -241,8 +249,28 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     ? perfil.bottom_nav.filter(id => idsPermitidos.has(id))
     : ['inicio', 'comunidades', 'levantamientos', 'notificaciones'];
 
-  const opcionesBarra = enComercial ? opcionesComercial : opcionesOperacion;
-  const barraIds = enComercial ? [] : [...preferidos];
+  // Finanzas y Configuración: también barra inferior en el teléfono (en
+  // escritorio, la barra lateral). Contabilidad oculta sus pestañas
+  // superiores en el teléfono para no repetir el menú.
+  const opcionesFinanzas = [
+    { id: 'conta-resumen', etiqueta: 'Resumen', ruta: '/contabilidad', activo: p => p === '/contabilidad' },
+    { id: 'conta-asientos', etiqueta: 'Asientos', ruta: '/contabilidad/asientos' },
+    { id: 'conta-reportes', etiqueta: 'Reportes', ruta: '/contabilidad/reportes' },
+    { id: 'conta-plan', etiqueta: 'Plan de cuentas', ruta: '/contabilidad/plan' },
+    { id: 'conta-entidades', etiqueta: 'Entidades', ruta: '/contabilidad/entidades' },
+    { id: 'conta-configuracion', etiqueta: 'Configuración', ruta: '/contabilidad/configuracion' }
+  ];
+  const opcionesConfiguracion = [
+    { id: 'ajustes', etiqueta: 'Ajustes', ruta: '/configuracion' },
+    { id: 'equipo', etiqueta: 'Equipo', ruta: '/equipo' },
+    { id: 'clientes', etiqueta: 'Clientes', ruta: '/clientes', mostrar: esSuperadmin }
+  ].filter(x => x.mostrar !== false);
+
+  const opcionesBarra = enComercial ? opcionesComercial
+    : enFinanzas ? opcionesFinanzas
+    : enConfiguracion ? opcionesConfiguracion
+    : opcionesOperacion;
+  const barraIds = enOperacion ? [...preferidos] : [];
   for (const item of opcionesBarra) {
     if (barraIds.length >= 4) break;
     if (!barraIds.includes(item.id)) barraIds.push(item.id);
@@ -252,7 +280,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     .filter(Boolean);
   const menuMasOperacion = opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
-  const mostrarBarraMovil = enOperacion || (enComercial && !activa(pathname, '/seo'));
+  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion
+    || (enComercial && !activa(pathname, '/seo'));
 
   function itemMovilActivo(item) {
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';

@@ -110,7 +110,10 @@ async function irPantalla(page,vista) {
     } else if(ruta.startsWith('/mantenciones'))
       await clickDestino(page,'/mantenciones','Mantenciones');
   } else if(ruta.startsWith('/contabilidad/')) {
-    await page.locator('a[href="'+ruta+'"]:visible').first().click();
+    // Teléfono: barra inferior de Finanzas; escritorio: barra lateral o pestañas.
+    const etiquetas={asientos:'Asientos',reportes:'Reportes',plan:'Plan de cuentas',
+      configuracion:'Configuración',entidades:'Entidades'};
+    await clickDestino(page,ruta,etiquetas[ruta.split('/')[2]]||'Resumen');
   } else if(ruta.startsWith('/propiedades/')) {
     await page.locator('a[href^="/propiedades/nueva"]:visible').first().click();
   } else if(ruta.startsWith('/proveedores/')) {

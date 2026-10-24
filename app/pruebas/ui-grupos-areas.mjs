@@ -108,8 +108,25 @@ try {
     const { ctx, page } = await crear();
     await page.getByRole('button', { name: /Gestión contable/ }).click();
     await page.waitForURL(u => u.pathname === '/contabilidad', { timeout: 20000 });
-    assert.equal(await page.locator('.barra-inferior-movil').count(), 0);
-    console.log('Teléfono · Finanzas → Contabilidad: OK');
+    const barra = page.locator('.barra-inferior-movil');
+    assert.deepEqual((await barra.locator('.nav-movil-item').allInnerTexts()).map(x => x.trim()),
+      ['Resumen', 'Asientos', 'Reportes', 'Plan de cuentas', 'Más']);
+    assert.equal(await page.locator('.contabilidad-nav:visible').count(), 0, 'sin pestañas duplicadas en el teléfono');
+    await barra.getByRole('button', { name: 'Más' }).click();
+    await page.getByRole('dialog', { name: 'Más opciones' }).getByRole('button', { name: 'Entidades' }).click();
+    await page.waitForURL(u => u.pathname === '/contabilidad/entidades', { timeout: 20000 });
+    console.log('Teléfono · Finanzas: barra inferior y Más → Entidades: OK');
+    await ctx.close();
+  }
+
+  // Teléfono · Configuración
+  {
+    const { ctx, page } = await crear();
+    await page.getByRole('button', { name: /Configuración/ }).click();
+    await page.waitForURL(u => u.pathname === '/configuracion', { timeout: 20000 });
+    assert.deepEqual((await page.locator('.barra-inferior-movil .nav-movil-item').allInnerTexts()).map(x => x.trim()),
+      ['Ajustes', 'Equipo', 'Clientes', 'Más']);
+    console.log('Teléfono · Configuración: barra inferior: OK');
     await ctx.close();
   }
 

@@ -42,8 +42,10 @@ Grupos (24-10-2026): el selector muestra cuatro tarjetas según permisos.
 
 - **Comercial** (`/pipeline`): Pipeline y diagnóstico comercial, Arriendos y ventas, SEO y analítica (SEO solo administración). En el teléfono usa la misma barra inferior que Operaciones (Pipeline · Arriendos · SEO · Notificaciones · Más, con Nueva propiedad en «Más»); en /seo se mantiene la barra propia de SEO y su «Más» incluye Pipeline y Arriendos y ventas. En escritorio, todo en la barra lateral.
 - **Operaciones** (`/inicio`): comunidades, levantamientos, mantenciones, bitácora, mapa, plantillas, y para administración Proveedores y WhatsApp (en el teléfono, dentro de «Más»).
-- **Finanzas** (`/contabilidad`, solo administración).
-- **Configuración** (`/configuracion`, solo administración; no se guarda como grupo).
+- **Finanzas** (`/contabilidad`, solo administración). Teléfono: barra inferior Resumen · Asientos · Reportes · Plan de cuentas · Más (Entidades, Configuración); las pestañas superiores de Contabilidad quedan solo para escritorio.
+- **Configuración** (`/configuracion`, solo administración; no se guarda como grupo). Teléfono: barra inferior Ajustes · Equipo · Clientes · Más.
+
+Regla general: en el teléfono, menú inferior; en escritorio, barra lateral.
 
 Volver por jerarquía: sección → inicio del grupo → selector (por ejemplo `/seo` → `/pipeline` → `/`; `/proveedores` → `/inicio` → `/`). Los valores guardados de la versión anterior (crm, seo, propiedades, proveedores, whatsapp, contabilidad) se leen como su grupo. Prueba: `pruebas/ui-grupos-areas.mjs`.
 
