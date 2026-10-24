@@ -12,6 +12,34 @@
  * Esto no elimina las validaciones del perfil ni permisos de cada ruta.
  */
 import { esRutaInterna } from './historialSelector.js';
+import { grupoDeRuta, normalizarArea } from './area.js';
+
+/*
+ * Excepción: los enlaces que envía Coproactiva (por ejemplo, el botón del
+ * correo de nuevo prospecto) llevan `origen=correo`. Esa apertura es una
+ * petición explícita de una pantalla, no una restauración de Android, así que
+ * se abre esa pantalla con el Home detrás (Atrás vuelve al selector). La marca
+ * se quita de la URL al arrancar para que una recarga no la repita.
+ */
+const ORIGENES_DIRECTOS = new Set(['correo']);
+let areaDeEnlace = null;
+
+function esEnlaceDirecto(search) {
+  try {
+    return ORIGENES_DIRECTOS.has(new URLSearchParams(search || '').get('origen') || '');
+  } catch {
+    return false;
+  }
+}
+
+/* Área del enlace directo recién abierto, una sola vez. App la deja elegida
+ * para que "Inicio" y la barra del área respondan como si se hubiera entrado
+ * desde el selector. */
+export function consumirAreaEnlaceDirecto() {
+  const area = areaDeEnlace;
+  areaDeEnlace = null;
+  return area;
+}
 
 export function esContinuacionDocumento(rendimiento, documentoDescartado = false) {
   if (documentoDescartado) return true;
@@ -39,6 +67,17 @@ export function prepararArranqueConHome(historial, ubicacion, base = '/', opcion
   const ruta = (prefijo ? pathname.slice(prefijo.length) : pathname) || '/';
   const esPortal = ruta === '/portal' || ruta.startsWith('/portal/');
   if (!(esPortal || esRutaInterna(ruta))) return false;
+
+  if (esEnlaceDirecto(ubicacion.search)) {
+    const parametros = new URLSearchParams(ubicacion.search || '');
+    parametros.delete('origen');
+    const consulta = parametros.toString();
+    areaDeEnlace = normalizarArea(grupoDeRuta(ruta));
+    try {
+      historial.replaceState(historial.state, '', pathname + (consulta ? '?' + consulta : '') + (ubicacion.hash || ''));
+    } catch { /* si no se puede limpiar la URL, la pantalla abre igual */ }
+    return false;
+  }
 
   const home = prefijo + '/';
   const anterior = historial.state || {};

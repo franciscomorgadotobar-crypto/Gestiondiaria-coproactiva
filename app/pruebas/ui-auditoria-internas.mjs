@@ -58,6 +58,12 @@ async function clickDestino(page,ruta,etiqueta) {
     await link.click();
     return;
   }
+  // Móvil: barra inferior del grupo (Comercial: «Arriendos», «SEO»).
+  const barra=page.locator('.barra-inferior-movil:visible').getByRole('button',{name:new RegExp('^'+etiqueta.split(' ')[0],'i')});
+  if(await barra.count()) {
+    await barra.first().click();
+    return;
+  }
   // Móvil de Operación: opciones de baja frecuencia dentro de «Más».
   const mas=page.getByRole('button',{name:'Más',exact:true}).last();
   if(await mas.count()) {
@@ -76,12 +82,16 @@ async function irPantalla(page,vista) {
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:12000});
   const ruta=vista.ruta;
   const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
-  const area=operacion ? /OPERACIONES|Levantamientos/i
+  // Cuatro grupos: Proveedores es de Operaciones; Arriendos y ventas y SEO,
+  // de Comercial. Primero se elige el grupo y luego la sección.
+  const area=(operacion || ruta.startsWith('/proveedores')) ? /Operación de comunidades/
     : ruta.startsWith('/contabilidad') ? /Gestión contable/
-    : ruta.startsWith('/propiedades') ? /Arriendos y ventas/
-    : ruta.startsWith('/proveedores') ? /Red de proveedores/
-    : /SEO y Analítica/;
+    : /Gestión comercial/;
   await page.getByRole('button',{name:area}).first().click();
+  await page.waitForURL(u=>u.pathname!=='/',{timeout:12000});
+  if(ruta.startsWith('/proveedores')) await clickDestino(page,'/proveedores','Proveedores');
+  else if(ruta.startsWith('/propiedades')) await clickDestino(page,'/propiedades','Arriendos y ventas');
+  else if(ruta.startsWith('/seo')) await clickDestino(page,'/seo','SEO');
 
   if(operacion) {
     if(ruta==='/nuevo') await clickDestino(page,'/nuevo','Nuevo levantamiento');
@@ -100,7 +110,10 @@ async function irPantalla(page,vista) {
     } else if(ruta.startsWith('/mantenciones'))
       await clickDestino(page,'/mantenciones','Mantenciones');
   } else if(ruta.startsWith('/contabilidad/')) {
-    await page.locator('a[href="'+ruta+'"]:visible').first().click();
+    // Teléfono: barra inferior de Finanzas; escritorio: barra lateral o pestañas.
+    const etiquetas={asientos:'Asientos',reportes:'Reportes',plan:'Plan de cuentas',
+      configuracion:'Configuración',entidades:'Entidades'};
+    await clickDestino(page,ruta,etiquetas[ruta.split('/')[2]]||'Resumen');
   } else if(ruta.startsWith('/propiedades/')) {
     await page.locator('a[href^="/propiedades/nueva"]:visible').first().click();
   } else if(ruta.startsWith('/proveedores/')) {

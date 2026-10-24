@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { prepararArranqueConHome, esContinuacionDocumento } from '../src/lib/arranqueHistorialPWA.js';
+import { prepararArranqueConHome, esContinuacionDocumento, consumirAreaEnlaceDirecto } from '../src/lib/arranqueHistorialPWA.js';
 
 function simularHistorial(url, estado = { idx: 9, usr: { anterior: 'recordado' } }) {
   const entradas = [{url,estado}];
@@ -35,6 +35,40 @@ test('CRM, operación y pantallas profundas también vuelven al Home de acceso',
     assert.equal(h.entradas.length,1,'sin vista antigua en el historial');
     assert.equal(h.entradas[0].url,'/',ruta);
   }
+});
+
+test('el enlace del correo abre Pipeline directo, sin la marca y con el grupo Comercial',()=>{
+  const h=simularHistorial('/pipeline?etapa=nuevo&origen=correo',null);
+  assert.equal(prepararArranqueConHome(h.api,{
+    pathname:'/pipeline',search:'?etapa=nuevo&origen=correo',hash:''},'/'),false);
+  assert.equal(h.entradas.length,1,'no apila nada');
+  assert.equal(h.entradas[0].url,'/pipeline?etapa=nuevo');
+  assert.equal(consumirAreaEnlaceDirecto(),'comercial');
+  assert.equal(consumirAreaEnlaceDirecto(),null,'se usa una sola vez');
+});
+
+test('enlace directo a una pantalla de Operación fija ese grupo y conserva otros parámetros',()=>{
+  const h=simularHistorial('/comunidades/abc?origen=correo&seccion=documentos#x',null);
+  assert.equal(prepararArranqueConHome(h.api,{
+    pathname:'/comunidades/abc',search:'?origen=correo&seccion=documentos',hash:'#x'},'/'),false);
+  assert.equal(h.entradas[0].url,'/comunidades/abc?seccion=documentos#x');
+  assert.equal(consumirAreaEnlaceDirecto(),'operacion');
+});
+
+test('enlace directo a Configuración no guarda grupo (es una visita)',()=>{
+  const h=simularHistorial('/equipo?origen=correo',null);
+  assert.equal(prepararArranqueConHome(h.api,{pathname:'/equipo',search:'?origen=correo',hash:''},'/'),false);
+  assert.equal(h.entradas[0].url,'/equipo');
+  assert.equal(consumirAreaEnlaceDirecto(),null);
+});
+
+test('otros orígenes o URLs sin marca siguen yendo al Home',()=>{
+  for(const search of ['?origen=whatsapp','?etapa=nuevo','?origen=']) {
+    const h=simularHistorial('/pipeline'+search);
+    assert.equal(prepararArranqueConHome(h.api,{pathname:'/pipeline',search,hash:''},'/'),true,search);
+    assert.equal(h.entradas[0].url,'/',search);
+  }
+  assert.equal(consumirAreaEnlaceDirecto(),null);
 });
 
 test('portal cliente restaurado inicia en la raíz que resuelve el perfil',()=>{

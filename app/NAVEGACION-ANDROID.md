@@ -38,6 +38,18 @@ Los tests unitarios verifican lectura/escritura de parámetros URL y que no se b
 
 ## Selector de áreas
 
+Grupos (24-10-2026): el selector muestra cuatro tarjetas según permisos.
+
+- **Comercial** (`/pipeline`): Pipeline y diagnóstico comercial, Arriendos y ventas, SEO y analítica (SEO solo administración). En el teléfono usa la misma barra inferior que Operaciones (Pipeline · Arriendos · SEO · Notificaciones · Más, con Nueva propiedad en «Más»); en /seo se mantiene la barra propia de SEO y su «Más» incluye Pipeline y Arriendos y ventas. En escritorio, todo en la barra lateral.
+- **Operaciones** (`/inicio`): comunidades, levantamientos, mantenciones, bitácora, mapa, plantillas, y para administración Proveedores y WhatsApp (en el teléfono, dentro de «Más»).
+- **Finanzas** (`/contabilidad`, solo administración). Teléfono: barra inferior Resumen · Asientos · Reportes · Plan de cuentas · Más (Entidades, Configuración); las pestañas superiores de Contabilidad quedan solo para escritorio.
+- **Configuración** (`/configuracion`, solo administración; no se guarda como grupo). Teléfono: barra inferior Ajustes · Equipo · Clientes · Más.
+
+Regla general: en el teléfono, menú inferior; en escritorio, barra lateral.
+
+Volver por jerarquía: sección → inicio del grupo → selector (por ejemplo `/seo` → `/pipeline` → `/`; `/proveedores` → `/inicio` → `/`). Los valores guardados de la versión anterior (crm, seo, propiedades, proveedores, whatsapp, contabilidad) se leen como su grupo. Prueba: `pruebas/ui-grupos-areas.mjs`.
+
+
 Cuando se selecciona un área desde la pantalla de selección, React Router conserva esa pantalla en el historial antes de abrir CRM, Operación, Propiedades, Proveedores, WhatsApp, Contabilidad o SEO. El gesto Atrás desde el primer nivel del área regresa a la selección y permite elegir otra, aunque exista un área guardada previamente. Esto evita el bucle anterior que redirigía inmediatamente a la misma área al volver a `/`. El portal cliente y entradas externas directas conservan su comportamiento normal.
 
 ## Volver dentro de la aplicación: jerarquía reforzada (12-10-2026)
@@ -73,6 +85,8 @@ normal de Android (no se bloquea ni se crea un historial artificial).
 La función Entrada dejó de consultar la preferencia antigua de área. Al iniciar una sesión de documento se limpia la selección local anterior, sin borrar sesiones, comunidades ni datos. Las preferencias todavía se utilizan mientras se navega en esa sesión.
 
 Si Android restaura una URL interna (por ejemplo, /seo o /control/123), antes de montar React Router el arranque reemplaza esa misma entrada del historial por /. No se apila la página antigua: Atrás no puede devolverla como efecto de nuestra navegación.
+
+Excepción (24-10-2026): los enlaces que envía Coproactiva llevan `origen=correo` (por ejemplo, el botón del aviso de nuevo prospecto: `/pipeline?etapa=nuevo&origen=correo`). Son una petición explícita de esa pantalla, así que se abre directamente con el Home detrás (Atrás vuelve al selector), queda elegido el grupo correspondiente (Comercial para Pipeline) y la marca se quita de la URL al arrancar. Sin esa marca, la regla anterior se mantiene. Prueba: `pruebas/ui-enlace-correo-pipeline.mjs`.
 
 Una vez abierto el Home, la elección explícita de un módulo conserva el historial normal. Atrás puede volver del módulo al Home; otro Atrás puede salir de la PWA o retornar al navegador, según Android. El botón Salir cierra sesión y no equivale a Atrás.
 

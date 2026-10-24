@@ -753,6 +753,10 @@ function SEOInterno() {
       secciones={SECCIONES}
       vistasValidas={VISTAS_SEO}
       onSeleccionar={id => { if (id === 'resumen') void cargarHistorialSEO(); }}
+      enlacesArea={[
+        { ruta: '/pipeline', etiqueta: 'Pipeline' },
+        { ruta: '/propiedades', etiqueta: 'Arriendos y ventas' }
+      ]}
     />
   </div>;
 }

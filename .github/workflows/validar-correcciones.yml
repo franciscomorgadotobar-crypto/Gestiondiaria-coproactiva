@@ -115,6 +115,12 @@ jobs:
       - name: Reproducir Atrás Android desde SEO con sesión local simulada
         working-directory: app
         run: node pruebas/ui-pwa-atras-autenticado.mjs
+      - name: Grupos del selector (Comercial, Operaciones, Finanzas) en móvil y escritorio
+        working-directory: app
+        run: node pruebas/ui-grupos-areas.mjs
+      - name: Enlace del correo de prospecto abre Pipeline directo
+        working-directory: app
+        run: node pruebas/ui-enlace-correo-pipeline.mjs
       - name: Validar pantalla de apertura real en Chromium móvil
         working-directory: app
         run: node pruebas/ui-splash-pwa.mjs

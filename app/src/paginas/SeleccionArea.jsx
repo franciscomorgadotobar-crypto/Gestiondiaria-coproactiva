@@ -11,10 +11,10 @@ import './SeleccionArea.css';
  * vivía "el CRM". Terreno y demás roles sin acceso al CRM nunca ven esta
  * pantalla: van directo a Inicio.
  *
- * La elección de CRM, Operación o Propiedades se guarda en el navegador;
+ * La elección de Comercial, Operaciones o Finanzas se guarda en el navegador;
  * "Cambiar de área" en el panel la borra y vuelve a mostrar esta pantalla.
- * Propiedades es de los mismos roles: las publicaciones de arriendo y venta
- * del sitio no son trabajo de terreno. Configuración
+ * Arriendos y ventas va en Comercial y es de los mismos roles: las
+ * publicaciones del sitio no son trabajo de terreno. Configuración
  * no se guarda como área: no es un modo de trabajo del día a día, es una
  * visita ocasional, así que entrar ahí no cambia a qué área se vuelve
  * después. */
@@ -40,7 +40,7 @@ export default function SeleccionArea() {
     guardarArea(area);
     // Nunca "/": esta pantalla ya está montada ahí, y navegar a la misma
     // ruta en la que se está no vuelve a renderizar nada en React Router.
-    const destino = { crm: '/pipeline', propiedades: '/propiedades', proveedores: '/proveedores', contabilidad: '/contabilidad', whatsapp: '/whatsapp', seo: '/seo' }[area] ?? '/inicio';
+    const destino = { comercial: '/pipeline', finanzas: '/contabilidad' }[area] ?? '/inicio';
     navegar(destino, { state: { desdeSelectorCoproactiva: true } }); // Push: Atrás regresa a la selección.
   }
 
@@ -61,34 +61,27 @@ export default function SeleccionArea() {
     catch { /* La vista funciona aunque no se pueda guardar. */ }
   };
 
+  // Cuatro grupos. Dentro de cada uno, sus secciones quedan en el menú del
+  // panel; los permisos de cada sección no cambian (SEO, proveedores,
+  // WhatsApp y contabilidad siguen siendo solo de administración).
   const modulos = [
     {
-      area: 'crm', etiqueta: 'CRM', titulo: 'Gestión comercial',
-      descripcion: 'Leads, pipeline y diagnóstico comercial de prospectos.', visible: true
+      area: 'comercial', etiqueta: 'COMERCIAL', titulo: 'Gestión comercial',
+      descripcion: puedeConfigurar
+        ? 'Pipeline y diagnóstico de prospectos, arriendos y ventas, SEO y analítica.'
+        : 'Pipeline y diagnóstico de prospectos, arriendos y ventas.',
+      visible: true
     },
     {
-      area: 'operacion', etiqueta: 'OPERACIONES', titulo: 'Levantamientos',
-      descripcion: 'Comunidades administradas, levantamientos y mantención.', visible: true
+      area: 'operacion', etiqueta: 'OPERACIONES', titulo: 'Operación de comunidades',
+      descripcion: puedeConfigurar
+        ? 'Comunidades, levantamientos, mantenciones, bitácora, proveedores y recepción WhatsApp.'
+        : 'Comunidades, levantamientos, mantenciones y bitácora.',
+      visible: true
     },
     {
-      area: 'propiedades', etiqueta: 'PROPIEDADES', titulo: 'Arriendos y ventas',
-      descripcion: 'Lo que se publica en coproactiva.cl/propiedades.', visible: true
-    },
-    {
-      area: 'proveedores', etiqueta: 'PROVEEDORES', titulo: 'Red de proveedores',
-      descripcion: 'Buscar, contactar y administrar proveedores para las comunidades.', visible: puedeConfigurar
-    },
-    {
-      area: 'whatsapp', etiqueta: 'WHATSAPP', titulo: 'Recepción y atención',
-      descripcion: 'Solicitudes, cotizaciones y conversaciones con administración.', visible: puedeConfigurar
-    },
-    {
-      area: 'contabilidad', etiqueta: 'CONTABILIDAD', titulo: 'Gestión contable',
+      area: 'finanzas', etiqueta: 'FINANZAS', titulo: 'Gestión contable',
       descripcion: 'Asientos, libros, estados financieros e informes por entidad.', visible: puedeConfigurar
-    },
-    {
-      area: 'seo', etiqueta: 'MARKETING', titulo: 'SEO y Analítica',
-      descripcion: 'Search Console, Analytics, indexación, velocidad y oportunidades web.', visible: puedeConfigurar
     },
     {
       area: 'configuracion', etiqueta: 'AJUSTES', titulo: 'Configuración',

@@ -315,6 +315,15 @@
     background: var(--hover);
   }
   .seo-menu-mas-enlaces button { min-height: 50px; }
+  .seo-menu-mas-enlaces .seo-menu-grupo {
+    margin: 14px 4px 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--borde-suave);
+    color: var(--texto-tenue);
+    font: 700 11px/1.2 var(--fuente-cuerpo);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
 }
 
 /* Un solo encabezado: título, controles y metadatos en la misma tarjeta. */

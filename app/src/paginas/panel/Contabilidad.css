@@ -1632,3 +1632,10 @@
     max-width: 100%;
   }
 }
+
+/* En el teléfono, las secciones de Contabilidad viven en la barra inferior
+ * del grupo Finanzas (PanelEscritorio). Las pestañas superiores quedan para
+ * escritorio, donde además está la barra lateral. */
+@media (max-width: 899px) {
+  .contabilidad-nav.ui-pestanas { display: none; }
+}

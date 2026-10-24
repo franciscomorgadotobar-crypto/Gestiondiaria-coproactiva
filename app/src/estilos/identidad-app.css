@@ -544,3 +544,15 @@
     min-width:0;
   }
 }
+
+/* Grupos del selector (24-10-2026). En escritorio, las subsecciones quedan
+ * con sangría bajo su sección. En el teléfono, Operaciones y Comercial usan la
+ * barra inferior y «Más». */
+@media (min-width:900px) {
+  .layout-escritorio .enlace-lateral.enlace-lateral-hijo {
+    min-height:38px;
+    margin-left:22px;
+    padding:7px 12px;
+    font-size:13px;
+  }
+}

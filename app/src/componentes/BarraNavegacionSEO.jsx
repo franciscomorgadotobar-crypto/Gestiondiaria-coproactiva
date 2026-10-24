@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import IconoNavegacion, { iconoRutaCoproactiva } from './IconoNavegacion';
 import {
   SEO_ACCESOS_DIRECTOS, SEO_MENU_PARAMETRO,
   abrirMenuSEO, cerrarMenuSEO, seleccionarSeccionSEO
@@ -25,7 +26,9 @@ function IconoSEO({ tipo }) {
   return <svg {...comun}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
 }
 
-export default function BarraNavegacionSEO({ vista, secciones, vistasValidas, onSeleccionar }) {
+/* `enlacesArea`: otras secciones del grupo Comercial (Pipeline, Arriendos y
+ * ventas). Van al final de «Más» porque SEO usa su propia barra inferior. */
+export default function BarraNavegacionSEO({ vista, secciones, vistasValidas, onSeleccionar, enlacesArea = [] }) {
   const [parametros, setParametros] = useSearchParams();
   const navegar = useNavigate();
   const abiertoDesdeAqui = useRef(false);
@@ -56,6 +59,12 @@ export default function BarraNavegacionSEO({ vista, secciones, vistasValidas, on
       setParametros(actual => cerrarMenuSEO(actual),
         { replace: true, preventScrollReset: true });
     }
+  }
+
+  function irArea(ruta) {
+    // Reemplaza la entrada temporal de «Más»: Atrás vuelve a SEO.
+    abiertoDesdeAqui.current = false;
+    navegar(ruta, { replace: true });
   }
 
   function seleccionar(id) {
@@ -137,6 +146,13 @@ export default function BarraNavegacionSEO({ vista, secciones, vistasValidas, on
                   aria-current={vista === item.id ? 'page' : undefined}
                   onClick={() => seleccionar(item.id)}>
                   <span className="seo-menu-item-label"><IconoSEO tipo={item.id}/>{item.etiqueta}</span>
+                  <span aria-hidden="true">›</span>
+                </button>
+              ))}
+              {enlacesArea.length > 0 && <p className="seo-menu-grupo">Comercial</p>}
+              {enlacesArea.map(enlace => (
+                <button key={enlace.ruta} type="button" onClick={() => irArea(enlace.ruta)}>
+                  <span className="seo-menu-item-label"><IconoNavegacion tipo={iconoRutaCoproactiva(enlace.ruta)} size={22}/>{enlace.etiqueta}</span>
                   <span aria-hidden="true">›</span>
                 </button>
               ))}

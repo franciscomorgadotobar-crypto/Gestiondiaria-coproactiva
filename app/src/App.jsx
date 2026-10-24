@@ -22,8 +22,8 @@ import Proveedores from './paginas/panel/Proveedores';
 import SeleccionArea from './paginas/SeleccionArea';
 import PanelEscritorio from './componentes/PanelEscritorio';
 import AtrasNativoAndroid from './componentes/AtrasNativoAndroid';
-import { limpiarArea } from './lib/area';
-import { esContinuacionDocumento } from './lib/arranqueHistorialPWA';
+import { guardarArea, limpiarArea } from './lib/area';
+import { consumirAreaEnlaceDirecto, esContinuacionDocumento } from './lib/arranqueHistorialPWA';
 import { prepararHistorialSelector, consumirRegresoPendiente, reiniciarHistorialSelector } from './lib/historialSelector';
 
 const Mapa = lazy(() => import('./paginas/panel/Mapa'));
@@ -136,6 +136,10 @@ function ProtegerHomeFinal() {
       // ni alterar el destino del botón Volver. En un inicio nuevo sí se borra.
       if (idUsuario && !esContinuacionDocumento(window.performance, document.wasDiscarded)) {
         limpiarArea();
+        // Un enlace directo de Coproactiva (correo) deja elegida el área de su
+        // pantalla, igual que entrar desde el selector.
+        const areaEnlace = consumirAreaEnlaceDirecto();
+        if (areaEnlace) guardarArea(areaEnlace);
       }
       idAnterior.current = idUsuario;
     }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
-import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
+import { limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
@@ -86,31 +86,23 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
 
 
-  // La barra muestra solo el área en la que se está, igual que en el
-  // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
-  // comunidades y mapa; en Propiedades, el listado y el alta; en
-  // Configuración, Equipo y Clientes. Para ir a otra área está "Cambiar de
-  // área".
-  // El Pipeline es del CRM aunque se llegue a él sin haber elegido área
-  // (un enlace directo, por ejemplo). Lo mismo con Propiedades: la ruta
-  // manda sobre el área guardada.
-  // Configuración no se guarda como área (se entra desde su tarjeta en la
-  // capa de entrada, de visita), así que se reconoce solo por la ruta. Sus
-  // enlaces no se repiten en las otras áreas: no son trabajo del día.
-  const enConfiguracion = !esCliente && esAdministracion
-    && ['/configuracion', '/equipo', '/clientes'].some(r => activa(pathname, r));
-  const enSEO = !esCliente && esAdministracion && !enConfiguracion && activa(pathname, '/seo');
-  const enWhatsApp = !esCliente && esAdministracion && !enConfiguracion && !enSEO && (activa(pathname, '/whatsapp') || (areaGuardada() === 'whatsapp' && !['/proveedores','/contabilidad','/pipeline','/propiedades'].some(r => activa(pathname,r))));
-  const enContabilidad = !esCliente && esAdministracion && !enConfiguracion && !enSEO && !enWhatsApp
-    && (activa(pathname, '/contabilidad') || areaGuardada() === 'contabilidad');
-  const enProveedores = !esCliente && esAdministracion && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad
-    && (activa(pathname, '/proveedores') || areaGuardada() === 'proveedores');
-  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores
-    && (activa(pathname, '/propiedades')
-      || (areaGuardada() === 'propiedades' && !activa(pathname, '/pipeline')));
-  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores && !enPropiedades
-    && (areaGuardada() === 'crm' || activa(pathname, '/pipeline'));
-  const enOperacion = !esCliente && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores && !enPropiedades && !enCRM;
+  // La barra muestra solo el grupo en el que se está: Comercial (Pipeline,
+  // Arriendos y ventas, SEO), Operaciones (levantamientos, comunidades,
+  // mantenciones, bitácora, mapa, proveedores y WhatsApp), Finanzas
+  // (contabilidad) o Configuración (equipo y clientes). Para ir a otro grupo
+  // está "Cambiar de área".
+  // La ruta manda sobre el grupo guardado: el Pipeline es Comercial aunque se
+  // llegue por un enlace directo. Las rutas compartidas (/nuevo,
+  // /notificaciones, /mi-cuenta) usan el grupo elegido.
+  // Configuración no se guarda como grupo (es una visita), así que se
+  // reconoce solo por la ruta.
+  let grupo = esCliente ? null : (grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion');
+  if (grupo === 'comercial' && !puedeConfigurar) grupo = 'operacion';
+  if ((grupo === 'finanzas' || grupo === 'configuracion') && !esAdministracion) grupo = 'operacion';
+  const enConfiguracion = grupo === 'configuracion';
+  const enComercial = grupo === 'comercial';
+  const enFinanzas = grupo === 'finanzas';
+  const enOperacion = grupo === 'operacion';
   const alertasTotales = alertasMantencion + alertasGenerales;
   const levantamientosActivo = pathname === '/nuevo'
     || pathname.startsWith('/control/')
@@ -118,13 +110,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   const nombreArea = esCliente ? null
     : enConfiguracion ? 'Configuración'
-    : enSEO ? 'SEO y Analítica'
-    : enWhatsApp ? 'WhatsApp'
-    : enContabilidad ? 'Contabilidad'
-    : enProveedores ? 'Proveedores'
-    : enPropiedades ? 'Propiedades'
-    : enCRM ? 'CRM'
-    : puedeConfigurar ? 'Operación' : null;
+    : enComercial ? 'Comercial'
+    : enFinanzas ? 'Finanzas'
+    : puedeConfigurar ? 'Operaciones' : null;
 
   // La comunidad seleccionada es el contexto del menú cliente.
   // Los enlaces usan la misma URL de pestañas, sin crear pantallas duplicadas.
@@ -150,15 +138,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: true },
         { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
       ]
-    : enSEO
-    ? [{ ruta: '/seo', etiqueta: 'Dashboard SEO', mostrar: true }]
-    : enWhatsApp
-    ? [
-        { ruta: '/whatsapp', etiqueta: 'Bandeja', mostrar: true, activo: p => p === '/whatsapp' },
-        { ruta: '/whatsapp/automatizaciones', etiqueta: 'Automatizaciones', mostrar: esSuperadmin },
-        { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin }
-      ]
-    : enContabilidad
+    : enFinanzas
     ? [
         { ruta: '/contabilidad', etiqueta: 'Resumen', mostrar: true },
         { ruta: '/contabilidad/asientos', etiqueta: 'Asientos', mostrar: true },
@@ -167,22 +147,13 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/contabilidad/configuracion', etiqueta: 'Configuración', mostrar: true },
         { ruta: '/contabilidad/entidades', etiqueta: 'Entidades', mostrar: true }
       ]
-    : enProveedores
+    : enComercial
     ? [
-        { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: true, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
-        { ruta: '/proveedores/postulantes', etiqueta: 'Postulantes', mostrar: true },
-        { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: true },
-        { ruta: '/proveedores/comunicaciones', etiqueta: 'Comunicaciones', mostrar: true }
-      ]
-    : enPropiedades
-    ? [
-        { ruta: '/propiedades', etiqueta: 'Inicio', mostrar: true, activo: activaPropiedades },
-        { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true }
-      ]
-    : enCRM
-    ? [
-        // "Inicio" es el home del área: en CRM, el Pipeline.
-        { ruta: '/pipeline', etiqueta: 'Inicio', mostrar: true }
+        // "Inicio" del grupo Comercial es el Pipeline.
+        { ruta: '/pipeline', etiqueta: 'Pipeline', mostrar: true },
+        { ruta: '/propiedades', etiqueta: 'Arriendos y ventas', mostrar: true, activo: activaPropiedades },
+        { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true, hijo: true },
+        { ruta: '/seo', etiqueta: 'SEO y analítica', mostrar: esAdministracion }
       ]
     : [
         { ruta: '/inicio', etiqueta: 'Inicio', mostrar: true },
@@ -191,7 +162,16 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/bitacora', etiqueta: 'Bitácora', mostrar: true },
         { ruta: '/comunidades', etiqueta: 'Comunidades', mostrar: true },
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
-        { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true }
+        { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true },
+        // Proveedores y WhatsApp son de administración. Sus subsecciones
+        // aparecen debajo solo mientras se está en ellas.
+        { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: esAdministracion, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
+        { ruta: '/proveedores/postulantes', etiqueta: 'Postulantes', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
+        { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
+        { ruta: '/proveedores/comunicaciones', etiqueta: 'Comunicaciones', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
+        { ruta: '/whatsapp', etiqueta: 'WhatsApp', mostrar: esAdministracion, activo: p => p === '/whatsapp' },
+        { ruta: '/whatsapp/automatizaciones', etiqueta: 'Automatizaciones', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true },
+        { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true }
       ];
 
   const inicio = esCliente ? '/portal' : inicioSegunArea();
@@ -217,6 +197,17 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (tipo === 'bitacora') return <svg {...comun}><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>;
     if (tipo === 'mantenciones') return <svg {...comun}><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v6a6 6 0 0 1-6 6H6"/><path d="m10 18-4 4-4-4 4-4"/><path d="M6 22v-6"/></svg>;
     if (tipo === 'mapa') return <svg {...comun}><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>;
+    if (tipo === 'proveedores' || tipo === 'whatsapp' || tipo === 'propiedades' || tipo === 'seo') return <IconoNavegacion tipo={tipo} size={21} />;
+    if (tipo === 'pipeline') return <IconoNavegacion tipo="comercial" size={21} />;
+    if (tipo === 'conta-resumen') return <svg {...comun}><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>;
+    if (tipo === 'conta-asientos') return <svg {...comun}><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/><path d="M12 4v16"/></svg>;
+    if (tipo === 'conta-reportes') return <svg {...comun}><path d="M4 19V5M4 19h17M7 15l4-4 3 2 6-7"/></svg>;
+    if (tipo === 'conta-plan') return <svg {...comun}><path d="M6 4v16M6 8h6M6 14h6"/><rect x="12" y="5.5" width="8" height="5" rx="1"/><rect x="12" y="11.5" width="8" height="5" rx="1"/></svg>;
+    if (tipo === 'conta-entidades') return <svg {...comun}><path d="M4 20h16"/><path d="M6 20V7h12v13"/><path d="M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>;
+    if (tipo === 'conta-configuracion' || tipo === 'ajustes') return <svg {...comun}><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>;
+    if (tipo === 'equipo') return <svg {...comun}><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1"/></svg>;
+    if (tipo === 'clientes') return <svg {...comun}><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg>;
+    if (tipo === 'nueva-propiedad') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M12 11v6M9 14h6"/></svg>;
     return <svg {...comun}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   }
 
@@ -238,7 +229,19 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'plantillas', etiqueta: 'Plantillas', ruta: '/plantillas', mostrar: puedeConfigurar },
     { id: 'bitacora', etiqueta: 'Bitácora', ruta: '/bitacora' },
     { id: 'mantenciones', etiqueta: 'Mantenciones', ruta: '/mantenciones' },
-    { id: 'mapa', etiqueta: 'Mapa', ruta: '/mapa' }
+    { id: 'mapa', etiqueta: 'Mapa', ruta: '/mapa' },
+    { id: 'proveedores', etiqueta: 'Proveedores', ruta: '/proveedores', mostrar: esAdministracion },
+    { id: 'whatsapp', etiqueta: 'WhatsApp', ruta: '/whatsapp', mostrar: esAdministracion }
+  ].filter(x => x.mostrar !== false);
+
+  // Comercial en el teléfono: misma barra inferior que Operaciones. SEO
+  // tiene su propia barra de secciones, así que en /seo no se dibuja esta.
+  const opcionesComercial = [
+    { id: 'pipeline', etiqueta: 'Pipeline', ruta: '/pipeline' },
+    { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
+    { id: 'seo', etiqueta: 'SEO', ruta: '/seo', mostrar: esAdministracion },
+    { id: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', badge: alertasTotales },
+    { id: 'nueva-propiedad', etiqueta: 'Nueva propiedad', ruta: '/propiedades/nueva' }
   ].filter(x => x.mostrar !== false);
 
   const idsPermitidos = new Set(opcionesOperacion.map(x => x.id));
@@ -246,20 +249,44 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     ? perfil.bottom_nav.filter(id => idsPermitidos.has(id))
     : ['inicio', 'comunidades', 'levantamientos', 'notificaciones'];
 
-  const barraIds = [...preferidos];
-  for (const item of opcionesOperacion) {
+  // Finanzas y Configuración: también barra inferior en el teléfono (en
+  // escritorio, la barra lateral). Contabilidad oculta sus pestañas
+  // superiores en el teléfono para no repetir el menú.
+  const opcionesFinanzas = [
+    { id: 'conta-resumen', etiqueta: 'Resumen', ruta: '/contabilidad', activo: p => p === '/contabilidad' },
+    { id: 'conta-asientos', etiqueta: 'Asientos', ruta: '/contabilidad/asientos' },
+    { id: 'conta-reportes', etiqueta: 'Reportes', ruta: '/contabilidad/reportes' },
+    { id: 'conta-plan', etiqueta: 'Plan de cuentas', ruta: '/contabilidad/plan' },
+    { id: 'conta-entidades', etiqueta: 'Entidades', ruta: '/contabilidad/entidades' },
+    { id: 'conta-configuracion', etiqueta: 'Configuración', ruta: '/contabilidad/configuracion' }
+  ];
+  const opcionesConfiguracion = [
+    { id: 'ajustes', etiqueta: 'Ajustes', ruta: '/configuracion' },
+    { id: 'equipo', etiqueta: 'Equipo', ruta: '/equipo' },
+    { id: 'clientes', etiqueta: 'Clientes', ruta: '/clientes', mostrar: esSuperadmin }
+  ].filter(x => x.mostrar !== false);
+
+  const opcionesBarra = enComercial ? opcionesComercial
+    : enFinanzas ? opcionesFinanzas
+    : enConfiguracion ? opcionesConfiguracion
+    : opcionesOperacion;
+  const barraIds = enOperacion ? [...preferidos] : [];
+  for (const item of opcionesBarra) {
     if (barraIds.length >= 4) break;
     if (!barraIds.includes(item.id)) barraIds.push(item.id);
   }
   const barraMovil = barraIds.slice(0, 4)
-    .map(id => opcionesOperacion.find(x => x.id === id))
+    .map(id => opcionesBarra.find(x => x.id === id))
     .filter(Boolean);
-  const menuMasOperacion = opcionesOperacion.filter(x => !barraIds.slice(0, 4).includes(x.id));
+  const menuMasOperacion = opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
+  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion
+    || (enComercial && !activa(pathname, '/seo'));
 
   function itemMovilActivo(item) {
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
     if (item.id === 'levantamientos') return levantamientosActivo;
+    if (item.activo) return item.activo(pathname);
     return item.ruta ? activa(pathname, item.ruta) : false;
   }
 
@@ -281,7 +308,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
           {accesos.filter(a => a.mostrar).map(a => (
             <Link key={a.ruta} to={a.ruta}
-                  className={'enlace-lateral' + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
+                  className={'enlace-lateral' + (a.hijo ? ' enlace-lateral-hijo' : '') + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
               <span className="enlace-lateral-icono"><IconoNavegacion tipo={iconoRutaCoproactiva(a.ruta)} /></span>
               <span>{a.etiqueta}</span>
             </Link>
@@ -363,7 +390,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         {children}
       </div>
 
-      {enOperacion && (
+      {mostrarBarraMovil && (
         <>
           <nav className="barra-inferior-movil" aria-label="Navegación principal">
             {barraMovil.map(item => (
