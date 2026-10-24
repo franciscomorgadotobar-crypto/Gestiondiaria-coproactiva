@@ -234,8 +234,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'whatsapp', etiqueta: 'WhatsApp', ruta: '/whatsapp', mostrar: esAdministracion }
   ].filter(x => x.mostrar !== false);
 
-  // Comercial en el teléfono: misma barra inferior que Operaciones. SEO
-  // tiene su propia barra de secciones, así que en /seo no se dibuja esta.
+  // Comercial conserva el mismo menú principal también al entrar en SEO.
+  // Las secciones de SEO son navegación interna, no reemplazan esta barra.
   const opcionesComercial = [
     { id: 'pipeline', etiqueta: 'Pipeline', ruta: '/pipeline' },
     { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
@@ -280,8 +280,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     .filter(Boolean);
   const menuMasOperacion = opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
-  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion
-    || (enComercial && !activa(pathname, '/seo'));
+  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial;
 
   function itemMovilActivo(item) {
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
