@@ -528,24 +528,36 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   <strong>Más</strong>
                   <button ref={cerrarMasRef} type="button" onClick={() => setMasAbierto(false)} aria-label="Cerrar menú">×</button>
                 </div>
-                <div className="menu-mas-enlaces">
-                  {menuMasOperacion.map(item => (
-                    <button key={item.id} type="button" onClick={() => ejecutarItemMovil(item)}>
-                      <span>
-                        {item.etiqueta}
-                        {item.badge > 0 ? ` (${item.badge})` : ''}
-                      </span>
-                      <span>›</span>
-                    </button>
-                  ))}
-                  <Link to="/mi-cuenta" onClick={() => setMasAbierto(false, { alNavegar: true })}>
-                    Mi cuenta <span>›</span>
-                  </Link>
-                  {puedeCambiarArea && (
-                    <button type="button" onClick={() => { setMasAbierto(false, { alNavegar: true }); cambiarArea(); }}>
-                      Cambiar de área <span>›</span>
-                    </button>
+                <div className="menu-mas-secciones">
+                  {menuMasOperacion.length > 0 && (
+                    <div className="menu-mas-grupo" role="group" aria-label={'Módulos y acciones de ' + nombreArea}>
+                      <p className="menu-mas-grupo-titulo">Módulos y acciones · {nombreArea}</p>
+                      <div className="menu-mas-enlaces">
+                        {menuMasOperacion.map(item => (
+                          <button key={item.id} type="button" onClick={() => ejecutarItemMovil(item)}>
+                            <span>
+                              {item.etiqueta}
+                              {item.badge > 0 ? ` (${item.badge})` : ''}
+                            </span>
+                            <span aria-hidden="true">›</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
+                  <div className="menu-mas-grupo menu-mas-grupo-cuenta" role="group" aria-label="Cuenta y navegación">
+                    <p className="menu-mas-grupo-titulo">Cuenta y navegación</p>
+                    <div className="menu-mas-enlaces">
+                      <Link to="/mi-cuenta" onClick={() => setMasAbierto(false, { alNavegar: true })}>
+                        Mi cuenta <span aria-hidden="true">›</span>
+                      </Link>
+                      {puedeCambiarArea && (
+                        <button type="button" onClick={() => { setMasAbierto(false, { alNavegar: true }); cambiarArea(); }}>
+                          Cambiar de área <span aria-hidden="true">›</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
