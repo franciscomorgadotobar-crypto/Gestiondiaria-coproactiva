@@ -23,7 +23,7 @@ const session = {
     app_metadata:{provider:'email',providers:['email']},user_metadata:{},
     created_at:new Date().toISOString()}
 };
-// Cuatro grupos en el selector; las demás secciones se abren dentro de su
+// Tres áreas y acceso secundario a Administración; los módulos se abren dentro de su
 // grupo (pestañas de Comercial, «Más» o barra lateral de Operaciones).
 const areas=[
   {name:/Gestión comercial/,heading:/Pipeline comercial/,slug:'crm'},
@@ -91,13 +91,17 @@ try {
         const style=getComputedStyle(modulo);
         const html=document.documentElement;
         const encabezado=modulo.querySelector('.modulo-cabecera, .wa-header');
+        const contenido=modulo.querySelector(':scope > .cuerpo, :scope > .seo-cuerpo, :scope > .contabilidad-cuerpo');
+        const px=nodo=>nodo ? parseFloat(getComputedStyle(nodo).paddingLeft) : null;
         return {
           ruta:location.pathname,
           fondo:style.backgroundColor,
           radio:style.getPropertyValue('--radio-tarjeta').trim(),
           ancho:window.innerWidth,
           documento:html.scrollWidth,
-          encabezado:!!encabezado
+          encabezado:!!encabezado,
+          lateralCabecera:px(encabezado),
+          lateralContenido:px(contenido)
         };
       });
       assert.ok(!aspecto.missing,area.slug+' sin estilo global '+JSON.stringify(aspecto));
@@ -105,6 +109,13 @@ try {
       if(area.slug!=='whatsapp')
         assert.equal(aspecto.fondo,'rgb(247, 244, 240)',area.slug+' fondo cálido');
       assert.ok(aspecto.encabezado,area.slug+' sin encabezado homogéneo');
+      if(area.slug!=='whatsapp') {
+        assert.ok(aspecto.lateralContenido!==null,
+          area.slug+' sin contenedor principal '+JSON.stringify(aspecto));
+        assert.ok(Math.abs(aspecto.lateralCabecera-aspecto.lateralContenido)<=1,
+          area.slug+' cabecera y contenido deben estar alineados a '+width+
+          'px '+JSON.stringify(aspecto));
+      }
       if(width<=390)assert.ok(aspecto.documento<=aspecto.ancho+2,
         'Desbordamiento de '+area.slug+' '+JSON.stringify(aspecto));
       await page.screenshot({
