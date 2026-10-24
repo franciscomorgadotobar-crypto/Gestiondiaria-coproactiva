@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { usePestanaHistorial } from '../../lib/pestanasHistorial';
+import { useVolverGlobal } from '../../lib/navegacion';
 import { useSesion } from '../../lib/sesion';
 import { construirOportunidades, destinoOportunidadSEO, rutasParaAuditoriaSEO } from '../../lib/seoOportunidades';
 import { clasificarOportunidadesSEO } from '../../lib/seoEstadoOportunidades';
@@ -109,7 +110,14 @@ function Barra({ titulo, valor, max, detalle }) {
     <div className="seo-barra-fondo"><span style={{ width: (100 * Number(valor || 0) / Math.max(1, max)) + '%' }} /></div></div>;
 }
 function SEOInterno() {
+  const navegar = useNavigate();
   const [vista, setVista] = usePestanaHistorial('vista', 'resumen', VISTAS_SEO);
+  // Volver del encabezado: primero al Dashboard SEO; desde él, a Comercial.
+  // El historial del navegador y Atrás de Android conservan su comportamiento.
+  useVolverGlobal(() => {
+    if (vista !== 'resumen') setVista('resumen', { replace: true });
+    else navegar('/pipeline');
+  });
   // El período es parte de la URL, igual que la pestaña. Sobrevive a
   // actualizar, restaurar la PWA y navegar entre vistas del módulo.
   const [parametrosPeriodo, setParametrosPeriodo] = useSearchParams();
@@ -377,6 +385,12 @@ function SEOInterno() {
     </header>
 
     <div className="cuerpo seo-cuerpo modulo-contenido">
+      <BarraNavegacionSEO
+        vista={vista}
+        secciones={SECCIONES}
+        vistasValidas={VISTAS_SEO}
+        onSeleccionar={irVista}
+      />
       <nav id="seo-navegacion" className="seo-pestanas ui-pestanas" aria-label="Secciones SEO" role="tablist">{SECCIONES.map(([id, label]) =>
         <button key={id} type="button" role="tab" aria-selected={vista === id}
           className={vista === id ? 'activo' : ''}
@@ -748,16 +762,6 @@ function SEOInterno() {
 
 
     </div>
-    <BarraNavegacionSEO
-      vista={vista}
-      secciones={SECCIONES}
-      vistasValidas={VISTAS_SEO}
-      onSeleccionar={id => { if (id === 'resumen') void cargarHistorialSEO(); }}
-      enlacesArea={[
-        { ruta: '/pipeline', etiqueta: 'Pipeline' },
-        { ruta: '/propiedades', etiqueta: 'Arriendos y ventas' }
-      ]}
-    />
   </div>;
 }
 export default function SEO() {
