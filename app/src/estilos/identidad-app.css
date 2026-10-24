@@ -186,6 +186,18 @@
   color:#955123;
 }
 
+/* Alineación real escritorio: la cabecera y el contenido usan la misma
+   columna centrada. Antes el encabezado tenía 18–34 px, mientras la zona de
+   trabajo heredaba 40 px o una anchura máxima específica de la pantalla. */
+@media (min-width:900px) {
+  .pantalla.modulo-unificado {
+    --ca-margen-contenido: max(
+      var(--margen-escritorio,40px),
+      calc((100% - var(--ancho-contenido,1280px)) / 2)
+    );
+  }
+}
+
 /* Navegación persistente: misma marca, jerarquía y estados para cada módulo. */
 @media(min-width:900px) {
   .layout-escritorio .barra-lateral {
