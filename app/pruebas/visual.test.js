@@ -115,12 +115,12 @@ test('mismos ejes de alineación y navegación contextual en todo el sistema',()
   const seoEstilos=read('paginas/panel/SEO.css');
   const base=read('estilos/base.css');
   const panel=read('componentes/PanelEscritorio.jsx');
-  assert.match(identidad,/--ca-margen-contenido-movil:\\s*16px/);
-  assert.match(identidad,/--ca-margen-contenido:\\s*max\\(/);
-  assert.match(identidad,/padding:20px var\\(--ca-margen-contenido-movil\\)/);
-  assert.match(seoEstilos,/cabecera\\.modulo-cabecera\\{display:flex/);
-  assert.doesNotMatch(seoEstilos,/margin:16px clamp\\(16px/);
+  assert.match(identidad,/--ca-margen-contenido-movil:\s*16px/);
+  assert.match(identidad,/--ca-margen-contenido:\s*max\(/);
+  assert.match(identidad,/padding:20px var\(--ca-margen-contenido-movil\)/);
+  assert.match(seoEstilos,/cabecera\.modulo-cabecera\{display:flex/);
+  assert.doesNotMatch(seoEstilos,/margin:16px clamp\(16px/);
   assert.match(panel,/menu-mas-grupo-cuenta/);
   assert.match(panel,/Módulos y acciones/);
-  assert.match(base,/max-height: calc\\(100dvh - 88px/);
+  assert.match(base,/max-height: calc\(100dvh - 88px/);
 });
