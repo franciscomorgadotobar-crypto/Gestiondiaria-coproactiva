@@ -556,3 +556,49 @@
     font-size:13px;
   }
 }
+
+
+/* Menú lateral constante: áreas de trabajo desplegables y ajustes secundarios. */
+@media (min-width: 900px) {
+  .layout-escritorio .grupo-navegacion-lateral { display: flex; flex-direction: column; gap: 4px; }
+  .layout-escritorio .grupo-navegacion-boton {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #56606a;
+    font: 700 14px/1.3 var(--fuente-cuerpo);
+    text-align: left;
+    cursor: pointer;
+  }
+  .layout-escritorio .grupo-navegacion-boton:hover { background: #fff5ec; color: var(--tinta); }
+  .layout-escritorio .grupo-navegacion-boton.activo { color: #9b4f1c; background: #fff0e4; }
+  .layout-escritorio .grupo-navegacion-boton:focus-visible {
+    outline: 2px solid #b45c20;
+    outline-offset: 2px;
+  }
+  .layout-escritorio .grupo-navegacion-flecha { margin-left: auto; font-size: 20px; line-height: 1; }
+  .layout-escritorio .grupo-navegacion-enlaces {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0 0 5px 20px;
+    padding-left: 8px;
+    border-left: 2px solid #f0e2d4;
+  }
+  .layout-escritorio .grupo-navegacion-enlaces .enlace-lateral {
+    min-height: 37px;
+    padding: 8px 9px;
+    font-size: 12.5px;
+  }
+  .layout-escritorio .grupo-navegacion-administracion {
+    margin-top: 16px;
+    padding-top: 13px;
+    border-top: 1px solid var(--ca-borde);
+  }
+}
