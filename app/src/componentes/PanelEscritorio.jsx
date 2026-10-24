@@ -143,7 +143,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     || (pathname === '/inicio' && hash === '#por-hacer');
 
   const nombreArea = esCliente ? null
-    : enConfiguracion ? 'Configuración'
+    : enConfiguracion ? 'Administración y ajustes'
     : enComercial ? 'Comercial'
     : enFinanzas ? 'Finanzas'
     : puedeConfigurar ? 'Operaciones' : null;
@@ -470,10 +470,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   ?
                 </button>
               )}
-              {puedeCambiarArea && (
-                <button type="button" className="barra-area-cambiar" onClick={cambiarArea}>
-                  Cambiar de área
-                </button>
+              {nombreArea && (
+                <span className="barra-area-nombre" aria-label={'Área actual: ' + nombreArea}>
+                  {nombreArea}
+                </span>
               )}
             </div>
           </div>
