@@ -66,3 +66,24 @@ test('se respeta la barra inferior y ancho móvil sin alterar navegación',()=>{
   const panel=read('componentes/PanelEscritorio.jsx');
   assert.match(panel,/barra-inferior-movil/);
 });
+
+
+test('Clientes separa listado, ficha individual, permisos y actividad real',()=>{
+  const clientes = read('paginas/panel/Clientes.jsx');
+  const estilos = read('paginas/panel/Clientes.css');
+  const panel = read('componentes/PanelEscritorio.jsx');
+  assert.match(clientes,/Listado de clientes/);
+  assert.match(clientes,/clientes-lista-item/);
+  assert.match(clientes,/parametros\.get\('cliente'\)/);
+  assert.match(clientes,/['"]permisos['"], ['"]actividad['"]/);
+  assert.match(clientes,/Comunidades autorizadas/);
+  assert.match(clientes,/Último acceso registrado/);
+  assert.match(clientes,/Detalle de uso todavía no disponible/);
+  assert.match(clientes,/setMostrarInactivos/);
+  assert.match(clientes,/cargandoAcceso/);
+  assert.doesNotMatch(clientes,/setSeleccionado/);
+  assert.match(estilos,/@media\(max-width:899px\)/);
+  assert.match(estilos,/clientes-ficha-tabs/);
+  assert.match(panel,/barra-area-nombre/);
+  assert.doesNotMatch(panel,/className="barra-area-cambiar"/);
+});
