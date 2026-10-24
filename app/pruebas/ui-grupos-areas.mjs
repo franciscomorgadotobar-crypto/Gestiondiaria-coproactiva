@@ -102,18 +102,12 @@ try {
       ['Pipeline', 'Arriendos', 'SEO', 'Notificaciones', 'Más']);
     await barra.getByRole('button', { name: 'Más' }).click();
     const menu = page.getByRole('dialog', { name: 'Más opciones' });
-    assert.equal(await menu.getByRole('button', { name: 'Nueva propiedad' }).count(), 0,
-      'Pipeline no muestra acciones de Arriendos');
-    assert.equal(await menu.getByRole('button', { name: 'Cambiar de área' }).count(), 1);
-    await page.getByRole('button', { name: 'Cerrar menú' }).click();
+    for (const nombre of ['Nueva propiedad', 'Cambiar de área'])
+      assert.equal(await menu.getByRole('button', { name: nombre }).count(), 1, nombre);
+    await menu.getByRole('button', { name: 'Nueva propiedad' }).click();
+    await page.waitForURL(u => u.pathname === '/propiedades/nueva', { timeout: 20000 });
     await barra.getByRole('button', { name: 'Arriendos' }).click();
     await page.waitForURL(u => u.pathname === '/propiedades', { timeout: 20000 });
-    await barra.getByRole('button', { name: 'Más' }).click();
-    const menuArriendos = page.getByRole('dialog', { name: 'Más opciones' });
-    assert.equal(await menuArriendos.getByRole('button', { name: 'Nueva propiedad' }).count(), 1,
-      'Arriendos sí ofrece Nueva propiedad');
-    await menuArriendos.getByRole('button', { name: 'Nueva propiedad' }).click();
-    await page.waitForURL(u => u.pathname === '/propiedades/nueva', { timeout: 20000 });
     await barra.getByRole('button', { name: 'SEO', exact: true }).click();
     await page.waitForURL(u => u.pathname === '/seo', { timeout: 20000 });
     await page.getByRole('combobox', { name: 'Sección de SEO' }).waitFor({ timeout: 20000 });
