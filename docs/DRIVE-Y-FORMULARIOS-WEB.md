@@ -51,5 +51,9 @@ Al crear una comunidad o ganar un prospecto se intenta crear la carpeta de inmed
 - Destino: `prospectos` con etapa `nuevo`, visible en Pipeline de Gestión Diaria.
 - Auditoría y atribución: `web_form_ingresos`, con ID del formulario, servicio original y UTM.
 - Avisos: tabla `notificaciones` para admins y jefaturas activas.
+- Correos (por el SMTP de contacto@coproactiva.cl ya configurado, sin servicios nuevos):
+  - "Nuevo prospecto web: [condominio]" a contacto@coproactiva.cl, con los datos, el ID del prospecto y el enlace a Pipeline.
+  - "Gracias por contactarnos — [condominio]" a quien completó el formulario. Máximo 3 confirmaciones por dirección en 24 horas.
+  - Se envían después de responder al navegador y solo cuando se crea un prospecto nuevo; un reenvío idéntico dentro de la hora no repite correos. Si el correo falla, el prospecto queda registrado igual y el registro de la función indica la falla sin exponer direcciones.
 
 Si se habilita `WEB_FORM_TURNSTILE_SECRET`, también debe agregarse el widget Turnstile al formulario para enviar `turnstile_token`. Sin configuración simultánea se bloquearán los envíos.

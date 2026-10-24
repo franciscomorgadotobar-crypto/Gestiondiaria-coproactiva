@@ -100,12 +100,15 @@ export async function enviarSimple(para: string, asunto: string, html: string) {
   return resultado;
 }
 
+/* `logo: false` envía HTML + texto sin la imagen embebida, para plantillas que
+ * dibujan la marca con texto y no la piden por cid. */
 export async function enviarLote(mensajes: Array<{
   para: string;
   asunto: string;
   html: string;
   texto: string;
-}>) {
+}>, opciones: { logo?: boolean } = {}) {
+  const conLogo = opciones.logo !== false;
   if (!hayCorreo()) {
     return mensajes.map(() => ({ enviado: false, motivo: 'SMTP sin configurar' }));
   }
@@ -129,13 +132,15 @@ export async function enviarLote(mensajes: Array<{
           subject: mensaje.asunto,
           content: mensaje.texto,
           html: mensaje.html,
-          attachments: [{
-            contentType: 'image/png',
-            filename: 'coproactiva.png',
-            encoding: 'base64',
-            content: LOGO_PNG,
-            contentID: 'logo'
-          }]
+          ...(conLogo ? {
+            attachments: [{
+              contentType: 'image/png',
+              filename: 'coproactiva.png',
+              encoding: 'base64' as const,
+              content: LOGO_PNG,
+              contentID: 'logo'
+            }]
+          } : {})
         });
         resultados.push({ enviado: true });
       } catch (e) {
