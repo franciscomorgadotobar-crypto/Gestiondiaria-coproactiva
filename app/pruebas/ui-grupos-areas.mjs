@@ -194,6 +194,14 @@ try {
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'Clientes'}).click();
     await page.waitForURL(u=>u.pathname==='/clientes');
     await page.getByRole('heading',{name:'Clientes y accesos'}).waitFor();
+    const ejesClientes=await page.evaluate(()=>{
+      const cabeza=document.querySelector('.clientes-pantalla .modulo-cabecera');
+      const cuerpo=document.querySelector('.clientes-pantalla .clientes-cuerpo');
+      return [parseFloat(getComputedStyle(cabeza).paddingLeft),
+        parseFloat(getComputedStyle(cuerpo).paddingLeft)];
+    });
+    assert.ok(Math.abs(ejesClientes[0]-ejesClientes[1])<=1,
+      'Clientes mantiene cabecera y contenido alineados: '+JSON.stringify(ejesClientes));
     assert.equal(await page.locator('.clientes-lista-item').count(),1,'por defecto solo activos');
     assert.equal(await page.locator('.clientes-ficha').count(),0,'ninguna ficha abierta automáticamente');
     assert.equal(await page.locator('.barra-area-cambiar').count(),0,'sin botón Cambiar de área duplicado arriba');
