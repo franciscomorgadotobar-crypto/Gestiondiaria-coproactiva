@@ -1,65 +1,55 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import {
-  SEO_ACCESOS_DIRECTOS, SEO_MENU_PARAMETRO,
-  abrirMenuSEO, cerrarMenuSEO, seleccionarSeccionSEO
-} from '../src/lib/seoNavegacion.js';
+import { obtenerValorNavegable, cambiarValorNavegable } from '../src/lib/pestanasHistorial.js';
 
-const read = path => readFileSync(new URL('../src/' + path, import.meta.url), 'utf8');
-const seo = read('paginas/panel/SEO.jsx');
-const barra = read('componentes/BarraNavegacionSEO.jsx');
-const estilos = read('paginas/panel/SEO.css');
-const validadas = ['resumen','consultas','analytics','business','oportunidades','seguimiento',
-  'tecnico','velocidad','tagmanager','conexiones','diagnostico'];
+const leer = ruta => readFileSync(new URL('../src/' + ruta, import.meta.url), 'utf8');
+const seo = leer('paginas/panel/SEO.jsx');
+const selector = leer('componentes/BarraNavegacionSEO.jsx');
+const estilos = leer('paginas/panel/SEO.css');
+const panel = leer('componentes/PanelEscritorio.jsx');
+const vistas = ['resumen','consultas','analytics','business','oportunidades',
+  'seguimiento','tecnico','velocidad','tagmanager','conexiones','diagnostico'];
 
-test('menú inferior: Dashboard, Búsquedas, Audiencia, Google Maps y Más', () => {
-  assert.deepEqual(SEO_ACCESOS_DIRECTOS, ['resumen','consultas','analytics','business']);
-  assert.match(barra, /className="barra-inferior-movil seo-barra-inferior"/);
-  assert.match(barra, /principales\.map\(item =>/);
-  assert.match(barra, /<span>Más<\/span>/);
-  assert.match(seo, /\['business', 'Google Maps'\]/);
-  assert.match(seo, /\['analytics', 'Audiencia'\]/);
-  assert.ok(!SEO_ACCESOS_DIRECTOS.includes('oportunidades'));
-  assert.ok(!SEO_ACCESOS_DIRECTOS.includes('seguimiento'));
-  assert.match(barra, /if \(tipo === 'business'\)/);
-  assert.match(barra, /if \(tipo === 'analytics'\)/);
-  assert.match(barra, /<IconoSEO tipo=\{item\.id\}/);
-  assert.match(barra, /aria-current=\{vista === item\.id \? 'page' : undefined\}/);
+test('SEO mantiene barra principal de Comercial también en teléfono', () => {
+  assert.match(panel, /const mostrarBarraMovil = enOperacion \|\| enFinanzas \|\| enConfiguracion \|\| enComercial/);
+  assert.match(panel, /\{ id: 'seo', etiqueta: 'SEO', ruta: '\/seo'/);
+  assert.match(panel, /\{ id: 'pipeline', etiqueta: 'Pipeline', ruta: '\/pipeline'/);
+  assert.match(panel, /aria-current=\{itemMovilActivo\(item\) \? 'page'/);
+  assert.doesNotMatch(seo, /seo-barra-inferior/);
 });
 
-test('Más ofrece todas las secciones restantes e incluye Diagnóstico', () => {
-  assert.match(barra, /secciones\.map\(\(\[id, etiqueta\]\)/);
-  assert.match(barra, /id: 'diagnostico', etiqueta: 'Diagnóstico'/);
-  assert.match(barra, /opciones\.filter\(item => !SEO_ACCESOS_DIRECTOS\.includes\(item\.id\)\)/);
-  assert.match(barra, /adicionales\.map\(item =>/);
-  assert.match(barra, /role="dialog" aria-modal="true"/);
-  assert.match(barra, /aria-expanded=\{menuAbierto\}/);
-  assert.match(barra, /e\.key === 'Escape'/);
-  assert.match(barra, /e\.key !== 'Tab'/);
-});
-
-test('menú Más conserva el historial y al elegir una vista se elimina su entrada temporal', () => {
-  const original = new URLSearchParams('dias=28&comunidad=456&vista=consultas');
-  const abierto = abrirMenuSEO(original);
-  assert.equal(abierto.get(SEO_MENU_PARAMETRO), 'mas');
-  assert.equal(abierto.get('comunidad'), '456');
-  const cambiado = seleccionarSeccionSEO(abierto, 'seguimiento', validadas);
-  assert.equal(cambiado.get('vista'), 'seguimiento');
-  assert.equal(cambiado.has(SEO_MENU_PARAMETRO), false);
-  assert.equal(cambiado.get('comunidad'), '456');
-  assert.equal(seleccionarSeccionSEO(abierto,'resumen',validadas).has('vista'),false);
-  assert.equal(seleccionarSeccionSEO(abierto,'vista-inexistente',validadas).has('vista'),true);
-  assert.equal(cerrarMenuSEO(abierto).get('vista'),'consultas');
-  assert.match(barra, /replace: menuAbierto, preventScrollReset: true/);
-  assert.match(barra, /navegar\(-1\)/);
-});
-
-test('no se duplican tabs móviles y el escritorio conserva las secciones SEO', () => {
-  assert.match(seo, /id="seo-navegacion" className="seo-pestanas ui-pestanas"/);
+test('SEO usa selector interno accesible con todas las secciones, sin otra barra fija', () => {
+  assert.match(selector, /useId\(\)/);
+  assert.match(selector, /htmlFor=\{id\}/);
+  assert.match(selector, /aria-label="Sección de SEO"/);
+  assert.match(selector, /<select/);
+  assert.match(selector, /opciones\.map/);
+  assert.match(selector, /\['diagnostico', 'Diagnóstico'\]/);
   assert.match(seo, /<BarraNavegacionSEO/);
-  assert.match(estilos, /@media \(max-width: 899px\)/);
+  assert.match(seo, /onSeleccionar=\{irVista\}/);
+  assert.match(estilos, /\.seo-selector-secciones \{ display: none; \}/);
+  assert.match(estilos, /\.seo-selector-secciones \{[\s\S]*?position: sticky;/);
   assert.match(estilos, /#seo-navegacion\.seo-pestanas \{ display: none; \}/);
-  assert.match(estilos, /max-height: calc\(100dvh/);
-  assert.match(seo, /if \(window\.matchMedia\('\(max-width: 899px\)'\)\.matches\)/);
+  assert.doesNotMatch(selector, /className="barra-inferior-movil/);
+});
+
+test('la vista y el período siguen en URL y se conservan al cambiar de sección', () => {
+  const inicio = new URLSearchParams('dias=90&comunidad=36&vista=analytics');
+  const maps = cambiarValorNavegable(inicio,'vista','business','resumen',vistas);
+  assert.equal(obtenerValorNavegable(maps,'vista',vistas,'resumen'),'business');
+  assert.equal(maps.get('dias'),'90');
+  assert.equal(maps.get('comunidad'),'36');
+  const dashboard = cambiarValorNavegable(maps,'vista','resumen','resumen',vistas);
+  assert.equal(dashboard.has('vista'),false);
+  assert.equal(dashboard.get('dias'),'90');
+});
+
+test('Volver en SEO pasa por Dashboard antes de regresar a Comercial', () => {
+  assert.match(seo, /useVolverGlobal\(\(\) =>/);
+  assert.match(seo, /vista !== 'resumen'\) setVista\('resumen', \{ replace: true \}\)/);
+  assert.match(seo, /else navegar\('\/pipeline'\)/);
+  assert.match(panel, /replace: desdeMas/);
+  assert.match(panel, /aria-haspopup="dialog"/);
+  assert.match(panel, /evento\.key === 'Escape'/);
 });
