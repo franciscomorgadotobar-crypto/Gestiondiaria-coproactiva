@@ -322,24 +322,24 @@
   }
 }
 
-/* Un solo encabezado: título, controles y metadatos en la misma tarjeta. */
-.pantalla.modulo-unificado.seo-pantalla>.encabezado.seo-cabecera.modulo-cabecera{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin:16px clamp(16px,2.5vw,34px) 0;padding:20px 24px 17px;background:#fff;border:1px solid var(--ca-borde);border-radius:18px;box-shadow:var(--ca-sombra)}
-.seo-pantalla.modulo-unificado .seo-cabecera h1.h3{font-size:clamp(1.55rem,3.2vw,2rem);margin:5px 0}
+/* SEO comparte el mismo encabezado de borde a borde que todos los módulos. */
+.pantalla.modulo-unificado.seo-pantalla>.encabezado.seo-cabecera.modulo-cabecera{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin:0;padding:24px var(--ca-margen-contenido);background:var(--ca-blanco);border:0;border-bottom:1px solid var(--ca-borde);border-radius:0;box-shadow:0 1px 1px rgba(35,36,38,.02)}
+.seo-pantalla.modulo-unificado .seo-cabecera h1.h3{font-size:clamp(20px,2.2vw,27px);margin:4px 0}
 .seo-pantalla .seo-cabecera p{max-width:630px}
 .seo-pantalla .seo-cabecera-acciones{margin-top:15px;gap:9px;flex-wrap:wrap;width:100%}
-.seo-pantalla .seo-cabecera select{border-radius:13px;min-height:44px;padding:10px 15px}
-.pantalla.seo-pantalla.modulo-unificado .seo-cabecera .boton.seo-actualizar{min-height:44px;padding:10px 17px;border-radius:13px;border:1px solid #9b4b19;color:#fff;background:#a7521c;letter-spacing:0;font-weight:700}
-.pantalla.seo-pantalla.modulo-unificado .seo-cabecera .boton.seo-actualizar:hover:not(:disabled){background:#8a4115}
+.seo-pantalla .seo-cabecera select{border-radius:var(--ca-radio-control);min-height:44px;padding:10px 15px}
+.pantalla.seo-pantalla.modulo-unificado .seo-cabecera .boton.seo-actualizar{min-height:44px;padding:10px 17px;border-radius:var(--ca-radio-control);border:1px solid var(--tinta);color:#fff;background:var(--tinta);letter-spacing:0;font-weight:700}
+.pantalla.seo-pantalla.modulo-unificado .seo-cabecera .boton.seo-actualizar:hover:not(:disabled){background:#3c4147}
 .seo-cabecera .seo-actualizar span{font-size:1.15rem;margin-right:5px;vertical-align:middle}
 .seo-cabecera-datos{width:100%;display:flex;gap:11px;align-items:flex-start;border-top:1px solid var(--ca-borde);margin-top:15px;padding-top:11px;font-size:.78rem;color:#647080;line-height:1.43}
 .seo-cabecera-datos>div{display:flex;flex-direction:column}
 .seo-cabecera-datos-icono{width:18px;height:18px;border:1.7px solid currentColor;border-radius:50%;display:grid;place-items:center;flex:none;font-size:.76rem;font-weight:750}
 .seo-cabecera-datos-aclaracion{color:#806549;font-size:.72rem}
-.seo-pantalla.modulo-unificado>.seo-cuerpo.modulo-contenido{padding-top:13px}
+.seo-pantalla.modulo-unificado>.seo-cuerpo.modulo-contenido{padding-top:22px}
 @media(max-width:520px){
-.pantalla.modulo-unificado.seo-pantalla>.encabezado.seo-cabecera.modulo-cabecera{margin:12px 12px 0;padding:17px 16px 15px;border-radius:16px}
+.pantalla.modulo-unificado.seo-pantalla>.encabezado.seo-cabecera.modulo-cabecera{margin:0;padding:17px var(--ca-margen-contenido-movil);border-radius:0}
 .seo-pantalla .seo-cabecera-acciones{margin-top:12px}
 .seo-pantalla .seo-cabecera select{min-height:44px;padding:9px 12px}
 .pantalla.seo-pantalla.modulo-unificado .seo-cabecera .boton.seo-actualizar{min-height:44px;padding:9px 13px}
-.seo-pantalla.modulo-unificado>.seo-cuerpo.modulo-contenido{padding:10px 12px 20px}
+.seo-pantalla.modulo-unificado>.seo-cuerpo.modulo-contenido{padding:18px var(--ca-margen-contenido-movil)}
 }
