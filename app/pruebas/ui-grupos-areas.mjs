@@ -123,10 +123,10 @@ try {
     await ctx.close();
   }
 
-  // Teléfono · Configuración
+  // Teléfono · Administración y ajustes
   {
     const { ctx, page } = await crear();
-    await page.getByRole('button', { name: /Configuración/ }).click();
+    await page.getByRole('button', { name: /Administración y ajustes/ }).click();
     await page.waitForURL(u => u.pathname === '/configuracion', { timeout: 20000 });
     assert.deepEqual((await page.locator('.barra-inferior-movil .nav-movil-item').allInnerTexts()).map(x => x.trim()),
       ['Ajustes', 'Equipo', 'Clientes', 'Más']);
@@ -142,7 +142,9 @@ try {
     const lateral = page.locator('.barra-lateral .enlace-lateral');
     assert.deepEqual((await lateral.allInnerTexts()).map(t => t.trim()),
       ['Pipeline', 'Arriendos y ventas', 'Nueva propiedad', 'SEO y analítica']);
-    assert.equal((await page.locator('.barra-lateral .etiqueta-lateral').innerText()).trim().toLowerCase(), 'comercial');
+    assert.deepEqual((await page.locator('.barra-lateral .grupo-navegacion-boton').allInnerTexts()).map(t => t.trim().replace(/[⌄›]/g, '').trim()),
+      ['Comercial', 'Operaciones', 'Finanzas', 'Administración y ajustes']);
+    assert.equal(await page.locator('.barra-lateral .grupo-navegacion-boton.activo').count(), 1);
 
     await page.goto(base + '/inicio', { waitUntil: 'domcontentloaded' });
     await page.getByRole('heading', { name: /Hola/ }).waitFor({ timeout: 20000 });
@@ -155,7 +157,7 @@ try {
     await page.waitForURL(u => u.pathname === '/proveedores', { timeout: 20000 });
     const dentro = (await lateral.allInnerTexts()).map(t => t.trim());
     for (const nombre of ['Postulantes', 'Correos', 'Comunicaciones']) assert.ok(dentro.includes(nombre), nombre);
-    assert.equal((await page.locator('.barra-lateral .etiqueta-lateral').innerText()).trim().toLowerCase(), 'operaciones');
+    assert.equal(await page.locator('.barra-lateral .grupo-navegacion-boton.activo').innerText().then(t => t.includes('Operaciones')), true);
     console.log('Escritorio · Comercial y Operaciones con sus secciones: OK');
     await ctx.close();
   }
