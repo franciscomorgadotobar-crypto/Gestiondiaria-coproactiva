@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { INDICADORES_PERFIL_GOOGLE, indicadorPerfilGoogle, datosPerfilGoogle } from '../src/lib/seoGoogleMaps.js';
-import { SEO_ACCESOS_DIRECTOS, seleccionarSeccionSEO, abrirMenuSEO, SEO_MENU_PARAMETRO } from '../src/lib/seoNavegacion.js';
+import { cambiarValorNavegable } from '../src/lib/pestanasHistorial.js';
 
 const leer = ruta => readFileSync(new URL('../src/' + ruta, import.meta.url), 'utf8');
 const dashboard = leer('paginas/panel/SEODashboard.jsx');
@@ -10,27 +10,23 @@ const seo = leer('paginas/panel/SEO.jsx');
 const estilos = leer('paginas/panel/SEODashboard.css');
 const barra = leer('componentes/BarraNavegacionSEO.jsx');
 
-test('Google Maps queda visible en el menú de 5 opciones sin tapar Más', () => {
-  assert.deepEqual(SEO_ACCESOS_DIRECTOS, ['resumen','consultas','analytics','business']);
-  assert.equal(SEO_ACCESOS_DIRECTOS.length,4);
-  assert.match(barra,/principales\.map\(item =>/);
-  assert.match(barra,/<span>Más<\/span>/);
-  assert.match(barra,/if \(tipo === 'business'\)/);
-  assert.match(seo,/\['business', 'Google Maps'\]/);
-  for(const id of ['oportunidades','seguimiento','tecnico','velocidad','tagmanager','conexiones'])
-    assert.ok(!SEO_ACCESOS_DIRECTOS.includes(id));
+test('Google Maps queda en el selector interno de SEO sin sustituir Comercial', () => {
+  assert.match(barra, /<select/);
+  assert.match(barra, /opciones\.map/);
+  assert.match(seo, /\['business', 'Google Maps'\]/);
+  assert.match(seo, /<BarraNavegacionSEO/);
 });
 
-test('Google Maps desde la barra y desde Más preserva navegación y filtros', () => {
+test('pasar de Audiencia a Google Maps conserva el período y los filtros', () => {
   const vistas=['resumen','consultas','analytics','business','oportunidades','seguimiento','tecnico'];
   const original = new URLSearchParams('dias=28&comunidad=36&vista=analytics');
-  const maps = seleccionarSeccionSEO(original,'business',vistas);
+  const maps = cambiarValorNavegable(original,'vista','business','resumen',vistas);
   assert.equal(maps.get('vista'),'business');
   assert.equal(maps.get('dias'),'28');
   assert.equal(maps.get('comunidad'),'36');
-  const desdeMas = seleccionarSeccionSEO(abrirMenuSEO(original),'seguimiento',vistas);
-  assert.equal(desdeMas.has(SEO_MENU_PARAMETRO),false);
-  assert.equal(desdeMas.get('vista'),'seguimiento');
+  const seguimiento = cambiarValorNavegable(maps,'vista','seguimiento','resumen',vistas);
+  assert.equal(seguimiento.get('vista'),'seguimiento');
+  assert.equal(seguimiento.get('dias'),'28');
 });
 
 test('cinco indicadores GBP distintos de Search Console y GA4 están definidos', () => {
