@@ -23,16 +23,25 @@ const session = {
     app_metadata:{provider:'email',providers:['email']},user_metadata:{},
     created_at:new Date().toISOString()}
 };
+// Cuatro grupos en el selector; las demás secciones se abren dentro de su
+// grupo (pestañas de Comercial, «Más» o barra lateral de Operaciones).
 const areas=[
   {name:/Gestión comercial/,heading:/Pipeline comercial/,slug:'crm'},
-  {name:/OPERACIONES|Levantamientos/i,heading:/Hola/,slug:'operacion'},
-  {name:/Arriendos y ventas/,heading:/Propiedades/,slug:'propiedades'},
-  {name:/Red de proveedores/,heading:/Proveedores/,slug:'proveedores'},
-  {name:/Recepción y atención/,heading:/WhatsApp/,slug:'whatsapp'},
+  {name:/Operación de comunidades/,heading:/Hola/,slug:'operacion'},
+  {name:/Gestión comercial/,seccion:['/propiedades','Arriendos y ventas'],heading:/Propiedades/,slug:'propiedades'},
+  {name:/Operación de comunidades/,seccion:['/proveedores','Proveedores'],heading:/Proveedores/,slug:'proveedores'},
+  {name:/Operación de comunidades/,seccion:['/whatsapp','WhatsApp'],heading:/WhatsApp/,slug:'whatsapp'},
   {name:/Gestión contable/,heading:/Contabilidad/,slug:'contabilidad'},
-  {name:/SEO y Analítica/,heading:/SEO y Analítica/,slug:'seo'},
+  {name:/Gestión comercial/,seccion:['/seo','SEO'],heading:/SEO y Analítica/,slug:'seo'},
   {name:/Configuración/,heading:/Configuración/,slug:'configuracion'}
 ];
+
+async function abrirSeccion(page,ruta,etiqueta) {
+  const link=page.locator('a[href="'+ruta+'"]:visible').first();
+  if(await link.count()) return link.click();
+  await page.getByRole('button',{name:'Más',exact:true}).last().click();
+  await page.getByRole('dialog',{name:'Más opciones'}).getByRole('button',{name:new RegExp(etiqueta,'i')}).click();
+}
 await mkdir('artifacts/ui',{recursive:true});
 const browser = await chromium.launch({headless:true});
 try {
@@ -69,6 +78,10 @@ try {
       await page.goto(base+'/',{waitUntil:'domcontentloaded'});
       await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
       await page.getByRole('button',{name:area.name}).first().click();
+      if(area.seccion){
+        await page.waitForURL(u=>u.pathname!=='/',{timeout:17000});
+        await abrirSeccion(page,...area.seccion);
+      }
       await page.getByRole('heading',{name:area.heading}).first().waitFor({timeout:17000});
       const aspecto = await page.evaluate(()=>{
         const modulo=document.querySelector('.pantalla.modulo-unificado, .wa-page.modulo-unificado');

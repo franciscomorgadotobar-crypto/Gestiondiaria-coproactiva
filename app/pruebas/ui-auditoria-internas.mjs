@@ -76,12 +76,16 @@ async function irPantalla(page,vista) {
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:12000});
   const ruta=vista.ruta;
   const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
-  const area=operacion ? /OPERACIONES|Levantamientos/i
+  // Cuatro grupos: Proveedores es de Operaciones; Arriendos y ventas y SEO,
+  // de Comercial. Primero se elige el grupo y luego la sección.
+  const area=(operacion || ruta.startsWith('/proveedores')) ? /Operación de comunidades/
     : ruta.startsWith('/contabilidad') ? /Gestión contable/
-    : ruta.startsWith('/propiedades') ? /Arriendos y ventas/
-    : ruta.startsWith('/proveedores') ? /Red de proveedores/
-    : /SEO y Analítica/;
+    : /Gestión comercial/;
   await page.getByRole('button',{name:area}).first().click();
+  await page.waitForURL(u=>u.pathname!=='/',{timeout:12000});
+  if(ruta.startsWith('/proveedores')) await clickDestino(page,'/proveedores','Proveedores');
+  else if(ruta.startsWith('/propiedades')) await clickDestino(page,'/propiedades','Arriendos y ventas');
+  else if(ruta.startsWith('/seo')) await clickDestino(page,'/seo','SEO');
 
   if(operacion) {
     if(ruta==='/nuevo') await clickDestino(page,'/nuevo','Nuevo levantamiento');
