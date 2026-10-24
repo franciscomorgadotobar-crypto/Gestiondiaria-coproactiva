@@ -30,7 +30,7 @@ const session = {
 
 const navegador = await chromium.launch({ headless: true });
 try {
-  async function crear({ ancho = 390, alto = 844, rol = 'superadmin' } = {}) {
+  async function crear({ ancho = 390, alto = 844, rol = 'superadmin', clientesQA = false } = {}) {
     const movil = ancho < 900;
     const ctx = await navegador.newContext({
       viewport: { width: ancho, height: alto }, isMobile: movil, hasTouch: movil, serviceWorkers: 'block'
@@ -40,6 +40,23 @@ try {
     }, { session });
     await ctx.route('https://sin-configurar.supabase.co/**', async route => {
       const url = route.request().url();
+      if (clientesQA && url.includes('/rest/v1/perfiles?') && url.includes('rol=eq.cliente'))
+        return route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify([
+          {id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', nombre:'Cliente QA activo', email:'activo@qa.test', rol:'cliente', activo:true, ultimo_acceso:'2026-10-23T10:00:00Z', creado_en:'2026-10-01T10:00:00Z'},
+          {id:'cccccccc-cccc-4ccc-8ccc-cccccccccccc', nombre:'Cliente QA inactivo', email:'inactivo@qa.test', rol:'cliente', activo:false, ultimo_acceso:null, creado_en:'2026-09-01T10:00:00Z'}
+        ])});
+      if (clientesQA && url.includes('/rest/v1/comunidades?'))
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
+          {id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd', nombre:'Comunidad QA', comuna:'Santiago'}
+        ])});
+      if (clientesQA && url.includes('/rest/v1/plantillas_control?'))
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
+          {id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', nombre:'Control mensual', activa:true, codigo:'control'}
+        ])});
+      if (clientesQA && url.includes('/rest/v1/portal_cliente_comunidades?'))
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
+          {id:'ffffffff-ffff-4fff-8fff-ffffffffffff',usuario_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', comunidad_id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd',activa:true}
+        ])});
       if (url.includes('/rest/v1/perfiles?')) return route.fulfill({
         status: 200, contentType: 'application/json',
         body: JSON.stringify({ id: userId, nombre: 'QA Coproactiva', rol, activo: true, bottom_nav: [], email: 'qa-local@coproactiva.test' })
@@ -131,6 +148,36 @@ try {
     assert.deepEqual((await page.locator('.barra-inferior-movil .nav-movil-item').allInnerTexts()).map(x => x.trim()),
       ['Ajustes', 'Equipo', 'Clientes', 'Más']);
     console.log('Teléfono · Configuración: barra inferior: OK');
+    await ctx.close();
+  }
+
+  // Teléfono · Clientes: listado primero, ficha y permisos en secciones separadas.
+  {
+    const {ctx, page} = await crear({clientesQA:true});
+    await page.getByRole('button',{name:/Administración y ajustes/}).click();
+    await page.waitForURL(u=>u.pathname==='/configuracion');
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Clientes'}).click();
+    await page.waitForURL(u=>u.pathname==='/clientes');
+    await page.getByRole('heading',{name:'Clientes y accesos'}).waitFor();
+    assert.equal(await page.locator('.clientes-lista-item').count(),1,'por defecto solo activos');
+    assert.equal(await page.locator('.clientes-ficha').count(),0,'ninguna ficha abierta automáticamente');
+    assert.equal(await page.locator('.barra-area-cambiar').count(),0,'sin botón Cambiar de área duplicado arriba');
+    await page.getByRole('checkbox',{name:'Mostrar inactivos'}).check();
+    assert.equal(await page.locator('.clientes-lista-item').count(),2,'puede mostrar las cuentas dadas de baja');
+    await page.getByRole('button',{name:'Abrir ficha de Cliente QA activo'}).click();
+    await page.waitForURL(u=>u.pathname==='/clientes' && u.searchParams.has('cliente'));
+    await page.getByRole('heading',{name:'Cliente QA activo'}).waitFor();
+    assert.equal(await page.locator('.clientes-lista-item').count(),0,'ficha reemplaza a listado');
+    await page.getByRole('tab',{name:'Comunidades y permisos'}).click();
+    await page.getByRole('button',{name:/Ver permisos de Comunidad QA/}).click();
+    await page.getByText('Control mensual',{exact:true}).waitFor();
+    await page.getByRole('tab',{name:'Actividad'}).click();
+    await page.getByText('Detalle de uso todavía no disponible').waitFor();
+    await page.locator('.barra-area-volver').click();
+    await page.waitForURL(u=>u.pathname==='/clientes' && !u.searchParams.has('cliente'));
+    assert.equal(await page.locator('.clientes-lista-item').count(),2);
+    assert.equal(await page.locator('.barra-inferior-movil').count(),1);
+    console.log('Clientes: listado activo → ficha → permisos → actividad → volver al listado: OK');
     await ctx.close();
   }
 

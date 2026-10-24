@@ -2020,7 +2020,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
 @media (max-width: 899px) {
   .area-escritorio {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
     background: var(--fondo-app);
   }
 

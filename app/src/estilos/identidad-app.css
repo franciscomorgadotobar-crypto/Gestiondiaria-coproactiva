@@ -262,12 +262,17 @@
     box-shadow:0 2px 8px rgba(131,77,36,.035);
   }
   .barra-area-movil .barra-area-derecha { min-width:0; }
+  .barra-area-movil .barra-area-nombre {
+    display:inline-block; max-width:50vw; overflow:hidden;
+    white-space:nowrap; text-overflow:ellipsis;
+    color:#8f572e; font-size:12px; font-weight:700;
+  }
   .modulo-unificado > .encabezado.modulo-cabecera { padding:20px 18px; }
   .modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido {
     padding:18px 16px;
   }
   .barra-inferior-movil {
-    background:rgba(255,254,253,.98);
+    background:#fffefd;
     border-top:1px solid var(--ca-borde);
     box-shadow:0 -4px 18px rgba(47,40,32,.055);
   }
