@@ -27,7 +27,8 @@ Deno.test('aviso interno: datos, ID y enlace a Pipeline', () => {
   assert(r.html.includes('PROS_685A12EA3B8C'));
   assert(r.html.includes('+56912345678'));
   assert(r.html.includes('Dirección: Av. Siempre Viva 123<br>Unidades: 80'));
-  assert(r.html.includes(c.URL_PIPELINE));
+  assert(r.html.includes('href="https://app.coproactiva.cl/pipeline?etapa=nuevo&amp;origen=correo"'));
+  assert(r.texto.includes(c.URL_PIPELINE));
   assert(r.texto.includes('maria@ejemplo.cl'));
 });
 

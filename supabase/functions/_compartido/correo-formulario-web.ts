@@ -7,7 +7,9 @@
  */
 
 export const BUZON_COMERCIAL = 'contacto@coproactiva.cl';
-export const URL_PIPELINE = 'https://app.coproactiva.cl/pipeline';
+// `origen=correo` hace que la app abra Pipeline (etapa Nuevo) directamente en
+// vez del selector de áreas que muestra en una apertura nueva.
+export const URL_PIPELINE = 'https://app.coproactiva.cl/pipeline?etapa=nuevo&origen=correo';
 
 export type DatosFormulario = {
   nombre: string;
@@ -181,7 +183,7 @@ export function avisoNuevoProspecto(d: DatosFormulario) {
       <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0">
         <tr>
           <td align="center">
-            <a href="${URL_PIPELINE}" style="display:inline-block;background:#d5863b;color:#ffffff;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;padding:15px 36px;border-radius:8px;text-decoration:none;letter-spacing:0.2px">Abrir Pipeline → gestionar prospecto</a>
+            <a href="${escapar(URL_PIPELINE)}" style="display:inline-block;background:#d5863b;color:#ffffff;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;padding:15px 36px;border-radius:8px;text-decoration:none;letter-spacing:0.2px">Abrir Pipeline → gestionar prospecto</a>
           </td>
         </tr>
       </table>

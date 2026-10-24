@@ -74,6 +74,8 @@ La función Entrada dejó de consultar la preferencia antigua de área. Al inici
 
 Si Android restaura una URL interna (por ejemplo, /seo o /control/123), antes de montar React Router el arranque reemplaza esa misma entrada del historial por /. No se apila la página antigua: Atrás no puede devolverla como efecto de nuestra navegación.
 
+Excepción (24-10-2026): los enlaces que envía Coproactiva llevan `origen=correo` (por ejemplo, el botón del aviso de nuevo prospecto: `/pipeline?etapa=nuevo&origen=correo`). Son una petición explícita de esa pantalla, así que se abre directamente con el Home detrás (Atrás vuelve al selector), queda elegida el área correspondiente (CRM para Pipeline) y la marca se quita de la URL al arrancar. Sin esa marca, la regla anterior se mantiene. Prueba: `pruebas/ui-enlace-correo-pipeline.mjs`.
+
 Una vez abierto el Home, la elección explícita de un módulo conserva el historial normal. Atrás puede volver del módulo al Home; otro Atrás puede salir de la PWA o retornar al navegador, según Android. El botón Salir cierra sesión y no equivale a Atrás.
 
 Pruebas: Node verifica el arranque y Chromium móvil con perfil simulado prueba superadmin, jefatura, terreno y cliente; SEO guardado no se autoselecciona y solo abre tras pulsar su tarjeta.
