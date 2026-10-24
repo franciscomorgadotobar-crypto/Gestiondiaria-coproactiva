@@ -61,9 +61,9 @@ export default function SeleccionArea() {
     catch { /* La vista funciona aunque no se pueda guardar. */ }
   };
 
-  // Cuatro grupos. Dentro de cada uno, sus secciones quedan en el menú del
-  // panel; los permisos de cada sección no cambian (SEO, proveedores,
-  // WhatsApp y contabilidad siguen siendo solo de administración).
+  // Tres áreas de trabajo; Administración y ajustes aparece debajo como
+  // acceso secundario, sin cambiar el área que el usuario tenía seleccionada.
+  // Los permisos de SEO, proveedores, WhatsApp y contabilidad no cambian.
   const modulos = [
     {
       area: 'comercial', etiqueta: 'COMERCIAL', titulo: 'Gestión comercial',
@@ -82,10 +82,6 @@ export default function SeleccionArea() {
     {
       area: 'finanzas', etiqueta: 'FINANZAS', titulo: 'Gestión contable',
       descripcion: 'Asientos, libros, estados financieros e informes por entidad.', visible: puedeConfigurar
-    },
-    {
-      area: 'configuracion', etiqueta: 'AJUSTES', titulo: 'Configuración',
-      descripcion: 'Equipo y clientes.', visible: puedeConfigurar
     }
   ].filter(modulo => modulo.visible);
 
@@ -132,9 +128,7 @@ export default function SeleccionArea() {
               key={modulo.area}
               type="button"
               className="tarjeta seleccion-area-opcion seleccion-home__tarjeta"
-              onClick={() => modulo.area === 'configuracion'
-                ? navegar('/configuracion')
-                : elegir(modulo.area)}
+              onClick={() => elegir(modulo.area)}
             >
               <span className="seleccion-home__detalle">
                 <span className="seleccion-area-etiqueta">{modulo.etiqueta}</span>
@@ -150,6 +144,22 @@ export default function SeleccionArea() {
             </button>
           ))}
         </div>
+
+        {puedeConfigurar && (
+          <div className="seleccion-home__administracion">
+            <button type="button" className="seleccion-home__ajustes-enlace"
+                    onClick={() => navegar('/configuracion')}>
+              <span className="seleccion-home__ajustes-icono" aria-hidden="true">⚙</span>
+              <span className="seleccion-home__detalle">
+                <span className="seleccion-home__ajustes-titulo">Administración y ajustes</span>
+                <span className="seleccion-home__descripcion">
+                  Equipo, usuarios, permisos, accesos de clientes y configuración general.
+                </span>
+              </span>
+              <span aria-hidden="true">›</span>
+            </button>
+          </div>
+        )}
 
         <footer className="seleccion-home__pie">
           <p>Puedes cambiar de área cuando quieras desde el panel.</p>

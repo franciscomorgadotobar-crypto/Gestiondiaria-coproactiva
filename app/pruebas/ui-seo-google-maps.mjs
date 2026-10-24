@@ -100,8 +100,12 @@ try {
     'Clics para llamar','Solicitudes de indicaciones'
   ])assert.equal(await page.getByText(title,{exact:true}).count(),1,title);
 
-  assert.equal(await page.getByRole('button',{name:'Ir a Google Maps'}).count(),1);
-  assert.equal(await page.getByRole('button',{name:'Ir a Audiencia'}).count(),1);
+  // SEO usa un selector interno, sin sustituir el menú principal de Comercial.
+  const selectorSEO = page.getByRole('combobox',{name:'Sección de SEO'});
+  assert.equal(await selectorSEO.count(),1);
+  assert.equal(await page.locator('.barra-inferior-movil').count(),1);
+  for (const valor of ['analytics','business','oportunidades','seguimiento'])
+    assert.equal(await selectorSEO.locator('option[value="'+valor+'"]').count(),1,valor);
 
   const width = await page.evaluate(()=>({inner:window.innerWidth,
     html:document.documentElement.scrollWidth}));
@@ -111,18 +115,20 @@ try {
     .scrollIntoViewIfNeeded();
   await page.screenshot({path:'artifacts/ui/seo-google-maps-dashboard-390.png'});
 
-  await page.getByRole('button',{name:'Ir a Google Maps'}).click();
+  await selectorSEO.selectOption('business');
   await page.getByRole('heading',{name:'Google Business Profile · métricas oficiales'})
     .waitFor({timeout:12000});
   assert.equal(new URL(page.url()).searchParams.get('vista'),'business');
 
-  await page.getByRole('button',{name:'Más secciones SEO'}).click();
-  await page.getByRole('dialog',{name:'Más secciones SEO'}).waitFor({timeout:10000});
-  await page.getByRole('dialog').getByRole('button',{name:/Oportunidades/}).waitFor();
-  await page.getByRole('dialog').getByRole('button',{name:/Seguimiento/}).waitFor();
+  await selectorSEO.selectOption('oportunidades');
+  await page.waitForURL(url => url.searchParams.get('vista') === 'oportunidades');
+  await selectorSEO.selectOption('seguimiento');
+  await page.waitForURL(url => url.searchParams.get('vista') === 'seguimiento');
+  assert.equal(await page.locator('.seo-barra-inferior').count(),0);
+  assert.equal(await page.locator('.barra-inferior-movil').count(),1);
   assert.deepEqual(errores,[],'Errores JS en dashboard móvil');
 
-  console.log('Google Maps: barra directa + cinco métricas GBP + Más sin desbordamiento (390 px): OK');
+  console.log('Google Maps: cinco métricas GBP + selector SEO + barra Comercial, sin desbordamiento (390 px): OK');
   await context.close();
 } finally {
   await browser.close();

@@ -75,8 +75,7 @@ try {
     await ctx.close();
   }
 
-  // Teléfono · Comercial: barra inferior propia; en SEO, su barra de secciones
-  // y en «Más» los accesos de vuelta a Pipeline y Arriendos y ventas.
+  // Teléfono · Comercial: barra principal constante y selector interno SEO.
   {
     const { ctx, page } = await crear();
     await page.getByRole('button', { name: /Gestión comercial/ }).click();
@@ -93,13 +92,18 @@ try {
     await page.waitForURL(u => u.pathname === '/propiedades', { timeout: 20000 });
     await page.locator('.barra-inferior-movil').getByRole('button', { name: 'SEO', exact: true }).click();
     await page.waitForURL(u => u.pathname === '/seo', { timeout: 20000 });
-    await page.locator('.seo-barra-inferior').waitFor({ timeout: 20000 });
-    assert.equal(await page.locator('.barra-inferior-movil').count(), 1, 'en SEO solo su propia barra');
-    assert.equal(await page.locator('.seo-barra-inferior').count(), 1);
-    await page.getByRole('button', { name: 'Más secciones SEO' }).click();
-    await page.getByRole('dialog', { name: 'Más secciones SEO' }).getByRole('button', { name: 'Pipeline' }).click();
+    await page.getByRole('combobox', { name: 'Sección de SEO' }).waitFor({ timeout: 20000 });
+    assert.equal(await page.locator('.barra-inferior-movil').count(), 1, 'SEO mantiene barra Comercial');
+    assert.equal(await page.locator('.seo-barra-inferior').count(), 0, 'sin barra SEO duplicada');
+    assert.deepEqual((await barra.locator('.nav-movil-item').allInnerTexts()).map(x => x.trim()),
+      ['Pipeline', 'Arriendos', 'SEO', 'Notificaciones', 'Más']);
+    await page.getByRole('combobox', { name: 'Sección de SEO' }).selectOption('business');
+    await page.waitForURL(u => u.searchParams.get('vista') === 'business', { timeout: 10000 });
+    await page.locator('.barra-area-volver').click();
+    await page.waitForURL(u => u.pathname === '/seo' && !u.searchParams.has('vista'), { timeout: 10000 });
+    await barra.getByRole('button', { name: 'Pipeline' }).click();
     await page.waitForURL(u => u.pathname === '/pipeline', { timeout: 20000 });
-    console.log('Teléfono · Comercial: barra inferior, Más, Arriendos, SEO y regreso a Pipeline: OK');
+    console.log('Teléfono · Comercial: barra persistente, SEO Google Maps y regreso a Pipeline: OK');
     await ctx.close();
   }
 
@@ -119,10 +123,10 @@ try {
     await ctx.close();
   }
 
-  // Teléfono · Configuración
+  // Teléfono · Administración y ajustes
   {
     const { ctx, page } = await crear();
-    await page.getByRole('button', { name: /Configuración/ }).click();
+    await page.getByRole('button', { name: /Administración y ajustes/ }).click();
     await page.waitForURL(u => u.pathname === '/configuracion', { timeout: 20000 });
     assert.deepEqual((await page.locator('.barra-inferior-movil .nav-movil-item').allInnerTexts()).map(x => x.trim()),
       ['Ajustes', 'Equipo', 'Clientes', 'Más']);
@@ -138,7 +142,9 @@ try {
     const lateral = page.locator('.barra-lateral .enlace-lateral');
     assert.deepEqual((await lateral.allInnerTexts()).map(t => t.trim()),
       ['Pipeline', 'Arriendos y ventas', 'Nueva propiedad', 'SEO y analítica']);
-    assert.equal((await page.locator('.barra-lateral .etiqueta-lateral').innerText()).trim().toLowerCase(), 'comercial');
+    assert.deepEqual((await page.locator('.barra-lateral .grupo-navegacion-boton').allInnerTexts()).map(t => t.trim().replace(/[⌄›]/g, '').trim()),
+      ['Comercial', 'Operaciones', 'Finanzas', 'Administración y ajustes']);
+    assert.equal(await page.locator('.barra-lateral .grupo-navegacion-boton.activo').count(), 1);
 
     await page.goto(base + '/inicio', { waitUntil: 'domcontentloaded' });
     await page.getByRole('heading', { name: /Hola/ }).waitFor({ timeout: 20000 });
@@ -151,8 +157,20 @@ try {
     await page.waitForURL(u => u.pathname === '/proveedores', { timeout: 20000 });
     const dentro = (await lateral.allInnerTexts()).map(t => t.trim());
     for (const nombre of ['Postulantes', 'Correos', 'Comunicaciones']) assert.ok(dentro.includes(nombre), nombre);
-    assert.equal((await page.locator('.barra-lateral .etiqueta-lateral').innerText()).trim().toLowerCase(), 'operaciones');
-    console.log('Escritorio · Comercial y Operaciones con sus secciones: OK');
+    assert.equal(await page.locator('.barra-lateral .grupo-navegacion-boton.activo').innerText().then(t => t.includes('Operaciones')), true);
+    // En escritorio se cambia de área desde el propio menú, sin volver
+    // al selector; SEO conserva el menú Comercial visible.
+    await page.locator('.grupo-navegacion-boton').filter({ hasText: 'Comercial' }).click();
+    await page.waitForURL(u => u.pathname === '/pipeline', { timeout: 15000 });
+    await page.locator('.barra-lateral').getByRole('link', { name: 'SEO y analítica' }).click();
+    await page.waitForURL(u => u.pathname === '/seo', { timeout: 15000 });
+    assert.equal(await page.locator('.grupo-navegacion-boton.activo').innerText().then(t => t.includes('Comercial')), true);
+    await page.locator('.grupo-navegacion-boton').filter({ hasText: 'Finanzas' }).click();
+    await page.waitForURL(u => u.pathname === '/contabilidad', { timeout: 15000 });
+    await page.locator('.grupo-navegacion-boton').filter({ hasText: 'Administración y ajustes' }).click();
+    await page.waitForURL(u => u.pathname === '/configuracion', { timeout: 15000 });
+    await page.getByRole('heading', { name: 'Administración y ajustes' }).waitFor({ timeout: 15000 });
+    console.log('Escritorio · cambio directo entre áreas, SEO y Administración: OK');
     await ctx.close();
   }
 } finally {

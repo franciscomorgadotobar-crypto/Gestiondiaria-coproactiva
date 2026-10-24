@@ -68,8 +68,8 @@ try {
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
     await page.getByRole('button',{name:/Gestión comercial/}).waitFor({timeout:15000});
-    // Cuatro grupos: Comercial, Operaciones, Finanzas y Configuración.
-    for(const nombre of [/Gestión comercial/,/Operación de comunidades/,/Gestión contable/,/Configuración/])
+    // Tres áreas de trabajo y un acceso secundario a Administración y ajustes.
+    for(const nombre of [/Gestión comercial/,/Operación de comunidades/,/Gestión contable/,/Administración y ajustes/])
       assert.equal(await page.getByRole('button',{name:nombre}).count(),1,String(nombre));
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica|Red de proveedores|Recepción y atención/}).count(),0);
     assert.equal(new URL(page.url()).pathname,'/');
@@ -89,7 +89,7 @@ try {
 
     // La recarga no debe hacer volver al selector ni borrar filtros.
     await page.getByRole('combobox',{name:'Período de análisis'}).selectOption('90');
-    await page.getByRole('button',{name:'Ir a Google Maps'}).click();
+    await page.getByRole('combobox',{name:'Sección de SEO'}).selectOption('business');
     await page.waitForURL(url=>url.pathname==='/seo'
       && url.searchParams.get('vista')==='business'
       && url.searchParams.get('dias')==='90',{timeout:12000});
@@ -104,8 +104,9 @@ try {
     // Atrás desde la pestaña recupera primero el Dashboard y luego Home.
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:10000});
-    // La barra inferior reemplaza la sección (igual que en Operaciones):
-    // Atrás desde SEO vuelve al selector.
+    // Volver respeta niveles: vista SEO → SEO Dashboard → Pipeline → selector.
+    await page.goBack();
+    await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:10000});
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/',{timeout:10000});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:10000});

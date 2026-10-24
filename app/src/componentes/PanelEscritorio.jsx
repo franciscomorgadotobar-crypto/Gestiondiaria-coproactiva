@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
-import { limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } from '../lib/area';
+import { guardarArea, limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
@@ -41,6 +41,40 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const [alertasGenerales, setAlertasGenerales] = useState(0);
   const [menu, cambiarMenu] = usePestanaHistorial('menu', 'cerrado', ESTADOS_MENU);
   const masAbierto = menu === 'mas';
+  const botonMasRef = useRef(null);
+  const cerrarMasRef = useRef(null);
+
+  // El diálogo «Más» se comporta igual en Comercial, Operaciones, Finanzas
+  // y Configuración: foco inicial, Escape y tabulación confinada al diálogo.
+  useEffect(() => {
+    if (!masAbierto) return undefined;
+    cerrarMasRef.current?.focus({ preventScroll: true });
+    const alPulsarTecla = evento => {
+      if (evento.key === 'Escape') {
+        evento.preventDefault();
+        navegar(-1);
+        return;
+      }
+      if (evento.key !== 'Tab') return;
+      const elementos = Array.from(document.querySelectorAll(
+        '.menu-mas [href]:not([tabindex="-1"]), .menu-mas button:not([disabled])'
+      ));
+      if (!elementos.length) return;
+      const primero = elementos[0], ultimo = elementos[elementos.length - 1];
+      if (evento.shiftKey && document.activeElement === primero) {
+        evento.preventDefault();
+        ultimo.focus();
+      } else if (!evento.shiftKey && document.activeElement === ultimo) {
+        evento.preventDefault();
+        primero.focus();
+      }
+    };
+    window.addEventListener('keydown', alPulsarTecla);
+    return () => {
+      window.removeEventListener('keydown', alPulsarTecla);
+      botonMasRef.current?.focus({ preventScroll: true });
+    };
+  }, [masAbierto, navegar]);
   function setMasAbierto(proximo, { alNavegar = false } = {}) {
     const abrir = typeof proximo === 'function' ? proximo(masAbierto) : proximo;
     if (abrir === masAbierto) return;
@@ -234,8 +268,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'whatsapp', etiqueta: 'WhatsApp', ruta: '/whatsapp', mostrar: esAdministracion }
   ].filter(x => x.mostrar !== false);
 
-  // Comercial en el teléfono: misma barra inferior que Operaciones. SEO
-  // tiene su propia barra de secciones, así que en /seo no se dibuja esta.
+  // Comercial conserva el mismo menú principal también al entrar en SEO.
+  // Las secciones de SEO son navegación interna, no reemplazan esta barra.
   const opcionesComercial = [
     { id: 'pipeline', etiqueta: 'Pipeline', ruta: '/pipeline' },
     { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
@@ -280,8 +314,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     .filter(Boolean);
   const menuMasOperacion = opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
-  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion
-    || (enComercial && !activa(pathname, '/seo'));
+  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial;
 
   function itemMovilActivo(item) {
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
@@ -291,11 +324,38 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   function ejecutarItemMovil(item) {
-    // Se reemplaza la entrada del menú al navegar; Atrás lleva al módulo
-    // anterior sin regresar a un menú abierto.
+    // En la barra principal, navegar crea historial (Atrás recupera el módulo
+    // anterior). Desde «Más» se sustituye solo la entrada temporal del diálogo.
+    const desdeMas = masAbierto;
     setMasAbierto(false, { alNavegar: true });
     if (item.accion) return item.accion();
-    if (item.ruta) navegar(item.ruta, { replace: true });
+    if (item.ruta && pathname !== item.ruta) navegar(item.ruta, { replace: desdeMas });
+  }
+
+  // Navegación de escritorio: las tres áreas de trabajo permanecen a la
+  // vista. Solo se despliegan los destinos de la sección activa, sin obligar
+  // a volver al selector inicial. Administración es un acceso transversal.
+  const gruposLaterales = [
+    { id: 'comercial', etiqueta: 'Comercial', ruta: '/pipeline', icono: 'comercial', mostrar: puedeConfigurar },
+    { id: 'operacion', etiqueta: 'Operaciones', ruta: '/inicio', icono: 'comunidades', mostrar: true },
+    { id: 'finanzas', etiqueta: 'Finanzas', ruta: '/contabilidad', icono: 'contabilidad', mostrar: esAdministracion }
+  ].filter(item => item.mostrar);
+
+  function abrirGrupoLateral(item) {
+    guardarArea(item.id);
+    if (pathname !== item.ruta) navegar(item.ruta);
+  }
+
+  function enlacesDelGrupo() {
+    return accesos.filter(item => item.mostrar).map(item => (
+      <Link key={item.ruta} to={item.ruta}
+            aria-current={(item.activo ? item.activo(pathname) : activa(pathname, item.ruta)) ? 'page' : undefined}
+            className={'enlace-lateral' + (item.hijo ? ' enlace-lateral-hijo' : '') +
+              ((item.activo ? item.activo(pathname) : activa(pathname, item.ruta)) ? ' activo' : '')}>
+        <span className="enlace-lateral-icono"><IconoNavegacion tipo={iconoRutaCoproactiva(item.ruta)} /></span>
+        <span>{item.etiqueta}</span>
+      </Link>
+    ));
   }
 
   return (
@@ -305,14 +365,45 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva" />
         </Link>
         <div className="enlaces-lateral">
-          {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
-          {accesos.filter(a => a.mostrar).map(a => (
-            <Link key={a.ruta} to={a.ruta}
-                  className={'enlace-lateral' + (a.hijo ? ' enlace-lateral-hijo' : '') + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
-              <span className="enlace-lateral-icono"><IconoNavegacion tipo={iconoRutaCoproactiva(a.ruta)} /></span>
-              <span>{a.etiqueta}</span>
-            </Link>
-          ))}
+          {esCliente ? enlacesDelGrupo() : (
+            <>
+              <span className="micro apagado etiqueta-lateral">Áreas de trabajo</span>
+              {gruposLaterales.map(item => (
+                <div key={item.id} className="grupo-navegacion-lateral">
+                  <button type="button" onClick={() => abrirGrupoLateral(item)}
+                          className={'grupo-navegacion-boton' + (grupo === item.id ? ' activo' : '')}
+                          aria-expanded={grupo === item.id}
+                          aria-label={'Ir al área ' + item.etiqueta}>
+                    <span className="enlace-lateral-icono"><IconoNavegacion tipo={item.icono}/></span>
+                    <span>{item.etiqueta}</span>
+                    <span className="grupo-navegacion-flecha" aria-hidden="true">{grupo === item.id ? '⌄' : '›'}</span>
+                  </button>
+                  {grupo === item.id && (
+                    <div className="grupo-navegacion-enlaces" aria-label={'Módulos de ' + item.etiqueta}>
+                      {enlacesDelGrupo()}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {esAdministracion && (
+                <div className="grupo-navegacion-lateral grupo-navegacion-administracion">
+                  <button type="button" onClick={() => navegar('/configuracion')}
+                          className={'grupo-navegacion-boton' + (enConfiguracion ? ' activo' : '')}
+                          aria-expanded={enConfiguracion}
+                          title="Equipo, usuarios, permisos, accesos de clientes y configuración general.">
+                    <span className="enlace-lateral-icono"><IconoNavegacion tipo="configuracion"/></span>
+                    <span>Administración y ajustes</span>
+                    <span className="grupo-navegacion-flecha" aria-hidden="true">{enConfiguracion ? '⌄' : '›'}</span>
+                  </button>
+                  {enConfiguracion && (
+                    <div className="grupo-navegacion-enlaces" aria-label="Opciones de administración y ajustes">
+                      {enlacesDelGrupo()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="crece" />
@@ -398,6 +489,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 key={item.id}
                 type="button"
                 className={'nav-movil-item' + (itemMovilActivo(item) ? ' activo' : '')}
+                aria-current={itemMovilActivo(item) ? 'page' : undefined}
                 onClick={() => ejecutarItemMovil(item)}
               >
                 <span className="nav-movil-icono-wrap">
@@ -410,9 +502,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               </button>
             ))}
 
-            <button type="button"
+            <button type="button" ref={botonMasRef}
                     className={'nav-movil-item' + (masAbierto ? ' activo' : '')}
                     onClick={() => setMasAbierto(v => !v)}
+                    aria-haspopup="dialog"
                     aria-expanded={masAbierto}>
               <span className="nav-movil-icono-wrap">
                 <IconoMovil tipo="mas" />
@@ -430,7 +523,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                    onClick={e => e.stopPropagation()}>
                 <div className="menu-mas-cabecera">
                   <strong>Más</strong>
-                  <button type="button" onClick={() => setMasAbierto(false)} aria-label="Cerrar">×</button>
+                  <button ref={cerrarMasRef} type="button" onClick={() => setMasAbierto(false)} aria-label="Cerrar menú">×</button>
                 </div>
                 <div className="menu-mas-enlaces">
                   {menuMasOperacion.map(item => (

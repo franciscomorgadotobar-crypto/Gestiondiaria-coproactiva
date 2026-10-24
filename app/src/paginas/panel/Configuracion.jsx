@@ -26,9 +26,9 @@ export default function Configuracion() {
             ‹ Inicio
           </button>
         </div>
-        <h1 className="h3">Configuración</h1>
+        <h1 className="h3">Administración y ajustes</h1>
         <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-          Cuenta personal, equipo y accesos de clientes.
+          Equipo, usuarios, permisos, accesos de clientes y configuración general.
         </p>
       </header>
 
