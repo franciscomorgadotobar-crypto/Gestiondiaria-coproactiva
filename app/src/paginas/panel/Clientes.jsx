@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
@@ -9,12 +9,44 @@ import './Clientes.css';
 export default function Clientes() {
   const navegar = useNavigate();
   const { perfil } = useSesion();
-  useVolverGlobal(() => navegar('/configuracion'));
+  const [parametros, setParametros] = useSearchParams();
+  const seleccionado = parametros.get('cliente') || '';
+  const seccion = ['resumen', 'permisos', 'actividad'].includes(parametros.get('seccion'))
+    ? parametros.get('seccion') : 'resumen';
+
+  function abrirCliente(id) {
+    setParametros(actual => {
+      const siguientes = new URLSearchParams(actual);
+      siguientes.set('cliente', id);
+      siguientes.delete('seccion');
+      return siguientes;
+    }, { preventScrollReset: false });
+  }
+  function cerrarCliente() {
+    setParametros(actual => {
+      const siguientes = new URLSearchParams(actual);
+      siguientes.delete('cliente');
+      siguientes.delete('seccion');
+      return siguientes;
+    }, { replace: true, preventScrollReset: false });
+  }
+  function cambiarSeccion(destino) {
+    setParametros(actual => {
+      const siguientes = new URLSearchParams(actual);
+      if (destino === 'resumen') siguientes.delete('seccion');
+      else siguientes.set('seccion', destino);
+      return siguientes;
+    }, { replace: true, preventScrollReset: true });
+  }
+
+  useVolverGlobal(() => seleccionado ? cerrarCliente() : navegar('/configuracion'));
   const puedeAdministrar = perfil?.rol === 'superadmin';
   const [perfiles, setPerfiles] = useState([]);
   const [comunidades, setComunidades] = useState([]);
   const [plantillas, setPlantillas] = useState([]);
-  const [seleccionado, setSeleccionado] = useState('');
+  const [buscar, setBuscar] = useState('');
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
+  const [asignacionesGlobales, setAsignacionesGlobales] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
   const [visibilidades, setVisibilidades] = useState([]);
   const [error, setError] = useState(null);
@@ -56,19 +88,21 @@ export default function Clientes() {
    * la cuenta directo con ese rol— ni por ningún otro motivo. */
   async function cargarBase() {
     setError(null);
-    const [rp, rc, rt] = await Promise.all([
-      supabase.from('perfiles').select('id, nombre, email, rol, activo').eq('rol', 'cliente').order('nombre'),
+    const [rp, rc, rt, rg] = await Promise.all([
+      supabase.from('perfiles').select('id, nombre, email, rol, activo, ultimo_acceso, creado_en').eq('rol', 'cliente').order('nombre'),
       supabase.from('comunidades').select('id, nombre, comuna').order('nombre'),
-      supabase.from('plantillas_control').select('id, nombre, activa, codigo').eq('activa', true).order('nombre')
+      supabase.from('plantillas_control').select('id, nombre, activa, codigo').eq('activa', true).order('nombre'),
+      supabase.from('portal_cliente_comunidades').select('usuario_id, comunidad_id, activa')
     ]);
-    const fallo = [rp, rc, rt].find(r => r.error)?.error;
+    const fallo = [rp, rc, rt, rg].find(r => r.error)?.error;
     if (fallo) return setError(fallo.message);
     setPerfiles(rp.data ?? []);
+    setAsignacionesGlobales(rg.data ?? []);
     setComunidades(rc.data ?? []);
     // El diagnóstico comercial es previo a ganar la comunidad y de uso
     // interno: un cliente nunca lo ve, así que no se ofrece como permiso.
     setPlantillas((rt.data ?? []).filter(p => p.codigo !== 'diagnostico_comercial'));
-    if (!seleccionado && rp.data?.length) setSeleccionado(rp.data[0].id);
+    // La pantalla inicia en el listado, nunca abre un cliente por defecto.
   }
 
   async function cargarAcceso(usuarioId) {
@@ -97,6 +131,31 @@ export default function Clientes() {
   useEffect(() => { cargarAcceso(seleccionado); }, [seleccionado]);
 
   const usuario = useMemo(() => perfiles.find(p => p.id === seleccionado) ?? null, [perfiles, seleccionado]);
+  const clientesFiltrados = useMemo(() => perfiles.filter(p => {
+    if (!mostrarInactivos && !p.activo) return false;
+    const texto = (p.nombre + ' ' + p.email).toLocaleLowerCase('es-CL');
+    return texto.includes(buscar.trim().toLocaleLowerCase('es-CL'));
+  }), [perfiles, buscar, mostrarInactivos]);
+  const comunidadesPorCliente = useMemo(() => {
+    const mapa = new Map();
+    for (const asignacion of asignacionesGlobales) {
+      if (asignacion.activa) mapa.set(asignacion.usuario_id, (mapa.get(asignacion.usuario_id) || 0) + 1);
+    }
+    return mapa;
+  }, [asignacionesGlobales]);
+  const cantidadActivos = perfiles.filter(p => p.activo).length;
+  const cantidadInactivos = perfiles.length - cantidadActivos;
+  const autorizadas = comunidades.filter(c => asignaciones.some(a => a.comunidad_id === c.id && a.activa));
+  const sinAutorizar = comunidades.filter(c => !asignaciones.some(a => a.comunidad_id === c.id && a.activa));
+  const [mostrarDisponibles, setMostrarDisponibles] = useState(false);
+  const [comunidadAbierta, setComunidadAbierta] = useState(null);
+  useEffect(() => { setMostrarDisponibles(false); setComunidadAbierta(null); }, [seleccionado]);
+  const fechaCorta = valor => valor
+    ? new Date(valor).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })
+    : 'Sin registro';
+  const fechaLarga = valor => valor
+    ? new Date(valor).toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' })
+    : 'Sin registro';
   const asignacionPorComunidad = useMemo(() => new Map(asignaciones.map(a => [a.comunidad_id, a])), [asignaciones]);
   const visible = useMemo(() => new Map(visibilidades.map(v => [`${v.comunidad_id}:${v.plantilla_id}`, v])), [visibilidades]);
 
