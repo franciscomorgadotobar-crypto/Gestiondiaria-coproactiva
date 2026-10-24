@@ -150,7 +150,12 @@
 .modulo-unificado .boton-texto,
 .modulo-unificado .seo-exec-enlace { color:var(--ca-cobre-oscuro); }
 
-/* Campos: un mismo contorno, radio y objetivos táctiles. */
+/* Etiquetas y campos: lectura coherente incluso en formularios extensos. */
+.modulo-unificado .etiqueta-campo {
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: .08em;
+}
 .modulo-unificado :is(.campo input,.campo select,.campo textarea,
   .seo-cabecera select,.seo-herramientas input,.seo-herramientas select,
   .wa-page input,.wa-page select,.wa-page textarea,
