@@ -283,46 +283,42 @@
 .seo-error-recuperable button{flex:none;min-height:40px}
 
 
-/* SEO: mismo componente visual móvil de Operación, sin duplicar la tira
- * horizontal que se conserva en escritorio. */
+/* SEO mantiene la navegación principal del área Comercial.
+ * Estas opciones son internas del módulo: solo un selector accesible en móvil.
+ * Escritorio conserva las pestañas horizontales existentes. */
+.seo-selector-secciones { display: none; }
 @media (max-width: 899px) {
   .seo-pantalla #seo-navegacion.seo-pestanas { display: none; }
-  .seo-barra-inferior .nav-movil-item {
-    font-size: clamp(8px, 2.45vw, 10.5px);
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-  }
-  .seo-barra-inferior .nav-movil-item:focus-visible,
-  .seo-menu-mas button:focus-visible {
-    outline: 2px solid var(--enlace);
-    outline-offset: -2px;
-  }
-  .seo-menu-mas {
-    max-height: calc(100dvh - 104px - env(safe-area-inset-bottom));
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-  }
-  .seo-menu-mas-enlaces .seo-menu-item-label {
+  .seo-selector-secciones {
     display: flex;
-    align-items: center;
-    gap: 13px;
-    min-width: 0;
+    flex-direction: column;
+    gap: 7px;
+    position: sticky;
+    top: 8px;
+    z-index: 20;
+    padding: 12px 14px;
+    border: 1px solid var(--ca-borde, var(--borde));
+    border-radius: 14px;
+    background: var(--ca-blanco, #fff);
+    box-shadow: 0 3px 14px rgba(47, 40, 32, .07);
   }
-  .seo-menu-mas-enlaces .seo-menu-item-label svg { flex: none; }
-  .seo-menu-mas-enlaces button.activo {
-    color: var(--enlace);
-    font-weight: 750;
-    background: var(--hover);
+  .seo-selector-secciones label {
+    color: var(--texto-apagado);
+    font: 700 12px/1.25 var(--fuente-cuerpo);
   }
-  .seo-menu-mas-enlaces button { min-height: 50px; }
-  .seo-menu-mas-enlaces .seo-menu-grupo {
-    margin: 14px 4px 4px;
-    padding-top: 12px;
-    border-top: 1px solid var(--borde-suave);
-    color: var(--texto-tenue);
-    font: 700 11px/1.2 var(--fuente-cuerpo);
-    letter-spacing: .12em;
-    text-transform: uppercase;
+  .seo-selector-secciones select {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 36px 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background: var(--tarjeta);
+    color: var(--texto-cuerpo);
+    font: 650 15px/1.4 var(--fuente-cuerpo);
+  }
+  .seo-selector-secciones select:focus-visible {
+    outline: 3px solid var(--enlace);
+    outline-offset: 2px;
   }
 }
 
