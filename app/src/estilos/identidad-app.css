@@ -20,6 +20,8 @@
   --ca-radio: 16px;
   --ca-radio-control: 11px;
   --ca-transition: 160ms ease;
+  --ca-margen-contenido: clamp(18px,2.5vw,34px);
+  --ca-margen-contenido-movil: 16px;
 }
 
 /* La interfaz de trabajo comparte identidad sin rediseñar el Home existente. */
@@ -49,7 +51,7 @@
 .modulo-unificado > .encabezado.modulo-cabecera {
   background:var(--ca-blanco);
   border-bottom:1px solid var(--ca-borde);
-  padding:24px clamp(18px,2.5vw,34px);
+  padding:24px var(--ca-margen-contenido);
   box-shadow:0 1px 1px rgba(35,36,38,.02);
 }
 .modulo-unificado .modulo-cabecera :is(h1.h2,h1.h3,h1),
@@ -74,7 +76,7 @@
   color:#677078;
 }
 .modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido {
-  padding:22px clamp(18px,2.5vw,34px);
+  padding:22px var(--ca-margen-contenido);
   min-width:0;
 }
 .modulo-unificado .cuerpo { min-width:0; }
@@ -267,9 +269,9 @@
     white-space:nowrap; text-overflow:ellipsis;
     color:#8f572e; font-size:12px; font-weight:700;
   }
-  .modulo-unificado > .encabezado.modulo-cabecera { padding:20px 18px; }
+  .modulo-unificado > .encabezado.modulo-cabecera { padding:20px var(--ca-margen-contenido-movil); }
   .modulo-unificado > :is(.cuerpo,.seo-cuerpo,.contabilidad-cuerpo).modulo-contenido {
-    padding:18px 16px;
+    padding:18px var(--ca-margen-contenido-movil);
   }
   .barra-inferior-movil {
     background:#fffefd;
