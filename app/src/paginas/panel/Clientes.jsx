@@ -42,6 +42,7 @@ export default function Clientes() {
   useVolverGlobal(() => seleccionado ? cerrarCliente() : navegar('/configuracion'));
   const puedeAdministrar = perfil?.rol === 'superadmin';
   const [perfiles, setPerfiles] = useState([]);
+  const [cargandoLista, setCargandoLista] = useState(true);
   const [comunidades, setComunidades] = useState([]);
   const [plantillas, setPlantillas] = useState([]);
   const [buscar, setBuscar] = useState('');
@@ -88,6 +89,7 @@ export default function Clientes() {
    * la cuenta directo con ese rol— ni por ningún otro motivo. */
   async function cargarBase() {
     setError(null);
+    setCargandoLista(true);
     const [rp, rc, rt, rg] = await Promise.all([
       supabase.from('perfiles').select('id, nombre, email, rol, activo, ultimo_acceso, creado_en').eq('rol', 'cliente').order('nombre'),
       supabase.from('comunidades').select('id, nombre, comuna').order('nombre'),
@@ -95,7 +97,7 @@ export default function Clientes() {
       supabase.from('portal_cliente_comunidades').select('usuario_id, comunidad_id, activa')
     ]);
     const fallo = [rp, rc, rt, rg].find(r => r.error)?.error;
-    if (fallo) return setError(fallo.message);
+    if (fallo) { setError(fallo.message); setCargandoLista(false); return; }
     setPerfiles(rp.data ?? []);
     setAsignacionesGlobales(rg.data ?? []);
     setComunidades(rc.data ?? []);
@@ -103,6 +105,7 @@ export default function Clientes() {
     // interno: un cliente nunca lo ve, así que no se ofrece como permiso.
     setPlantillas((rt.data ?? []).filter(p => p.codigo !== 'diagnostico_comercial'));
     // La pantalla inicia en el listado, nunca abre un cliente por defecto.
+    setCargandoLista(false);
   }
 
   async function cargarAcceso(usuarioId) {
@@ -229,6 +232,13 @@ export default function Clientes() {
     }
     setGuardando(false);
     if (respuesta.error) return setError(respuesta.error.message);
+    setAsignacionesGlobales(xs => {
+      const existe = xs.some(x => x.usuario_id === usuario.id && x.comunidad_id === comunidadId);
+      const nueva = { ...respuesta.data, usuario_id: usuario.id };
+      return existe
+        ? xs.map(x => x.usuario_id === usuario.id && x.comunidad_id === comunidadId ? nueva : x)
+        : [...xs, nueva];
+    });
     setAsignaciones(xs => {
       const existe = xs.some(x => x.comunidad_id === comunidadId);
       return existe
