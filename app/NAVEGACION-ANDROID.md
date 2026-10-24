@@ -40,7 +40,7 @@ Los tests unitarios verifican lectura/escritura de parámetros URL y que no se b
 
 Grupos (24-10-2026): el selector muestra cuatro tarjetas según permisos.
 
-- **Comercial** (`/pipeline`): Pipeline y diagnóstico comercial, Arriendos y ventas, SEO y analítica (SEO solo administración). En el teléfono sus secciones aparecen como pestañas bajo la barra superior; en escritorio, en la barra lateral.
+- **Comercial** (`/pipeline`): Pipeline y diagnóstico comercial, Arriendos y ventas, SEO y analítica (SEO solo administración). En el teléfono usa la misma barra inferior que Operaciones (Pipeline · Arriendos · SEO · Notificaciones · Más, con Nueva propiedad en «Más»); en /seo se mantiene la barra propia de SEO y su «Más» incluye Pipeline y Arriendos y ventas. En escritorio, todo en la barra lateral.
 - **Operaciones** (`/inicio`): comunidades, levantamientos, mantenciones, bitácora, mapa, plantillas, y para administración Proveedores y WhatsApp (en el teléfono, dentro de «Más»).
 - **Finanzas** (`/contabilidad`, solo administración).
 - **Configuración** (`/configuracion`, solo administración; no se guarda como grupo).

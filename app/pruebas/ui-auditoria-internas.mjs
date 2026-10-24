@@ -58,6 +58,12 @@ async function clickDestino(page,ruta,etiqueta) {
     await link.click();
     return;
   }
+  // Móvil: barra inferior del grupo (Comercial: «Arriendos», «SEO»).
+  const barra=page.locator('.barra-inferior-movil:visible').getByRole('button',{name:new RegExp('^'+etiqueta.split(' ')[0],'i')});
+  if(await barra.count()) {
+    await barra.first().click();
+    return;
+  }
   // Móvil de Operación: opciones de baja frecuencia dentro de «Más».
   const mas=page.getByRole('button',{name:'Más',exact:true}).last();
   if(await mas.count()) {

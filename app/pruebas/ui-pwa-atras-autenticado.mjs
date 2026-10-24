@@ -80,9 +80,10 @@ try {
     // Solo al elegir el grupo se entra; SEO es una sección de Comercial.
     await page.getByRole('button',{name:/Gestión comercial/}).click();
     await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
-    const pestanas=page.locator('.subnav-grupo-movil .subnav-grupo-item');
-    assert.deepEqual(await pestanas.allInnerTexts(),['Pipeline','Arriendos y ventas','SEO y analítica']);
-    await page.locator('.subnav-grupo-movil').getByRole('link',{name:'SEO y analítica'}).click();
+    // Comercial usa la misma barra inferior que Operaciones.
+    const barra=page.locator('.barra-inferior-movil .nav-movil-item');
+    assert.deepEqual((await barra.allInnerTexts()).map(x=>x.trim()),['Pipeline','Arriendos','SEO','Notificaciones','Más']);
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'SEO',exact:true}).click();
     await page.waitForURL(/\/seo(?:\?|$)/,{timeout:20000});
     await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
 
@@ -103,12 +104,12 @@ try {
     // Atrás desde la pestaña recupera primero el Dashboard y luego Home.
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:10000});
-    await page.goBack();
-    await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:10000});
+    // La barra inferior reemplaza la sección (igual que en Operaciones):
+    // Atrás desde SEO vuelve al selector.
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/',{timeout:10000});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:10000});
-    console.log('PWA Home → Comercial → SEO → Atrás → Pipeline → Home: OK');
+    console.log('PWA Home → Comercial → SEO (barra) → Atrás → Home: OK');
     await ctx.close();
   }
 
@@ -141,7 +142,8 @@ try {
     assert.ok(await page.getByRole('button',{name:/Operación de comunidades/}).count()>0);
     await page.getByRole('button',{name:/Gestión comercial/}).click();
     await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
-    assert.deepEqual(await page.locator('.subnav-grupo-movil .subnav-grupo-item').allInnerTexts(),['Pipeline','Arriendos y ventas']);
+    assert.deepEqual((await page.locator('.barra-inferior-movil .nav-movil-item').allInnerTexts()).map(x=>x.trim()),
+      ['Pipeline','Arriendos','Notificaciones','Nueva propiedad','Más']);
     console.log('Jefatura → selector y Comercial filtrados por permisos: OK');
     await ctx.close();
   }

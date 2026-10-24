@@ -83,9 +83,9 @@ try {
   page.on('pageerror',e=>errores.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-  // SEO es una sección del grupo Comercial (pestaña en el teléfono).
+  // SEO es una sección del grupo Comercial (barra inferior en el teléfono).
   await page.getByRole('button',{name:/Gestión comercial/}).click();
-  await page.locator('a[href="/seo"]:visible').first().click();
+  await page.locator('.barra-inferior-movil').getByRole('button',{name:'SEO',exact:true}).click();
   await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
   await page.getByRole('button',{name:/Apariciones en Google Maps.*Fuente: Business Profile/}).waitFor({timeout:20000});
   await page.getByText('101',{exact:true}).waitFor({timeout:20000});

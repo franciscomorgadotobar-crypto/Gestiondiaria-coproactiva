@@ -39,6 +39,8 @@ const areas=[
 async function abrirSeccion(page,ruta,etiqueta) {
   const link=page.locator('a[href="'+ruta+'"]:visible').first();
   if(await link.count()) return link.click();
+  const barra=page.locator('.barra-inferior-movil:visible').getByRole('button',{name:new RegExp('^'+etiqueta.split(' ')[0],'i')});
+  if(await barra.count()) return barra.first().click();
   await page.getByRole('button',{name:'Más',exact:true}).last().click();
   await page.getByRole('dialog',{name:'Más opciones'}).getByRole('button',{name:new RegExp(etiqueta,'i')}).click();
 }

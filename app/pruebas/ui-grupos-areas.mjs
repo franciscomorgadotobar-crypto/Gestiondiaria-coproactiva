@@ -60,7 +60,8 @@ try {
     const { ctx, page } = await crear();
     await page.getByRole('button', { name: /Operación de comunidades/ }).click();
     await page.waitForURL(u => u.pathname === '/inicio', { timeout: 20000 });
-    assert.equal(await page.locator('.subnav-grupo-movil').count(), 0, 'Operaciones usa la barra inferior');
+    assert.deepEqual((await page.locator('.barra-inferior-movil .nav-movil-item').allInnerTexts()).map(x => x.trim()),
+      ['Inicio', 'Comunidades', 'Levantamientos', 'Notificaciones', 'Más']);
     await page.locator('.barra-inferior-movil').getByRole('button', { name: 'Más' }).click();
     const menu = page.getByRole('dialog', { name: 'Más opciones' });
     await menu.waitFor();
@@ -71,6 +72,34 @@ try {
     await page.locator('.barra-area-volver').click();
     await page.waitForURL(u => u.pathname === '/inicio', { timeout: 10000 });
     console.log('Teléfono · Operaciones: Más → Proveedores → Volver → Inicio: OK');
+    await ctx.close();
+  }
+
+  // Teléfono · Comercial: barra inferior propia; en SEO, su barra de secciones
+  // y en «Más» los accesos de vuelta a Pipeline y Arriendos y ventas.
+  {
+    const { ctx, page } = await crear();
+    await page.getByRole('button', { name: /Gestión comercial/ }).click();
+    await page.waitForURL(u => u.pathname === '/pipeline', { timeout: 20000 });
+    const barra = page.locator('.barra-inferior-movil');
+    assert.deepEqual((await barra.locator('.nav-movil-item').allInnerTexts()).map(x => x.trim()),
+      ['Pipeline', 'Arriendos', 'SEO', 'Notificaciones', 'Más']);
+    await barra.getByRole('button', { name: 'Más' }).click();
+    const menu = page.getByRole('dialog', { name: 'Más opciones' });
+    for (const nombre of ['Nueva propiedad', 'Cambiar de área']) assert.equal(await menu.getByRole('button', { name: nombre }).count(), 1, nombre);
+    await menu.getByRole('button', { name: 'Nueva propiedad' }).click();
+    await page.waitForURL(u => u.pathname === '/propiedades/nueva', { timeout: 20000 });
+    await page.locator('.barra-inferior-movil').getByRole('button', { name: 'Arriendos' }).click();
+    await page.waitForURL(u => u.pathname === '/propiedades', { timeout: 20000 });
+    await page.locator('.barra-inferior-movil').getByRole('button', { name: 'SEO', exact: true }).click();
+    await page.waitForURL(u => u.pathname === '/seo', { timeout: 20000 });
+    await page.locator('.seo-barra-inferior').waitFor({ timeout: 20000 });
+    assert.equal(await page.locator('.barra-inferior-movil').count(), 1, 'en SEO solo su propia barra');
+    assert.equal(await page.locator('.seo-barra-inferior').count(), 1);
+    await page.getByRole('button', { name: 'Más secciones SEO' }).click();
+    await page.getByRole('dialog', { name: 'Más secciones SEO' }).getByRole('button', { name: 'Pipeline' }).click();
+    await page.waitForURL(u => u.pathname === '/pipeline', { timeout: 20000 });
+    console.log('Teléfono · Comercial: barra inferior, Más, Arriendos, SEO y regreso a Pipeline: OK');
     await ctx.close();
   }
 

@@ -546,46 +546,13 @@
 }
 
 /* Grupos del selector (24-10-2026). En escritorio, las subsecciones quedan
- * con sangría bajo su sección; en el teléfono, Comercial muestra sus
- * secciones como pestañas desplazables bajo la barra superior. */
+ * con sangría bajo su sección. En el teléfono, Operaciones y Comercial usan la
+ * barra inferior y «Más». */
 @media (min-width:900px) {
   .layout-escritorio .enlace-lateral.enlace-lateral-hijo {
     min-height:38px;
     margin-left:22px;
     padding:7px 12px;
     font-size:13px;
-  }
-  .subnav-grupo-movil { display:none; }
-}
-@media (max-width:899px) {
-  .subnav-grupo-movil {
-    display:flex;
-    gap:8px;
-    overflow-x:auto;
-    padding:10px 16px;
-    background:var(--papel);
-    border-bottom:1px solid var(--borde-suave);
-    scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;
-  }
-  .subnav-grupo-movil::-webkit-scrollbar { display:none; }
-  .subnav-grupo-item {
-    flex:none;
-    display:inline-flex;
-    align-items:center;
-    min-height:var(--tactil, 44px);
-    padding:0 14px;
-    border:1px solid var(--borde);
-    border-radius:999px;
-    background:#fff;
-    color:#56606a;
-    font:600 13px/1 var(--fuente-cuerpo);
-    text-decoration:none;
-    white-space:nowrap;
-  }
-  .subnav-grupo-item.activo {
-    background:#fff0e4;
-    border-color:#e8b88d;
-    color:#9b4f1c;
   }
 }

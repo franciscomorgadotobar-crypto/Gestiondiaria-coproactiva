@@ -150,10 +150,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     : enComercial
     ? [
         // "Inicio" del grupo Comercial es el Pipeline.
-        { ruta: '/pipeline', etiqueta: 'Pipeline', mostrar: true, enMovil: true },
-        { ruta: '/propiedades', etiqueta: 'Arriendos y ventas', mostrar: true, activo: activaPropiedades, enMovil: true },
+        { ruta: '/pipeline', etiqueta: 'Pipeline', mostrar: true },
+        { ruta: '/propiedades', etiqueta: 'Arriendos y ventas', mostrar: true, activo: activaPropiedades },
         { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true, hijo: true },
-        { ruta: '/seo', etiqueta: 'SEO y analítica', mostrar: esAdministracion, enMovil: true }
+        { ruta: '/seo', etiqueta: 'SEO y analítica', mostrar: esAdministracion }
       ]
     : [
         { ruta: '/inicio', etiqueta: 'Inicio', mostrar: true },
@@ -173,10 +173,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/whatsapp/automatizaciones', etiqueta: 'Automatizaciones', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true },
         { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true }
       ];
-
-  // En el teléfono no hay barra lateral: Comercial muestra sus secciones como
-  // pestañas bajo la barra superior. Operaciones usa la barra inferior y "Más".
-  const seccionesMovil = accesos.filter(a => a.mostrar && a.enMovil);
 
   const inicio = esCliente ? '/portal' : inicioSegunArea();
 
@@ -201,7 +197,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (tipo === 'bitacora') return <svg {...comun}><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>;
     if (tipo === 'mantenciones') return <svg {...comun}><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v6a6 6 0 0 1-6 6H6"/><path d="m10 18-4 4-4-4 4-4"/><path d="M6 22v-6"/></svg>;
     if (tipo === 'mapa') return <svg {...comun}><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>;
-    if (tipo === 'proveedores' || tipo === 'whatsapp') return <IconoNavegacion tipo={tipo} size={21} />;
+    if (tipo === 'proveedores' || tipo === 'whatsapp' || tipo === 'propiedades' || tipo === 'seo') return <IconoNavegacion tipo={tipo} size={21} />;
+    if (tipo === 'pipeline') return <IconoNavegacion tipo="comercial" size={21} />;
+    if (tipo === 'nueva-propiedad') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M12 11v6M9 14h6"/></svg>;
     return <svg {...comun}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   }
 
@@ -228,25 +226,38 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'whatsapp', etiqueta: 'WhatsApp', ruta: '/whatsapp', mostrar: esAdministracion }
   ].filter(x => x.mostrar !== false);
 
+  // Comercial en el teléfono: misma barra inferior que Operaciones. SEO
+  // tiene su propia barra de secciones, así que en /seo no se dibuja esta.
+  const opcionesComercial = [
+    { id: 'pipeline', etiqueta: 'Pipeline', ruta: '/pipeline' },
+    { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
+    { id: 'seo', etiqueta: 'SEO', ruta: '/seo', mostrar: esAdministracion },
+    { id: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', badge: alertasTotales },
+    { id: 'nueva-propiedad', etiqueta: 'Nueva propiedad', ruta: '/propiedades/nueva' }
+  ].filter(x => x.mostrar !== false);
+
   const idsPermitidos = new Set(opcionesOperacion.map(x => x.id));
   const preferidos = Array.isArray(perfil?.bottom_nav) && perfil.bottom_nav.length
     ? perfil.bottom_nav.filter(id => idsPermitidos.has(id))
     : ['inicio', 'comunidades', 'levantamientos', 'notificaciones'];
 
-  const barraIds = [...preferidos];
-  for (const item of opcionesOperacion) {
+  const opcionesBarra = enComercial ? opcionesComercial : opcionesOperacion;
+  const barraIds = enComercial ? [] : [...preferidos];
+  for (const item of opcionesBarra) {
     if (barraIds.length >= 4) break;
     if (!barraIds.includes(item.id)) barraIds.push(item.id);
   }
   const barraMovil = barraIds.slice(0, 4)
-    .map(id => opcionesOperacion.find(x => x.id === id))
+    .map(id => opcionesBarra.find(x => x.id === id))
     .filter(Boolean);
-  const menuMasOperacion = opcionesOperacion.filter(x => !barraIds.slice(0, 4).includes(x.id));
+  const menuMasOperacion = opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
+  const mostrarBarraMovil = enOperacion || (enComercial && !activa(pathname, '/seo'));
 
   function itemMovilActivo(item) {
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
     if (item.id === 'levantamientos') return levantamientosActivo;
+    if (item.activo) return item.activo(pathname);
     return item.ruta ? activa(pathname, item.ruta) : false;
   }
 
@@ -347,21 +358,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             </div>
           </div>
         )}
-        {seccionesMovil.length > 1 && (
-          <nav className="subnav-grupo-movil" aria-label={'Secciones de ' + (nombreArea || 'esta área')}>
-            {seccionesMovil.map(a => (
-              <Link key={a.ruta} to={a.ruta}
-                    aria-current={(a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? 'page' : undefined}
-                    className={'subnav-grupo-item' + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
-                {a.etiqueta}
-              </Link>
-            ))}
-          </nav>
-        )}
         {children}
       </div>
 
-      {enOperacion && (
+      {mostrarBarraMovil && (
         <>
           <nav className="barra-inferior-movil" aria-label="Navegación principal">
             {barraMovil.map(item => (
