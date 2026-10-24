@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
-import { limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } from '../lib/area';
+import { guardarArea, limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
@@ -332,6 +332,32 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (item.ruta && pathname !== item.ruta) navegar(item.ruta, { replace: desdeMas });
   }
 
+  // Navegación de escritorio: las tres áreas de trabajo permanecen a la
+  // vista. Solo se despliegan los destinos de la sección activa, sin obligar
+  // a volver al selector inicial. Administración es un acceso transversal.
+  const gruposLaterales = [
+    { id: 'comercial', etiqueta: 'Comercial', ruta: '/pipeline', icono: 'comercial', mostrar: puedeConfigurar },
+    { id: 'operacion', etiqueta: 'Operaciones', ruta: '/inicio', icono: 'comunidades', mostrar: true },
+    { id: 'finanzas', etiqueta: 'Finanzas', ruta: '/contabilidad', icono: 'contabilidad', mostrar: esAdministracion }
+  ].filter(item => item.mostrar);
+
+  function abrirGrupoLateral(item) {
+    guardarArea(item.id);
+    if (pathname !== item.ruta) navegar(item.ruta);
+  }
+
+  function enlacesDelGrupo() {
+    return accesos.filter(item => item.mostrar).map(item => (
+      <Link key={item.ruta} to={item.ruta}
+            aria-current={(item.activo ? item.activo(pathname) : activa(pathname, item.ruta)) ? 'page' : undefined}
+            className={'enlace-lateral' + (item.hijo ? ' enlace-lateral-hijo' : '') +
+              ((item.activo ? item.activo(pathname) : activa(pathname, item.ruta)) ? ' activo' : '')}>
+        <span className="enlace-lateral-icono"><IconoNavegacion tipo={iconoRutaCoproactiva(item.ruta)} /></span>
+        <span>{item.etiqueta}</span>
+      </Link>
+    ));
+  }
+
   return (
     <div className="layout-escritorio">
       <nav className="barra-lateral" aria-label="Navegación">
@@ -339,14 +365,45 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva" />
         </Link>
         <div className="enlaces-lateral">
-          {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
-          {accesos.filter(a => a.mostrar).map(a => (
-            <Link key={a.ruta} to={a.ruta}
-                  className={'enlace-lateral' + (a.hijo ? ' enlace-lateral-hijo' : '') + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
-              <span className="enlace-lateral-icono"><IconoNavegacion tipo={iconoRutaCoproactiva(a.ruta)} /></span>
-              <span>{a.etiqueta}</span>
-            </Link>
-          ))}
+          {esCliente ? enlacesDelGrupo() : (
+            <>
+              <span className="micro apagado etiqueta-lateral">Áreas de trabajo</span>
+              {gruposLaterales.map(item => (
+                <div key={item.id} className="grupo-navegacion-lateral">
+                  <button type="button" onClick={() => abrirGrupoLateral(item)}
+                          className={'grupo-navegacion-boton' + (grupo === item.id ? ' activo' : '')}
+                          aria-expanded={grupo === item.id}
+                          aria-label={'Ir al área ' + item.etiqueta}>
+                    <span className="enlace-lateral-icono"><IconoNavegacion tipo={item.icono}/></span>
+                    <span>{item.etiqueta}</span>
+                    <span className="grupo-navegacion-flecha" aria-hidden="true">{grupo === item.id ? '⌄' : '›'}</span>
+                  </button>
+                  {grupo === item.id && (
+                    <div className="grupo-navegacion-enlaces" aria-label={'Módulos de ' + item.etiqueta}>
+                      {enlacesDelGrupo()}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {esAdministracion && (
+                <div className="grupo-navegacion-lateral grupo-navegacion-administracion">
+                  <button type="button" onClick={() => navegar('/configuracion')}
+                          className={'grupo-navegacion-boton' + (enConfiguracion ? ' activo' : '')}
+                          aria-expanded={enConfiguracion}
+                          title="Equipo, usuarios, permisos, accesos de clientes y configuración general.">
+                    <span className="enlace-lateral-icono"><IconoNavegacion tipo="configuracion"/></span>
+                    <span>Administración y ajustes</span>
+                    <span className="grupo-navegacion-flecha" aria-hidden="true">{enConfiguracion ? '⌄' : '›'}</span>
+                  </button>
+                  {enConfiguracion && (
+                    <div className="grupo-navegacion-enlaces" aria-label="Opciones de administración y ajustes">
+                      {enlacesDelGrupo()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="crece" />
