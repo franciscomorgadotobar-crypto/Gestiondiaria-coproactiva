@@ -89,7 +89,7 @@ try {
 
     // La recarga no debe hacer volver al selector ni borrar filtros.
     await page.getByRole('combobox',{name:'Período de análisis'}).selectOption('90');
-    await page.getByRole('button',{name:'Ir a Google Maps'}).click();
+    await page.getByRole('combobox',{name:'Sección de SEO'}).selectOption('business');
     await page.waitForURL(url=>url.pathname==='/seo'
       && url.searchParams.get('vista')==='business'
       && url.searchParams.get('dias')==='90',{timeout:12000});
@@ -104,8 +104,9 @@ try {
     // Atrás desde la pestaña recupera primero el Dashboard y luego Home.
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:10000});
-    // La barra inferior reemplaza la sección (igual que en Operaciones):
-    // Atrás desde SEO vuelve al selector.
+    // Volver respeta niveles: vista SEO → SEO Dashboard → Pipeline → selector.
+    await page.goBack();
+    await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:10000});
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/',{timeout:10000});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:10000});
