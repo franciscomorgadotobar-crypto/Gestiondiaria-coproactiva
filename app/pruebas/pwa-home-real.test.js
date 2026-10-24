@@ -37,21 +37,28 @@ test('CRM, operación y pantallas profundas también vuelven al Home de acceso',
   }
 });
 
-test('el enlace del correo abre Pipeline directo, sin la marca y con el área CRM',()=>{
+test('el enlace del correo abre Pipeline directo, sin la marca y con el grupo Comercial',()=>{
   const h=simularHistorial('/pipeline?etapa=nuevo&origen=correo',null);
   assert.equal(prepararArranqueConHome(h.api,{
     pathname:'/pipeline',search:'?etapa=nuevo&origen=correo',hash:''},'/'),false);
   assert.equal(h.entradas.length,1,'no apila nada');
   assert.equal(h.entradas[0].url,'/pipeline?etapa=nuevo');
-  assert.equal(consumirAreaEnlaceDirecto(),'crm');
+  assert.equal(consumirAreaEnlaceDirecto(),'comercial');
   assert.equal(consumirAreaEnlaceDirecto(),null,'se usa una sola vez');
 });
 
-test('enlace directo a una pantalla de Operación no fija área y conserva otros parámetros',()=>{
+test('enlace directo a una pantalla de Operación fija ese grupo y conserva otros parámetros',()=>{
   const h=simularHistorial('/comunidades/abc?origen=correo&seccion=documentos#x',null);
   assert.equal(prepararArranqueConHome(h.api,{
     pathname:'/comunidades/abc',search:'?origen=correo&seccion=documentos',hash:'#x'},'/'),false);
   assert.equal(h.entradas[0].url,'/comunidades/abc?seccion=documentos#x');
+  assert.equal(consumirAreaEnlaceDirecto(),'operacion');
+});
+
+test('enlace directo a Configuración no guarda grupo (es una visita)',()=>{
+  const h=simularHistorial('/equipo?origen=correo',null);
+  assert.equal(prepararArranqueConHome(h.api,{pathname:'/equipo',search:'?origen=correo',hash:''},'/'),false);
+  assert.equal(h.entradas[0].url,'/equipo');
   assert.equal(consumirAreaEnlaceDirecto(),null);
 });
 

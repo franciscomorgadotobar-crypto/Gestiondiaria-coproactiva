@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
-import { limpiarArea, inicioSegunArea, areaGuardada } from '../lib/area';
+import { limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } from '../lib/area';
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
@@ -86,31 +86,23 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
 
 
-  // La barra muestra solo el área en la que se está, igual que en el
-  // teléfono: en CRM, el Pipeline; en Operación, levantamientos, plantillas,
-  // comunidades y mapa; en Propiedades, el listado y el alta; en
-  // Configuración, Equipo y Clientes. Para ir a otra área está "Cambiar de
-  // área".
-  // El Pipeline es del CRM aunque se llegue a él sin haber elegido área
-  // (un enlace directo, por ejemplo). Lo mismo con Propiedades: la ruta
-  // manda sobre el área guardada.
-  // Configuración no se guarda como área (se entra desde su tarjeta en la
-  // capa de entrada, de visita), así que se reconoce solo por la ruta. Sus
-  // enlaces no se repiten en las otras áreas: no son trabajo del día.
-  const enConfiguracion = !esCliente && esAdministracion
-    && ['/configuracion', '/equipo', '/clientes'].some(r => activa(pathname, r));
-  const enSEO = !esCliente && esAdministracion && !enConfiguracion && activa(pathname, '/seo');
-  const enWhatsApp = !esCliente && esAdministracion && !enConfiguracion && !enSEO && (activa(pathname, '/whatsapp') || (areaGuardada() === 'whatsapp' && !['/proveedores','/contabilidad','/pipeline','/propiedades'].some(r => activa(pathname,r))));
-  const enContabilidad = !esCliente && esAdministracion && !enConfiguracion && !enSEO && !enWhatsApp
-    && (activa(pathname, '/contabilidad') || areaGuardada() === 'contabilidad');
-  const enProveedores = !esCliente && esAdministracion && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad
-    && (activa(pathname, '/proveedores') || areaGuardada() === 'proveedores');
-  const enPropiedades = !esCliente && puedeConfigurar && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores
-    && (activa(pathname, '/propiedades')
-      || (areaGuardada() === 'propiedades' && !activa(pathname, '/pipeline')));
-  const enCRM = !esCliente && puedeConfigurar && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores && !enPropiedades
-    && (areaGuardada() === 'crm' || activa(pathname, '/pipeline'));
-  const enOperacion = !esCliente && !enConfiguracion && !enSEO && !enWhatsApp && !enContabilidad && !enProveedores && !enPropiedades && !enCRM;
+  // La barra muestra solo el grupo en el que se está: Comercial (Pipeline,
+  // Arriendos y ventas, SEO), Operaciones (levantamientos, comunidades,
+  // mantenciones, bitácora, mapa, proveedores y WhatsApp), Finanzas
+  // (contabilidad) o Configuración (equipo y clientes). Para ir a otro grupo
+  // está "Cambiar de área".
+  // La ruta manda sobre el grupo guardado: el Pipeline es Comercial aunque se
+  // llegue por un enlace directo. Las rutas compartidas (/nuevo,
+  // /notificaciones, /mi-cuenta) usan el grupo elegido.
+  // Configuración no se guarda como grupo (es una visita), así que se
+  // reconoce solo por la ruta.
+  let grupo = esCliente ? null : (grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion');
+  if (grupo === 'comercial' && !puedeConfigurar) grupo = 'operacion';
+  if ((grupo === 'finanzas' || grupo === 'configuracion') && !esAdministracion) grupo = 'operacion';
+  const enConfiguracion = grupo === 'configuracion';
+  const enComercial = grupo === 'comercial';
+  const enFinanzas = grupo === 'finanzas';
+  const enOperacion = grupo === 'operacion';
   const alertasTotales = alertasMantencion + alertasGenerales;
   const levantamientosActivo = pathname === '/nuevo'
     || pathname.startsWith('/control/')
@@ -118,13 +110,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   const nombreArea = esCliente ? null
     : enConfiguracion ? 'Configuración'
-    : enSEO ? 'SEO y Analítica'
-    : enWhatsApp ? 'WhatsApp'
-    : enContabilidad ? 'Contabilidad'
-    : enProveedores ? 'Proveedores'
-    : enPropiedades ? 'Propiedades'
-    : enCRM ? 'CRM'
-    : puedeConfigurar ? 'Operación' : null;
+    : enComercial ? 'Comercial'
+    : enFinanzas ? 'Finanzas'
+    : puedeConfigurar ? 'Operaciones' : null;
 
   // La comunidad seleccionada es el contexto del menú cliente.
   // Los enlaces usan la misma URL de pestañas, sin crear pantallas duplicadas.
@@ -150,15 +138,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: true },
         { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
       ]
-    : enSEO
-    ? [{ ruta: '/seo', etiqueta: 'Dashboard SEO', mostrar: true }]
-    : enWhatsApp
-    ? [
-        { ruta: '/whatsapp', etiqueta: 'Bandeja', mostrar: true, activo: p => p === '/whatsapp' },
-        { ruta: '/whatsapp/automatizaciones', etiqueta: 'Automatizaciones', mostrar: esSuperadmin },
-        { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin }
-      ]
-    : enContabilidad
+    : enFinanzas
     ? [
         { ruta: '/contabilidad', etiqueta: 'Resumen', mostrar: true },
         { ruta: '/contabilidad/asientos', etiqueta: 'Asientos', mostrar: true },
@@ -167,22 +147,13 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/contabilidad/configuracion', etiqueta: 'Configuración', mostrar: true },
         { ruta: '/contabilidad/entidades', etiqueta: 'Entidades', mostrar: true }
       ]
-    : enProveedores
+    : enComercial
     ? [
-        { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: true, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
-        { ruta: '/proveedores/postulantes', etiqueta: 'Postulantes', mostrar: true },
-        { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: true },
-        { ruta: '/proveedores/comunicaciones', etiqueta: 'Comunicaciones', mostrar: true }
-      ]
-    : enPropiedades
-    ? [
-        { ruta: '/propiedades', etiqueta: 'Inicio', mostrar: true, activo: activaPropiedades },
-        { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true }
-      ]
-    : enCRM
-    ? [
-        // "Inicio" es el home del área: en CRM, el Pipeline.
-        { ruta: '/pipeline', etiqueta: 'Inicio', mostrar: true }
+        // "Inicio" del grupo Comercial es el Pipeline.
+        { ruta: '/pipeline', etiqueta: 'Pipeline', mostrar: true, enMovil: true },
+        { ruta: '/propiedades', etiqueta: 'Arriendos y ventas', mostrar: true, activo: activaPropiedades, enMovil: true },
+        { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true, hijo: true },
+        { ruta: '/seo', etiqueta: 'SEO y analítica', mostrar: esAdministracion, enMovil: true }
       ]
     : [
         { ruta: '/inicio', etiqueta: 'Inicio', mostrar: true },
@@ -191,8 +162,21 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/bitacora', etiqueta: 'Bitácora', mostrar: true },
         { ruta: '/comunidades', etiqueta: 'Comunidades', mostrar: true },
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
-        { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true }
+        { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true },
+        // Proveedores y WhatsApp son de administración. Sus subsecciones
+        // aparecen debajo solo mientras se está en ellas.
+        { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: esAdministracion, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
+        { ruta: '/proveedores/postulantes', etiqueta: 'Postulantes', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
+        { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
+        { ruta: '/proveedores/comunicaciones', etiqueta: 'Comunicaciones', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
+        { ruta: '/whatsapp', etiqueta: 'WhatsApp', mostrar: esAdministracion, activo: p => p === '/whatsapp' },
+        { ruta: '/whatsapp/automatizaciones', etiqueta: 'Automatizaciones', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true },
+        { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true }
       ];
+
+  // En el teléfono no hay barra lateral: Comercial muestra sus secciones como
+  // pestañas bajo la barra superior. Operaciones usa la barra inferior y "Más".
+  const seccionesMovil = accesos.filter(a => a.mostrar && a.enMovil);
 
   const inicio = esCliente ? '/portal' : inicioSegunArea();
 
@@ -217,6 +201,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (tipo === 'bitacora') return <svg {...comun}><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>;
     if (tipo === 'mantenciones') return <svg {...comun}><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v6a6 6 0 0 1-6 6H6"/><path d="m10 18-4 4-4-4 4-4"/><path d="M6 22v-6"/></svg>;
     if (tipo === 'mapa') return <svg {...comun}><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>;
+    if (tipo === 'proveedores' || tipo === 'whatsapp') return <IconoNavegacion tipo={tipo} size={21} />;
     return <svg {...comun}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   }
 
@@ -238,7 +223,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'plantillas', etiqueta: 'Plantillas', ruta: '/plantillas', mostrar: puedeConfigurar },
     { id: 'bitacora', etiqueta: 'Bitácora', ruta: '/bitacora' },
     { id: 'mantenciones', etiqueta: 'Mantenciones', ruta: '/mantenciones' },
-    { id: 'mapa', etiqueta: 'Mapa', ruta: '/mapa' }
+    { id: 'mapa', etiqueta: 'Mapa', ruta: '/mapa' },
+    { id: 'proveedores', etiqueta: 'Proveedores', ruta: '/proveedores', mostrar: esAdministracion },
+    { id: 'whatsapp', etiqueta: 'WhatsApp', ruta: '/whatsapp', mostrar: esAdministracion }
   ].filter(x => x.mostrar !== false);
 
   const idsPermitidos = new Set(opcionesOperacion.map(x => x.id));
@@ -281,7 +268,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           {nombreArea && <span className="micro apagado etiqueta-lateral">{nombreArea}</span>}
           {accesos.filter(a => a.mostrar).map(a => (
             <Link key={a.ruta} to={a.ruta}
-                  className={'enlace-lateral' + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
+                  className={'enlace-lateral' + (a.hijo ? ' enlace-lateral-hijo' : '') + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
               <span className="enlace-lateral-icono"><IconoNavegacion tipo={iconoRutaCoproactiva(a.ruta)} /></span>
               <span>{a.etiqueta}</span>
             </Link>
@@ -359,6 +346,17 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               )}
             </div>
           </div>
+        )}
+        {seccionesMovil.length > 1 && (
+          <nav className="subnav-grupo-movil" aria-label={'Secciones de ' + (nombreArea || 'esta área')}>
+            {seccionesMovil.map(a => (
+              <Link key={a.ruta} to={a.ruta}
+                    aria-current={(a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? 'page' : undefined}
+                    className={'subnav-grupo-item' + ((a.activo ? a.activo(pathname) : activa(pathname, a.ruta)) ? ' activo' : '')}>
+                {a.etiqueta}
+              </Link>
+            ))}
+          </nav>
         )}
         {children}
       </div>

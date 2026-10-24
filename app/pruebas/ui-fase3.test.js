@@ -59,14 +59,16 @@ test('Volver por niveles termina en selección de área, no sale de la PWA',()=>
   verificar(['/control/123/editar','/control/123','/inicio','/']);
   verificar(['/bitacora/nueva','/bitacora','/inicio','/']);
   verificar(['/plantillas/importar','/plantillas','/inicio','/']);
-  verificar(['/proveedores/comunicaciones','/proveedores','/']);
+  // Grupos: Operaciones incluye Proveedores y WhatsApp; Comercial incluye
+  // Arriendos y ventas y SEO; Finanzas es Contabilidad.
+  verificar(['/proveedores/comunicaciones','/proveedores','/inicio','/']);
+  verificar(['/whatsapp/conversaciones','/whatsapp','/inicio','/']);
+  verificar(['/propiedades/abc','/propiedades','/pipeline','/']);
+  verificar(['/seo','/pipeline','/']);
   verificar(['/contabilidad/reportes','/contabilidad','/']);
-  verificar(['/propiedades/abc','/propiedades','/']);
-  verificar(['/whatsapp/conversaciones','/whatsapp','/']);
   verificar(['/equipo','/configuracion','/']);
   verificar(['/ayuda/practica-levantamiento','/ayuda','/inicio','/']);
-  for(const raiz of ['/pipeline','/seo','/proveedores','/propiedades',
-                     '/whatsapp','/contabilidad','/configuracion'])
+  for(const raiz of ['/inicio','/pipeline','/contabilidad','/configuracion'])
     assert.equal(destinoVolverPorJerarquia(raiz),'/');
 });
 test('cuenta y notificaciones regresan al inicio del área correcta',()=>{

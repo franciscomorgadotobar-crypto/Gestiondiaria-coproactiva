@@ -12,6 +12,7 @@
  * Esto no elimina las validaciones del perfil ni permisos de cada ruta.
  */
 import { esRutaInterna } from './historialSelector.js';
+import { grupoDeRuta, normalizarArea } from './area.js';
 
 /*
  * Excepción: los enlaces que envía Coproactiva (por ejemplo, el botón del
@@ -21,10 +22,6 @@ import { esRutaInterna } from './historialSelector.js';
  * se quita de la URL al arrancar para que una recarga no la repita.
  */
 const ORIGENES_DIRECTOS = new Set(['correo']);
-const AREA_POR_RUTA = [
-  ['/pipeline', 'crm'], ['/propiedades', 'propiedades'], ['/proveedores', 'proveedores'],
-  ['/contabilidad', 'contabilidad'], ['/whatsapp', 'whatsapp'], ['/seo', 'seo']
-];
 let areaDeEnlace = null;
 
 function esEnlaceDirecto(search) {
@@ -75,7 +72,7 @@ export function prepararArranqueConHome(historial, ubicacion, base = '/', opcion
     const parametros = new URLSearchParams(ubicacion.search || '');
     parametros.delete('origen');
     const consulta = parametros.toString();
-    areaDeEnlace = AREA_POR_RUTA.find(([raiz]) => ruta === raiz || ruta.startsWith(raiz + '/'))?.[1] ?? null;
+    areaDeEnlace = normalizarArea(grupoDeRuta(ruta));
     try {
       historial.replaceState(historial.state, '', pathname + (consulta ? '?' + consulta : '') + (ubicacion.hash || ''));
     } catch { /* si no se puede limpiar la URL, la pantalla abre igual */ }

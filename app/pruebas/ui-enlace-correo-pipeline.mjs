@@ -54,7 +54,7 @@ try {
     const url = new URL(page.url());
     assert.equal(url.pathname, '/pipeline', 'abre Pipeline, no el selector');
     assert.equal(url.search, '?etapa=nuevo', 'sin la marca origen');
-    assert.equal(await page.evaluate(id => localStorage.getItem('coproactiva_area:' + id), userId), 'crm');
+    assert.equal(await page.evaluate(id => localStorage.getItem('coproactiva_area:' + id), userId), 'comercial');
     assert.equal(await page.getByText('¿En qué área vas a trabajar?').count(), 0);
     await page.goBack();
     await page.waitForTimeout(500);

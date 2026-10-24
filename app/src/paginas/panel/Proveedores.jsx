@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
-import { limpiarArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
@@ -99,8 +98,8 @@ export default function Proveedores() {
       navegar('/proveedores');
       return;
     }
-    limpiarArea();
-    navegar('/', { replace: true });
+    // Proveedores es una sección de Operaciones: vuelve a su inicio.
+    navegar('/inicio');
   });
 
   async function cargar({ mostrarResultado = false } = {}) {

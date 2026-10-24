@@ -67,14 +67,22 @@ try {
     const {ctx,page}=await crearPagina();
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-    await page.getByRole('button',{name:/SEO y Analítica/}).waitFor({timeout:15000});
+    await page.getByRole('button',{name:/Gestión comercial/}).waitFor({timeout:15000});
+    // Cuatro grupos: Comercial, Operaciones, Finanzas y Configuración.
+    for(const nombre of [/Gestión comercial/,/Operación de comunidades/,/Gestión contable/,/Configuración/])
+      assert.equal(await page.getByRole('button',{name:nombre}).count(),1,String(nombre));
+    assert.equal(await page.getByRole('button',{name:/SEO y Analítica|Red de proveedores|Recepción y atención/}).count(),0);
     assert.equal(new URL(page.url()).pathname,'/');
     assert.equal(await page.locator('.seo-pantalla').count(),0);
     const area=await page.evaluate(({userId})=>localStorage.getItem('coproactiva_area:'+userId),{userId});
     assert.equal(area,null,'el área recordada se elimina al abrir');
 
-    // Solo al elegir el módulo debe entrar en SEO; Atrás retorna al Home.
-    await page.getByRole('button',{name:/SEO y Analítica/}).click();
+    // Solo al elegir el grupo se entra; SEO es una sección de Comercial.
+    await page.getByRole('button',{name:/Gestión comercial/}).click();
+    await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
+    const pestanas=page.locator('.subnav-grupo-movil .subnav-grupo-item');
+    assert.deepEqual(await pestanas.allInnerTexts(),['Pipeline','Arriendos y ventas','SEO y analítica']);
+    await page.locator('.subnav-grupo-movil').getByRole('link',{name:'SEO y analítica'}).click();
     await page.waitForURL(/\/seo(?:\?|$)/,{timeout:20000});
     await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
 
@@ -89,16 +97,18 @@ try {
     assert.equal(new URL(page.url()).pathname,'/seo','recarga conserva SEO');
     assert.equal(new URL(page.url()).searchParams.get('vista'),'business','recarga conserva Google Maps');
     assert.equal(await page.getByRole('combobox',{name:'Período de análisis'}).inputValue(),'90','recarga conserva días');
-    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0,'sin selector tras recarga');
+    assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),0,'sin selector tras recarga');
     console.log('SEO → Google Maps · 90 días → recarga → misma vista y período: OK');
 
     // Atrás desde la pestaña recupera primero el Dashboard y luego Home.
     await page.goBack();
     await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:10000});
     await page.goBack();
+    await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:10000});
+    await page.goBack();
     await page.waitForURL(url=>url.pathname==='/',{timeout:10000});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:10000});
-    console.log('PWA Home primero → selección de SEO → Atrás → Home: OK');
+    console.log('PWA Home → Comercial → SEO → Atrás → Pipeline → Home: OK');
     await ctx.close();
   }
 
@@ -125,9 +135,14 @@ try {
     const {ctx,page}=await crearPagina('jefatura');
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Gestión contable/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Configuración/}).count(),0);
     assert.ok(await page.getByRole('button',{name:/Gestión comercial/}).count()>0);
-    console.log('Jefatura → selector filtrado por permisos: OK');
+    assert.ok(await page.getByRole('button',{name:/Operación de comunidades/}).count()>0);
+    await page.getByRole('button',{name:/Gestión comercial/}).click();
+    await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
+    assert.deepEqual(await page.locator('.subnav-grupo-movil .subnav-grupo-item').allInnerTexts(),['Pipeline','Arriendos y ventas']);
+    console.log('Jefatura → selector y Comercial filtrados por permisos: OK');
     await ctx.close();
   }
 
@@ -136,8 +151,8 @@ try {
     const {ctx,page}=await crearPagina('terreno');
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Operación de comunidades/}).count(),0);
     assert.equal(new URL(page.url()).pathname,'/');
     console.log('Terreno → Inicio propio sin selector de módulos: OK');
     await ctx.close();
@@ -148,7 +163,7 @@ try {
     const {ctx,page}=await crearPagina('cliente');
     await page.goto(base+'/seo',{waitUntil:'domcontentloaded'});
     await page.waitForURL(url=>url.pathname==='/portal',{timeout:20000});
-    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),0);
     console.log('Cliente → portal propio sin selector administrativo: OK');
     await ctx.close();
   }
