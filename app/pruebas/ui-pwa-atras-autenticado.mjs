@@ -68,8 +68,8 @@ try {
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
     await page.getByRole('button',{name:/Gestión comercial/}).waitFor({timeout:15000});
-    // Cuatro grupos: Comercial, Operaciones, Finanzas y Configuración.
-    for(const nombre of [/Gestión comercial/,/Operación de comunidades/,/Gestión contable/,/Configuración/])
+    // Tres áreas de trabajo y un acceso secundario a Administración y ajustes.
+    for(const nombre of [/Gestión comercial/,/Operación de comunidades/,/Gestión contable/,/Administración y ajustes/])
       assert.equal(await page.getByRole('button',{name:nombre}).count(),1,String(nombre));
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica|Red de proveedores|Recepción y atención/}).count(),0);
     assert.equal(new URL(page.url()).pathname,'/');
