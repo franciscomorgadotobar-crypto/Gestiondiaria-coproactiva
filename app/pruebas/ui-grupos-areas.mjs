@@ -120,7 +120,7 @@ try {
     assert.notEqual(anterior, siguiente, 'No repetir inmediatamente una cápsula');
     await aviso.getByRole('button', { name: /Conoce más/ }).click();
     await page.waitForURL(u => u.pathname === '/conocimientos' && u.searchParams.has('capsula'), { timeout: 20000 });
-    assert.equal(await page.getByRole('heading', { name: 'Conoce más', exact: true }).count(), 1);
+    await page.getByRole('heading', { name: 'Conoce más', exact: true }).waitFor({timeout:15000});
     console.log('Cápsula lateral tipo mascota: bienvenida, siguiente y enlace a la ficha: OK');
     await ctx.close();
   }
@@ -143,7 +143,7 @@ try {
     assert.equal(await page.locator('.conocimientos-item').count(),202,'El módulo lista las 202 cápsulas');
     await page.locator('.conocimientos-item').first().click();
     await page.waitForURL(u=>u.pathname==='/conocimientos' && u.searchParams.has('capsula'));
-    assert.equal(await page.getByRole('heading',{name:'Conoce más',exact:true}).count(),1);
+    await page.getByRole('heading',{name:'Conoce más',exact:true}).waitFor({timeout:15000});
     const preferencia=page.getByRole('checkbox',{name:/Mostrar “¿Sabías que…?” automáticamente/});
     await preferencia.uncheck();
     assert.equal(await preferencia.isChecked(),false,'Se pueden desactivar avisos automáticos');
