@@ -23,6 +23,10 @@ function activaPropiedades(pathname) {
   return activa(pathname, '/propiedades') && !activa(pathname, '/propiedades/nueva');
 }
 
+function abrirConocimientos() {
+  window.dispatchEvent(new Event('coproactiva:base-conocimientos-abrir'));
+}
+
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
   const { pathname, hash, search } = useLocation();
@@ -353,6 +357,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   function esModuloActivo(item) {
+    if (item.id === 'conocimientos') return false;
     if (item.id === 'levantamientos') {
       // Módulo original «Levantamientos»: contiene Inicio, Comunidades,
       // Levantamientos, Mantenciones, Bitácora, Plantillas y Mapa.
@@ -367,8 +372,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   function irModuloPlano(item, { desdeMas = false } = {}) {
-    if (item.area) guardarArea(item.area);
     if (desdeMas) setMasAbierto(false, { alNavegar: true });
+    if (item.id === 'conocimientos') {
+      abrirConocimientos();
+      return;
+    }
+    if (item.area) guardarArea(item.area);
     navegar(item.ruta, desdeMas ? { replace: true } : undefined);
   }
 
@@ -394,7 +403,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           {esCliente ? enlacesDelGrupo() : organizacion === 'modulos' ? (
             <>
               <span className="micro apagado etiqueta-lateral">Módulos</span>
-              {modulosPlanos.map(item => (
+              {modulosPlanos.map(item => item.id === 'conocimientos' ? (
+                <button key={item.id} type="button"
+                        className="enlace-lateral" onClick={abrirConocimientos}
+                        style={{ width: '100%', textAlign: 'left', border: 0, background: 'transparent', cursor: 'pointer', font: 'inherit' }}>
+                  <span className="enlace-lateral-icono" aria-hidden="true">✦</span>
+                  <span>{item.titulo}</span>
+                </button>
+              ) : (
                 <Link key={item.id} to={item.ruta}
                       onClick={() => { if (item.area) guardarArea(item.area); }}
                       aria-current={esModuloActivo(item) ? 'page' : undefined}
@@ -444,6 +460,13 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 </div>
               )}
             </>
+          )}
+          {!esCliente && organizacion !== 'modulos' && (
+            <button type="button" className="enlace-lateral" onClick={abrirConocimientos}
+                    style={{ width: '100%', textAlign: 'left', border: 0, background: 'transparent', cursor: 'pointer', font: 'inherit' }}>
+              <span className="enlace-lateral-icono" aria-hidden="true">✦</span>
+              <span>Base de conocimientos</span>
+            </button>
           )}
         </div>
 
@@ -595,6 +618,17 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                             <span aria-hidden="true">›</span>
                           </button>
                         ))}
+                      </div>
+                    </div>
+                  )}
+                  {organizacion !== 'modulos' && !esCliente && (
+                    <div className="menu-mas-grupo" role="group" aria-label="Aprendizaje">
+                      <p className="menu-mas-grupo-titulo">Aprendizaje</p>
+                      <div className="menu-mas-enlaces">
+                        <button type="button" onClick={() => {
+                          setMasAbierto(false, { alNavegar: true });
+                          abrirConocimientos();
+                        }}>Base de conocimientos <span aria-hidden="true">›</span></button>
                       </div>
                     </div>
                   )}
