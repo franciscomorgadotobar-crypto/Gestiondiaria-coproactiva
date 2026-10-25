@@ -107,6 +107,24 @@ try {
     await ctx.close();
   }
 
+  // La cápsula educativa replica la mascota del CRM: temporal, lateral y enlazada a la lección.
+  {
+    const { ctx, page } = await crear({ ancho: 1280, alto: 850 });
+    await page.getByRole('button', { name: /Operación de comunidades/ }).click();
+    await page.waitForURL(u => u.pathname === '/inicio', { timeout: 20000 });
+    const aviso = page.locator('.conocimiento-mascota.is-visible');
+    await aviso.waitFor({ timeout: 10000 });
+    const anterior = await aviso.locator('.conocimiento-mascota__texto').innerText();
+    await aviso.getByRole('button', { name: 'Siguiente dato educativo' }).click();
+    const siguiente = await aviso.locator('.conocimiento-mascota__texto').innerText();
+    assert.notEqual(anterior, siguiente, 'No repetir inmediatamente una cápsula');
+    await aviso.getByRole('button', { name: /Conoce más/ }).click();
+    await page.waitForURL(u => u.pathname === '/conocimientos' && u.searchParams.has('capsula'), { timeout: 20000 });
+    assert.equal(await page.getByRole('heading', { name: 'Conoce más', exact: true }).count(), 1);
+    console.log('Cápsula lateral tipo mascota: bienvenida, siguiente y enlace a la ficha: OK');
+    await ctx.close();
+  }
+
   // En escritorio el modo plano no obliga a pasar por un grupo.
   {
     const {ctx,page}=await crear({ancho:1280,alto:850});
