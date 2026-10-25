@@ -57,7 +57,7 @@ export function modulosDisponibles(perfil) {
       descripcion:'Equipo y clientes.', ruta:'/configuracion', area:null, visible:administracion },
     { id:'conocimientos', titulo:'Base de conocimientos', etiqueta:'APRENDIZAJE',
       descripcion:'Cápsulas breves para aprender la Ley 21.442.',
-      ruta:'/inicio', area:null, tipo:'popup', visible:true }
+      ruta:'/conocimientos', area:null, visible:true }
 
   ];
   return destinos.filter(d => d.visible).map(({visible, ...d}) => d);
