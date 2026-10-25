@@ -8,21 +8,29 @@ test('Catálogo no agrega rutas inexistentes y evita duplicados',()=>{
   assert.equal(rutas.size,modulos.length);
   assert.ok(rutas.has('/pipeline'));
   assert.ok(rutas.has('/seo'));
-  assert.ok(rutas.has('/inicio#por-hacer'));
+  assert.ok(rutas.has('/inicio'));
   assert.ok(rutas.has('/contabilidad'));
-  assert.ok(rutas.has('/clientes'));
+  assert.ok(rutas.has('/configuracion'));
+  assert.equal(modulos.length,8,'Los ocho módulos originales, sin submódulos como tarjetas');
+  assert.deepEqual(modulos.map(m=>m.titulo),[
+    'Gestión comercial','Levantamientos','Arriendos y ventas','Red de proveedores',
+    'Recepción y atención','Gestión contable','SEO y Analítica','Configuración'
+  ]);
   assert.ok(!rutas.has('/mi-cuenta'),'Mi cuenta es transversal, no módulo');
 });
 
 test('Roles preservan autorizaciones del menú',()=>{
   const modulos=rol=>modulosDisponibles({id:rol,rol,activo:true}).map(x=>x.id);
   const jefatura=modulos('jefatura');
-  assert.ok(jefatura.includes('pipeline') && jefatura.includes('propiedades'));
-  for(const id of ['seo','contabilidad','clientes','equipo','whatsapp','proveedores'])
+  assert.ok(jefatura.includes('crm') && jefatura.includes('propiedades'));
+  assert.ok(jefatura.includes('levantamientos'));
+  assert.equal(jefatura.length,3);
+  for(const id of ['seo','contabilidad','configuracion','whatsapp','proveedores'])
     assert.ok(!jefatura.includes(id),'No visible para jefatura: '+id);
   assert.ok(modulos('admin').includes('contabilidad'));
   assert.ok(!modulos('admin').includes('clientes'));
-  assert.ok(modulos('superadmin').includes('clientes'));
+  assert.ok(modulos('superadmin').includes('configuracion'));
+  assert.equal(modulos('admin').length,8);
   assert.deepEqual(modulos('cliente'),[]);
   assert.deepEqual(modulosDisponibles({id:'s',rol:'superadmin',activo:false}),[]);
 });
