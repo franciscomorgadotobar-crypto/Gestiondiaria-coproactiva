@@ -650,7 +650,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                     <div className="menu-mas-grupo" role="group" aria-label="Preferencias de aprendizaje">
                       <p className="menu-mas-grupo-titulo">Preferencias de aprendizaje</p>
                       <div className="menu-mas-enlaces">
-                        <button type="button" role="switch" aria-checked={avisosActivos}
+                        <button type="button" role="switch" aria-label="Mostrar avisos educativos automáticos" aria-checked={avisosActivos}
                           onClick={() => {
                             const proximo = !avisosActivos;
                             setAvisosActivos(proximo);
