@@ -120,8 +120,49 @@ try {
     assert.notEqual(anterior, siguiente, 'No repetir inmediatamente una cápsula');
     await aviso.getByRole('button', { name: /Conoce más/ }).click();
     await page.waitForURL(u => u.pathname === '/conocimientos' && u.searchParams.has('capsula'), { timeout: 20000 });
-    await page.getByRole('heading', { name: 'Conoce más', exact: true }).waitFor({timeout:15000});
+    await page.getByRole('heading', { name: 'Desarrollo del tema', exact: true }).waitFor({timeout:15000});
     console.log('Cápsula lateral tipo mascota: bienvenida, siguiente y enlace a la ficha: OK');
+    await ctx.close();
+  }
+
+  // Móvil: tres botones exactos, búsqueda a demanda y expansión en el mismo recuadro.
+  {
+    const {ctx,page}=await crear({ancho:390,alto:844});
+    await page.getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:/Base de conocimientos/}).click();
+    await page.waitForURL(u=>u.pathname==='/conocimientos',{timeout:20000});
+    const barra=page.locator('.barra-inferior-movil');
+    assert.deepEqual((await barra.locator('.nav-movil-item').allInnerTexts()).map(x=>x.trim()),
+      ['Aprendizaje','Buscar','Más'],'La barra exclusiva no duplica navegación');
+    assert.equal(await page.locator('.conocimientos-filtros-escritorio:visible').count(),0,
+      'El buscador no ocupa espacio en el listado');
+    assert.equal(await page.locator('.conocimientos-tarjeta').count(),202);
+    const primera=page.locator('.conocimientos-tarjeta').first();
+    await primera.locator('.conocimientos-tarjeta-resumen').click();
+    assert.equal(await primera.locator('.conocimientos-tarjeta-desarrollo').count(),1);
+    assert.equal(await page.locator('.conocimientos-tarjeta-desarrollo').count(),1);
+    await primera.locator('.conocimientos-tarjeta-resumen').click();
+    assert.equal(await primera.locator('.conocimientos-tarjeta-desarrollo').count(),0);
+    await barra.getByRole('button',{name:'Buscar'}).click();
+    const buscador=page.getByRole('dialog',{name:'Buscar en Base de conocimientos'});
+    await buscador.waitFor();
+    await buscador.getByRole('searchbox').fill('condominio');
+    await buscador.getByRole('button',{name:/Ver \d+ contenidos/}).click();
+    assert.ok((await page.locator('.conocimientos-tarjeta').count())>0);
+    assert.ok((await page.locator('.conocimientos-tarjeta').count())<202,
+      'La lupa filtra el catálogo');
+    await barra.getByRole('button',{name:'Aprendizaje'}).click();
+    assert.equal(await page.locator('.conocimientos-tarjeta').count(),202,
+      'Aprendizaje recupera la biblioteca completa');
+    await barra.getByRole('button',{name:'Más'}).click();
+    const menu=page.getByRole('dialog',{name:'Más opciones'});
+    const switchAvisos=menu.getByRole('switch',{name:/Avisos «¿Sabías que…?»/});
+    assert.equal(await switchAvisos.getAttribute('aria-checked'),'true');
+    await switchAvisos.click();
+    assert.equal(await switchAvisos.getAttribute('aria-checked'),'false');
+    await switchAvisos.click();
+    assert.equal(await switchAvisos.getAttribute('aria-checked'),'true');
+    console.log('Aprendizaje móvil: acordeones, lupa, filtros, barra de tres accesos y avisos: OK');
     await ctx.close();
   }
 
@@ -140,14 +181,14 @@ try {
     await page.locator('.barra-lateral').getByRole('link',{name:'Base de conocimientos'}).click();
     await page.waitForURL(u=>u.pathname==='/conocimientos',{timeout:20000});
     await page.getByRole('heading',{name:'Base de conocimientos',exact:true}).waitFor();
-    assert.equal(await page.locator('.conocimientos-item').count(),202,'El módulo lista las 202 cápsulas');
-    await page.locator('.conocimientos-item').first().click();
+    assert.equal(await page.locator('.conocimientos-tarjeta').count(),202,'El módulo lista las 202 cápsulas');
+    const primera=page.locator('.conocimientos-tarjeta').first();
+    await primera.locator('.conocimientos-tarjeta-resumen').click();
     await page.waitForURL(u=>u.pathname==='/conocimientos' && u.searchParams.has('capsula'));
-    await page.getByRole('heading',{name:'Conoce más',exact:true}).waitFor({timeout:15000});
-    const preferencia=page.locator('.conocimientos-preferencia input[type="checkbox"]');
-    await preferencia.uncheck();
-    assert.equal(await preferencia.isChecked(),false,'Se pueden desactivar avisos automáticos');
-    await preferencia.check();
+    assert.equal(await primera.locator('.conocimientos-tarjeta-desarrollo').count(),1,
+      'La explicación se expande dentro de su tarjeta');
+    await primera.getByRole('heading',{name:'Desarrollo del tema'}).waitFor();
+    assert.equal(await page.locator('.conocimientos-lectura').count(),0,'No existe lector separado');
     await page.locator('.barra-lateral').getByRole('link',{name:'SEO y Analítica'}).click();
     await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
     assert.equal(await page.locator('.barra-lateral .enlace-lateral.activo').count(),1);
