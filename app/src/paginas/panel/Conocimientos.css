@@ -285,3 +285,53 @@
   .conocimientos-chevron { transition: none; }
   .conocimientos-tarjeta-desarrollo { animation: none; }
 }
+
+
+/* Fichas de aprendizaje: el acordeón conserva el mismo ancho y su lectura gana profundidad. */
+.conocimientos-tarjeta-desarrollo .conocimientos-subtitulo {
+  margin-top: 15px;
+}
+.conocimientos-tarjeta-desarrollo .conocimientos-definiciones {
+  display:grid;
+  gap:11px;
+  margin:8px 0 0;
+}
+.conocimientos-definiciones > div {
+  padding:10px 12px;
+  border-left:3px solid #d6a06e;
+  border-radius:0 9px 9px 0;
+  background:#fdf9f5;
+}
+.conocimientos-definiciones dt {
+  margin:0 0 4px;
+  font-weight:750;
+  color:var(--kb-ink,#17263e);
+  font-size:13px;
+}
+.conocimientos-definiciones dd {
+  margin:0;
+  font-size:13.5px;
+  line-height:1.54;
+  color:#4f5c6b;
+}
+.conocimientos-tarjeta-desarrollo .conocimientos-consideracion-extra {
+  margin-top:10px;
+}
+.conocimientos-fundamento {
+  display:grid;
+  gap:4px;
+  margin:16px 0 7px 35px;
+  padding:11px 12px;
+  background:#f7f5f2;
+  border-radius:11px;
+  border:1px solid #ede6de;
+  font-size:12px;
+  color:#4f5c6b;
+}
+.conocimientos-fundamento strong { color:var(--kb-ink,#17263e);font-size:12.5px; }
+.conocimientos-fundamento small { color:#747b83;line-height:1.45;font-size:11px; }
+@media(max-width:899px) {
+  .conocimientos-tarjeta-desarrollo .conocimientos-definiciones { gap:9px; }
+  .conocimientos-definiciones > div { padding:9px 10px; }
+  .conocimientos-fundamento { margin-left:0; }
+}
