@@ -23,10 +23,6 @@ function activaPropiedades(pathname) {
   return activa(pathname, '/propiedades') && !activa(pathname, '/propiedades/nueva');
 }
 
-function abrirConocimientos() {
-  window.dispatchEvent(new Event('coproactiva:base-conocimientos-abrir'));
-}
-
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
   const { pathname, hash, search } = useLocation();
@@ -137,13 +133,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // /notificaciones, /mi-cuenta) usan el grupo elegido.
   // Configuración no se guarda como grupo (es una visita), así que se
   // reconoce solo por la ruta.
-  let grupo = esCliente ? null : (grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion');
+  let grupo = esCliente ? null : (pathname.startsWith('/conocimientos') ? 'aprendizaje' : (grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion'));
   if (grupo === 'comercial' && !puedeConfigurar) grupo = 'operacion';
   if ((grupo === 'finanzas' || grupo === 'configuracion') && !esAdministracion) grupo = 'operacion';
   const enConfiguracion = grupo === 'configuracion';
   const enComercial = grupo === 'comercial';
   const enFinanzas = grupo === 'finanzas';
   const enOperacion = grupo === 'operacion';
+  const enAprendizaje = grupo === 'aprendizaje';
   const alertasTotales = alertasMantencion + alertasGenerales;
   const levantamientosActivo = pathname === '/nuevo'
     || pathname.startsWith('/control/')
@@ -153,6 +150,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     : enConfiguracion ? 'Administración y ajustes'
     : enComercial ? 'Comercial'
     : enFinanzas ? 'Finanzas'
+    : enAprendizaje ? 'Aprendizaje'
     : puedeConfigurar ? 'Operaciones' : null;
 
   // La comunidad seleccionada es el contexto del menú cliente.
@@ -230,6 +228,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   function IconoMovil({ tipo }) {
     const comun = { width: 21, height: 21, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+    if (tipo === 'conocimientos') return <IconoNavegacion tipo="conocimientos" size={21} />;
     if (tipo === 'inicio') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg>;
     if (tipo === 'comunidades') return <svg {...comun}><path d="M4 20h16"/><path d="M6 20V7h12v13"/><path d="M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>;
     if (tipo === 'levantamientos') return <svg {...comun}><path d="M8 4h8"/><path d="M9 3h6v3H9z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="m8 11 1.5 1.5L12 10M14 11h2M8 16l1.5 1.5L12 15M14 16h2"/></svg>;
@@ -310,7 +309,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'clientes', etiqueta: 'Clientes', ruta: '/clientes', mostrar: esSuperadmin }
   ].filter(x => x.mostrar !== false);
 
-  const opcionesBarra = enComercial ? opcionesComercial
+  const opcionesBarra = enAprendizaje ? [{ id: 'conocimientos', etiqueta: 'Aprendizaje', ruta: '/conocimientos' }]
+    : enComercial ? opcionesComercial
     : enFinanzas ? opcionesFinanzas
     : enConfiguracion ? opcionesConfiguracion
     : opcionesOperacion;
@@ -324,7 +324,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     .filter(Boolean);
   const menuMasOperacion = opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
-  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial;
+  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enAprendizaje;
 
   function itemMovilActivo(item) {
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
@@ -357,7 +357,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   function esModuloActivo(item) {
-    if (item.id === 'conocimientos') return false;
+    if (item.id === 'conocimientos') return activa(pathname, '/conocimientos');
     if (item.id === 'levantamientos') {
       // Módulo original «Levantamientos»: contiene Inicio, Comunidades,
       // Levantamientos, Mantenciones, Bitácora, Plantillas y Mapa.
@@ -373,10 +373,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   function irModuloPlano(item, { desdeMas = false } = {}) {
     if (desdeMas) setMasAbierto(false, { alNavegar: true });
-    if (item.id === 'conocimientos') {
-      abrirConocimientos();
-      return;
-    }
     if (item.area) guardarArea(item.area);
     navegar(item.ruta, desdeMas ? { replace: true } : undefined);
   }
@@ -403,14 +399,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           {esCliente ? enlacesDelGrupo() : organizacion === 'modulos' ? (
             <>
               <span className="micro apagado etiqueta-lateral">Módulos</span>
-              {modulosPlanos.map(item => item.id === 'conocimientos' ? (
-                <button key={item.id} type="button"
-                        className="enlace-lateral" onClick={abrirConocimientos}
-                        style={{ width: '100%', textAlign: 'left', border: 0, background: 'transparent', cursor: 'pointer', font: 'inherit' }}>
-                  <span className="enlace-lateral-icono" aria-hidden="true">✦</span>
-                  <span>{item.titulo}</span>
-                </button>
-              ) : (
+              {modulosPlanos.map(item => (
                 <Link key={item.id} to={item.ruta}
                       onClick={() => { if (item.area) guardarArea(item.area); }}
                       aria-current={esModuloActivo(item) ? 'page' : undefined}
@@ -465,11 +454,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         {!esCliente && organizacion !== 'modulos' && (
           <div className="coproactiva-aprendizaje-lateral">
             <span className="micro apagado etiqueta-lateral">Aprendizaje</span>
-            <button type="button" className="coproactiva-aprendizaje-boton"
-                    onClick={abrirConocimientos}>
-              <span className="enlace-lateral-icono" aria-hidden="true">✦</span>
+            <Link to="/conocimientos"
+                  className={'coproactiva-aprendizaje-boton' + (activa(pathname, '/conocimientos') ? ' activo' : '')}
+                  aria-current={activa(pathname, '/conocimientos') ? 'page' : undefined}>
+              <span className="enlace-lateral-icono"><IconoNavegacion tipo="conocimientos" /></span>
               <span>Base de conocimientos</span>
-            </button>
+            </Link>
           </div>
         )}
 
@@ -628,10 +618,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                     <div className="menu-mas-grupo" role="group" aria-label="Aprendizaje">
                       <p className="menu-mas-grupo-titulo">Aprendizaje</p>
                       <div className="menu-mas-enlaces">
-                        <button type="button" onClick={() => {
-                          setMasAbierto(false, { alNavegar: true });
-                          abrirConocimientos();
-                        }}>Base de conocimientos <span aria-hidden="true">›</span></button>
+                        <Link to="/conocimientos" onClick={() => setMasAbierto(false, { alNavegar: true })}>
+                          Base de conocimientos <span aria-hidden="true">›</span>
+                        </Link>
                       </div>
                     </div>
                   )}

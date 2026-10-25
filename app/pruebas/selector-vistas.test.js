@@ -4,17 +4,16 @@ import {modulosDisponibles, leerOrganizacion, guardarOrganizacion} from '../src/
 
 test('Catálogo no agrega rutas inexistentes y evita duplicados',()=>{
   const modulos=modulosDisponibles({id:'admin-qa',rol:'superadmin',activo:true});
-  const navegables=modulos.filter(x=>x.tipo!=='popup');
-  const rutas=new Set(navegables.map(x=>x.ruta));
-  assert.equal(rutas.size,navegables.length);
-  assert.deepEqual(modulos.filter(x=>x.tipo==='popup').map(x=>x.id),['conocimientos']);
+  const rutas=new Set(modulos.map(x=>x.ruta));
+  assert.equal(rutas.size,modulos.length);
+  assert.equal(modulos.find(x=>x.id==='conocimientos').ruta,'/conocimientos');
+  assert.ok(modulos.every(x=>x.tipo!=='popup'),'Todos los módulos abren sus propias pantallas');
   assert.ok(rutas.has('/pipeline'));
   assert.ok(rutas.has('/seo'));
   assert.ok(rutas.has('/inicio'));
   assert.ok(rutas.has('/contabilidad'));
   assert.ok(rutas.has('/configuracion'));
-  assert.equal(navegables.length,8,'Se mantienen los ocho módulos originales');
-  assert.equal(modulos.length,9,'Se agrega solo el acceso al popup educativo');
+  assert.equal(modulos.length,9,'Se mantienen los ocho módulos originales y se suma Base de conocimientos');
   assert.deepEqual(modulos.map(m=>m.titulo),[
     'Gestión comercial','Levantamientos','Arriendos y ventas','Red de proveedores',
     'Recepción y atención','Gestión contable','SEO y Analítica','Configuración','Base de conocimientos'
