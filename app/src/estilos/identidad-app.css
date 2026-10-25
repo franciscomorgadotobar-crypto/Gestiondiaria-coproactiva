@@ -645,3 +645,36 @@
     font-size: 13px;
   }
 }
+
+
+/* Acceso transversal a Aprendizaje, fuera de los enlaces del área activa. */
+@media (min-width:900px) {
+  .layout-escritorio .coproactiva-aprendizaje-lateral {
+    border-top:1px solid var(--ca-borde);
+    margin-top:12px;
+    padding-top:12px;
+  }
+  .layout-escritorio .coproactiva-aprendizaje-boton {
+    display:flex;
+    width:100%;
+    min-height:46px;
+    align-items:center;
+    gap:11px;
+    padding:10px 12px;
+    border:0;
+    border-radius:12px;
+    background:transparent;
+    color:#56606a;
+    font:600 14px/1.35 var(--fuente-cuerpo);
+    text-align:left;
+    cursor:pointer;
+  }
+  .layout-escritorio .coproactiva-aprendizaje-boton:hover {
+    background:#fff5ec;
+    color:var(--tinta);
+  }
+  .layout-escritorio .coproactiva-aprendizaje-boton:focus-visible {
+    outline:2px solid var(--ca-cobre);
+    outline-offset:2px;
+  }
+}
