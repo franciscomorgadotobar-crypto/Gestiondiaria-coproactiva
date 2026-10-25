@@ -6,6 +6,7 @@ import { guardarArea, limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } 
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
+import { leerOrganizacion, modulosDisponibles } from '../lib/selectorModulos';
 
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
 import IconoNavegacion, { iconoRutaCoproactiva } from './IconoNavegacion';
@@ -117,6 +118,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const puedeCambiarArea = Boolean(puedeConfigurar);
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
+  const organizacion = leerOrganizacion(perfil?.id);
+  const modulosPlanos = esCliente ? [] : modulosDisponibles(perfil);
 
 
 
@@ -349,6 +352,20 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (pathname !== item.ruta) navegar(item.ruta);
   }
 
+  function esModuloActivo(item) {
+    if (item.id === 'levantamientos') return pathname === '/inicio' && hash === '#por-hacer';
+    if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
+    if (item.id === 'notificaciones') return pathname === '/notificaciones';
+    if (item.id === 'configuracion') return pathname === '/configuracion';
+    return item.ruta ? activa(pathname, item.ruta.split('#')[0]) : false;
+  }
+
+  function irModuloPlano(item, { desdeMas = false } = {}) {
+    if (item.area) guardarArea(item.area);
+    if (desdeMas) setMasAbierto(false, { alNavegar: true });
+    navegar(item.ruta, desdeMas ? { replace: true } : undefined);
+  }
+
   function enlacesDelGrupo() {
     return accesos.filter(item => item.mostrar).map(item => (
       <Link key={item.ruta} to={item.ruta}
@@ -368,7 +385,22 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva" />
         </Link>
         <div className="enlaces-lateral">
-          {esCliente ? enlacesDelGrupo() : (
+          {esCliente ? enlacesDelGrupo() : organizacion === 'modulos' ? (
+            <>
+              <span className="micro apagado etiqueta-lateral">Módulos</span>
+              {modulosPlanos.map(item => (
+                <Link key={item.id} to={item.ruta}
+                      onClick={() => { if (item.area) guardarArea(item.area); }}
+                      aria-current={esModuloActivo(item) ? 'page' : undefined}
+                      className={'enlace-lateral' + (esModuloActivo(item) ? ' activo' : '')}>
+                  <span className="enlace-lateral-icono">
+                    <IconoNavegacion tipo={iconoRutaCoproactiva(item.ruta)} />
+                  </span>
+                  <span>{item.titulo}</span>
+                </Link>
+              ))}
+            </>
+          ) : (
             <>
               <span className="micro apagado etiqueta-lateral">Áreas de trabajo</span>
               {gruposLaterales.map(item => (
@@ -430,7 +462,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
           <div className="usuario-lateral-acciones">
             {!esCliente && <Link to="/mi-cuenta">Mi cuenta</Link>}
             {puedeConfigurar && (
-              <button type="button" onClick={cambiarArea}>Cambiar de área</button>
+              <button type="button" onClick={cambiarArea}>
+                {organizacion === 'modulos' ? 'Cambiar vista o módulo' : 'Cambiar de área'}
+              </button>
             )}
             {!esCliente && tutorialContextual && (
               <button
@@ -529,7 +563,20 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   <button ref={cerrarMasRef} type="button" onClick={() => setMasAbierto(false)} aria-label="Cerrar menú">×</button>
                 </div>
                 <div className="menu-mas-secciones">
-                  {menuMasOperacion.length > 0 && (
+                  {organizacion === 'modulos' && !esCliente ? (
+                    <div className="menu-mas-grupo" role="group" aria-label="Todos los módulos">
+                      <p className="menu-mas-grupo-titulo">Todos los módulos</p>
+                      <div className="menu-mas-enlaces">
+                        {modulosPlanos.map(item => (
+                          <button key={item.id} type="button" onClick={() => irModuloPlano(item, { desdeMas: true })}
+                                  aria-current={esModuloActivo(item) ? 'page' : undefined}>
+                            <span>{item.titulo}</span>
+                            <span aria-hidden="true">›</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : menuMasOperacion.length > 0 && (
                     <div className="menu-mas-grupo" role="group" aria-label={'Módulos y acciones de ' + nombreArea}>
                       <p className="menu-mas-grupo-titulo">Módulos y acciones · {nombreArea}</p>
                       <div className="menu-mas-enlaces">
@@ -553,7 +600,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                       </Link>
                       {puedeCambiarArea && (
                         <button type="button" onClick={() => { setMasAbierto(false, { alNavegar: true }); cambiarArea(); }}>
-                          Cambiar de área <span aria-hidden="true">›</span>
+                          {organizacion === 'modulos' ? 'Cambiar vista o módulo' : 'Cambiar de área'}
+                          <span aria-hidden="true">›</span>
                         </button>
                       )}
                     </div>
