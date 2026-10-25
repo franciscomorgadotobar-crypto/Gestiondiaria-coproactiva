@@ -27,6 +27,8 @@ import { consumirAreaEnlaceDirecto, esContinuacionDocumento } from './lib/arranq
 import { prepararHistorialSelector, consumirRegresoPendiente, reiniciarHistorialSelector } from './lib/historialSelector';
 
 const Mapa = lazy(() => import('./paginas/panel/Mapa'));
+// Biblioteca legal solo se descarga al ingresar: no recarga el acceso inicial.
+const BaseConocimientos = lazy(() => import('./componentes/BaseConocimientos'));
 // El portal de cliente arrastra el mismo Leaflet que el mapa interno —de
 // cargarlo aparte, quien va a terreno con el teléfono también lo bajaría,
 // sin usarlo nunca.
@@ -274,6 +276,7 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    {sesion && <Suspense fallback={null}><BaseConocimientos /></Suspense>}
     </>
   );
 }
