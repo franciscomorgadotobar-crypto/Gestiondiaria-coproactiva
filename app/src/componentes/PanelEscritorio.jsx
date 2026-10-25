@@ -7,6 +7,7 @@ import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
 import { leerOrganizacion, modulosDisponibles } from '../lib/selectorModulos';
+import { leerAutomaticas, guardarAutomaticas } from '../lib/conocimientos';
 
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
 import IconoNavegacion, { iconoRutaCoproactiva } from './IconoNavegacion';
@@ -41,6 +42,16 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const [alertasMantencion, setAlertasMantencion] = useState(0);
   const [alertasGenerales, setAlertasGenerales] = useState(0);
   const [menu, cambiarMenu] = usePestanaHistorial('menu', 'cerrado', ESTADOS_MENU);
+  const [buscarAprendizaje, setBuscarAprendizaje] = useState(false);
+  const [avisosActivos, setAvisosActivos] = useState(() => leerAutomaticas(perfil?.id));
+  useEffect(() => {
+    setAvisosActivos(leerAutomaticas(perfil?.id));
+  }, [perfil?.id]);
+  useEffect(() => {
+    const estadoBusqueda = e => setBuscarAprendizaje(Boolean(e.detail?.visible));
+    window.addEventListener('coproactiva:conocimientos:estado-busqueda', estadoBusqueda);
+    return () => window.removeEventListener('coproactiva:conocimientos:estado-busqueda', estadoBusqueda);
+  }, []);
   const masAbierto = menu === 'mas';
   const botonMasRef = useRef(null);
   const cerrarMasRef = useRef(null);
@@ -229,6 +240,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   function IconoMovil({ tipo }) {
     const comun = { width: 21, height: 21, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
     if (tipo === 'conocimientos') return <IconoNavegacion tipo="conocimientos" size={21} />;
+    if (tipo === 'buscar-conocimientos') return <svg {...comun}><circle cx="10.7" cy="10.7" r="7.2"/><path d="m16 16 5 5"/></svg>;
     if (tipo === 'inicio') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg>;
     if (tipo === 'comunidades') return <svg {...comun}><path d="M4 20h16"/><path d="M6 20V7h12v13"/><path d="M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>;
     if (tipo === 'levantamientos') return <svg {...comun}><path d="M8 4h8"/><path d="M9 3h6v3H9z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="m8 11 1.5 1.5L12 10M14 11h2M8 16l1.5 1.5L12 15M14 16h2"/></svg>;
@@ -309,7 +321,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'clientes', etiqueta: 'Clientes', ruta: '/clientes', mostrar: esSuperadmin }
   ].filter(x => x.mostrar !== false);
 
-  const opcionesBarra = enAprendizaje ? [{ id: 'conocimientos', etiqueta: 'Aprendizaje', ruta: '/conocimientos' }]
+  const opcionesBarra = enAprendizaje ? [
+    { id: 'conocimientos', etiqueta: 'Aprendizaje', ruta: '/conocimientos' },
+    { id: 'buscar-conocimientos', etiqueta: 'Buscar', accion: () =>
+      window.dispatchEvent(new CustomEvent('coproactiva:conocimientos:buscar', { detail: { accion: 'alternar' } })) }
+  ]
     : enComercial ? opcionesComercial
     : enFinanzas ? opcionesFinanzas
     : enConfiguracion ? opcionesConfiguracion
@@ -327,6 +343,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enAprendizaje;
 
   function itemMovilActivo(item) {
+    if (item.id === 'buscar-conocimientos') return buscarAprendizaje;
+    if (item.id === 'conocimientos') return !buscarAprendizaje && activa(pathname, '/conocimientos');
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
     if (item.id === 'levantamientos') return levantamientosActivo;
     if (item.activo) return item.activo(pathname);
@@ -338,6 +356,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     // anterior). Desde «Más» se sustituye solo la entrada temporal del diálogo.
     const desdeMas = masAbierto;
     setMasAbierto(false, { alNavegar: true });
+    if (item.id === 'conocimientos' && pathname === '/conocimientos') {
+      window.dispatchEvent(new CustomEvent('coproactiva:conocimientos:buscar', { detail: { accion: 'inicio' } }));
+      return;
+    }
     if (item.accion) return item.accion();
     if (item.ruta && pathname !== item.ruta) navegar(item.ruta, { replace: desdeMas });
   }
@@ -509,7 +531,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         {/* En el teléfono la barra lateral no existe (se oculta con CSS), así
             que sin esto "Cambiar de área" no tenía dónde vivir y quedaba
             fijo en la que se eligió la primera vez, sin salida. */}
-        {!esCliente && (
+        {!esCliente && !enAprendizaje && (
           <div className="barra-area-movil">
             {(puedeCambiarArea || !['/', '/inicio'].includes(pathname)) && (
               <button type="button" className="barra-area-volver" onClick={volverGlobal}>
@@ -542,7 +564,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
       {mostrarBarraMovil && (
         <>
-          <nav className="barra-inferior-movil" aria-label="Navegación principal">
+          <nav className={'barra-inferior-movil' + (enAprendizaje ? ' barra-inferior-aprendizaje' : '')} aria-label="Navegación principal">
             {barraMovil.map(item => (
               <button
                 key={item.id}
@@ -621,6 +643,22 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                         <Link to="/conocimientos" onClick={() => setMasAbierto(false, { alNavegar: true })}>
                           Base de conocimientos <span aria-hidden="true">›</span>
                         </Link>
+                      </div>
+                    </div>
+                  )}
+                  {enAprendizaje && (
+                    <div className="menu-mas-grupo" role="group" aria-label="Preferencias de aprendizaje">
+                      <p className="menu-mas-grupo-titulo">Preferencias de aprendizaje</p>
+                      <div className="menu-mas-enlaces">
+                        <button type="button" role="switch" aria-checked={avisosActivos}
+                          onClick={() => {
+                            const proximo = !avisosActivos;
+                            setAvisosActivos(proximo);
+                            guardarAutomaticas(perfil?.id, proximo);
+                          }}>
+                          <span>Avisos «¿Sabías que…?»</span>
+                          <span>{avisosActivos ? 'Activados' : 'Desactivados'}</span>
+                        </button>
                       </div>
                     </div>
                   )}
