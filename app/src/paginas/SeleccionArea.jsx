@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { guardarArea } from '../lib/area';
 import { registrarIndiceSelector } from '../lib/historialSelector';
+import { leerOrganizacion, guardarOrganizacion, modulosDisponibles } from '../lib/selectorModulos';
 import './SeleccionArea.css';
 
 /* Capa previa a entrar a la app, para roles que tienen acceso tanto al CRM
@@ -38,11 +39,24 @@ export default function SeleccionArea() {
 
   function elegir(area) {
     guardarArea(area);
-    // Nunca "/": esta pantalla ya está montada ahí, y navegar a la misma
-    // ruta en la que se está no vuelve a renderizar nada en React Router.
     const destino = { comercial: '/pipeline', finanzas: '/contabilidad' }[area] ?? '/inicio';
-    navegar(destino, { state: { desdeSelectorCoproactiva: true } }); // Push: Atrás regresa a la selección.
+    navegar(destino, { state: { desdeSelectorCoproactiva: true } });
   }
+
+  function elegirModulo(modulo) {
+    // Se conserva el área de la ruta para Volver, enlaces compartidos y
+    // barra móvil. No se añade ningún permiso ni ruta.
+    if (modulo.area) guardarArea(modulo.area);
+    navegar(modulo.ruta, { state: { desdeSelectorCoproactiva: true } });
+  }
+
+  // Mismo catálogo autorizado para pantalla inicial y navegación de escritorio.
+  // No confundir organización por módulos/áreas con formato lista/cuadrícula.
+  const [organizacion, setOrganizacion] = useState(() => leerOrganizacion(perfil?.id));
+  const cambiarOrganizacion = modo => {
+    setOrganizacion(modo);
+    guardarOrganizacion(perfil?.id, modo);
+  };
 
 
   // Dos presentaciones del mismo selector. No afecta rutas ni roles autorizados.
@@ -64,7 +78,7 @@ export default function SeleccionArea() {
   // Tres áreas de trabajo; Administración y ajustes aparece debajo como
   // acceso secundario, sin cambiar el área que el usuario tenía seleccionada.
   // Los permisos de SEO, proveedores, WhatsApp y contabilidad no cambian.
-  const modulos = [
+  const areas = [
     {
       area: 'comercial', etiqueta: 'COMERCIAL', titulo: 'Gestión comercial',
       descripcion: puedeConfigurar
@@ -84,6 +98,7 @@ export default function SeleccionArea() {
       descripcion: 'Asientos, libros, estados financieros e informes por entidad.', visible: puedeConfigurar
     }
   ].filter(modulo => modulo.visible);
+  const opciones = organizacion === 'modulos' ? modulosDisponibles(perfil) : areas;
 
   return (
     <main className="pantalla seleccion-home">
@@ -115,20 +130,29 @@ export default function SeleccionArea() {
           </button>
         </header>
 
-        <section className="seleccion-home__introduccion" aria-label="Selección de área">
+        <section className="seleccion-home__introduccion" aria-label="Selección de destino">
           <h1>Hola{perfil?.nombre ? ', ' + perfil.nombre.split(' ')[0] : ''}</h1>
-          <p>¿En qué área vas a trabajar?</p>
+          <p>{organizacion === 'modulos' ? '¿Qué módulo quieres abrir?' : '¿En qué área vas a trabajar?'}</p>
         </section>
+
+        <div className="seleccion-home__organizacion" role="group" aria-label="Organizar navegación">
+          <button type="button" className={organizacion === 'areas' ? 'activo' : ''}
+                  aria-pressed={organizacion === 'areas'}
+                  onClick={() => cambiarOrganizacion('areas')}>Por áreas</button>
+          <button type="button" className={organizacion === 'modulos' ? 'activo' : ''}
+                  aria-pressed={organizacion === 'modulos'}
+                  onClick={() => cambiarOrganizacion('modulos')}>Por módulos</button>
+        </div>
 
         <div className={'seleccion-area-grid seleccion-home__tarjetas ' +
           (puedeConfigurar ? 'dos ' : '') +
           (vista === 'cuadricula' ? 'vista-cuadricula' : 'vista-lista')}>
-          {modulos.map(modulo => (
+          {opciones.map(modulo => (
             <button
-              key={modulo.area}
+              key={modulo.id || modulo.area}
               type="button"
               className="tarjeta seleccion-area-opcion seleccion-home__tarjeta"
-              onClick={() => elegir(modulo.area)}
+              onClick={() => organizacion === 'modulos' ? elegirModulo(modulo) : elegir(modulo.area)}
             >
               <span className="seleccion-home__detalle">
                 <span className="seleccion-area-etiqueta">{modulo.etiqueta}</span>
@@ -145,7 +169,7 @@ export default function SeleccionArea() {
           ))}
         </div>
 
-        {puedeConfigurar && (
+        {puedeConfigurar && organizacion === 'areas' && (
           <div className="seleccion-home__administracion">
             <button type="button" className="seleccion-home__ajustes-enlace"
                     onClick={() => navegar('/configuracion')}>
@@ -162,7 +186,7 @@ export default function SeleccionArea() {
         )}
 
         <footer className="seleccion-home__pie">
-          <p>Puedes cambiar de área cuando quieras desde el panel.</p>
+          <p>Puedes volver al selector y cambiar la organización cuando quieras, sin perder tus módulos.</p>
           <button className="seleccion-home__salir" type="button" onClick={salir}>Salir</button>
         </footer>
       </div>
