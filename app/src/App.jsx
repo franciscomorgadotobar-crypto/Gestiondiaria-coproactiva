@@ -29,6 +29,7 @@ import { prepararHistorialSelector, consumirRegresoPendiente, reiniciarHistorial
 const Mapa = lazy(() => import('./paginas/panel/Mapa'));
 // Biblioteca legal solo se descarga al ingresar: no recarga el acceso inicial.
 const BaseConocimientos = lazy(() => import('./componentes/BaseConocimientos'));
+const Conocimientos = lazy(() => import('./paginas/panel/Conocimientos'));
 // El portal de cliente arrastra el mismo Leaflet que el mapa interno —de
 // cargarlo aparte, quien va a terreno con el teléfono también lo bajaría,
 // sin usarlo nunca.
@@ -211,6 +212,7 @@ export default function App() {
           Inicio" del panel apunta acá, para no quedar en loop de vuelta al
           CRM cuando la área elegida es 'crm'. */}
       <Route path="/inicio" element={<Interna><Inicio /></Interna>} />
+      <Route path="/conocimientos" element={<Interna><Suspense fallback={<p className="cargando">Cargando biblioteca…</p>}><Conocimientos /></Suspense></Interna>} />
       <Route path="/ayuda" element={<Interna><Ayuda /></Interna>} />
       <Route path="/ayuda/practica-levantamiento" element={<Interna><PracticaLevantamiento /></Interna>} />
       <Route path="/configuracion" element={<Interna><Configuracion /></Interna>} />
