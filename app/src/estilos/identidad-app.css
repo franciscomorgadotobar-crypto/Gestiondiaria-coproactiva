@@ -626,3 +626,22 @@
     border-top: 1px solid var(--ca-borde);
   }
 }
+
+/* Una lista extensa de módulos debe desplazarse dentro de la barra lateral,
+   sin empujar las páginas ni ocultar las opciones finales. */
+@media(min-width:900px) {
+  .layout-escritorio .barra-lateral.barra-lateral-modulos {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+  }
+  .layout-escritorio .barra-lateral-modulos .enlace-lateral {
+    min-height: 41px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
