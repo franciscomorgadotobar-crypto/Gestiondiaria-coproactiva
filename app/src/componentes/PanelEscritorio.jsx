@@ -461,14 +461,17 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               )}
             </>
           )}
-          {!esCliente && organizacion !== 'modulos' && (
-            <button type="button" className="enlace-lateral" onClick={abrirConocimientos}
-                    style={{ width: '100%', textAlign: 'left', border: 0, background: 'transparent', cursor: 'pointer', font: 'inherit' }}>
+        </div>
+        {!esCliente && organizacion !== 'modulos' && (
+          <div className="coproactiva-aprendizaje-lateral">
+            <span className="micro apagado etiqueta-lateral">Aprendizaje</span>
+            <button type="button" className="coproactiva-aprendizaje-boton"
+                    onClick={abrirConocimientos}>
               <span className="enlace-lateral-icono" aria-hidden="true">✦</span>
               <span>Base de conocimientos</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="crece" />
         <div className="usuario-lateral">
