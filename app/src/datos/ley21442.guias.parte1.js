@@ -257,3 +257,4 @@ export const GUIAS = {
 "Para actualizar el registro de copropietarios después de una venta, contrasta el nuevo título inscrito con la identificación de la unidad.",
 "Una promesa de compraventa o comunicación informal de entrega no reemplaza la inscripción que acredita transferencia de dominio en los términos aplicables."
 ]
+};
