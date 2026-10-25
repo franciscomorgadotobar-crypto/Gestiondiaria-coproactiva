@@ -136,6 +136,7 @@ try {
       ['Aprendizaje','Buscar','Más'],'La barra exclusiva no duplica navegación');
     assert.equal(await page.locator('.conocimientos-filtros-escritorio:visible').count(),0,
       'El buscador no ocupa espacio en el listado');
+    await page.locator('.conocimientos-tarjeta').first().waitFor({timeout:20000});
     assert.equal(await page.locator('.conocimientos-tarjeta').count(),202);
     const primera=page.locator('.conocimientos-tarjeta').first();
     await primera.locator('.conocimientos-tarjeta-resumen').click();
