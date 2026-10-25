@@ -233,3 +233,38 @@
 }
 .seleccion-home__ajustes-titulo { font: 700 14px/1.4 var(--fuente-display); color: #5c4638; }
 .seleccion-home__ajustes-enlace > span:last-child { font-size: 25px; color: #b7794a; }
+
+/* Organizar por áreas o por módulos es independiente de lista/cuadrícula. */
+.seleccion-home__organizacion {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  max-width: 380px;
+  padding: 4px;
+  margin: 0 0 18px;
+  border-radius: 13px;
+  background: #f0e8df;
+}
+.seleccion-home__organizacion button {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #6e737b;
+  font: 700 13px/1.3 var(--fuente-cuerpo);
+  cursor: pointer;
+}
+.seleccion-home__organizacion button.activo {
+  border-color: #ead7c6;
+  background: #fffefd;
+  box-shadow: 0 2px 7px rgba(60,38,23,.07);
+  color: #935326;
+}
+.seleccion-home__organizacion button:focus-visible {
+  outline: 3px solid var(--borde-foco);
+  outline-offset: 2px;
+}
+@media(max-width: 719px) {
+  .seleccion-home__organizacion { max-width: none; }
+}
