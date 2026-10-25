@@ -353,10 +353,16 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   function esModuloActivo(item) {
-    if (item.id === 'levantamientos') return pathname === '/inicio' && hash === '#por-hacer';
+    if (item.id === 'levantamientos') {
+      // Módulo original «Levantamientos»: contiene Inicio, Comunidades,
+      // Levantamientos, Mantenciones, Bitácora, Plantillas y Mapa.
+      // Proveedores y WhatsApp son módulos principales independientes.
+      return ['/inicio','/comunidades','/nuevo','/control','/mantenciones','/bitacora','/plantillas','/mapa']
+        .some(r => activa(pathname,r));
+    }
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
     if (item.id === 'notificaciones') return pathname === '/notificaciones';
-    if (item.id === 'configuracion') return pathname === '/configuracion';
+    if (item.id === 'configuracion') return ['/configuracion','/equipo','/clientes'].some(r => activa(pathname,r));
     return item.ruta ? activa(pathname, item.ruta.split('#')[0]) : false;
   }
 

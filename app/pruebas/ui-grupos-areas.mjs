@@ -76,15 +76,22 @@ try {
   {
     const {ctx,page}=await crear();
     await page.getByRole('button',{name:'Por módulos'}).click();
-    assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),1);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),8,'8 tarjetas originales');
+    assert.equal(await page.getByRole('button',{name:/Comunidades administradas, levantamientos y mantención/}).count(),1);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),1);
+    const originales=(await page.locator('.seleccion-home__tarjeta .seleccion-home__titulo').allInnerTexts());
+    assert.deepEqual(originales,[
+      'Gestión comercial','Levantamientos','Arriendos y ventas','Red de proveedores',
+      'Recepción y atención','Gestión contable','SEO y Analítica','Configuración'
+    ]);
     await page.getByRole('button',{name:/SEO y Analítica/}).click();
     await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
     const mas=page.getByRole('dialog',{name:'Más opciones'});
     assert.equal(await mas.getByRole('group',{name:'Todos los módulos'}).count(),1);
-    await mas.getByRole('button',{name:'Comunidades',exact:true}).click();
-    await page.waitForURL(u=>u.pathname==='/comunidades',{timeout:20000});
+    await mas.getByRole('button',{name:'Levantamientos',exact:true}).click();
+    await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     assert.equal(await page.locator('.barra-inferior-movil').count(),1);
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
     await page.getByRole('dialog',{name:'Más opciones'}).getByRole('button',{name:'Cambiar vista o módulo'}).click();
@@ -96,7 +103,7 @@ try {
     assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),1);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
     assert.equal(await page.getByRole('button',{name:'Por áreas'}).getAttribute('aria-pressed'),'true');
-    console.log('Selector: Por módulos → SEO → Comunidades → Home → Por áreas: OK');
+    console.log('Selector original: 8 tarjetas → SEO → Levantamientos → Home → Por áreas: OK');
     await ctx.close();
   }
 
@@ -104,11 +111,11 @@ try {
   {
     const {ctx,page}=await crear({ancho:1280,alto:850});
     await page.getByRole('button',{name:'Por módulos'}).click();
-    await page.getByRole('button',{name:/Comunidades/}).click();
-    await page.waitForURL(u=>u.pathname==='/comunidades',{timeout:20000});
+    await page.getByRole('button',{name:/Levantamientos/}).click();
+    await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const enlaces=page.locator('.barra-lateral .enlace-lateral');
     const titulos=await enlaces.allInnerTexts();
-    for(const nombre of ['Pipeline comercial','SEO y Analítica','Comunidades','Mantenciones','Contabilidad'])
+    for(const nombre of ['Gestión comercial','Levantamientos','Arriendos y ventas','Red de proveedores','Recepción y atención','Gestión contable','SEO y Analítica','Configuración'])
       assert.ok(titulos.includes(nombre), 'Falta módulo '+nombre);
     assert.equal(await page.locator('.barra-lateral .grupo-navegacion-boton').count(),0,
       'Modo módulos sin menú de grupos desplegables');
@@ -125,9 +132,9 @@ try {
     await page.getByRole('button',{name:'Por módulos'}).click();
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Contabilidad/}).count(),0);
-    assert.equal(await page.getByRole('button',{name:/Clientes y accesos/}).count(),0);
-    assert.equal(await page.getByRole('button',{name:/Pipeline comercial/}).count(),1);
-    assert.equal(await page.getByRole('button',{name:/Comunidades/}).count(),1);
+    assert.equal(await page.getByRole('button',{name:/Configuración/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),1);
+    assert.equal(await page.getByRole('button',{name:/Levantamientos/}).count(),1);
     console.log('Jefatura: selector de módulos sin funciones restringidas: OK');
     await ctx.close();
   }
