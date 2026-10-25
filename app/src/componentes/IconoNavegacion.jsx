@@ -5,6 +5,7 @@
  */
 export const iconoRutaCoproactiva = ruta => {
   const r = String(ruta || '');
+  if (r.startsWith('/conocimientos')) return 'conocimientos';
   if (r.startsWith('/pipeline')) return 'comercial';
   if (r.startsWith('/propiedades')) return 'propiedades';
   if (r.startsWith('/proveedores')) return 'proveedores';
@@ -29,6 +30,7 @@ export default function IconoNavegacion({ tipo = 'inicio', size = 19 }) {
     strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true,
     focusable:'false' };
   switch(tipo) {
+    case 'conocimientos': return <svg {...icon}><path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1z"/><path d="M12 6v14M6 9h3M15 9h3"/></svg>;
     case 'comercial': return <svg {...icon}><path d="M4 20V13M10 20V9M16 20V4M21 20H3"/><path d="M3 11 10 7l6-4"/></svg>;
     case 'propiedades': return <svg {...icon}><path d="m3 11 9-8 9 8v10H3z"/><path d="M9 21v-7h6v7M15 8h3M15 11h3"/></svg>;
     case 'proveedores': return <svg {...icon}><circle cx="12" cy="8" r="3"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/><path d="M19 6a2 2 0 0 1 0 4M20 15a4 4 0 0 1 2 4"/></svg>;
