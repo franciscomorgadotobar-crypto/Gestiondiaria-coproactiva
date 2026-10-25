@@ -380,7 +380,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   return (
     <div className="layout-escritorio">
-      <nav className="barra-lateral" aria-label="Navegación">
+      <nav className={'barra-lateral' + (organizacion === 'modulos' && !esCliente ? ' barra-lateral-modulos' : '')} aria-label="Navegación">
         <Link to={inicio} className="marca-lateral" aria-label="CoproActiva">
           <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva" />
         </Link>
