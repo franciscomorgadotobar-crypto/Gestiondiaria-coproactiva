@@ -44,6 +44,15 @@ export default function SeleccionArea() {
   }
 
   function elegirModulo(modulo) {
+    // Base de conocimientos es un popup, no una novena pantalla completa.
+    if (modulo.id === 'conocimientos') {
+      guardarArea('operacion');
+      navegar('/inicio', { state: {
+        desdeSelectorCoproactiva: true,
+        abrirBaseConocimientos: true
+      } });
+      return;
+    }
     // Se conserva el área de la ruta para Volver, enlaces compartidos y
     // barra móvil. No se añade ningún permiso ni ruta.
     if (modulo.area) guardarArea(modulo.area);

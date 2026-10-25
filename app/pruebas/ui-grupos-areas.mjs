@@ -77,13 +77,13 @@ try {
     const {ctx,page}=await crear();
     await page.getByRole('button',{name:'Por módulos'}).click();
     assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),1);
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),8,'8 tarjetas originales');
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9,'8 módulos originales y un acceso a conocimientos');
     assert.equal(await page.getByRole('button',{name:/Comunidades administradas, levantamientos y mantención/}).count(),1);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),1);
     const originales=(await page.locator('.seleccion-home__tarjeta .seleccion-home__titulo').allInnerTexts());
     assert.deepEqual(originales,[
       'Gestión comercial','Levantamientos','Arriendos y ventas','Red de proveedores',
-      'Recepción y atención','Gestión contable','SEO y Analítica','Configuración'
+      'Recepción y atención','Gestión contable','SEO y Analítica','Configuración','Base de conocimientos'
     ]);
     await page.getByRole('button',{name:/SEO y Analítica/}).click();
     await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
@@ -103,7 +103,7 @@ try {
     assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),1);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
     assert.equal(await page.getByRole('button',{name:'Por áreas'}).getAttribute('aria-pressed'),'true');
-    console.log('Selector original: 8 tarjetas → SEO → Levantamientos → Home → Por áreas: OK');
+    console.log('Selector: 8 tarjetas originales + Base de conocimientos → SEO → Levantamientos → Por áreas: OK');
     await ctx.close();
   }
 
@@ -119,6 +119,16 @@ try {
       assert.ok(titulos.includes(nombre), 'Falta módulo '+nombre);
     assert.equal(await page.locator('.barra-lateral .grupo-navegacion-boton').count(),0,
       'Modo módulos sin menú de grupos desplegables');
+    await page.locator('.barra-lateral').getByRole('button',{name:'Base de conocimientos'}).click();
+    const popup = page.getByRole('dialog',{name:'Base de conocimientos · Cápsula educativa'});
+    await popup.waitFor();
+    assert.equal(await popup.getByRole('button',{name:'Siguiente cápsula'}).count(),1);
+    await popup.getByRole('button',{name:'Conoce más'}).click();
+    assert.equal(await popup.getByRole('heading',{level:3}).count(),1,'Conoce más abre explicación dentro del popup');
+    await popup.getByRole('button',{name:'Siguiente cápsula'}).click();
+    assert.equal(await popup.getByRole('button',{name:'Ver menos'}).count(),0,'La siguiente cápsula reinicia el detalle');
+    await popup.getByRole('button',{name:'Cerrar cápsula'}).click();
+    assert.equal(await popup.count(),0,'Cerrar mantiene la pantalla actual');
     await page.locator('.barra-lateral').getByRole('link',{name:'SEO y Analítica'}).click();
     await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
     assert.equal(await page.locator('.barra-lateral .enlace-lateral.activo').count(),1);
