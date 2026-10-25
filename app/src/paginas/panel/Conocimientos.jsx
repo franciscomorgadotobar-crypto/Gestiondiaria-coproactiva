@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSesion } from '../../lib/sesion';
 import biblioteca from '../../datos/ley21442.contenidos.json';
+import { obtenerLeccion } from '../../datos/ley21442.lecciones.js';
 import './Conocimientos.css';
 
 const contenidos = biblioteca.contenidos;
@@ -40,7 +41,7 @@ export default function Conocimientos() {
     const palabra = busqueda.trim().toLocaleLowerCase('es');
     return contenidos.filter(item =>
       (materia === 'Todas' || item.categoria === materia) &&
-      (!palabra || [item.titulo, item.texto, item.explicacion, item.precaucion, item.categoria, item.referencia]
+      (!palabra || [item.titulo, item.texto, item.explicacion, item.precaucion, item.categoria, item.referencia, obtenerLeccion(item)?.desarrollo, obtenerLeccion(item)?.aplicacion, ...((obtenerLeccion(item)?.detalles || []).flat())]
         .some(valor => (valor || '').toLocaleLowerCase('es').includes(palabra)))
     );
   }, [busqueda, materia]);
@@ -150,6 +151,7 @@ export default function Conocimientos() {
           )}
           {resultados.map(item => {
             const desplegado = item.id === abiertoId;
+            const leccion = obtenerLeccion(item);
             return (
               <article key={item.id}
                 ref={elemento => {
@@ -191,17 +193,58 @@ export default function Conocimientos() {
                     </section>
                     <section className="conocimientos-seccion-desarrollo">
                       <div className="conocimientos-detalle-icono" aria-hidden="true">
-                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                          strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M7 3h9l4 4v14H7zM16 3v5h4M10 12h7M10 16h7"/>
                         </svg>
                       </div>
                       <div>
-                        <h3>Desarrollo del tema</h3>
-                        <p>{item.explicacion}</p>
+                        <h3>¿Qué establece la ley?</h3>
+                        <p>{leccion?.resumen || item.explicacion}</p>
+                        {leccion?.desarrollo && (
+                          <>
+                            <h3 className="conocimientos-subtitulo">Desarrollo del tema</h3>
+                            <p>{leccion.desarrollo}</p>
+                          </>
+                        )}
                       </div>
                     </section>
-                    {item.precaucion && (
+                    {leccion?.detalles?.length > 0 && (
+                      <section className="conocimientos-seccion-desarrollo">
+                        <div className="conocimientos-detalle-icono" aria-hidden="true">
+                          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 5h18M3 12h18M3 19h18M6 3v4M6 10v4M6 17v4"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h3>Conceptos y reglas principales</h3>
+                          <dl className="conocimientos-definiciones">
+                            {leccion.detalles.map(([concepto, contenido]) => (
+                              <div key={concepto}>
+                                <dt>{concepto}</dt>
+                                <dd>{contenido}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        </div>
+                      </section>
+                    )}
+                    {leccion?.aplicacion && (
+                      <section className="conocimientos-seccion-desarrollo">
+                        <div className="conocimientos-detalle-icono" aria-hidden="true">
+                          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h7M7 17h4"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h3>Aplicación práctica</h3>
+                          <p>{leccion.aplicacion}</p>
+                        </div>
+                      </section>
+                    )}
+                    {(leccion?.consideraciones?.length || item.precaucion) && (
                       <section className="conocimientos-seccion-desarrollo">
                         <div className="conocimientos-detalle-icono" aria-hidden="true">
                           <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
@@ -211,10 +254,17 @@ export default function Conocimientos() {
                         </div>
                         <div>
                           <h3>Consideraciones importantes</h3>
-                          <p>{item.precaucion}</p>
+                          {(leccion?.consideraciones || [item.precaucion]).map((texto, n) => (
+                            <p key={n} className={n ? 'conocimientos-consideracion-extra' : ''}>{texto}</p>
+                          ))}
                         </div>
                       </section>
                     )}
+                    <div className="conocimientos-fundamento">
+                      <strong>Fundamento legal</strong>
+                      <span>{leccion?.fundamento || (item.referencia + ' · Ley N° 21.442')}</span>
+                      <small>Texto BCN, versión {leccion?.version || biblioteca.version_fuente}. La referencia permite contrastar el artículo y sus excepciones.</small>
+                    </div>
                     {item.requiere_validacion && (
                       <p className="conocimientos-alerta">Verifica la vigencia de esta disposición antes de aplicarla.</p>
                     )}
