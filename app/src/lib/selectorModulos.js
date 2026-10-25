@@ -5,11 +5,11 @@
 const PREFIJO = 'coproactiva_organizacion:';
 
 export function leerOrganizacion(usuarioId) {
-  if (!usuarioId) return 'modulos';
+  if (!usuarioId) return 'areas';
   try {
-    return localStorage.getItem(PREFIJO + usuarioId) === 'areas' ? 'areas' : 'modulos';
+    return localStorage.getItem(PREFIJO + usuarioId) === 'modulos' ? 'modulos' : 'areas';
   } catch {
-    return 'modulos';
+    return 'areas';
   }
 }
 
