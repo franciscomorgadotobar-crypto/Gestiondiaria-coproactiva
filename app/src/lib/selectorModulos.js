@@ -28,25 +28,34 @@ export function modulosDisponibles(perfil) {
   const rol = perfil.rol;
   const comercial = ['superadmin', 'admin', 'jefatura'].includes(rol);
   const administracion = ['superadmin', 'admin'].includes(rol);
-  const superadmin = rol === 'superadmin';
+  // Restauración fiel del Home modular previo a la agrupación por áreas
+  // (commit histórico c99a7bd). Los submódulos se navegan DENTRO de cada
+  // módulo principal y no se presentan como tarjetas independientes.
   const destinos = [
-    { id: 'pipeline', titulo: 'Pipeline comercial', etiqueta: 'COMERCIAL', descripcion: 'Prospectos y oportunidades comerciales.', ruta: '/pipeline', area: 'comercial', visible: comercial },
-    { id: 'propiedades', titulo: 'Arriendos y ventas', etiqueta: 'COMERCIAL', descripcion: 'Gestión de propiedades y publicaciones.', ruta: '/propiedades', area: 'comercial', visible: comercial },
-    { id: 'seo', titulo: 'SEO y Analítica', etiqueta: 'COMERCIAL', descripcion: 'Posicionamiento, resultados y métricas web.', ruta: '/seo', area: 'comercial', visible: administracion },
-    { id: 'inicio', titulo: 'Inicio operativo', etiqueta: 'OPERACIONES', descripcion: 'Resumen de tareas y trabajo del día.', ruta: '/inicio', area: 'operacion', visible: true },
-    { id: 'comunidades', titulo: 'Comunidades', etiqueta: 'OPERACIONES', descripcion: 'Comunidades, activos y fichas de gestión.', ruta: '/comunidades', area: 'operacion', visible: true },
-    { id: 'levantamientos', titulo: 'Levantamientos', etiqueta: 'OPERACIONES', descripcion: 'Controles y levantamientos pendientes.', ruta: '/inicio#por-hacer', area: 'operacion', visible: true },
-    { id: 'mantenciones', titulo: 'Mantenciones', etiqueta: 'OPERACIONES', descripcion: 'Planificación, ejecución y seguimiento.', ruta: '/mantenciones', area: 'operacion', visible: true },
-    { id: 'bitacora', titulo: 'Bitácora', etiqueta: 'OPERACIONES', descripcion: 'Observaciones, incidencias y registros.', ruta: '/bitacora', area: 'operacion', visible: true },
-    { id: 'plantillas', titulo: 'Plantillas', etiqueta: 'OPERACIONES', descripcion: 'Tipos de levantamiento y formularios.', ruta: '/plantillas', area: 'operacion', visible: comercial },
-    { id: 'mapa', titulo: 'Mapa', etiqueta: 'OPERACIONES', descripcion: 'Ubicación de comunidades y visitas.', ruta: '/mapa', area: 'operacion', visible: true },
-    { id: 'proveedores', titulo: 'Proveedores', etiqueta: 'OPERACIONES', descripcion: 'Directorio, postulantes y comunicaciones.', ruta: '/proveedores', area: 'operacion', visible: administracion },
-    { id: 'whatsapp', titulo: 'WhatsApp', etiqueta: 'OPERACIONES', descripcion: 'Recepción y atención por mensajería.', ruta: '/whatsapp', area: 'operacion', visible: administracion },
-    { id: 'notificaciones', titulo: 'Notificaciones', etiqueta: 'GENERAL', descripcion: 'Avisos y tareas que requieren atención.', ruta: '/notificaciones', area: 'operacion', visible: true },
-    { id: 'contabilidad', titulo: 'Contabilidad', etiqueta: 'FINANZAS', descripcion: 'Asientos, libros y estados financieros.', ruta: '/contabilidad', area: 'finanzas', visible: administracion },
-    { id: 'configuracion', titulo: 'Administración y ajustes', etiqueta: 'ADMINISTRACIÓN', descripcion: 'Equipo, usuarios, permisos, accesos de clientes y configuración general.', ruta: '/configuracion', area: null, visible: administracion },
-    { id: 'equipo', titulo: 'Equipo y permisos', etiqueta: 'ADMINISTRACIÓN', descripcion: 'Miembros, roles y accesos internos.', ruta: '/equipo', area: null, visible: administracion },
-    { id: 'clientes', titulo: 'Clientes y accesos', etiqueta: 'ADMINISTRACIÓN', descripcion: 'Clientes del portal y comunidades autorizadas.', ruta: '/clientes', area: null, visible: superadmin }
+    { id:'crm', titulo:'Gestión comercial', etiqueta:'CRM',
+      descripcion:'Leads, pipeline y diagnóstico comercial de prospectos.',
+      ruta:'/pipeline', area:'comercial', visible:comercial },
+    { id:'levantamientos', titulo:'Levantamientos', etiqueta:'OPERACIONES',
+      descripcion:'Comunidades administradas, levantamientos y mantención.',
+      ruta:'/inicio', area:'operacion', visible:true },
+    { id:'propiedades', titulo:'Arriendos y ventas', etiqueta:'PROPIEDADES',
+      descripcion:'Lo que se publica en coproactiva.cl/propiedades.',
+      ruta:'/propiedades', area:'comercial', visible:comercial },
+    { id:'proveedores', titulo:'Red de proveedores', etiqueta:'PROVEEDORES',
+      descripcion:'Buscar, contactar y administrar proveedores para las comunidades.',
+      ruta:'/proveedores', area:'operacion', visible:administracion },
+    { id:'whatsapp', titulo:'Recepción y atención', etiqueta:'WHATSAPP',
+      descripcion:'Solicitudes, cotizaciones y conversaciones con administración.',
+      ruta:'/whatsapp', area:'operacion', visible:administracion },
+    { id:'contabilidad', titulo:'Gestión contable', etiqueta:'CONTABILIDAD',
+      descripcion:'Asientos, libros, estados financieros e informes por entidad.',
+      ruta:'/contabilidad', area:'finanzas', visible:administracion },
+    { id:'seo', titulo:'SEO y Analítica', etiqueta:'MARKETING',
+      descripcion:'Search Console, Analytics, indexación, velocidad y oportunidades web.',
+      ruta:'/seo', area:'comercial', visible:administracion },
+    { id:'configuracion', titulo:'Configuración', etiqueta:'AJUSTES',
+      descripcion:'Equipo y clientes.', ruta:'/configuracion', area:null, visible:administracion }
+
   ];
   return destinos.filter(d => d.visible).map(({visible, ...d}) => d);
 }
