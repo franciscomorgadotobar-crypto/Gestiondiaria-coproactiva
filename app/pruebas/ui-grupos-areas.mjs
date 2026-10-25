@@ -156,7 +156,7 @@ try {
       'Aprendizaje recupera la biblioteca completa');
     await barra.getByRole('button',{name:'Más'}).click();
     const menu=page.getByRole('dialog',{name:'Más opciones'});
-    const switchAvisos=menu.getByRole('switch',{name:/Avisos «¿Sabías que…?»/});
+    const switchAvisos=menu.getByRole('switch',{name:'Mostrar avisos educativos automáticos'});
     assert.equal(await switchAvisos.getAttribute('aria-checked'),'true');
     await switchAvisos.click();
     assert.equal(await switchAvisos.getAttribute('aria-checked'),'false');
