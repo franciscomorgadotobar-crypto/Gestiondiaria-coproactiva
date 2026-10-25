@@ -119,20 +119,21 @@ try {
       assert.ok(titulos.includes(nombre), 'Falta módulo '+nombre);
     assert.equal(await page.locator('.barra-lateral .grupo-navegacion-boton').count(),0,
       'Modo módulos sin menú de grupos desplegables');
-    await page.locator('.barra-lateral').getByRole('button',{name:'Base de conocimientos'}).click();
-    const popup = page.getByRole('dialog',{name:'Base de conocimientos · Cápsula educativa'});
-    await popup.waitFor();
-    assert.equal(await popup.getByRole('button',{name:'Siguiente cápsula'}).count(),1);
-    await popup.getByRole('button',{name:'Conoce más'}).click();
-    assert.equal(await popup.getByRole('heading',{level:3}).count(),1,'Conoce más abre explicación dentro del popup');
-    await popup.getByRole('button',{name:'Siguiente cápsula'}).click();
-    assert.equal(await popup.getByRole('button',{name:'Ver menos'}).count(),0,'La siguiente cápsula reinicia el detalle');
-    await popup.getByRole('button',{name:'Cerrar cápsula'}).click();
-    assert.equal(await popup.count(),0,'Cerrar mantiene la pantalla actual');
+    await page.locator('.barra-lateral').getByRole('link',{name:'Base de conocimientos'}).click();
+    await page.waitForURL(u=>u.pathname==='/conocimientos',{timeout:20000});
+    await page.getByRole('heading',{name:'Base de conocimientos',exact:true}).waitFor();
+    assert.equal(await page.locator('.conocimientos-item').count(),202,'El módulo lista las 202 cápsulas');
+    await page.locator('.conocimientos-item').first().click();
+    await page.waitForURL(u=>u.pathname==='/conocimientos' && u.searchParams.has('capsula'));
+    assert.equal(await page.getByRole('heading',{name:'Conoce más',exact:true}).count(),1);
+    const preferencia=page.getByRole('checkbox',{name:/Mostrar “¿Sabías que…?” automáticamente/});
+    await preferencia.uncheck();
+    assert.equal(await preferencia.isChecked(),false,'Se pueden desactivar avisos automáticos');
+    await preferencia.check();
     await page.locator('.barra-lateral').getByRole('link',{name:'SEO y Analítica'}).click();
     await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
     assert.equal(await page.locator('.barra-lateral .enlace-lateral.activo').count(),1);
-    console.log('Escritorio: barra plana con todos los módulos autorizados: OK');
+    console.log('Escritorio: Base de conocimientos independiente → 202 fichas → SEO: OK');
     await ctx.close();
   }
 
