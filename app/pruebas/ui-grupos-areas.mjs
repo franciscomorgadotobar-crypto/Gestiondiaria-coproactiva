@@ -75,7 +75,9 @@ try {
   // Doble organización del selector: módulos independientes y áreas.
   {
     const {ctx,page}=await crear();
-    await page.getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cambiar vista'}).click();
+    await page.getByRole('group',{name:'Organización'}).getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),1);
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9,'8 módulos originales y un acceso a conocimientos');
     assert.equal(await page.getByRole('button',{name:/Comunidades administradas, levantamientos y mantención/}).count(),1);
@@ -83,7 +85,7 @@ try {
     const originales=(await page.locator('.seleccion-home__tarjeta .seleccion-home__titulo').allInnerTexts());
     assert.deepEqual(originales,[
       'Gestión comercial','Levantamientos','Arriendos y ventas','Red de proveedores',
-      'Recepción y atención','Gestión contable','SEO y Analítica','Configuración','Base de conocimientos'
+      'Recepción y atención','Gestión contable','SEO y Analítica','Base de conocimientos','Configuración'
     ]);
     await page.getByRole('button',{name:/SEO y Analítica/}).click();
     await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
@@ -96,13 +98,36 @@ try {
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
     await page.getByRole('dialog',{name:'Más opciones'}).getByRole('button',{name:'Cambiar vista o módulo'}).click();
     await page.waitForURL(u=>u.pathname==='/',{timeout:15000});
-    assert.equal(await page.getByRole('button',{name:'Por módulos'}).getAttribute('aria-pressed'),'true',
-      'Preferencia módulos persiste al volver al Home');
-    await page.getByRole('button',{name:'Cambiar a vista en cuadrícula'}).count(); // Presentación independiente
-    await page.getByRole('button',{name:'Por áreas'}).click();
+    const cambiarVista=page.getByRole('button',{name:'Cambiar vista'});
+    assert.match(await cambiarVista.innerText(),/Por módulos · Lista/,
+      'La organización y presentación persisten al volver al Home');
+    await cambiarVista.click();
+    const menuVista=page.getByRole('dialog',{name:'Opciones de visualización'});
+    const organizacion=menuVista.getByRole('group',{name:'Organización'});
+    const presentacion=menuVista.getByRole('group',{name:'Presentación'});
+    assert.equal(await organizacion.getByRole('button',{name:'Por módulos'}).getAttribute('aria-pressed'),'true');
+    assert.equal(await presentacion.getByRole('button',{name:'Lista'}).getAttribute('aria-pressed'),'true');
+
+    // Los dos ajustes funcionan de forma independiente, con cuatro combinaciones.
+    await presentacion.getByRole('button',{name:'Cuadrícula'}).click();
+    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-cuadricula').count(),1);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').last().locator('.seleccion-home__titulo').innerText(),'Configuración');
+    await organizacion.getByRole('button',{name:'Por áreas'}).click();
     assert.equal(await page.getByRole('button',{name:/Gestión comercial/}).count(),1);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
-    assert.equal(await page.getByRole('button',{name:'Por áreas'}).getAttribute('aria-pressed'),'true');
+    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-cuadricula').count(),1);
+    assert.equal(await page.locator('.seleccion-home__administracion').count(),1,
+      'Administración y ajustes queda al final de la vista por áreas');
+    await presentacion.getByRole('button',{name:'Lista'}).click();
+    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-lista').count(),1);
+    await organizacion.getByRole('button',{name:'Por módulos'}).click();
+    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-lista').count(),1);
+    await menuVista.getByRole('button',{name:'Cerrar opciones de vista'}).click();
+    assert.equal(await cambiarVista.getAttribute('aria-expanded'),'false');
+    await cambiarVista.click();
+    await organizacion.getByRole('button',{name:'Por áreas'}).click();
+    await menuVista.getByRole('button',{name:'Cerrar opciones de vista'}).click();
+    assert.equal(await page.locator('.seleccion-home__administracion').count(),1);
     console.log('Selector: 8 tarjetas originales + Base de conocimientos → SEO → Levantamientos → Por áreas: OK');
     await ctx.close();
   }
@@ -128,7 +153,9 @@ try {
   // Móvil: tres botones exactos, búsqueda a demanda y expansión en el mismo recuadro.
   {
     const {ctx,page}=await crear({ancho:390,alto:844});
-    await page.getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cambiar vista'}).click();
+    await page.getByRole('group',{name:'Organización'}).getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     await page.getByRole('button',{name:/Base de conocimientos/}).click();
     await page.waitForURL(u=>u.pathname==='/conocimientos',{timeout:20000});
     const barra=page.locator('.barra-inferior-movil');
@@ -170,7 +197,9 @@ try {
   // En escritorio el modo plano no obliga a pasar por un grupo.
   {
     const {ctx,page}=await crear({ancho:1280,alto:850});
-    await page.getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cambiar vista'}).click();
+    await page.getByRole('group',{name:'Organización'}).getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     await page.getByRole('button',{name:/Levantamientos/}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const enlaces=page.locator('.barra-lateral .enlace-lateral');
@@ -200,7 +229,9 @@ try {
   // La vista por módulos respeta permisos y no confunde elementos de cuenta.
   {
     const {ctx,page}=await crear({rol:'jefatura'});
-    await page.getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cambiar vista'}).click();
+    await page.getByRole('group',{name:'Organización'}).getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Contabilidad/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Configuración/}).count(),0);

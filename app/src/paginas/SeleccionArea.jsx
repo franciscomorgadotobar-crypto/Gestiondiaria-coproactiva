@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { guardarArea } from '../lib/area';
@@ -23,6 +23,8 @@ export default function SeleccionArea() {
   const { perfil, salir } = useSesion();
   const navegar = useNavigate();
   const location = useLocation();
+  const opcionesVistaRef = useRef(null);
+  const [mostrarOpcionesVista, setMostrarOpcionesVista] = useState(false);
 
   useEffect(() => {
     registrarIndiceSelector(window.history.state?.idx);
@@ -68,12 +70,30 @@ export default function SeleccionArea() {
     return window.matchMedia('(min-width: 720px)').matches ? 'cuadricula' : 'lista';
   });
 
-  const alternarVista = () => {
-    const siguiente = vista === 'lista' ? 'cuadricula' : 'lista';
+  const cambiarVista = siguiente => {
+    if (!['lista', 'cuadricula'].includes(siguiente)) return;
     setVista(siguiente);
     try { window.localStorage.setItem('coproactiva_selector_vista', siguiente); }
     catch { /* La vista funciona aunque no se pueda guardar. */ }
   };
+
+  useEffect(() => {
+    if (!mostrarOpcionesVista) return undefined;
+    const cerrarExterior = evento => {
+      if (!opcionesVistaRef.current?.contains(evento.target)) {
+        setMostrarOpcionesVista(false);
+      }
+    };
+    const cerrarEscape = evento => {
+      if (evento.key === 'Escape') setMostrarOpcionesVista(false);
+    };
+    document.addEventListener('pointerdown', cerrarExterior);
+    document.addEventListener('keydown', cerrarEscape);
+    return () => {
+      document.removeEventListener('pointerdown', cerrarExterior);
+      document.removeEventListener('keydown', cerrarEscape);
+    };
+  }, [mostrarOpcionesVista]);
 
   // Tres áreas de trabajo; Administración y ajustes aparece debajo como
   // acceso secundario, sin cambiar el área que el usuario tenía seleccionada.
@@ -109,40 +129,89 @@ export default function SeleccionArea() {
             src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'}
             alt="Coproactiva"
           />
-          <button
-            className="seleccion-home__cambiar"
-            type="button"
-            onClick={alternarVista}
-            aria-label={'Cambiar a vista en ' + (vista === 'lista' ? 'cuadrícula' : 'lista')}
-            title={'Cambiar a vista en ' + (vista === 'lista' ? 'cuadrícula' : 'lista')}
-          >
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
-              <rect x="3" y="3" width="7" height="7" rx="1.4" />
-              <rect x="14" y="3" width="7" height="7" rx="1.4" />
-              <rect x="3" y="14" width="7" height="7" rx="1.4" />
-              <rect x="14" y="14" width="7" height="7" rx="1.4" />
-            </svg>
-            <span>Cambiar vista</span>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m7 10 5 5 5-5" />
-            </svg>
-          </button>
+          <div className="seleccion-home__selector-vistas" ref={opcionesVistaRef}>
+            <button
+              className="seleccion-home__cambiar"
+              type="button"
+              aria-label="Cambiar vista"
+              aria-expanded={mostrarOpcionesVista}
+              aria-haspopup="dialog"
+              aria-controls="seleccion-home-opciones-vista"
+              onClick={() => setMostrarOpcionesVista(actual => !actual)}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7" rx="1.4" />
+                <rect x="14" y="3" width="7" height="7" rx="1.4" />
+                <rect x="3" y="14" width="7" height="7" rx="1.4" />
+                <rect x="14" y="14" width="7" height="7" rx="1.4" />
+              </svg>
+              <span className="seleccion-home__cambiar-etiqueta">
+                <strong>Cambiar vista</strong>
+                <small>{organizacion === 'areas' ? 'Por áreas' : 'Por módulos'} · {vista === 'lista' ? 'Lista' : 'Cuadrícula'}</small>
+              </span>
+              <svg className={mostrarOpcionesVista ? 'seleccion-home__desplegable-abierto' : ''}
+                viewBox="0 0 24 24" width="15" height="15" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m7 10 5 5 5-5" />
+              </svg>
+            </button>
+            {mostrarOpcionesVista && (
+              <div id="seleccion-home-opciones-vista"
+                className="seleccion-home__menu-vistas"
+                role="dialog" aria-modal="false" aria-label="Opciones de visualización">
+                <div className="seleccion-home__menu-vistas-cabecera">
+                  <strong>Personalizar vista</strong>
+                  <button type="button" aria-label="Cerrar opciones de vista"
+                    onClick={() => setMostrarOpcionesVista(false)}>×</button>
+                </div>
+                <div className="seleccion-home__grupo-vistas"
+                  role="group" aria-label="Organización">
+                  <span>Organizar por</span>
+                  <div className="seleccion-home__botones-vistas">
+                    <button type="button" aria-pressed={organizacion === 'areas'}
+                      className={organizacion === 'areas' ? 'activo' : ''}
+                      onClick={() => cambiarOrganizacion('areas')}>Por áreas</button>
+                    <button type="button" aria-pressed={organizacion === 'modulos'}
+                      className={organizacion === 'modulos' ? 'activo' : ''}
+                      onClick={() => cambiarOrganizacion('modulos')}>Por módulos</button>
+                  </div>
+                </div>
+                <div className="seleccion-home__grupo-vistas"
+                  role="group" aria-label="Presentación">
+                  <span>Mostrar como</span>
+                  <div className="seleccion-home__botones-vistas">
+                    <button type="button" aria-pressed={vista === 'lista'}
+                      className={vista === 'lista' ? 'activo' : ''}
+                      onClick={() => cambiarVista('lista')}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                        <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                      </svg>
+                      Lista
+                    </button>
+                    <button type="button" aria-pressed={vista === 'cuadricula'}
+                      className={vista === 'cuadricula' ? 'activo' : ''}
+                      onClick={() => cambiarVista('cuadricula')}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                        stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="7" rx="1.2"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1.2"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1.2"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1.2"/>
+                      </svg>
+                      Cuadrícula
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </header>
 
         <section className="seleccion-home__introduccion" aria-label="Selección de destino">
           <h1>Hola{perfil?.nombre ? ', ' + perfil.nombre.split(' ')[0] : ''}</h1>
           <p>{organizacion === 'modulos' ? '¿Qué módulo quieres abrir?' : '¿En qué área vas a trabajar?'}</p>
         </section>
-
-        <div className="seleccion-home__organizacion" role="group" aria-label="Organizar navegación">
-          <button type="button" className={organizacion === 'areas' ? 'activo' : ''}
-                  aria-pressed={organizacion === 'areas'}
-                  onClick={() => cambiarOrganizacion('areas')}>Por áreas</button>
-          <button type="button" className={organizacion === 'modulos' ? 'activo' : ''}
-                  aria-pressed={organizacion === 'modulos'}
-                  onClick={() => cambiarOrganizacion('modulos')}>Por módulos</button>
-        </div>
 
         <div className={'seleccion-area-grid seleccion-home__tarjetas ' +
           (puedeConfigurar ? 'dos ' : '') +

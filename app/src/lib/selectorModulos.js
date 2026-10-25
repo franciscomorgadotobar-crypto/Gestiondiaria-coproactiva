@@ -53,11 +53,12 @@ export function modulosDisponibles(perfil) {
     { id:'seo', titulo:'SEO y Analítica', etiqueta:'MARKETING',
       descripcion:'Search Console, Analytics, indexación, velocidad y oportunidades web.',
       ruta:'/seo', area:'comercial', visible:administracion },
-    { id:'configuracion', titulo:'Configuración', etiqueta:'AJUSTES',
-      descripcion:'Equipo y clientes.', ruta:'/configuracion', area:null, visible:administracion },
     { id:'conocimientos', titulo:'Base de conocimientos', etiqueta:'APRENDIZAJE',
       descripcion:'Cápsulas breves para aprender la Ley 21.442.',
-      ruta:'/conocimientos', area:null, visible:true }
+      ruta:'/conocimientos', area:null, visible:true },
+    // Ajustes y configuración siempre al final del catálogo y navegación plana.
+    { id:'configuracion', titulo:'Configuración', etiqueta:'AJUSTES',
+      descripcion:'Equipo y clientes.', ruta:'/configuracion', area:null, visible:administracion }
 
   ];
   return destinos.filter(d => d.visible).map(({visible, ...d}) => d);
