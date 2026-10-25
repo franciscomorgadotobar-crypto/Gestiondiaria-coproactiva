@@ -1,158 +1,262 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSesion } from '../../lib/sesion';
 import biblioteca from '../../datos/ley21442.contenidos.json';
-import { EVENTO_PREFERENCIA, guardarAutomaticas, leerAutomaticas } from '../../lib/conocimientos';
 import './Conocimientos.css';
 
-const capsulas = biblioteca.contenidos;
-const categorias = [...new Set(capsulas.map(c => c.categoria))].filter(Boolean);
-const LEIDOS = 'coproactiva:conocimientos:leidos:';
+const contenidos = biblioteca.contenidos;
+const materias = [...new Set(contenidos.map(item => item.categoria).filter(Boolean))];
+const CLAVE_LEIDOS = 'coproactiva:conocimientos:leidos:';
+export const EVENTO_BUSCAR = 'coproactiva:conocimientos:buscar';
+export const EVENTO_ESTADO_BUSCAR = 'coproactiva:conocimientos:estado-busqueda';
 
-function obtenerLeidos(usuarioId) {
+function leerConsultados(usuarioId) {
+  if (!usuarioId) return [];
   try {
-    const valor = JSON.parse(localStorage.getItem(LEIDOS + usuarioId) || '[]');
-    return Array.isArray(valor) ? valor : [];
+    const datos = JSON.parse(localStorage.getItem(CLAVE_LEIDOS + usuarioId) || '[]');
+    return Array.isArray(datos) ? datos : [];
   } catch { return []; }
 }
 
+/**
+ * Biblioteca de aprendizaje en formato acordeón. La pregunta, la respuesta
+ * desarrollada y las advertencias se abren dentro de LA MISMA tarjeta.
+ * La ruta ?capsula=ID permite acceder a la ficha desde «¿Sabías que…?».
+ */
 export default function Conocimientos() {
   const { sesion } = useSesion();
   const usuarioId = sesion?.user?.id;
   const [parametros, setParametros] = useSearchParams();
-  const idActual = parametros.get('capsula') || '';
+  const abiertoId = parametros.get('capsula') || '';
   const [busqueda, setBusqueda] = useState('');
-  const [categoria, setCategoria] = useState('Todas');
-  const [leidos, setLeidos] = useState(() => obtenerLeidos(usuarioId));
-  const [automaticas, setAutomaticas] = useState(() => leerAutomaticas(usuarioId));
-  const actual = capsulas.find(c => c.id === idActual) || null;
-  const filtradas = useMemo(() => capsulas.filter(item => {
-    const validaCategoria = categoria === 'Todas' || item.categoria === categoria;
-    const q = busqueda.trim().toLocaleLowerCase('es');
-    const validaBusqueda = !q || [item.titulo, item.texto, item.explicacion, item.referencia, item.categoria]
-      .some(texto => (texto || '').toLocaleLowerCase('es').includes(q));
-    return validaCategoria && validaBusqueda;
-  }), [busqueda, categoria]);
+  const [materia, setMateria] = useState('Todas');
+  const [buscarVisible, setBuscarVisible] = useState(false);
+  const [consultados, setConsultados] = useState(() => leerConsultados(usuarioId));
+  const tarjetasRef = useRef(new Map());
+  const buscadorRef = useRef(null);
+  const listadoRef = useRef(null);
+  const primeraApertura = useRef(false);
+  const resultados = useMemo(() => {
+    const palabra = busqueda.trim().toLocaleLowerCase('es');
+    return contenidos.filter(item =>
+      (materia === 'Todas' || item.categoria === materia) &&
+      (!palabra || [item.titulo, item.texto, item.explicacion, item.precaucion, item.categoria, item.referencia]
+        .some(valor => (valor || '').toLocaleLowerCase('es').includes(palabra)))
+    );
+  }, [busqueda, materia]);
 
   useEffect(() => {
-    setLeidos(obtenerLeidos(usuarioId));
-    setAutomaticas(leerAutomaticas(usuarioId));
-    const recibir = e => { if (e.detail?.usuarioId === usuarioId) setAutomaticas(e.detail.activas); };
-    window.addEventListener(EVENTO_PREFERENCIA, recibir);
-    return () => window.removeEventListener(EVENTO_PREFERENCIA, recibir);
+    setConsultados(leerConsultados(usuarioId));
   }, [usuarioId]);
 
-  function seleccionar(item) {
-    setParametros({ capsula: item.id });
-    if (!leidos.includes(item.id)) {
-      const siguientes = [...leidos, item.id];
-      setLeidos(siguientes);
-      try { localStorage.setItem(LEIDOS + usuarioId, JSON.stringify(siguientes)); } catch {}
+  useEffect(() => {
+    const gestionar = evento => {
+      if (evento.detail?.accion === 'inicio') {
+        setBuscarVisible(false);
+        setBusqueda('');
+        setMateria('Todas');
+        setParametros({}, { replace: true });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setBuscarVisible(valor => !valor);
+      }
+    };
+    window.addEventListener(EVENTO_BUSCAR, gestionar);
+    return () => window.removeEventListener(EVENTO_BUSCAR, gestionar);
+  }, [setParametros]);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(EVENTO_ESTADO_BUSCAR, { detail: { visible: buscarVisible } }));
+    if (buscarVisible) window.requestAnimationFrame(() => buscadorRef.current?.focus());
+    return () => window.dispatchEvent(new CustomEvent(EVENTO_ESTADO_BUSCAR, { detail: { visible: false } }));
+  }, [buscarVisible]);
+
+  useEffect(() => {
+    if (!abiertoId || !contenidos.some(item => item.id === abiertoId)) return;
+    if (!primeraApertura.current) {
+      primeraApertura.current = true;
+      const siguiente = window.requestAnimationFrame(() => {
+        tarjetasRef.current.get(abiertoId)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      });
+      return () => window.cancelAnimationFrame(siguiente);
+    }
+  }, [abiertoId]);
+
+  useEffect(() => {
+    if (!buscarVisible) return undefined;
+    const cerrarConEscape = evento => {
+      if (evento.key === 'Escape') setBuscarVisible(false);
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+    return () => document.removeEventListener('keydown', cerrarConEscape);
+  }, [buscarVisible]);
+
+  function abrirTarjeta(item) {
+    const siguiente = abiertoId === item.id ? '' : item.id;
+    setParametros(siguiente ? { capsula: siguiente } : {}, { replace: false });
+    if (siguiente && usuarioId && !consultados.includes(item.id)) {
+      const nuevos = [...consultados, item.id];
+      setConsultados(nuevos);
+      try { localStorage.setItem(CLAVE_LEIDOS + usuarioId, JSON.stringify(nuevos)); } catch {}
     }
   }
 
-  function cambiarAutomaticas() {
-    const siguiente = !automaticas;
-    setAutomaticas(siguiente);
-    guardarAutomaticas(usuarioId, siguiente);
-  }
+  const filtros = (
+    <>
+      <label className="conocimientos-campo">
+        <span>Buscar contenido</span>
+        <input ref={buscadorRef} type="search" value={busqueda}
+          onChange={evento => setBusqueda(evento.target.value)}
+          placeholder="Busca por concepto, tema o artículo…" autoComplete="off" />
+      </label>
+      <label className="conocimientos-campo">
+        <span>Materia</span>
+        <select value={materia} onChange={evento => setMateria(evento.target.value)}>
+          <option value="Todas">Todas las materias</option>
+          {materias.map(nombre => <option key={nombre} value={nombre}>{nombre}</option>)}
+        </select>
+      </label>
+    </>
+  );
 
   return (
     <main className="pantalla modulo-unificado conocimientos-pantalla">
-      <header className="encabezado modulo-cabecera">
-        <span className="etiqueta-grupo">APRENDIZAJE</span>
+      <header className="conocimientos-cabecera">
         <h1>Base de conocimientos</h1>
-        <p className="chico apagado">Aprende sobre administración de comunidades y la Ley N° 21.442, artículo por artículo.</p>
+        <p>Aprende sobre administración de comunidades y la Ley N° 21.442, artículo por artículo.</p>
+        <div className="conocimientos-insignia">
+          <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 6C9 4 6 4 3 5v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1zM12 6v14"/>
+          </svg>
+          {contenidos.length} contenidos · Ley 21.442
+        </div>
       </header>
-      <div className="cuerpo modulo-contenido conocimientos-cuerpo">
-        <div className="conocimientos-resumen ui-panel">
-          <div>
-            <span className="conocimientos-kicker">BIBLIOTECA EDUCATIVA</span>
-            <h2>Ley de Copropiedad Inmobiliaria</h2>
-            <p>{capsulas.length} cápsulas con explicaciones, referencias legales y ejemplos de aplicación.</p>
-            <small>Fuente: Ley 21.442 · Versión consultada: {biblioteca.version_fuente}. Verifica modificaciones posteriores.</small>
-          </div>
-          <label className="conocimientos-preferencia">
-            <input type="checkbox" checked={automaticas} onChange={cambiarAutomaticas} />
-            <span>Mostrar “¿Sabías que…?” automáticamente</span>
-            <small>Mensajes breves al costado derecho, como las mascotas del CRM, cada 5 minutos.</small>
-          </label>
-        </div>
-        <div className="conocimientos-herramientas ui-panel">
-          <label>
-            <span>Buscar contenido</span>
-            <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
-              type="search" placeholder="Busca por concepto, tema o artículo…" />
-          </label>
-          <label>
-            <span>Materia</span>
-            <select value={categoria} onChange={e => setCategoria(e.target.value)}>
-              <option value="Todas">Todas las materias</option>
-              {categorias.map(nombre => <option key={nombre} value={nombre}>{nombre}</option>)}
-            </select>
-          </label>
-          <span className="conocimientos-contador">{filtradas.length} resultados · {leidos.length} consultadas</span>
-        </div>
-        <div className="conocimientos-columnas">
-          <section className="conocimientos-listado ui-panel" aria-label="Cápsulas disponibles">
-            {filtradas.length === 0
-              ? <p>No hay contenidos que coincidan con la búsqueda.</p>
-              : filtradas.map(item => (
-                <button type="button" key={item.id}
-                  className={'conocimientos-item' + (actual?.id === item.id ? ' activo' : '')}
-                  onClick={() => seleccionar(item)}>
-                  <span className="conocimientos-item-top">
-                    <small>{item.categoria}</small>
-                    {leidos.includes(item.id) && <span aria-label="Consultada">✓</span>}
+
+      <div className="conocimientos-cuerpo">
+        <section className="conocimientos-filtros-escritorio" aria-label="Filtros de la biblioteca">
+          {filtros}
+          <span className="conocimientos-resultado-cantidad">{resultados.length} contenidos encontrados</span>
+        </section>
+
+        <section ref={listadoRef} className="conocimientos-tarjetas" aria-label="Contenidos educativos">
+          {resultados.length === 0 && (
+            <div className="conocimientos-sin-resultados">
+              <strong>No encontramos contenidos con esos filtros.</strong>
+              <button type="button" onClick={() => { setBusqueda(''); setMateria('Todas'); }}>
+                Mostrar todos los contenidos
+              </button>
+            </div>
+          )}
+          {resultados.map(item => {
+            const desplegado = item.id === abiertoId;
+            return (
+              <article key={item.id}
+                ref={elemento => {
+                  if (elemento) tarjetasRef.current.set(item.id, elemento);
+                  else tarjetasRef.current.delete(item.id);
+                }}
+                className={'conocimientos-tarjeta' + (desplegado ? ' abierta' : '')}>
+                <button type="button"
+                  className="conocimientos-tarjeta-resumen"
+                  onClick={() => abrirTarjeta(item)}
+                  aria-expanded={desplegado}
+                  aria-controls={'detalle-conocimiento-' + item.id}>
+                  <span className="conocimientos-tarjeta-titulos">
+                    <span className="conocimientos-categoria">{item.categoria}</span>
+                    <strong>{item.titulo}</strong>
+                    <small>{item.referencia} · Ley N° 21.442</small>
                   </span>
-                  <strong>{item.titulo}</strong>
-                  <span>{item.referencia} <span aria-hidden="true">›</span></span>
+                  <svg aria-hidden="true" className="conocimientos-chevron" width="20" height="20"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
                 </button>
-              ))}
-          </section>
-          <article className="conocimientos-lectura ui-panel" aria-label="Lección">
-            {actual ? (
-              <>
-                <span className="conocimientos-kicker">{actual.categoria}</span>
-                <h2>{actual.titulo}</h2>
-                <div className="conocimientos-articulo">{actual.referencia} · Ley N° 21.442</div>
-                <h3>¿Sabías que…?</h3>
-                <p className="conocimientos-dato">{actual.texto}</p>
-                <h3>Conoce más</h3>
-                <p>{actual.explicacion}</p>
-                {actual.precaucion && <>
-                  <h3>Consideraciones importantes</h3>
-                  <p>{actual.precaucion}</p>
-                </>}
-                {actual.requiere_validacion && (
-                  <p className="conocimientos-advertencia">Esta disposición requiere verificar su vigencia antes de aplicarla.</p>
+                {desplegado && (
+                  <div id={'detalle-conocimiento-' + item.id} className="conocimientos-tarjeta-desarrollo">
+                    <div className="conocimientos-referencia">{item.referencia} · Ley N° 21.442</div>
+                    <section className="conocimientos-dato">
+                      <div className="conocimientos-detalle-icono" aria-hidden="true">
+                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 18h6M10 21h4M9 15.5c0-2-3-3.4-3-7a6 6 0 0 1 12 0c0 3.6-3 5-3 7"/>
+                          <path d="M12 1v2M4 8H2M20 8h2M5 3l1.5 1.5M19 3l-1.5 1.5"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3>¿Sabías que…?</h3>
+                        <p>{item.texto}</p>
+                      </div>
+                    </section>
+                    <section className="conocimientos-seccion-desarrollo">
+                      <div className="conocimientos-detalle-icono" aria-hidden="true">
+                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M7 3h9l4 4v14H7zM16 3v5h4M10 12h7M10 16h7"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3>Desarrollo del tema</h3>
+                        <p>{item.explicacion}</p>
+                      </div>
+                    </section>
+                    {item.precaucion && (
+                      <section className="conocimientos-seccion-desarrollo">
+                        <div className="conocimientos-detalle-icono" aria-hidden="true">
+                          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m12 3 10 18H2L12 3zM12 9v5M12 18h.01"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h3>Consideraciones importantes</h3>
+                          <p>{item.precaucion}</p>
+                        </div>
+                      </section>
+                    )}
+                    {item.requiere_validacion && (
+                      <p className="conocimientos-alerta">Verifica la vigencia de esta disposición antes de aplicarla.</p>
+                    )}
+                    <a className="conocimientos-ley-link" href={biblioteca.url_oficial}
+                      target="_blank" rel="noopener noreferrer">
+                      Consultar texto de la ley ↗
+                    </a>
+                    <p className="conocimientos-advertencia-fuente">{biblioteca.aviso}</p>
+                  </div>
                 )}
-                <a href={biblioteca.url_oficial} target="_blank" rel="noopener noreferrer">
-                  Consultar texto de la ley ↗
-                </a>
-                <p className="conocimientos-aviso">{biblioteca.aviso}</p>
-                <div className="conocimientos-acciones">
-                  <button type="button" className="boton boton-secundario"
-                    onClick={() => {
-                      const pos = capsulas.findIndex(c => c.id === actual.id);
-                      seleccionar(capsulas[(pos + 1) % capsulas.length]);
-                    }}>Siguiente contenido →</button>
-                  <button type="button" className="boton boton-secundario"
-                    onClick={() => setParametros({})}>Volver al listado</button>
-                </div>
-              </>
-            ) : (
-              <div className="conocimientos-vacio">
-                <span aria-hidden="true">✧</span>
-                <h2>Selecciona un contenido</h2>
-                <p>Explora las materias o utiliza el buscador. Aquí encontrarás la explicación y el artículo de origen de cada cápsula.</p>
-                {filtradas.length > 0 && <button type="button" className="boton"
-                    onClick={() => seleccionar(filtradas[0])}>Comenzar a aprender</button>}
-              </div>
-            )}
-          </article>
-        </div>
+              </article>
+            );
+          })}
+        </section>
       </div>
+
+      {buscarVisible && (
+        <div className="conocimientos-buscador-capa" role="presentation"
+             onClick={() => setBuscarVisible(false)}>
+          <section className="conocimientos-buscador-panel" role="dialog"
+            aria-label="Buscar en Base de conocimientos" aria-modal="false"
+            onClick={evento => evento.stopPropagation()}>
+            <div className="conocimientos-buscador-titulo">
+              <strong>Buscar contenidos</strong>
+              <button type="button" onClick={() => setBuscarVisible(false)}
+                aria-label="Cerrar búsqueda">×</button>
+            </div>
+            {filtros}
+            <div className="conocimientos-buscador-acciones">
+              <button type="button" onClick={() => { setBusqueda(''); setMateria('Todas'); }}>
+                Limpiar
+              </button>
+              <button type="button" className="conocimientos-aplicar-filtros" onClick={() => {
+                setBuscarVisible(false);
+                listadoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}>
+                Ver {resultados.length} contenidos
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
