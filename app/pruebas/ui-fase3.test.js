@@ -21,7 +21,7 @@ test('cambiar de área navega a selector sin reiniciar la PWA',()=>{
   assert.match(router,/return <SeleccionArea \/>/);
   assert.doesNotMatch(router,/function RestaurarAreaGuardada/);
   assert.ok((panel.match(/onClick=\{cambiarArea\}/g)||[]).length>=1);
-  assert.match(panel,/Cambiar de área <span[^>]*>›<\/span>/);
+  assert.match(panel,/organizacion === 'modulos' \? 'Cambiar vista o módulo' : 'Cambiar de área'/);
   assert.doesNotMatch(panel,/className="barra-area-cambiar"/);
 });
 test('los dos diálogos comparten foco accesible y respetan Atrás Android',()=>{
