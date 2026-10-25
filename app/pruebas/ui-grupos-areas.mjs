@@ -144,7 +144,7 @@ try {
     await page.locator('.conocimientos-item').first().click();
     await page.waitForURL(u=>u.pathname==='/conocimientos' && u.searchParams.has('capsula'));
     await page.getByRole('heading',{name:'Conoce más',exact:true}).waitFor({timeout:15000});
-    const preferencia=page.getByRole('checkbox',{name:/Mostrar “¿Sabías que…?” automáticamente/});
+    const preferencia=page.locator('.conocimientos-preferencia input[type="checkbox"]');
     await preferencia.uncheck();
     assert.equal(await preferencia.isChecked(),false,'Se pueden desactivar avisos automáticos');
     await preferencia.check();
