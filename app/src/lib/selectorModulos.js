@@ -54,7 +54,10 @@ export function modulosDisponibles(perfil) {
       descripcion:'Search Console, Analytics, indexación, velocidad y oportunidades web.',
       ruta:'/seo', area:'comercial', visible:administracion },
     { id:'configuracion', titulo:'Configuración', etiqueta:'AJUSTES',
-      descripcion:'Equipo y clientes.', ruta:'/configuracion', area:null, visible:administracion }
+      descripcion:'Equipo y clientes.', ruta:'/configuracion', area:null, visible:administracion },
+    { id:'conocimientos', titulo:'Base de conocimientos', etiqueta:'APRENDIZAJE',
+      descripcion:'Cápsulas breves para aprender la Ley 21.442.',
+      ruta:'/inicio', area:null, tipo:'popup', visible:true }
 
   ];
   return destinos.filter(d => d.visible).map(({visible, ...d}) => d);
