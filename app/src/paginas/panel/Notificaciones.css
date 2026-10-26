@@ -55,3 +55,11 @@
   padding: 20px;
 }
 .notificaciones-vacio p { margin: 0; }
+
+.notificacion-tipo.bitacora:not(.urgente) { color: var(--naranja); }
+.notificacion-destino {
+  display: inline-block; color: var(--enlace); font-size: 12px;
+  font-weight: 700; margin-top: 3px; text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.notificacion-item:focus-visible { outline: 2px solid var(--naranja); outline-offset: 3px; }
