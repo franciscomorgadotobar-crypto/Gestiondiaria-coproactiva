@@ -26,7 +26,7 @@ export default function Notificaciones() {
     if (!perfil?.id) return;
     const [g, m] = await Promise.all([
       supabase.from('notificaciones')
-        .select('id,tipo,titulo,mensaje,bitacora_id,leida,creado_en')
+        .select('id,tipo,titulo,mensaje,bitacora_id,prospecto_id,leida,creado_en')
         .eq('destinatario_id', perfil.id)
         .order('creado_en', { ascending: false })
         .limit(100),
@@ -63,6 +63,7 @@ export default function Notificaciones() {
   ].sort((a, b) => String(b.creado_en).localeCompare(String(a.creado_en)));
 
   const sinLeer = todas.filter(x => !x.leida).length;
+  const tituloEstado = sinLeer > 0 ? `${sinLeer} sin leer` : todas.length ? 'Todas revisadas' : 'Estás al día.';
 
   return (
     <div className="pantalla notificaciones-pantalla modulo-unificado">
@@ -75,7 +76,7 @@ export default function Notificaciones() {
         </div>
         <h1 className="h3">Notificaciones</h1>
         <p className="chico apagado" style={{ margin: '3px 0 0' }}>
-          {sinLeer > 0 ? sinLeer + ' sin leer' : 'Estás al día.'}
+          {tituloEstado}
         </p>
       </header>
 
@@ -93,11 +94,12 @@ export default function Notificaciones() {
         <div className="notificaciones-lista">
           {todas.map(n => {
             const urgente = n.tipo === 'bitacora_urgente';
+            const esProspectoWeb = n.tipo === 'lead_web';
             const contenido = (
               <>
                 <div className="notificacion-superior">
                   <span className={'notificacion-tipo ' + (urgente ? 'urgente' : n.origen)}>
-                    {urgente ? 'Urgente' : n.origen === 'bitacora' ? 'Bitácora' : 'Mantención'}
+                    {urgente ? 'Urgente' : esProspectoWeb ? 'Comercial' : n.origen === 'bitacora' ? 'Bitácora' : 'Mantención'}
                   </span>
                   {!n.leida && <span className="notificacion-nueva">Nueva</span>}
                 </div>
@@ -107,6 +109,20 @@ export default function Notificaciones() {
               </>
             );
 
+            if (esProspectoWeb) {
+              return (
+                <Link key={n.tabla + n.id}
+                      to={n.prospecto_id
+                        ? '/pipeline?prospecto=' + encodeURIComponent(n.prospecto_id)
+                        : '/pipeline?etapa=nuevo'}
+                      className={'tarjeta notificacion-item' + (!n.leida ? ' no-leida' : '')}
+                      aria-label={'Gestionar prospecto: ' + n.titulo}
+                      onClick={() => marcarLeida(n.tabla, n.id)}>
+                  {contenido}
+                  <span className="notificacion-destino">Abrir prospecto en Pipeline ›</span>
+                </Link>
+              );
+            }
             if (n.origen === 'bitacora' && n.bitacora_id) {
               return (
                 <Link key={n.tabla + n.id}
@@ -125,6 +141,7 @@ export default function Notificaciones() {
                       onClick={() => {
                         marcarLeida(n.tabla, n.id);
                         if (n.origen === 'mantencion') navegar('/mantenciones');
+                        else if (n.origen === 'bitacora') navegar('/bitacora');
                       }}>
                 {contenido}
               </button>
