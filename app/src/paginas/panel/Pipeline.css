@@ -68,3 +68,25 @@
   .pipeline-tarjeta .boton-ancho { width: 100%; }
   .pipeline-formulario { max-width: 880px; }
 }
+
+/* Gestión de prospectos: contacto táctil claro y correo dentro del CRM. */
+.pipeline-tarjeta { cursor: pointer; }
+.pipeline-tarjeta:hover { border-color: var(--naranja); }
+.pipeline-titulo-prospecto {
+  display: block; border: 0; padding: 0; margin: 0; background: transparent;
+  font: 650 15px/1.35 var(--fuente-display); color: var(--texto-titulo);
+  text-align: left; cursor: pointer; overflow-wrap: anywhere;
+}
+.pipeline-titulo-prospecto:focus-visible, .pipeline-correo-accion:focus-visible {
+  outline: 2px solid var(--naranja); outline-offset: 3px;
+}
+.pipeline-correo-accion {
+  border: 0; background: transparent; color: var(--enlace);
+  padding: 8px 0; font: 700 12px/1.3 var(--fuente-cuerpo); cursor: pointer;
+  text-align: left; text-decoration: underline; text-underline-offset: 3px;
+}
+.pipeline-correo { display: grid; gap: 12px; padding: 18px; margin: 0 0 18px; scroll-margin-top: 18px; }
+.pipeline-correo h2 { margin: 0; }
+.pipeline-correo p { margin: 0; }
+.pipeline-correo textarea { min-height: 150px; }
+.pipeline-formulario { scroll-margin-top: 18px; }
