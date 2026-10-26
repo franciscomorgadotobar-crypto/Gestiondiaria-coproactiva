@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { usePestanaHistorial } from '../../lib/pestanasHistorial';
 import { useSesion } from '../../lib/sesion';
@@ -68,6 +68,8 @@ function fechaCL(valor, conHora = false) {
 export default function Pipeline() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
+  const location = useLocation();
+  const idAbiertoPorUrl = useRef(null);
   useVolverGlobal(() => volverPorJerarquia(navegar, '/pipeline'));
   const [prospectos, setProspectos] = useState(null);
   const [diagnosticos, setDiagnosticos] = useState(new Map());   // prospecto_id → { control, resultado }
@@ -79,6 +81,11 @@ export default function Pipeline() {
   const [guardando, setGuardando] = useState(false);
   const [perdidaPendiente, setPerdidaPendiente] = useState(null);
   const [ganarPendiente, setGanarPendiente] = useState(null);
+  const [correoProspecto, setCorreoProspecto] = useState(null);
+  const [asuntoCorreo, setAsuntoCorreo] = useState('');
+  const [mensajeCorreo, setMensajeCorreo] = useState('');
+  const [enviandoCorreo, setEnviandoCorreo] = useState(false);
+  const [avisoCorreo, setAvisoCorreo] = useState(null);
 
   async function cargar() {
     setError(null);
@@ -137,6 +144,51 @@ export default function Pipeline() {
   const enDiagnostico = porEtapa.get('diagnostico')?.length ?? 0;
   const perdidos = porEtapa.get('perdido')?.length ?? 0;
 
+  // Los avisos de contacto web abren directamente el prospecto enlazado.
+  // Si ya no existe o está restringido, se informa sin seleccionar otro.
+  useEffect(() => {
+    const id = new URLSearchParams(location.search).get('prospecto');
+    if (!id || !prospectos || idAbiertoPorUrl.current === id) return;
+    idAbiertoPorUrl.current = id;
+    const p = prospectos.find(x => x.id === id);
+    if (p) {
+      abrirEdicion(p);
+      setEtapa(p.etapa, { replace: true });
+      requestAnimationFrame(() => document.getElementById('pipeline-formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    } else {
+      setError('El prospecto de esta notificación ya no está disponible o no tienes acceso.');
+    }
+  }, [location.search, prospectos]);
+
+  function comenzarCorreo(p) {
+    if (!p.email) return setError('Este prospecto no tiene correo electrónico registrado.');
+    setError(null);
+    setAvisoCorreo(null);
+    setCorreoProspecto(p);
+    setAsuntoCorreo('Coproactiva · ' + p.nombre_condominio);
+    setMensajeCorreo('');
+    requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
+  async function enviarCorreo(e) {
+    e.preventDefault();
+    if (!correoProspecto || enviandoCorreo) return;
+    if (!asuntoCorreo.trim() || !mensajeCorreo.trim()) return setError('Completa el asunto y mensaje.');
+    setEnviandoCorreo(true);
+    setError(null);
+    const { data, error: envioError } = await supabase.functions.invoke('correo-prospecto', {
+      body: { prospecto_id: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim() }
+    });
+    setEnviandoCorreo(false);
+    if (envioError || !data?.enviado) {
+      return setError(data?.error || envioError?.message || 'No fue posible enviar el correo. Revisa la configuración de SMTP.');
+    }
+    setAvisoCorreo('Correo enviado a ' + correoProspecto.email);
+    setCorreoProspecto(null);
+    setMensajeCorreo('');
+    cargar();
+  }
+
   function abrirNuevo() {
     setForm(VACIO);
     setAbierto('nuevo');
@@ -153,6 +205,7 @@ export default function Pipeline() {
       observaciones: p.observaciones ?? ''
     });
     setAbierto(p.id);
+    setCorreoProspecto(null);
   }
 
   function cerrarForm() {
@@ -309,7 +362,32 @@ export default function Pipeline() {
       </header>
 
       <div className="cuerpo">
-        {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
+        {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }} role="alert">{error}</div>}
+        {avisoCorreo && <div className="aviso" role="status">{avisoCorreo}</div>}
+
+        {correoProspecto && (
+          <form id="pipeline-correo" className="tarjeta pipeline-correo" onSubmit={enviarCorreo}>
+            <h2 className="h4">Enviar correo a {correoProspecto.nombre_contacto || correoProspecto.nombre_condominio}</h2>
+            <p className="chico apagado">Para: {correoProspecto.email} · desde contacto@coproactiva.cl</p>
+            <label className="campo">
+              <span className="etiqueta-campo">Asunto</span>
+              <input value={asuntoCorreo} required maxLength={160}
+                     onChange={e => setAsuntoCorreo(e.target.value)} />
+            </label>
+            <label className="campo">
+              <span className="etiqueta-campo">Mensaje</span>
+              <textarea value={mensajeCorreo} required maxLength={5000} rows={6}
+                        onChange={e => setMensajeCorreo(e.target.value)} />
+            </label>
+            <div className="fila-botones">
+              <button className="boton boton-secundario" type="button" disabled={enviandoCorreo}
+                      onClick={() => setCorreoProspecto(null)}>Cancelar</button>
+              <button className="boton" type="submit" disabled={enviandoCorreo}>
+                {enviandoCorreo ? 'Enviando…' : 'Enviar correo'}
+              </button>
+            </div>
+          </form>
+        )}
 
         <div className="tablero">
           <div><p className="n">{activos}</p><p className="r">Activos</p></div>
@@ -384,6 +462,7 @@ export default function Pipeline() {
                     <TarjetaProspecto key={p.id} p={p} equipo={equipo} guardando={guardando}
                                       diagnostico={diagnosticos.get(p.id)}
                                       onEditar={() => abrirEdicion(p)}
+                                      onCorreo={() => comenzarCorreo(p)}
                                       onCambiarEtapa={nuevaEtapa => cambiarEtapa(p, nuevaEtapa)} />
                   ))}
                 </section>
@@ -396,20 +475,25 @@ export default function Pipeline() {
   );
 }
 
-function TarjetaProspecto({ p, equipo, guardando, diagnostico, onEditar, onCambiarEtapa }) {
+function TarjetaProspecto({ p, equipo, guardando, diagnostico, onEditar, onCorreo, onCambiarEtapa }) {
   const responsable = equipo.find(e => e.id === p.responsable_id);
   const vencida = p.fecha_proxima_accion && new Date(p.fecha_proxima_accion) < new Date();
 
   return (
-    <article className="tarjeta pipeline-tarjeta">
+    <article className="tarjeta pipeline-tarjeta" onClick={e => {
+      // Acciones internas mantienen su comportamiento; el espacio restante
+      // y el nombre del prospecto abren la gestión del registro.
+      if (!e.target.closest('button,a,input,select,textarea,label')) onEditar();
+    }}>
       <div className="fila" style={{ alignItems: 'flex-start', marginBottom: 6 }}>
         <div className="crece">
-          <strong className="dato-chico" style={{ display: 'block' }}>{p.nombre_condominio}</strong>
+          <button type="button" className="pipeline-titulo-prospecto" onClick={onEditar}
+                   aria-label={'Gestionar prospecto ' + p.nombre_condominio}>{p.nombre_condominio}</button>
           {(p.comuna || p.direccion) && (
             <span className="micro apagado">{[p.direccion, p.comuna].filter(Boolean).join(', ')}</span>
           )}
         </div>
-        <button type="button" className="editar" onClick={onEditar}>Editar</button>
+        <button type="button" className="editar" onClick={onEditar}>Gestionar</button>
       </div>
 
       {(p.nombre_contacto || p.telefono || p.email) && (
@@ -419,6 +503,10 @@ function TarjetaProspecto({ p, equipo, guardando, diagnostico, onEditar, onCambi
         </p>
       )}
 
+      {p.email && (
+        <button type="button" className="pipeline-correo-accion"
+                onClick={onCorreo}>Enviar correo a {p.nombre_contacto || 'contacto'}</button>
+      )}
       <div className="fila" style={{ marginTop: 8, flexWrap: 'wrap', gap: 6 }}>
         {p.fuente && <span className="chip chip-tipo">{p.fuente}</span>}
         {p.unidades && <span className="chip chip-tipo">{p.unidades} unidades</span>}
@@ -494,7 +582,7 @@ function FormularioProspecto({ form, setForm, equipo, esNuevo, guardando, onGuar
   function set(campo, valor) { setForm(x => ({ ...x, [campo]: valor })); }
 
   return (
-    <div className="tarjeta pipeline-formulario">
+    <div id="pipeline-formulario" className="tarjeta pipeline-formulario">
       <h2 className="h4" style={{ marginTop: 0 }}>{esNuevo ? 'Nuevo lead' : 'Editar prospecto'}</h2>
 
       <Campo label="Nombre del condominio o edificio *" valor={form.nombre_condominio} onChange={v => set('nombre_condominio', v)} />
