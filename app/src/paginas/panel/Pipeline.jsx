@@ -206,6 +206,7 @@ export default function Pipeline() {
     });
     setAbierto(p.id);
     setCorreoProspecto(null);
+    requestAnimationFrame(() => document.getElementById('pipeline-formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   function cerrarForm() {
