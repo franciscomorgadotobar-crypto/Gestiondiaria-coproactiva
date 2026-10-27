@@ -13,7 +13,7 @@ export const RAICES_CON_SELECTOR = [
   '/inicio', '/pipeline', '/propiedades', '/proveedores', '/contabilidad',
   '/seo', '/configuracion', '/whatsapp', '/comunidades', '/mantenciones',
   '/bitacora', '/plantillas', '/mapa', '/ayuda', '/nuevo', '/equipo',
-  '/clientes', '/mi-cuenta', '/notificaciones', '/control'
+  '/clientes', '/mi-cuenta', '/notificaciones', '/control', '/compromisos', '/plantillas-correo'
 ];
 
 let ultimoIndiceSelector = null;
@@ -38,7 +38,7 @@ export function esRutaInterna(ruta, esCliente = false) {
 }
 
 export function homePermitido(puedeCambiarArea, esCliente = false) {
-  return esCliente ? '/portal' : puedeCambiarArea ? '/' : '/inicio';
+  return esCliente ? '/portal' : '/';
 }
 
 export function debePrepararHistorialSelector(ruta, indice, accesoInterno, puedeCambiarArea = true, esCliente = false) {
