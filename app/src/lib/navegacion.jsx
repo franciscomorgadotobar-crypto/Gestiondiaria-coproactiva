@@ -31,7 +31,6 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
   const destino = destinoVolverPorJerarquia(pathname, inicioSegunArea());
   if (!destino) return;
   if (destino === '/') {
-    if (!puedeCambiarArea) return;
     limpiarArea();
     // Volver al selector real ya guardado evita dos copias consecutivas.
     // Si la app se abrió directamente en SEO, el selector fue preparado
@@ -39,7 +38,7 @@ export function volverPorJerarquia(navegar, pathname, puedeCambiarArea = true) {
     const pasos = pasosHastaSelector(window.history.state);
     if (pasos !== null) return navegar(pasos);
     // Sin entrada previa verificable, mostrar selector sin crear bucles.
-    return navegar('/', { replace: true, state: { selectorCoproactiva: true } });
+    return navegar('/', { replace:true });
   }
   return navegar(destino);
 }
