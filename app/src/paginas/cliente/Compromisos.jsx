@@ -6,11 +6,14 @@ import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '.
 
 const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
-const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_limite: '', responsable: '' };
+const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '' };
 
 export default function Compromisos({ comunidadId, administrador = false }) {
  const [compromisos, setCompromisos] = useState([]);
  const [avances, setAvances] = useState([]);
+ const [transiciones,setTransiciones] = useState([]);
+ const [fechasRapidas,setFechasRapidas] = useState({});
+ const [observacionesRapidas,setObservacionesRapidas] = useState({});
  const [adjuntos, setAdjuntos] = useState([]);
  const [archivos, setArchivos] = useState([]);
  const [subtareas,setSubtareas]=useState([]);
@@ -43,13 +46,18 @@ export default function Compromisos({ comunidadId, administrador = false }) {
    const { data: historial, error: err2 } = await supabase.from('compromisos_avances').select('*').in('compromiso_id', ids).order('registrado_en', {ascending:false});
    if (err2) setError(err2.message);
    setAvances(historial || []);
+   const {data: trans,error: errTrans}=await supabase.from('compromisos_transiciones')
+      .select('id,compromiso_id,estado_anterior,estado_nuevo,observacion,fecha_proxima_accion,cambiado_en')
+      .in('compromiso_id', ids).order('cambiado_en',{ascending:false});
+   if(errTrans) setError(errTrans.message);
+   setTransiciones(trans || []);
    const avanceIds = (historial || []).map(a => a.id);
    if (avanceIds.length) {
     const {data: docs, error: errDocs} = await supabase.from('compromisos_avances_adjuntos').select('*').in('avance_id',avanceIds);
     if (errDocs) setError(errDocs.message);
     setAdjuntos(docs || []);
    } else setAdjuntos([]);
-  } else { setAvances([]); setAdjuntos([]); }
+  } else { setAvances([]); setAdjuntos([]); setTransiciones([]); }
   setCargando(false);
  }
  useEffect(() => { cargar(); }, [comunidadId]);
@@ -59,6 +67,8 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   const { error: err } = await supabase.from('compromisos_administracion').insert({
    comunidad_id: comunidadId, titulo: nuevo.titulo.trim(), descripcion: nuevo.descripcion,
    referencia_contractual: nuevo.referencia_contractual, fecha_limite: nuevo.fecha_limite || null,
+   fecha_inicio: nuevo.fecha_inicio || null,
+   fecha_proxima_accion: nuevo.fecha_proxima_accion || null,
    responsable: nuevo.responsable, publicado: false
   });
   if (err) setError(err.message); else { setNuevo(inicial); await cargar(); }
@@ -101,9 +111,15 @@ export default function Compromisos({ comunidadId, administrador = false }) {
     if (errMeta) fallidos.push(file.name + ': ' + errMeta.message);
    }
    const {error: err2} = await supabase.from('compromisos_administracion').update({
-    avance:porcentajeReal, estado:subt.length?(porcentajeReal===100?'completado':porcentajeReal>0?'en_curso':'pendiente'):estado, actualizado_en:new Date().toISOString()
-   }).eq('id',detalle);
+     avance:porcentajeReal, actualizado_en:new Date().toISOString()
+   }).eq('id',detalle).select('id').single();
    if(err2) throw err2;
+   const {error: estadoError}=await supabase.rpc('compromisos_cambiar_etapa',{
+     p_compromiso_id:detalle,p_estado:estado,
+     p_proxima_accion:fechasRapidas[detalle]||null,
+     p_observacion:'Cambio al registrar avance: '+texto.trim().slice(0,500)
+   });
+   if(estadoError) throw estadoError;
    setTexto('');setEvidencia('');setPublicar(false);setArchivos([]);setVersionDocs(v=>v+1);
    await cargar();
    if(fallidos.length) setError('Avance guardado, pero algunos archivos no se adjuntaron: ' + fallidos.join('; '));
@@ -116,8 +132,9 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   const {error:err}=await supabase.from('compromisos_administracion').update({
    titulo:editForm.titulo.trim(),descripcion:editForm.descripcion,
    referencia_contractual:editForm.referencia_contractual,
-   responsable:editForm.responsable,fecha_limite:editForm.fecha_limite||null
-  }).eq('id',editando);
+   responsable:editForm.responsable,fecha_limite:editForm.fecha_limite||null,
+   fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null
+  }).eq('id',editando).select('id').single();
   setGuardando(false);
   if(err)setError(err.message);else {setEditando(null);await cargar();}
  }
@@ -154,7 +171,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   if(err)setError(err.message);else{
    const items=subtareas.filter(s=>s.compromiso_id===item.id);
    const avance=Math.round(items.filter(s=>s.completada).length/(items.length+1)*100);
-   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,estado:avance>0?'en_curso':'pendiente'}).eq('id',item.id);
+   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();
    if(err2)setError(err2.message);
    setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar();}
   setGuardando(false);
@@ -166,8 +183,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
    if(err)throw err;
    const items=subtareas.filter(s=>s.compromiso_id===item.id).map(s=>s.id===sub.id?{...s,completada}:s);
    const avance=Math.round(items.filter(s=>s.completada).length/items.length*100);
-   const estado=avance===100?'completado':avance>0?'en_curso':'pendiente';
-   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,estado,actualizado_en:new Date().toISOString()}).eq('id',item.id);
+   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();
    if(err2)throw err2;
    await cargar();
   }catch(e){setError(e.message||'No fue posible actualizar.');await cargar();}
@@ -182,12 +198,26 @@ export default function Compromisos({ comunidadId, administrador = false }) {
    const restantes=subtareas.filter(s=>s.compromiso_id===item.id&&s.id!==sub.id);
    {
     const avance=restantes.length?Math.round(restantes.filter(s=>s.completada).length/restantes.length*100):0;
-    const estado=avance===100?'completado':avance>0?'en_curso':'pendiente';
-    const {error:err2}=await supabase.from('compromisos_administracion').update({avance,estado}).eq('id',item.id);if(err2)throw err2;
+    const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();if(err2)throw err2;
    }
    await cargar();
   }catch(e){setError(e.message||'No fue posible eliminar subtarea.');}
   finally{setGuardando(false);}
+ }
+ async function cambiarEstado(item, siguiente) {
+  if(!administrador || guardando || siguiente===item.estado)return;
+  const proxima=fechasRapidas[item.id]||item.fecha_proxima_accion||null;
+  if(siguiente==='en_espera'&&!proxima){
+    return setError('Registra la fecha de la próxima acción antes de pasar el compromiso a En espera.');
+  }
+  setGuardando(true);setError('');
+  const {error:err}=await supabase.rpc('compromisos_cambiar_etapa',{
+    p_compromiso_id:item.id,p_estado:siguiente,p_proxima_accion:proxima,
+    p_observacion:observacionesRapidas[item.id]?.trim()||'Cambio de etapa desde compromisos'
+  });
+  if(err)setError('No se pudo cambiar la etapa: '+err.message);
+  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await cargar();}
+  setGuardando(false);
  }
  async function visibilidad(item) {
   const {error: err} = await supabase.from('compromisos_administracion').update({publicado: !item.publicado}).eq('id', item.id);
