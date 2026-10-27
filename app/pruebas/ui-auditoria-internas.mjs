@@ -93,7 +93,7 @@ async function irPantalla(page,vista) {
     :ruta.startsWith('/proveedores')?'/proveedores'
     :ruta.startsWith('/contabilidad')?'/contabilidad'
     :ruta.startsWith('/propiedades')?'/propiedades':'/pipeline';
-  await page.locator('.home-general a[href="'+raiz+'"]').click();
+  await page.locator('.home-general-enlaces a[href="'+raiz+'"]').click();
   await page.waitForURL(u=>u.pathname===raiz,{timeout:12000});
   if(operacion) {
     if(ruta==='/nuevo') await clickDestino(page,'/nuevo','Nuevo levantamiento');
