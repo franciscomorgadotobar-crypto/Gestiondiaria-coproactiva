@@ -80,6 +80,7 @@ try {
       await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
       await page.getByRole('button',{name:/Cambiar vista/}).click();
       await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
+      await page.getByRole('button',{name:'Cerrar opciones de vista'}).click();
       await page.locator('.home-general-modulo[href="'+area.ruta+'"]').click();
       await page.waitForURL(u=>u.pathname===area.ruta,{timeout:17000});
       await page.getByRole('heading',{name:area.heading}).first().waitFor({timeout:17000});
