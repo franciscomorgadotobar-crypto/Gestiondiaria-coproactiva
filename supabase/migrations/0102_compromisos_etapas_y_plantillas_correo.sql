@@ -22,8 +22,10 @@ drop policy if exists compromisos_transiciones_lectura on public.compromisos_tra
 create policy compromisos_transiciones_lectura on public.compromisos_transiciones
  for select to authenticated using (
   public.puede_gestionar_compromisos() or exists (
+   -- La tabla padre aplica RLS: el cliente solo ve compromisos publicados
+   -- de comunidades que su cuenta tiene autorizadas.
    select 1 from public.compromisos_administracion c
-   where c.id=compromiso_id and c.publicado
+   where c.id=compromiso_id
   )
  );
 -- Solo la función de cambio de estado inserta una transición:
