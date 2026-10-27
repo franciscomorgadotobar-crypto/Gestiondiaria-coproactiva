@@ -140,9 +140,9 @@ try {
   {
     const {ctx,page}=await crear({ancho:1280,alto:850,rol:'superadmin'});
     for(const nombre of ['Comercial','Operaciones','Finanzas','Administración y ajustes']){
-      assert.ok(await page.getByRole('button',{name:new RegExp(nombre)}).count()>0,nombre);
+      assert.equal(await page.locator('.home-general').getByRole('button',{name:new RegExp(nombre)}).count(),1,nombre);
     }
-    await page.getByRole('button',{name:/Finanzas/}).click();
+    await page.locator('.home-general').getByRole('button',{name:/Finanzas/}).click();
     await page.getByRole('link',{name:/Gestión contable/}).click();
     await page.waitForURL(u=>u.pathname==='/contabilidad',{timeout:20000});
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
@@ -152,8 +152,8 @@ try {
 
   {
     const {ctx,page}=await crear({rol:'jefatura'});
-    assert.equal(await page.getByRole('button',{name:/Finanzas/}).count(),0);
-    assert.equal(await page.getByRole('button',{name:/Administración y ajustes/}).count(),0);
+    assert.equal(await page.locator('.home-general').getByRole('button',{name:/Finanzas/}).count(),0);
+    assert.equal(await page.locator('.home-general').getByRole('button',{name:/Administración y ajustes/}).count(),0);
     await page.getByRole('button',{name:/Comercial/}).click();
     assert.equal(await page.getByRole('link',{name:/SEO y Analítica/}).count(),0);
     await page.getByRole('link',{name:/Pipeline comercial/}).click();
