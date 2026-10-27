@@ -23,17 +23,16 @@ const session = {
     app_metadata:{provider:'email',providers:['email']},user_metadata:{},
     created_at:new Date().toISOString()}
 };
-// Tres áreas y acceso secundario a Administración; los módulos se abren dentro de su
-// grupo (pestañas de Comercial, «Más» o barra lateral de Operaciones).
+// Ocho destinos visuales desde el Home único por secciones.
 const areas=[
-  {name:/Gestión comercial/,heading:/Pipeline comercial/,slug:'crm'},
-  {name:/Operación de comunidades/,heading:/Hola/,slug:'operacion'},
-  {name:/Gestión comercial/,seccion:['/propiedades','Arriendos y ventas'],heading:/Propiedades/,slug:'propiedades'},
-  {name:/Operación de comunidades/,seccion:['/proveedores','Proveedores'],heading:/Proveedores/,slug:'proveedores'},
-  {name:/Operación de comunidades/,seccion:['/whatsapp','WhatsApp'],heading:/WhatsApp/,slug:'whatsapp'},
-  {name:/Gestión contable/,heading:/Contabilidad/,slug:'contabilidad'},
-  {name:/Gestión comercial/,seccion:['/seo','SEO'],heading:/SEO y Analítica/,slug:'seo'},
-  {name:/Administración y ajustes/,heading:/Administración y ajustes/,slug:'configuracion'}
+ {grupo:'Comercial',ruta:'/pipeline',heading:/Pipeline comercial/,slug:'crm'},
+ {grupo:'Operaciones',ruta:'/inicio',heading:/Hola/,slug:'operacion'},
+ {grupo:'Comercial',ruta:'/propiedades',heading:/Propiedades/,slug:'propiedades'},
+ {grupo:'Operaciones',ruta:'/proveedores',heading:/Proveedores/,slug:'proveedores'},
+ {grupo:'Operaciones',ruta:'/whatsapp',heading:/WhatsApp/,slug:'whatsapp'},
+ {grupo:'Finanzas',ruta:'/contabilidad',heading:/Contabilidad/,slug:'contabilidad'},
+ {grupo:'Comercial',ruta:'/seo',heading:/SEO y Analítica/,slug:'seo'},
+ {grupo:'Administración y ajustes',ruta:'/configuracion',heading:/Administración y ajustes/,slug:'configuracion'}
 ];
 
 async function abrirSeccion(page,ruta,etiqueta) {
@@ -79,11 +78,10 @@ try {
     for(const area of areas){
       await page.goto(base+'/',{waitUntil:'domcontentloaded'});
       await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-      await page.getByRole('button',{name:area.name}).first().click();
-      if(area.seccion){
-        await page.waitForURL(u=>u.pathname!=='/',{timeout:17000});
-        await abrirSeccion(page,...area.seccion);
-      }
+      const grupo=page.locator('.home-general').getByRole('button',{name:new RegExp('^'+area.grupo)});
+      if((await grupo.getAttribute('aria-expanded'))==='false')await grupo.click();
+      await page.locator('.home-general a[href="'+area.ruta+'"]').click();
+      await page.waitForURL(u=>u.pathname===area.ruta,{timeout:17000});
       await page.getByRole('heading',{name:area.heading}).first().waitFor({timeout:17000});
       const aspecto = await page.evaluate(()=>{
         const modulo=document.querySelector('.pantalla.modulo-unificado, .wa-page.modulo-unificado');
