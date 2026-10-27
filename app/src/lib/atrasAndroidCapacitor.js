@@ -7,8 +7,7 @@
  */
 export function homeAutorizado(rol) {
   if (rol === 'cliente') return '/portal';
-  if (['superadmin', 'admin', 'jefatura'].includes(rol)) return '/';
-  return '/inicio';
+  return '/';
 }
 
 export function decidirAtrasAndroid({ pathname, rol, indice }) {
