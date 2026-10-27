@@ -9,7 +9,10 @@ export const VARIABLES_CORREO=VARIABLES.map(x=>'{{'+x+'}}');
 export function completarCorreo(texto, prospecto={}, responsable='Equipo Coproactiva'){
  const nombreCompleto=String(prospecto.nombre_contacto||'').trim();
  const val=v=>v===null||v===undefined||String(v).trim()===''?null:String(v);
+ const horaChile=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'America/Santiago',hour:'2-digit',hour12:false}).format(new Date()));
+ const saludo=horaChile>=20?'Buenas noches':horaChile>=12?'Buenas tardes':'Buenos días';
  const mapa={
+  saludo,
   nombre:val(nombreCompleto.split(/\s+/)[0]),
   nombreCompleto:val(nombreCompleto),
   comunidad:val(prospecto.nombre_condominio),
