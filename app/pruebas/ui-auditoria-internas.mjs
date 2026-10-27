@@ -89,10 +89,13 @@ async function irPantalla(page,vista) {
     :ruta.startsWith('/bitacora')?'/inicio'
     :ruta.startsWith('/mantenciones')?'/inicio'
     :ruta.startsWith('/proveedores')?'/proveedores'
-    :ruta.startsWith('/contabilidad')?'/contabilidad'
+    :ruta.startsWith('/contabilidad')?'/contabilidad/asientos'
     :ruta.startsWith('/propiedades')?'/propiedades':'/pipeline';
   if (operacion) {
     await page.locator('.home-general-metricas a[href="/inicio"]').click();
+  } else if (ruta.startsWith('/contabilidad')) {
+    await page.getByRole('button',{name:/Finanzas/}).click();
+    await page.locator('.home-general-indicador[href="/contabilidad/asientos"]').first().click();
   } else {
     await page.getByRole('button',{name:/Cambiar vista/}).click();
     await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
@@ -120,7 +123,7 @@ async function irPantalla(page,vista) {
     // Teléfono: barra inferior de Finanzas; escritorio: barra lateral o pestañas.
     const etiquetas={asientos:'Asientos',reportes:'Reportes',plan:'Plan de cuentas',
       configuracion:'Configuración',entidades:'Entidades'};
-    await clickDestino(page,ruta,etiquetas[ruta.split('/')[2]]||'Resumen');
+    if (ruta !== raiz) await clickDestino(page,ruta,etiquetas[ruta.split('/')[2]]||'Resumen');
   } else if(ruta.startsWith('/propiedades/')) {
     await page.locator('a[href^="/propiedades/nueva"]:visible').first().click();
   } else if(ruta.startsWith('/proveedores/')) {
