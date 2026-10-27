@@ -78,22 +78,24 @@ async function clickDestino(page,ruta,etiqueta) {
 async function irPantalla(page,vista) {
   // Abre siempre desde el Home único, sin un selector intermedio.
   await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:22000});
-  await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor({timeout:12000});
+  await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:12000});
   const ruta=vista.ruta;
   const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
-  const grupo=(operacion||ruta.startsWith('/proveedores'))?'Operaciones'
-    :ruta.startsWith('/contabilidad')?'Finanzas':'Comercial';
-  const head=page.locator('.home-general').getByRole('button',{name:new RegExp('^'+grupo)});
-  if((await head.getAttribute('aria-expanded'))==='false') await head.click();
+
   const raiz=ruta.startsWith('/nuevo')?'/inicio'
-    :ruta.startsWith('/comunidades')?'/comunidades'
-    :ruta.startsWith('/plantillas')?'/plantillas'
-    :ruta.startsWith('/bitacora')?'/bitacora'
-    :ruta.startsWith('/mantenciones')?'/mantenciones'
+    :ruta.startsWith('/comunidades')?'/inicio'
+    :ruta.startsWith('/plantillas')?'/inicio'
+    :ruta.startsWith('/bitacora')?'/inicio'
+    :ruta.startsWith('/mantenciones')?'/inicio'
     :ruta.startsWith('/proveedores')?'/proveedores'
     :ruta.startsWith('/contabilidad')?'/contabilidad'
     :ruta.startsWith('/propiedades')?'/propiedades':'/pipeline';
-  await page.locator('.home-general-enlaces a[href="'+raiz+'"]').click();
+  const nombre={
+    '/inicio':'Levantamientos','/proveedores':'Red de proveedores',
+    '/contabilidad':'Gestión contable','/propiedades':'Arriendos y ventas',
+    '/pipeline':'Gestión comercial'
+  }[raiz];
+  await page.locator('.seleccion-home__tarjeta').filter({hasText:nombre}).first().click();
   await page.waitForURL(u=>u.pathname===raiz,{timeout:12000});
   if(operacion) {
     if(ruta==='/nuevo') await clickDestino(page,'/nuevo','Nuevo levantamiento');
