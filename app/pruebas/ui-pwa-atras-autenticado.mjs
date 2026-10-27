@@ -67,14 +67,13 @@ try {
     const {ctx,page}=await crearPagina();
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-    await page.getByRole('heading',{name:'Dashboards por área'}).waitFor();
+    await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor();
     assert.equal(await page.locator('.seleccion-home').count(),0);
     assert.equal(await page.locator('.seo-pantalla').count(),0);
     const area=await page.evaluate(({userId})=>localStorage.getItem('coproactiva_area:'+userId),{userId});
     assert.equal(area,null,'la preferencia de área antigua no modifica la apertura');
-    await page.getByRole('button',{name:/Cambiar vista/}).click();
-    await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
-    await page.locator('.home-general-modulo[href="/seo"]').click();
+    await page.getByRole('button',{name:/Comercial/}).click();
+    await page.getByRole('link',{name:/SEO y Analítica/}).click();
     await page.waitForURL(url=>url.pathname==='/seo',{timeout:20000});
     await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
     // Al recargar, sigue en el mismo módulo y conserva sus filtros.
@@ -92,7 +91,7 @@ try {
     await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:15000});
     await page.locator('.barra-area-volver').click();
     await page.waitForURL(url=>url.pathname==='/',{timeout:15000});
-    await page.getByRole('heading',{name:/Dashboards por área|Módulos de trabajo/}).waitFor();
+    await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor();
     console.log('PWA Inicio → SEO → filtros → recarga → Inicio único: OK');
     await ctx.close();
   }
@@ -106,7 +105,7 @@ try {
     });
     await page.goto(base+'/seo',{waitUntil:'domcontentloaded'});
     await page.waitForURL(url=>url.pathname==='/',{timeout:20000});
-    await page.getByRole('heading',{name:'Dashboards por área'}).waitFor();
+    await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor();
     assert.equal(await page.locator('.seo-pantalla').count(),0);
     console.log('PWA restablecida → Home único: OK');
     await ctx.close();
@@ -116,12 +115,12 @@ try {
   {
     const {ctx,page}=await crearPagina('jefatura');
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
-    await page.getByRole('heading',{name:'Dashboards por área'}).waitFor({timeout:20000});
+    await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor({timeout:20000});
     assert.equal(await page.getByRole('button',{name:/Finanzas/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Administración y ajustes/}).count(),0);
     await page.getByRole('button',{name:/Comercial/}).click();
     assert.equal(await page.getByRole('link',{name:/SEO y Analítica/}).count(),0);
-    await page.locator('.home-general-indicador[href="/pipeline"]').click();
+    await page.getByRole('link',{name:/Pipeline comercial/}).click();
     await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
     console.log('Jefatura → Home filtrado y Pipeline: OK');
     await ctx.close();
@@ -131,7 +130,7 @@ try {
   {
     const {ctx,page}=await crearPagina('terreno');
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
-    await page.getByRole('heading',{name:'Dashboards por área'}).waitFor({timeout:20000});
+    await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor({timeout:20000});
     assert.equal(await page.getByRole('button',{name:/Comercial/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Finanzas/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Operaciones/}).count(),1);
