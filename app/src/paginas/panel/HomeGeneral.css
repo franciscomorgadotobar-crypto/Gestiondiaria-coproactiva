@@ -27,3 +27,7 @@
 .home-general-vacio{padding:20px}
 .home-general button:focus-visible,.home-general a:focus-visible{outline:3px solid #ad6331;outline-offset:2px}
 @media(max-width:640px){.home-general-cabecera{display:grid}.home-general-buscar{width:100%;min-width:0}.home-general-encabezado{padding:15px}.home-general-enlace{padding:12px 17px}.home-general-metricas>div{padding:13px}.home-general-metricas{gap:8px}}
+
+.home-general-perfil{display:flex;align-items:center;gap:10px;flex:none}
+.home-general-perfil .boton{min-height:42px}
+@media(max-width:400px){.home-general-perfil{gap:4px}.home-general-perfil .boton{padding:6px 8px}}
