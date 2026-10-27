@@ -9,6 +9,7 @@ import { useVolverGlobal, volverPorJerarquia } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import { prepararCarpetasDrive } from '../../lib/drive';
+import {completarCorreo} from '../../lib/plantillasCorreo';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
  *
@@ -86,6 +87,16 @@ export default function Pipeline() {
   const [mensajeCorreo, setMensajeCorreo] = useState('');
   const [enviandoCorreo, setEnviandoCorreo] = useState(false);
   const [avisoCorreo, setAvisoCorreo] = useState(null);
+  const [plantillasCorreo,setPlantillasCorreo] = useState([]);
+  const [plantillaElegida,setPlantillaElegida] = useState('');
+  useEffect(()=>{
+    let activo=true;
+    supabase.from('plantillas_correo_crm').select('id,nombre,asunto,cuerpo')
+      .eq('activa',true).order('nombre').then(({data,error})=>{
+        if(activo&&!error)setPlantillasCorreo(data||[]);
+      });
+    return()=>{activo=false};
+  },[]);
 
   async function cargar() {
     setError(null);
@@ -167,7 +178,16 @@ export default function Pipeline() {
     setCorreoProspecto(p);
     setAsuntoCorreo('Coproactiva · ' + p.nombre_condominio);
     setMensajeCorreo('');
+    setPlantillaElegida('');
     requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
+  function cargarPlantillaCorreo(id) {
+    const p=plantillasCorreo.find(x=>x.id===id);
+    setPlantillaElegida(id);
+    if(!p||!correoProspecto)return;
+    setAsuntoCorreo(completarCorreo(p.asunto,correoProspecto,perfil?.nombre));
+    setMensajeCorreo(completarCorreo(p.cuerpo,correoProspecto,perfil?.nombre));
   }
 
   async function enviarCorreo(e) {
@@ -370,6 +390,14 @@ export default function Pipeline() {
           <form id="pipeline-correo" className="tarjeta pipeline-correo" onSubmit={enviarCorreo}>
             <h2 className="h4">Enviar correo a {correoProspecto.nombre_contacto || correoProspecto.nombre_condominio}</h2>
             <p className="chico apagado">Para: {correoProspecto.email} · desde contacto@coproactiva.cl</p>
+            <label className="campo">
+              <span className="etiqueta-campo">Plantilla (opcional)</span>
+              <select value={plantillaElegida} onChange={e=>cargarPlantillaCorreo(e.target.value)}>
+                <option value="">Redactar desde cero</option>
+                {plantillasCorreo.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+              </select>
+              <Link to="/plantillas-correo" className="micro">Administrar plantillas de correo</Link>
+            </label>
             <label className="campo">
               <span className="etiqueta-campo">Asunto</span>
               <input value={asuntoCorreo} required maxLength={160}
