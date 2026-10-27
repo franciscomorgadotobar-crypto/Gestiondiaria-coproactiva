@@ -1,8 +1,8 @@
 /*
  * Chromium móvil con perfil Supabase simulado (no toca la base real).
  * El botón del correo de nuevo prospecto (`/pipeline?etapa=nuevo&origen=correo`)
- * abre Pipeline directo en una apertura nueva, con el selector detrás y el área
- * CRM elegida. Una URL interna sin esa marca sigue abriendo el selector.
+ * abre Pipeline directo en una apertura nueva, con el Home único detrás y el área
+ * CRM elegida. Una URL interna sin esa marca sigue abriendo el Home.
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
@@ -52,22 +52,22 @@ try {
   {
     const { ctx, page } = await abrir('/pipeline?etapa=nuevo&origen=correo');
     const url = new URL(page.url());
-    assert.equal(url.pathname, '/pipeline', 'abre Pipeline, no el selector');
+    assert.equal(url.pathname, '/pipeline', 'abre Pipeline, no el Home');
     assert.equal(url.search, '?etapa=nuevo', 'sin la marca origen');
     assert.equal(await page.evaluate(id => localStorage.getItem('coproactiva_area:' + id), userId), 'comercial');
-    assert.equal(await page.getByText('¿En qué área vas a trabajar?').count(), 0);
+    assert.equal(await page.getByText('Módulos de trabajo').count(), 0);
     await page.goBack();
     await page.waitForTimeout(500);
-    assert.equal(new URL(page.url()).pathname, '/', 'Atrás vuelve al selector');
-    console.log('OK enlace de correo → Pipeline; Atrás → selector');
+    assert.equal(new URL(page.url()).pathname, '/', 'Atrás vuelve al Home');
+    console.log('OK enlace de correo → Pipeline; Atrás → Home');
     await ctx.close();
   }
 
   {
     const { ctx, page } = await abrir('/pipeline');
     assert.equal(new URL(page.url()).pathname, '/', 'sin marca mantiene la política de Home');
-    assert.ok(await page.getByText('¿En qué área vas a trabajar?').count() > 0);
-    console.log('OK /pipeline sin marca → selector');
+    assert.ok(await page.getByText('Módulos de trabajo').count() > 0);
+    console.log('OK /pipeline sin marca → Home');
     await ctx.close();
   }
 } finally {
