@@ -16,7 +16,7 @@ function fechaHora(iso) {
 export default function Notificaciones() {
   const navegar = useNavigate();
   const { perfil } = useSesion();
-  useVolverGlobal(() => navegar('/inicio'));
+  useVolverGlobal(() => navegar('/'));
 
   const [generales, setGenerales] = useState(null);
   const [mantenciones, setMantenciones] = useState(null);
@@ -70,8 +70,8 @@ export default function Notificaciones() {
       <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
           <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-                  onClick={() => navegar('/inicio')}>
-            ‹ Inicio
+                  onClick={() => navegar('/')}>
+            ‹ Home
           </button>
         </div>
         <h1 className="h3">Notificaciones</h1>
