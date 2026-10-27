@@ -76,11 +76,11 @@ try {
   // Home único. Secciones plegables en vez de la pantalla inicial de selección.
   {
     const {ctx,page}=await crear();
-    await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor();
+    await page.getByRole('heading',{name:'Dashboards por área'}).waitFor();
     assert.equal(await page.locator('.seleccion-home').count(),0,'no existe un primer selector de módulos');
     assert.equal(await page.getByRole('button',{name:/Operaciones/}).getAttribute('aria-expanded'),'true');
     await page.getByRole('button',{name:/Comercial/}).click();
-    await page.getByRole('link',{name:/Pipeline comercial/}).click();
+    await page.locator('.home-general-indicador[href="/pipeline"]').click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
     await page.getByRole('heading',{name:/Pipeline/}).waitFor();
     const barra=page.locator('.barra-inferior-movil');
@@ -126,7 +126,7 @@ try {
   // Operaciones: acceso directo y filtros de compromisos por comunidad.
   {
     const {ctx,page}=await crear({ancho:360,alto:740});
-    await page.getByRole('link',{name:/Compromisos y avances/}).click();
+    await page.locator('.home-general-indicador[href="/compromisos"]').click();
     await page.waitForURL(u=>u.pathname==='/compromisos',{timeout:20000});
     await page.getByRole('heading',{name:'Compromisos y avances'}).waitFor();
     await page.getByRole('combobox',{name:'Etapa'}).selectOption('en_espera');
@@ -173,8 +173,8 @@ try {
       assert.equal(await page.locator('.home-general').getByRole('button',{name:new RegExp(nombre)}).count(),1,nombre);
     }
     await page.locator('.home-general').getByRole('button',{name:/Finanzas/}).click();
-    await page.getByRole('link',{name:/Gestión contable/}).click();
-    await page.waitForURL(u=>u.pathname==='/contabilidad',{timeout:20000});
+    await page.locator('.home-general-indicador[href="/contabilidad/asientos"]').first().click();
+    await page.waitForURL(u=>u.pathname==='/contabilidad/asientos',{timeout:20000});
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
     console.log('Escritorio · Finanzas desde Home: OK');
     await ctx.close();
@@ -186,7 +186,7 @@ try {
     assert.equal(await page.locator('.home-general').getByRole('button',{name:/Administración y ajustes/}).count(),0);
     await page.getByRole('button',{name:/Comercial/}).click();
     assert.equal(await page.getByRole('link',{name:/SEO y Analítica/}).count(),0);
-    await page.getByRole('link',{name:/Pipeline comercial/}).click();
+    await page.locator('.home-general-indicador[href="/pipeline"]').click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
     console.log('Permisos · Jefatura ve solo módulos autorizados: OK');
     await ctx.close();
