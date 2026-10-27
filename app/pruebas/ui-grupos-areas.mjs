@@ -79,6 +79,10 @@ try {
     await page.getByRole('heading',{name:'Dashboards por área'}).waitFor();
     assert.equal(await page.locator('.seleccion-home').count(),0,'no existe un primer selector de módulos');
     assert.equal(await page.getByRole('button',{name:/Operaciones/}).getAttribute('aria-expanded'),'true');
+    await page.getByRole('button',{name:/Operaciones/}).click();
+    assert.equal(await page.locator('.home-general-tablero').count(),0);
+    await page.getByRole('button',{name:/Operaciones/}).click();
+    assert.equal(await page.locator('.home-general-enlaces').count(),0);
     await page.getByRole('button',{name:/Comercial/}).click();
     await page.locator('.home-general-indicador[href="/pipeline"]').click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
