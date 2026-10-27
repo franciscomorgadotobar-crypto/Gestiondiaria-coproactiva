@@ -94,7 +94,7 @@ async function irPantalla(page,vista) {
   if (operacion) {
     await page.locator('.home-general-metricas a[href="/inicio"]').click();
   } else if (ruta.startsWith('/contabilidad')) {
-    await page.getByRole('button',{name:/Finanzas/}).click();
+    await page.locator('.home-general').getByRole('button',{name:/Finanzas/}).click();
     await page.locator('.home-general-indicador[href="/contabilidad/asientos"]').first().click();
   } else {
     await page.getByRole('button',{name:/Cambiar vista/}).click();
