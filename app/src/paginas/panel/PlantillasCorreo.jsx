@@ -78,7 +78,7 @@ export default function PlantillasCorreo(){
     </div>
     <p className="chico apagado">Variables frecuentes: {VARIABLES_CORREO.join(' · ')}</p>
     <div className="tarjeta plantillas-correo-criterios"><strong>Convenciones del catálogo</strong>
-      <p>Trato de usted; sin firma incorporada. CCO recomendado: {CCO_RECOMENDADO}.</p>
+      <p>Trato de usted; sin firma incorporada. CCO por defecto en envíos desde el CRM: {CCO_RECOMENDADO}.</p>
       <p>Los campos entre <code>{'{{llaves}}'}</code> y las instrucciones entre [corchetes] se deben completar o eliminar. Los adjuntos mencionados no se incorporan automáticamente. Las respuestas requieren continuar el hilo original.</p>
     </div>
     <div className="plantillas-correo-filtros">
