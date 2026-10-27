@@ -92,7 +92,7 @@ try {
     await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:15000});
     await page.locator('.barra-area-volver').click();
     await page.waitForURL(url=>url.pathname==='/',{timeout:15000});
-    await page.getByRole('heading',{name:'Dashboards por área'}).waitFor();
+    await page.getByRole('heading',{name:/Dashboards por área|Módulos de trabajo/}).waitFor();
     console.log('PWA Inicio → SEO → filtros → recarga → Inicio único: OK');
     await ctx.close();
   }
