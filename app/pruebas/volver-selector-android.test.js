@@ -32,7 +32,7 @@ test('todos los módulos y pantallas profundas comparten Home autorizado',()=>{
   }
   assert.ok(RAICES_CON_SELECTOR.length>=20);
   assert.equal(homePermitido(true),'/');
-  assert.equal(homePermitido(false),'/inicio');
+  assert.equal(homePermitido(false),'/');
 });
 
 test('entrada sin historial en SEO: primero Home de módulos y luego SEO con push',()=>{
@@ -61,14 +61,14 @@ test('abriendo un levantamiento directamente la última página será el selecto
   assert.equal(consumirRegresoPendiente('/').destino,'/control/123/editar?comunidad=7');
 });
 
-test('perfil con una sola área: home Operación antes del detalle y nunca selector multiárea',()=>{
+test('perfil de terreno: el Home único también está antes del detalle',()=>{
   reiniciarHistorialSelector();
   const x=simular('/comunidades/123','',0);
   assert.equal(prepararHistorialSelector(x.navegar,x.ubicacion,0,true,false),true);
-  assert.equal(x.acciones[0].destino,'/inicio');
+  assert.equal(x.acciones[0].destino,'/');
   assert.deepEqual(x.acciones[0].opciones.state,{homeAreaCoproactiva:true});
-  assert.equal(consumirRegresoPendiente('/inicio').destino,'/comunidades/123');
-  assert.equal(debePrepararHistorialSelector('/inicio',0,true,false),false);
+  assert.equal(consumirRegresoPendiente('/').destino,'/comunidades/123');
+  assert.equal(debePrepararHistorialSelector('/inicio',0,true,false),true);
   assert.equal(debePrepararHistorialSelector('/inicio',0,true,true),true);
 });
 
@@ -79,7 +79,7 @@ test('sin sesión, cliente o desde un historial válido no se altera navegación
   }
   assert.equal(debePrepararHistorialSelector('/seo',1,true,true),false);
   assert.equal(debePrepararHistorialSelector('/seo',0,false,true),false);
-  assert.equal(debePrepararHistorialSelector('/inicio',0,true,false),false);
+  assert.equal(debePrepararHistorialSelector('/inicio',0,true,false),true);
 });
 
 test('si ya se visitó Home no añade entradas; Volver usa el índice real registrado',()=>{
@@ -114,16 +114,13 @@ test('guardia global no depende de SEO ni del panel y respeta permisos',()=>{
   assert.match(app,/idAnterior\.current !== idUsuario/);
 });
 
-test('el Home se determina por permisos, nunca por un área guardada',()=>{
-  const app=read('App.jsx');
-  const selector=read('paginas/SeleccionArea.jsx');
-  assert.match(app,/\['superadmin', 'admin', 'jefatura'\]\.includes\(perfil\.rol\)/);
-  assert.match(app,/if \(perfil\?\.rol === 'cliente'\) return <Navigate to="\/portal" replace \/>/);
-  assert.match(app,/if \(!tieneCRM\(perfil\)\) return <PanelEscritorio><Inicio \/><\/PanelEscritorio>/);
-  assert.match(app,/return <SeleccionArea \/>/);
-  assert.match(app,/if \(idUsuario && !esContinuacionDocumento\(/);
-  assert.doesNotMatch(app,/RestaurarAreaGuardada|restauracionAutomaticaEjecutada/);
-  assert.match(selector,/const puedeConfigurar = \['superadmin', 'admin'\]\.includes\(perfil\?\.rol\)/);
+test('el Home se determina por permisos, no por la última vista guardada',()=>{
+ const app=read('App.jsx');
+ assert.match(app,/if \(perfil\?\.rol === 'cliente'\) return <Navigate to="\/portal" replace \/>/);
+ assert.match(app,/return <PanelEscritorio><HomeGeneral \/><\/PanelEscritorio>/);
+ assert.doesNotMatch(app,/<SeleccionArea/);
+ assert.match(app,/if \(idUsuario && !esContinuacionDocumento\(/);
+ assert.doesNotMatch(app,/RestaurarAreaGuardada|restauracionAutomaticaEjecutada/);
 });
 
 test('perfil cliente: detalle del portal vuelve al inicio del portal, sin selector administrativo',()=>{
