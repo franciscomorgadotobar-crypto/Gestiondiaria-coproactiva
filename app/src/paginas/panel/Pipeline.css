@@ -90,3 +90,43 @@
 .pipeline-correo p { margin: 0; }
 .pipeline-correo textarea { min-height: 150px; }
 .pipeline-formulario { scroll-margin-top: 18px; }
+
+
+/* El embudo muestra fichas compactas de acceso, no formularios ni acciones de
+   diagnóstico. Una ficha de gestión separada contiene todas las operaciones. */
+.pipeline-tarjeta{padding:0;overflow:hidden;cursor:default}
+.pipeline-tarjeta-abrir{display:grid;gap:8px;width:100%;min-height:118px;padding:15px;border:0;border-radius:inherit;text-align:left;background:transparent;color:var(--texto-titulo);cursor:pointer}
+.pipeline-tarjeta-abrir:hover{background:var(--hover)}
+.pipeline-tarjeta-abrir:focus-visible{outline:3px solid var(--naranja);outline-offset:-3px}
+.pipeline-tarjeta-fila{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.pipeline-tarjeta-gestion{color:var(--enlace);font-size:11px;font-weight:700;white-space:nowrap}
+.pipeline-tarjeta-contacto{display:block;overflow-wrap:anywhere;line-height:1.55}
+.pipeline-tarjeta-tags{display:flex;flex-wrap:wrap;gap:5px}
+.pipeline-tarjeta-accion{display:block;line-height:1.45;overflow-wrap:anywhere}
+.pipeline-ficha{display:grid;gap:19px;padding:22px;max-width:920px;margin-bottom:20px}
+.pipeline-ficha-encabezado{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.pipeline-ficha-encabezado h2{margin:8px 0 4px;overflow-wrap:anywhere}
+.pipeline-ficha-encabezado p{margin:0}
+.pipeline-ficha-informacion{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.pipeline-ficha-informacion>div{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}
+.pipeline-ficha-informacion .etiqueta-campo{font-size:10px}
+.pipeline-ficha-informacion strong,.pipeline-ficha-informacion span:last-child{font-size:13px}
+.pipeline-ficha-notas{padding:13px 15px;background:var(--papel);border-radius:11px}
+.pipeline-ficha-notas strong{font-size:12px}
+.pipeline-ficha-notas p{font-size:12px;white-space:pre-wrap;margin:7px 0 0;overflow-wrap:anywhere;line-height:1.55}
+.pipeline-ficha-gestionar{display:grid;gap:11px;padding-top:12px;border-top:1px solid var(--borde-suave)}
+.pipeline-ficha-gestionar h3,.pipeline-ficha-gestionar p{margin:0}
+.pipeline-ficha-acciones{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-start}
+.pipeline-ficha-acciones>a,.pipeline-ficha-acciones>button{min-height:42px;display:inline-flex;align-items:center;justify-content:center;flex:0 1 auto}
+.pipeline-ficha-acciones .pipeline-diagnostico{flex-basis:100%;max-width:440px}
+.pipeline-ficha-etapa{max-width:300px;padding-top:12px;border-top:1px solid var(--borde-suave)}
+.pipeline-ficha-etapa select{min-height:44px}
+.pipeline-ficha .boton:focus-visible{outline:3px solid var(--naranja);outline-offset:2px}
+@media(max-width:640px){
+ .pipeline-ficha{padding:16px;gap:16px}
+ .pipeline-ficha-informacion{grid-template-columns:1fr}
+ .pipeline-ficha-acciones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .pipeline-ficha-acciones>a,.pipeline-ficha-acciones>button{min-width:0;white-space:normal;text-align:center}
+ .pipeline-ficha-acciones .pipeline-diagnostico{grid-column:1 / -1}
+}
+@media(max-width:370px){.pipeline-ficha-acciones{grid-template-columns:1fr}}
