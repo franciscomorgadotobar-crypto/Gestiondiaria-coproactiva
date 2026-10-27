@@ -7,9 +7,14 @@ test('Home único sin selector intermedio y secciones operativas',()=>{
  const app=read('src/App.jsx'),home=read('src/paginas/panel/HomeGeneral.jsx');
  assert.match(app,/return <PanelEscritorio><HomeGeneral\s*\/><\/PanelEscritorio>/);
  assert.doesNotMatch(app,/<SeleccionArea/);
- for(const name of ['Comercial','Operaciones','Finanzas','Administración y ajustes','Compromisos y avances'])
+ for(const name of ['Comercial','Operaciones','Finanzas','Administración y ajustes','Dashboards por área'])
    assert.ok(home.includes(name),name);
  assert.match(home,/aria-expanded=\{abierto\}/);
+ assert.match(home,/home-general-indicadores/);
+ assert.doesNotMatch(home,/g\.enlaces\.map/);
+ const datos=read('src/lib/homeIndicadores.js');
+ assert.match(datos,/contar\('compromisos_administracion'\)/);
+ assert.match(datos,/valor:error \? null/);
  assert.match(app,/path="\/compromisos"/);
  assert.match(app,/path="\/plantillas-correo"/);
 });

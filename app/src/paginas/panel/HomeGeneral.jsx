@@ -5,6 +5,7 @@ import { useSesion } from '../../lib/sesion';
 import { guardarArea } from '../../lib/area';
 import { leerOrganizacion, guardarOrganizacion, modulosDisponibles } from '../../lib/selectorModulos';
 import Campana from '../../componentes/Campana';
+import { indicadoresHomeArea } from '../../lib/homeIndicadores';
 import IconoNavegacion, { iconoRutaCoproactiva } from '../../componentes/IconoNavegacion';
 import './HomeGeneral.css';
 
@@ -26,6 +27,7 @@ function leerVista(usuarioId) {
 export default function HomeGeneral() {
   const { perfil, salir } = useSesion();
   const [resumen, setResumen] = useState({ prospectos:null, compromisos:null, pendientes:null });
+  const [indicadores, setIndicadores] = useState({});
   const [aviso, setAviso] = useState('');
   const [filtro, setFiltro] = useState('');
   const [abiertos, setAbiertos] = useState(() => new Set(['operaciones']));
@@ -36,11 +38,11 @@ export default function HomeGeneral() {
   const rol = perfil?.rol;
   const comercial = ['superadmin','admin','jefatura'].includes(rol);
   const administracion = ['superadmin','admin'].includes(rol);
-  const superadmin = rol === 'superadmin';
 
   useEffect(() => {
     setOrganizacion(leerOrganizacion(perfil?.id));
     setVista(leerVista(perfil?.id));
+    setIndicadores({});
   }, [perfil?.id]);
 
   useEffect(() => {
@@ -77,55 +79,51 @@ export default function HomeGeneral() {
     return () => { activo = false; };
   }, [perfil?.id, comercial]);
 
+  // En la organización por áreas se muestran solo tableros de indicadores.
+  // El catálogo de módulos no se duplica aquí: permanece en "Por módulos"
+  // y en la navegación lateral/inferior.
   const secciones = useMemo(() => [
-    {id:'comercial', nombre:'Comercial', descripcion:'Contactos web, prospectos y seguimiento comercial.',
-      area:'comercial', mostrar:comercial, enlaces:[
-        ['Pipeline comercial','/pipeline','Contactos de formularios y etapas de oportunidad'],
-        ['Arriendos y ventas','/propiedades','Propiedades y publicaciones'],
-        ...(administracion ? [['SEO y Analítica','/seo','Resultados de la web y posicionamiento']] : []),
-        ['Plantillas de correo','/plantillas-correo','Mensajes reutilizables para prospectos']
-      ]},
-    {id:'operaciones', nombre:'Operaciones', descripcion:'Comunidades y trabajo en terreno.',
-      area:'operacion', mostrar:true, enlaces:[
-        ['Levantamientos','/inicio','Pendientes y realizados por persona'],
-        ['Comunidades','/comunidades','Fichas, compromisos y documentos'],
-        ['Compromisos y avances','/compromisos','Etapas, fechas y responsables por comunidad'],
-        ['Mantenciones','/mantenciones','Planificación y seguimiento'],
-        ['Bitácora','/bitacora','Incidencias y observaciones'],
-        ['Mapa','/mapa','Ubicaciones y visitas'],
-        ...(administracion ? [
-          ['Red de proveedores','/proveedores','Directorio y comunicaciones'],
-          ['Recepción y atención','/whatsapp','Conversaciones y solicitudes']
-        ] : []),
-        ...(comercial ? [['Plantillas de levantamientos','/plantillas','Formularios operativos']] : [])
-      ]},
-    {id:'finanzas', nombre:'Finanzas', descripcion:'Gestión contable y financiera.',
-      area:'finanzas', mostrar:administracion,
-      enlaces:[['Gestión contable','/contabilidad','Asientos, libro mayor y estados financieros']]},
-    {id:'general', nombre:'Mi espacio', descripcion:'Avisos, información y cuenta personal.',
-      area:null, mostrar:true, enlaces:[
-        ['Notificaciones','/notificaciones','Avisos pendientes'],
-        ['Mi cuenta','/mi-cuenta','Perfil y preferencias'],
-        ['Aprendizaje','/conocimientos','Guías y normativas']
-      ]},
-    // Configuración debe quedar siempre al final, también en vista cuadrícula.
-    {id:'administracion', nombre:'Administración y ajustes',
-      descripcion:'Equipo, usuarios, permisos, accesos de clientes y configuración general.',
-      area:null, mostrar:administracion, enlaces:[
-        ['Equipo y permisos','/equipo','Usuarios y accesos internos'],
-        ...(superadmin ? [['Clientes y accesos','/clientes','Permisos del portal cliente']] : []),
-        ['Configuración general','/configuracion','Ajustes de la aplicación']
-      ]}
-  ].filter(grupo => grupo.mostrar), [comercial,administracion,superadmin]);
+    { id:'comercial', nombre:'Comercial',
+      descripcion:'Prospectos y seguimiento de oportunidades.',
+      area:'comercial', mostrar:comercial },
+    { id:'operaciones', nombre:'Operaciones',
+      descripcion:'Comunidades, compromisos y trabajo en terreno.',
+      area:'operacion', mostrar:true },
+    { id:'finanzas', nombre:'Finanzas',
+      descripcion:'Gestión contable y entidades.',
+      area:'finanzas', mostrar:administracion },
+    { id:'general', nombre:'Aprendizaje y avisos',
+      descripcion:'Biblioteca educativa y notificaciones personales.',
+      area:null, mostrar:true },
+    { id:'administracion', nombre:'Administración y ajustes',
+      descripcion:'Usuarios, permisos y accesos de clientes.',
+      area:null, mostrar:administracion }
+  ].filter(g => g.mostrar), [comercial,administracion]);
+
+  // Se consultan solamente los dashboards que están abiertos. Al contraerlos
+  // dejan de mostrarse tanto los indicadores como su contenido, sin tocar rutas.
+  useEffect(() => {
+    if (!perfil?.id || organizacion !== 'areas') return;
+    let vigente = true;
+    const visibles = secciones.filter(g => abiertos.has(g.id) || filtro.trim());
+    for (const grupo of visibles) {
+      indicadoresHomeArea(grupo.id, perfil.id)
+        .then(datos => {
+          if (vigente) setIndicadores(prev => ({ ...prev, [grupo.id]:datos }));
+        })
+        .catch(() => {
+          if (vigente) setIndicadores(prev => ({ ...prev, [grupo.id]:[] }));
+        });
+    }
+    return () => { vigente = false; };
+  }, [perfil?.id, organizacion, abiertos, secciones, filtro]);
 
   const modulos = useMemo(() => modulosDisponibles(perfil), [perfil]);
   const q = filtro.trim().toLocaleLowerCase('es-CL');
-  const grupos = secciones.map(grupo => {
-    const coincideGrupo = (grupo.nombre + ' ' + grupo.descripcion).toLocaleLowerCase('es-CL').includes(q);
-    return { ...grupo, enlaces: grupo.enlaces.filter(
-      x => !q || coincideGrupo || (x[0] + ' ' + x[2]).toLocaleLowerCase('es-CL').includes(q)
-    ) };
-  }).filter(grupo => grupo.enlaces.length);
+  // Buscar en áreas no vuelve a mostrar módulos: solo filtra dashboards.
+  const grupos = secciones.filter(g => !q ||
+    (g.nombre + ' ' + g.descripcion + ' ' +
+      (indicadores[g.id] ?? []).map(m => m.nombre).join(' ')).toLocaleLowerCase('es-CL').includes(q));
   const modulosFiltrados = modulos.filter(m => !q ||
     (m.titulo + ' ' + m.descripcion + ' ' + m.etiqueta).toLocaleLowerCase('es-CL').includes(q));
 
@@ -177,11 +175,13 @@ export default function HomeGeneral() {
         </Link>
       </div>
       <div className="home-general-cabecera">
-        <div><h2 className="h4">Módulos de trabajo</h2>
-          <p className="chico apagado">Accede a tus herramientas desde un solo lugar.</p></div>
+        <div><h2 className="h4">{organizacion === 'areas' ? 'Dashboards por área' : 'Módulos de trabajo'}</h2>
+          <p className="chico apagado">{organizacion === 'areas'
+            ? 'Consulta los indicadores de cada área. Abre o contrae el dashboard desde su encabezado.'
+            : 'Accede a tus herramientas desde un solo lugar.'}</p></div>
         <div className="home-general-herramientas">
           <label className="home-general-buscar">
-            <span className="micro">Buscar módulo</span>
+            <span className="micro">{organizacion === 'areas' ? 'Buscar área o indicador' : 'Buscar módulo'}</span>
             <input type="search" value={filtro} onChange={e=>setFiltro(e.target.value)}
               placeholder="Buscar…" />
           </label>
@@ -233,26 +233,33 @@ export default function HomeGeneral() {
         ? <div className={'home-general-secciones vista-' + vista}>
           {grupos.map(g => {
             const abierto = Boolean(q) || abiertos.has(g.id);
+            const datos = indicadores[g.id];
             return <section key={g.id} className="tarjeta home-general-seccion">
               <button type="button" className="home-general-encabezado" aria-expanded={abierto}
                 aria-controls={'seccion-' + g.id} onClick={() => alternar(g.id)}>
                 <span><strong>{g.nombre}</strong><small>{g.descripcion}</small></span>
-                <span className="home-general-contador">{g.enlaces.length}</span>
-                <span aria-hidden="true">{abierto ? '⌃' : '⌄'}</span>
+                <span className="home-general-contador">Dashboard</span>
+                <span className="home-general-chevron" aria-hidden="true">{abierto ? '⌃' : '⌄'}</span>
               </button>
-              {abierto && <div id={'seccion-' + g.id} className="home-general-enlaces">
-                {g.enlaces.map(([nombre,ruta,desc]) =>
-                  <Link key={ruta} to={ruta} className="home-general-enlace"
+              {abierto && <div id={'seccion-' + g.id} className="home-general-tablero">
+                {!datos && <p className="chico apagado home-general-cargando" role="status">Cargando indicadores…</p>}
+                {datos && <div className={'home-general-indicadores vista-' + vista}>
+                  {datos.map(dato => <Link key={dato.nombre} to={dato.ruta}
+                    className="home-general-indicador"
                     onClick={() => { if (g.area) guardarArea(g.area); }}>
-                    <span className="home-general-enlace-icono"><IconoNavegacion tipo={iconoRutaCoproactiva(ruta)} /></span>
-                    <span className="home-general-enlace-texto"><strong>{nombre}</strong><small>{desc}</small></span>
-                    <span aria-hidden="true">›</span>
-                  </Link>
-                )}
+                    <strong className="home-general-indicador-valor">
+                      {typeof dato.valor === 'number' ? dato.valor.toLocaleString('es-CL') : '—'}
+                    </strong>
+                    <span className="home-general-indicador-texto">{dato.nombre}</span>
+                    {dato.nota && <small>{dato.nota}</small>}
+                    <span className="home-general-indicador-ir" aria-hidden="true">›</span>
+                  </Link>)}
+                </div>}
+                {datos?.length === 0 && <p className="chico apagado">No se pudieron cargar los indicadores de esta área.</p>}
               </div>}
             </section>;
           })}
-          {!grupos.length && <div className="tarjeta home-general-vacio">No hay módulos que coincidan con la búsqueda.</div>}
+          {!grupos.length && <div className="tarjeta home-general-vacio">No hay áreas que coincidan con la búsqueda.</div>}
         </div>
         : <div className={'home-general-modulos vista-' + vista}>
           {modulosFiltrados.map(modulo =>
