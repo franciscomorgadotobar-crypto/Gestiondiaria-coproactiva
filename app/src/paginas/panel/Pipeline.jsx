@@ -72,7 +72,7 @@ export default function Pipeline() {
   const navegar = useNavigate();
   const location = useLocation();
   const idAbiertoPorUrl = useRef(null);
-  useVolverGlobal(() => volverPorJerarquia(navegar, '/pipeline'));
+  useVolverGlobal(() => volverPipeline());
   const [prospectos, setProspectos] = useState(null);
   const [diagnosticos, setDiagnosticos] = useState(new Map());   // prospecto_id → { control, resultado }
   const [equipo, setEquipo] = useState([]);
@@ -92,6 +92,59 @@ export default function Pipeline() {
   const [plantillaElegida,setPlantillaElegida] = useState('');
   const [varianteElegida,setVarianteElegida] = useState('principal');
   const [adjuntosCorreo,setAdjuntosCorreo] = useState([]);
+  // El prospecto seleccionado y su subvista viven en la URL. Android y el
+  // navegador conservan Atrás: embudo → ficha → editar/correo.
+  const parametros = new URLSearchParams(location.search);
+  const prospectoSeleccionadoId = parametros.get('prospecto');
+  const accionSeleccionada = parametros.get('accion');
+  const prospectoSeleccionado = prospectos?.find(x => x.id === prospectoSeleccionadoId) ?? null;
+
+  function navegarPipeline(params, state = null, replace = false) {
+    navegar({pathname:'/pipeline',search:params.toString() ? '?' + params.toString() : ''},
+      {state,replace,preventScrollReset:true});
+  }
+  function abrirGestion(p) {
+    if (!p) return;
+    setError(null);
+    setAbierto(null);
+    setCorreoProspecto(null);
+    const params=new URLSearchParams(location.search);
+    params.set('prospecto',p.id);
+    params.delete('accion');
+    navegarPipeline(params,{desdeEmbudo:true});
+    window.scrollTo?.({top:0,behavior:'instant'});
+  }
+  function abrirAccion(accion) {
+    const params=new URLSearchParams(location.search);
+    params.set('accion',accion);
+    navegarPipeline(params,{desdeFicha:true});
+  }
+  function volverFicha() {
+    setError(null);
+    setAbierto(null);
+    setCorreoProspecto(null);
+    if (location.state?.desdeFicha) return navegar(-1);
+    const params=new URLSearchParams(location.search);
+    params.delete('accion');
+    navegarPipeline(params,null,true);
+  }
+  function cerrarGestion() {
+    setError(null);
+    setAbierto(null);
+    setCorreoProspecto(null);
+    if (location.state?.desdeEmbudo) return navegar(-1);
+    const params=new URLSearchParams(location.search);
+    params.delete('prospecto');
+    params.delete('accion');
+    navegarPipeline(params,null,true);
+  }
+  function volverPipeline() {
+    if (abierto==='nuevo') return cerrarForm();
+    if (prospectoSeleccionado && (accionSeleccionada || abierto===prospectoSeleccionado.id || correoProspecto))
+      return volverFicha();
+    if (prospectoSeleccionado) return cerrarGestion();
+    return volverPorJerarquia(navegar,'/pipeline');
+  }
   useEffect(()=>{
     let activo=true;
     supabase.from('plantillas_correo_crm').select('id,codigo,nombre,categoria,uso,etapa_crm,adjunto_sugerido,asunto,cuerpo,variantes')
@@ -166,9 +219,8 @@ export default function Pipeline() {
     idAbiertoPorUrl.current = id;
     const p = prospectos.find(x => x.id === id);
     if (p) {
-      abrirEdicion(p);
-      setEtapa(p.etapa, { replace: true });
-      requestAnimationFrame(() => document.getElementById('pipeline-formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      // La notificación abre primero la ficha de gestión, nunca la edición.
+      setEtapa(p.etapa,{replace:true});
     } else {
       setError('El prospecto de esta notificación ya no está disponible o no tienes acceso.');
     }
@@ -184,6 +236,7 @@ export default function Pipeline() {
     setPlantillaElegida('');
     setVarianteElegida('principal');
     setAdjuntosCorreo([]);
+    abrirAccion('correo');
     requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
@@ -233,6 +286,7 @@ export default function Pipeline() {
     setCorreoProspecto(null);
     setMensajeCorreo('');
     setAdjuntosCorreo([]);
+    volverFicha();
     cargar();
   }
 
@@ -253,12 +307,15 @@ export default function Pipeline() {
     });
     setAbierto(p.id);
     setCorreoProspecto(null);
+    abrirAccion('editar');
     requestAnimationFrame(() => document.getElementById('pipeline-formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   function cerrarForm() {
+    const eraEdicion=abierto!=='nuevo' && Boolean(prospectoSeleccionado);
     setAbierto(null);
     setForm(VACIO);
+    if (eraEdicion) volverFicha();
   }
 
   async function guardar() {
@@ -316,6 +373,7 @@ export default function Pipeline() {
     setGuardando(false);
     if (error || !data) return setError(error?.message || 'No se pudo actualizar el prospecto.');
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
+    setEtapa(nuevaEtapa,{replace:true});
   }
 
   async function cambiarEtapa(p, nuevaEtapa) {
@@ -394,8 +452,9 @@ export default function Pipeline() {
       )}
       <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
-          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
-            ‹ Inicio
+          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
+            onClick={() => prospectoSeleccionado ? cerrarGestion() : navegar(inicioSegunArea())}>
+            {prospectoSeleccionado ? '‹ Volver al embudo' : '‹ Inicio'}
           </button>
         </div>
         <div className="fila">
@@ -405,7 +464,7 @@ export default function Pipeline() {
               Leads y prospectos hasta ganarse o perderse.
             </p>
           </div>
-          <button type="button" className="boton" onClick={abrirNuevo}>Nuevo lead</button>
+          {!prospectoSeleccionado&&<button type="button" className="boton" onClick={abrirNuevo}>Nuevo lead</button>}
         </div>
       </header>
 
