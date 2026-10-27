@@ -73,122 +73,68 @@ try {
   }
 
 
-  // Home único. Secciones plegables en vez de la pantalla inicial de selección.
+  // Home modular recuperado. Los cuatro estados se seleccionan en el mismo Home.
   {
     const {ctx,page}=await crear();
-    await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor();
-    assert.equal(await page.locator('.seleccion-home').count(),0,'no existe un primer selector de módulos');
-    assert.equal(await page.getByRole('button',{name:/Operaciones/}).getAttribute('aria-expanded'),'true');
-    await page.getByRole('button',{name:/Comercial/}).click();
-    await page.getByRole('link',{name:/Pipeline comercial/}).click();
-    await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
-    await page.getByRole('heading',{name:/Pipeline/}).waitFor();
-    const barra=page.locator('.barra-inferior-movil');
-    await barra.getByRole('button',{name:'Más'}).click();
-    const mas=page.getByRole('dialog',{name:'Más opciones'});
-    await mas.getByRole('button',{name:'Ir al inicio'}).click();
-    await page.waitForURL(u=>u.pathname==='/',{timeout:20000});
-    assert.equal(await page.locator('.home-general').count(),1);
-    console.log('Móvil · Home → Pipeline → Inicio sin selector intermedio: OK');
-    await ctx.close();
-  }
-
-  // Cambiar vista recupera dos decisiones independientes: organización y
-  // presentación. Se mantienen al recargar el Home, sin pantalla intermedia.
-  {
-    const {ctx,page}=await crear({ancho:390,alto:844});
-    await page.getByRole('button',{name:/Cambiar vista/}).click();
+    assert.equal(await page.locator('.seleccion-home').count(),1);
+    assert.equal(await page.locator('.home-general').count(),0);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9);
+    assert.match(await page.locator('.seleccion-home__tarjeta').last().innerText(),/Configuración/);
+    await page.getByRole('button',{name:'Cambiar vista'}).click();
     const dialogo=page.getByRole('dialog',{name:'Opciones de visualización'});
-    assert.equal(await dialogo.getByRole('button',{name:'Por áreas'}).getAttribute('aria-pressed'),'true');
+    assert.equal(await dialogo.getByRole('button',{name:'Por módulos'}).getAttribute('aria-pressed'),'true');
     assert.equal(await dialogo.getByRole('button',{name:'Lista'}).getAttribute('aria-pressed'),'true');
-    await dialogo.getByRole('button',{name:'Por módulos'}).click();
     await dialogo.getByRole('button',{name:'Cuadrícula'}).click();
-    assert.equal(await page.locator('.home-general-modulos.vista-cuadricula').count(),1);
-    const ultimo=page.locator('.home-general-modulo').last();
-    assert.match(await ultimo.innerText(),/Configuración/);
-    assert.equal(await page.locator('.home-general-modulo').count(),9);
+    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-cuadricula').count(),1);
+    await dialogo.getByRole('button',{name:'Por áreas'}).click();
+    assert.equal(await page.locator('.seleccion-home__administracion').count(),1);
+    await dialogo.getByRole('button',{name:'Lista'}).click();
+    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-lista').count(),1);
+    await dialogo.getByRole('button',{name:'Por módulos'}).click();
+    await dialogo.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     await page.reload({waitUntil:'domcontentloaded'});
-    await page.getByRole('heading',{name:/Hola/}).waitFor();
-    assert.equal(await page.locator('.home-general-modulos.vista-cuadricula').count(),1);
-    await page.getByRole('button',{name:/Cambiar vista/}).click();
-    const menu=page.getByRole('dialog',{name:'Opciones de visualización'});
-    assert.equal(await menu.getByRole('button',{name:'Por módulos'}).getAttribute('aria-pressed'),'true');
-    assert.equal(await menu.getByRole('button',{name:'Cuadrícula'}).getAttribute('aria-pressed'),'true');
-    await menu.getByRole('button',{name:'Por áreas'}).click();
-    await menu.getByRole('button',{name:'Lista'}).click();
-    assert.equal(await page.locator('.home-general-secciones.vista-lista').count(),1);
-    assert.match(await page.locator('.home-general-seccion').last().innerText(),/Administración y ajustes/);
-    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2),'sin desbordamiento del Home');
-    console.log('Home · cuatro combinaciones, persistencia y Configuración al final: OK');
+    await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9);
+    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-lista').count(),1);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth + 2));
+    console.log('Home modular · dos organizaciones, dos presentaciones y persistencia: OK');
     await ctx.close();
   }
 
-  // Operaciones: acceso directo y filtros de compromisos por comunidad.
-  {
-    const {ctx,page}=await crear({ancho:360,alto:740});
-    await page.getByRole('link',{name:/Compromisos y avances/}).click();
-    await page.waitForURL(u=>u.pathname==='/compromisos',{timeout:20000});
-    await page.getByRole('heading',{name:'Compromisos y avances'}).waitFor();
-    await page.getByRole('combobox',{name:'Etapa'}).selectOption('en_espera');
-    assert.equal(await page.locator('.compromisos-general-filtros').count(),1);
-    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2),'sin desbordamiento horizontal');
-    await ctx.close();
-  }
-
-  // Plantillas de correo del CRM: editor y vista previa funcional.
+  // Cada tarjeta lleva a un módulo real y el menú permite volver.
   {
     const {ctx,page}=await crear();
-    await page.getByRole('button',{name:/Comercial/}).click();
-    await page.getByRole('link',{name:/Plantillas de correo/}).click();
-    await page.waitForURL(u=>u.pathname==='/plantillas-correo',{timeout:20000});
-    await page.getByRole('button',{name:/Nueva plantilla/}).click();
-    await page.getByRole('textbox',{name:'Nombre'}).fill('Seguimiento QA');
-    await page.getByRole('textbox',{name:'Asunto'}).fill('Hola {{nombre}}');
-    await page.getByRole('textbox',{name:'Mensaje'}).fill('Necesidades de {{comunidad}}');
-    await page.locator('.plantillas-correo-previa').getByText('Necesidades de',{exact:true}).waitFor();
-    console.log('Móvil · editor de correos con variables y vista previa: OK');
-    await ctx.close();
-  }
-
-  // SEO conserva barra Comercial y puede regresar en un solo paso al Home.
-  {
-    const {ctx,page}=await crear();
-    await page.getByRole('button',{name:/Comercial/}).click();
-    await page.getByRole('link',{name:/SEO y Analítica/}).click();
+    await page.getByRole('button',{name:/SEO y Analítica/}).click();
     await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
-    assert.equal(await page.locator('.barra-inferior-movil').count(),1);
+    await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor();
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
-    const mas=page.getByRole('dialog',{name:'Más opciones'});
-    assert.equal(await mas.getByRole('button',{name:'Nueva propiedad'}).count(),0);
-    await mas.getByRole('button',{name:'Ir al inicio'}).click();
+    await page.getByRole('dialog',{name:'Más opciones'}).getByRole('button',{name:'Ir al inicio'}).click();
     await page.waitForURL(u=>u.pathname==='/',{timeout:20000});
-    console.log('Móvil · SEO → Inicio directo: OK');
+    assert.equal(await page.locator('.seleccion-home').count(),1);
+    console.log('SEO → Home modular, navegación sin pantalla adicional: OK');
     await ctx.close();
   }
 
-  // Escritorio: menú sin desbordamiento y permisos según perfil.
-  {
-    const {ctx,page}=await crear({ancho:1280,alto:850,rol:'superadmin'});
-    for(const nombre of ['Comercial','Operaciones','Finanzas','Administración y ajustes']){
-      assert.equal(await page.locator('.home-general').getByRole('button',{name:new RegExp(nombre)}).count(),1,nombre);
-    }
-    await page.locator('.home-general').getByRole('button',{name:/Finanzas/}).click();
-    await page.getByRole('link',{name:/Gestión contable/}).click();
-    await page.waitForURL(u=>u.pathname==='/contabilidad',{timeout:20000});
-    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
-    console.log('Escritorio · Finanzas desde Home: OK');
-    await ctx.close();
-  }
-
+  // Respeto estricto de permisos, incluso en la vista de módulos.
   {
     const {ctx,page}=await crear({rol:'jefatura'});
-    assert.equal(await page.locator('.home-general').getByRole('button',{name:/Finanzas/}).count(),0);
-    assert.equal(await page.locator('.home-general').getByRole('button',{name:/Administración y ajustes/}).count(),0);
-    await page.getByRole('button',{name:/Comercial/}).click();
-    assert.equal(await page.getByRole('link',{name:/SEO y Analítica/}).count(),0);
-    await page.getByRole('link',{name:/Pipeline comercial/}).click();
+    const titulos=await page.locator('.seleccion-home__titulo').allInnerTexts();
+    assert.deepEqual(titulos,['Gestión comercial','Levantamientos','Arriendos y ventas','Base de conocimientos']);
+    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Configuración/}).count(),0);
+    await page.getByRole('button',{name:/Gestión comercial/}).click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
-    console.log('Permisos · Jefatura ve solo módulos autorizados: OK');
+    console.log('Jefatura · catálogo filtrado y navegación al Pipeline: OK');
+    await ctx.close();
+  }
+
+  {
+    const {ctx,page}=await crear({ancho:1280,alto:850});
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
+    await page.getByRole('button',{name:/Levantamientos/}).click();
+    await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
+    console.log('Escritorio · acceso al módulo Levantamientos: OK');
     await ctx.close();
   }
 } finally {

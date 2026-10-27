@@ -19,7 +19,7 @@ import Pipeline from './paginas/panel/Pipeline';
 import Ayuda from './paginas/panel/Ayuda';
 import PracticaLevantamiento from './paginas/panel/PracticaLevantamiento';
 import Proveedores from './paginas/panel/Proveedores';
-import HomeGeneral from './paginas/panel/HomeGeneral';
+import SeleccionArea from './paginas/SeleccionArea';
 import CompromisosGeneral from './paginas/panel/CompromisosGeneral';
 import PlantillasCorreo from './paginas/panel/PlantillasCorreo';
 import PanelEscritorio from './componentes/PanelEscritorio';
@@ -80,8 +80,8 @@ function SoloCliente({ children }) {
   return children;
 }
 
-/* Las rutas se conservan; el Home único toma el lugar del selector previo.
- * Los permisos continúan verificándose en cada pantalla. */
+/* El inicio vuelve al selector de tarjetas original.
+ * No se alteran rutas ni controles de permisos de las pantallas internas. */
 function tieneCRM(perfil) {
   return Boolean(perfil) && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
 }
@@ -95,7 +95,9 @@ function tieneCRM(perfil) {
 function Entrada() {
   const { perfil } = useSesion();
   if (perfil?.rol === 'cliente') return <Navigate to="/portal" replace />;
-  return <PanelEscritorio><HomeGeneral /></PanelEscritorio>;
+  // Se recupera el Home modular original para perfiles con acceso a distintas áreas.
+  if (!tieneCRM(perfil)) return <PanelEscritorio><Inicio /></PanelEscritorio>;
+  return <SeleccionArea />;
 }
 
 function Interna({ children, anchoCompleto = false }) {

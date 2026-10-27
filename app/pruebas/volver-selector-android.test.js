@@ -117,8 +117,8 @@ test('guardia global no depende de SEO ni del panel y respeta permisos',()=>{
 test('el Home se determina por permisos, no por la última vista guardada',()=>{
  const app=read('App.jsx');
  assert.match(app,/if \(perfil\?\.rol === 'cliente'\) return <Navigate to="\/portal" replace \/>/);
- assert.match(app,/return <PanelEscritorio><HomeGeneral \/><\/PanelEscritorio>/);
- assert.doesNotMatch(app,/<SeleccionArea/);
+ assert.match(app,/return <SeleccionArea \/>/);
+ assert.match(app,/import SeleccionArea from/);
  assert.match(app,/if \(idUsuario && !esContinuacionDocumento\(/);
  assert.doesNotMatch(app,/RestaurarAreaGuardada|restauracionAutomaticaEjecutada/);
 });

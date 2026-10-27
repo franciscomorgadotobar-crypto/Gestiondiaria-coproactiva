@@ -49,10 +49,10 @@ test('La organización es local por usuario y se mantiene tras volver al Home',(
     setItem(key,value){values.set(key,value)}
   };
   try{
-    assert.equal(leerOrganizacion('persona-a'),'areas');
+    assert.equal(leerOrganizacion('persona-a'),'modulos');
     guardarOrganizacion('persona-a','modulos');
     assert.equal(leerOrganizacion('persona-a'),'modulos');
-    assert.equal(leerOrganizacion('persona-b'),'areas');
+    assert.equal(leerOrganizacion('persona-b'),'modulos');
     guardarOrganizacion('persona-a','areas');
     assert.equal(leerOrganizacion('persona-a'),'areas');
     guardarOrganizacion('persona-a','no-valido');

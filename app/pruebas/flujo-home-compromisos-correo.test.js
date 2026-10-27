@@ -3,13 +3,18 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {completarCorreo,VARIABLES_CORREO} from '../src/lib/plantillasCorreo.js';
 const read=(path)=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-test('Home único sin selector intermedio y secciones operativas',()=>{
- const app=read('src/App.jsx'),home=read('src/paginas/panel/HomeGeneral.jsx');
- assert.match(app,/return <PanelEscritorio><HomeGeneral\s*\/><\/PanelEscritorio>/);
- assert.doesNotMatch(app,/<SeleccionArea/);
- for(const name of ['Comercial','Operaciones','Finanzas','Administración y ajustes','Compromisos y avances'])
-   assert.ok(home.includes(name),name);
- assert.match(home,/aria-expanded=\{abierto\}/);
+test('Home modular restaurado y Cambiar vista disponible',()=>{
+ const app=read('src/App.jsx');
+ const selector=read('src/paginas/SeleccionArea.jsx');
+ const catalogo=read('src/lib/selectorModulos.js');
+ assert.match(app,/return <SeleccionArea \/>/);
+ assert.match(selector,/modulosDisponibles\(perfil\)/);
+ assert.match(selector,/Cambiar vista/);
+ assert.match(selector,/Por módulos/);
+ assert.match(selector,/Por áreas/);
+ assert.match(selector,/Lista/);
+ assert.match(selector,/Cuadrícula/);
+ assert.match(catalogo,/return 'modulos'/);
  assert.match(app,/path="\/compromisos"/);
  assert.match(app,/path="\/plantillas-correo"/);
 });

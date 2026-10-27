@@ -11,12 +11,12 @@ const campos=read('componentes/DialogoCampos.jsx');
 const foco=read('lib/focoDialogo.js');
 const css=read('estilos/modulos.css');
 
-test('Home único sustituye selector de módulos y conserva navegación SPA',()=>{
+test('Home modular restaurado y Cambiar vista conserva navegación SPA',()=>{
  assert.match(panel,/function cambiarArea\(\)/);
  assert.match(panel,/navegar\('\/', \{ replace:true \}\)/);
  assert.doesNotMatch(panel,/window\.location\.href\s*=\s*import\.meta\.env\.BASE_URL/);
- assert.match(router,/return <PanelEscritorio><HomeGeneral \/><\/PanelEscritorio>/);
- assert.doesNotMatch(router,/<SeleccionArea/);
+ assert.match(router,/return <SeleccionArea \/>/);
+ assert.match(router,/import SeleccionArea from/);
  assert.doesNotMatch(router,/function RestaurarAreaGuardada/);
  assert.ok((panel.match(/onClick=\{cambiarArea\}/g)||[]).length>=1);
  assert.match(panel,/Ir al inicio/);
