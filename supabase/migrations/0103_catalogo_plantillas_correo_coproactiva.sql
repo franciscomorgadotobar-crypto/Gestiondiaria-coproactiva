@@ -20,3 +20,27 @@ from jsonb_to_recordset('[{"codigo":"01","nombre":"Primer contacto con comité",
  asunto text,cuerpo text,sugerida boolean,variantes jsonb
 )
 on conflict (codigo) do nothing;
+
+-- Ocultar sin eliminar solamente los tres ejemplos originales sin ediciones.
+update public.plantillas_correo_crm set activa=false, actualizado_en=now()
+where codigo is null and creada_por is null and activa=true
+ and (nombre,asunto,cuerpo) in (
+('Coordinación de reunión', 'Reunión para {{comunidad}}', 'Hola {{nombre}},
+
+Me gustaría coordinar una reunión para conocer las necesidades de {{comunidad}}. ¿Qué disponibilidad tienes esta semana?
+
+Saludos,
+{{responsable}}'),
+('Seguimiento de propuesta', 'Seguimiento propuesta · {{comunidad}}', 'Hola {{nombre}},
+
+Quisiera consultar si tuvieron oportunidad de revisar la propuesta para {{comunidad}} y si necesitan alguna aclaración.
+
+Saludos,
+{{responsable}}'),
+('Presentación Coproactiva', 'Presentación de administración · {{comunidad}}', 'Hola {{nombre}},
+
+Gracias por contactar a Coproactiva respecto de {{comunidad}}. Podemos revisar las necesidades de la comunidad y las alternativas de administración.
+
+Saludos,
+{{responsable}}')
+);
