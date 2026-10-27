@@ -1,1 +1,39 @@
 .compromisos-wrap{display:grid;gap:16px;min-width:0;padding-top:8px;color:var(--texto-cuerpo)}.compromisos-cabecera h2{color:var(--texto-titulo);margin:0}.compromisos-cabecera p{margin:5px 0 0}.compromisos-lista{display:grid;gap:12px}.compromisos-item,.compromisos-form{padding:18px;display:grid;gap:12px;min-width:0}.compromisos-item strong{color:var(--texto-titulo)}.compromisos-item p{margin:5px 0}.compromisos-fila{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.compromisos-meta{display:flex;gap:8px 16px;flex-wrap:wrap;font-size:12px;color:var(--texto-apagado)}.compromisos-progreso{height:7px;background:var(--niebla);border-radius:8px;overflow:hidden}.compromisos-progreso>div{height:100%;background:var(--naranja);border-radius:8px;transition:width .2s}.compromisos-historial{display:grid;gap:8px}.compromisos-historial>div{border-left:3px solid var(--naranja);padding:4px 12px;background:var(--papel)}.compromisos-acciones{display:flex;gap:8px;flex-wrap:wrap}.compromisos-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.compromisos-form label{display:grid;gap:5px;font-size:13px;font-weight:600}.compromisos-form input:not([type=checkbox]),.compromisos-form textarea,.compromisos-form select{min-width:0;width:100%;box-sizing:border-box;border:1px solid var(--borde);border-radius:8px;padding:10px;color:var(--texto-cuerpo);background:var(--tarjeta);font:inherit}.compromisos-form .compromisos-check{display:flex;align-items:center;gap:8px}.compromisos-form button{justify-self:start}@media(max-width:640px){.compromisos-grid{grid-template-columns:1fr}.compromisos-fila{flex-direction:column}.compromisos-item,.compromisos-form{padding:13px}}
+
+/* Compromisos secuenciales: una tarjeta y sus detalles anidados plegables. */
+.compromisos-crear-desplegable{padding:0;min-width:0}
+.compromisos-crear-desplegable>summary{padding:16px 18px;font-weight:750;cursor:pointer;color:var(--enlace)}
+.compromisos-crear-desplegable>.compromisos-form{padding:0 18px 18px}
+.compromisos-item{display:block;padding:0;overflow:hidden}
+.compromisos-item>.compromisos-fila{list-style:none;padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.compromisos-item>.compromisos-fila::-webkit-details-marker{display:none}
+.compromisos-titulo{display:grid;gap:7px;flex:1;min-width:0}
+.compromisos-titulo strong{font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.compromisos-titulo small{font-size:12px;line-height:1.35;color:var(--texto-apagado)}
+.compromisos-flecha{font-size:19px;color:var(--enlace);transition:transform .18s ease}
+.compromisos-item[open] .compromisos-flecha{transform:rotate(180deg)}
+.compromisos-detalle{display:grid;gap:16px;padding:16px 18px 20px;border-top:1px solid var(--borde-suave)}
+.compromisos-detalle>p{margin:0}
+.compromisos-detalle>details{border:1px solid var(--borde);border-radius:12px;min-width:0;overflow:hidden}
+.compromisos-detalle>details>summary{padding:12px 14px;cursor:pointer;font-weight:700;font-size:13px;background:var(--papel)}
+.compromisos-subtareas,.compromisos-historial{display:block}
+.compromisos-subtareas[open],.compromisos-historial[open]{padding:0}
+.compromisos-subfila,.compromisos-subagregar{padding:12px 14px;display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap}
+.compromisos-subagregar>input{min-width:120px;flex:1;min-height:42px;border-radius:9px;border:1px solid var(--borde)}
+.compromisos-avance-item{margin:10px;border:1px solid var(--borde-suave);border-radius:10px}
+.compromisos-avance-item>summary{padding:12px;cursor:pointer;font-weight:650}
+.compromisos-avance-item>p,.compromisos-avance-item>a,.compromisos-avance-item>span{display:block;margin:10px 12px}
+.compromisos-transicion{padding:12px 14px;border-bottom:1px solid var(--borde-suave);font-size:12px}
+.compromisos-transicion p{margin:5px 0}
+.compromisos-cambiar-etapa{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;padding:15px;border-radius:12px;background:var(--papel)}
+.compromisos-cambiar-etapa label{display:grid;gap:7px;font-size:12px;font-weight:650}
+.compromisos-cambiar-etapa :is(input,select){min-width:0;width:100%;min-height:43px;border:1px solid var(--borde);border-radius:9px;background:white;padding:8px}
+.compromisos-cambiar-etapa button{min-height:43px}
+.compromisos-item>summary:focus-visible,.compromisos-detalle summary:focus-visible{outline:3px solid var(--naranja);outline-offset:-3px}
+@media(max-width:640px){
+ .compromisos-item>.compromisos-fila{padding:13px;flex-direction:row;flex-wrap:wrap}
+ .compromisos-titulo{flex:1 1 65%}
+ .compromisos-detalle{padding:13px}
+ .compromisos-cambiar-etapa{grid-template-columns:1fr}
+ .compromisos-crear-desplegable>.compromisos-form{padding:0 13px 13px}
+}

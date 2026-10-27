@@ -116,7 +116,7 @@ function SEOInterno() {
   // El historial del navegador y Atrás de Android conservan su comportamiento.
   useVolverGlobal(() => {
     if (vista !== 'resumen') setVista('resumen', { replace: true });
-    else navegar('/pipeline');
+    else navegar('/', {replace:true});
   });
   // El período es parte de la URL, igual que la pestaña. Sobrevive a
   // actualizar, restaurar la PWA y navegar entre vistas del módulo.

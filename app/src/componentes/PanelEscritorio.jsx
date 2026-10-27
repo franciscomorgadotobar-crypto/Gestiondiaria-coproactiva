@@ -28,15 +28,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const { perfil, salir } = useSesion();
   const { pathname, hash, search } = useLocation();
   const navegar = useNavigate();
-  // Cambiar de área no debe reiniciar React ni interrumpir la PWA.
-  // Entrada interpreta este estado incluso al navegar desde la misma ruta '/'.
+  // El Home único es el nivel superior; las pantallas funcionales no apilan
+  // selectores en el historial al volver.
   function cambiarArea() {
     limpiarArea();
-    // La selección ya es el último destino: no debe quedar una copia nueva
-    // encima de una pantalla de trabajo al pulsar «Cambiar de área».
-    const pasos = pasosHastaSelector(window.history.state);
-    if (pasos !== null) return navegar(pasos);
-    navegar('/', { replace: true, state: { selectorCoproactiva: true } });
+    navegar('/', { replace:true });
   }
   const { iniciar } = useTutoriales();
   const [alertasMantencion, setAlertasMantencion] = useState(0);
@@ -129,7 +125,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const puedeCambiarArea = Boolean(puedeConfigurar);
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
-  const organizacion = leerOrganizacion(perfil?.id);
+  // El menú lateral utiliza en vivo la misma organización del Home.
+  const [organizacion, setOrganizacion] = useState(() => leerOrganizacion(perfil?.id));
+  useEffect(() => {
+    const sincronizar = () => setOrganizacion(leerOrganizacion(perfil?.id));
+    sincronizar();
+    window.addEventListener('coproactiva:organizacion-cambio', sincronizar);
+    return () => window.removeEventListener('coproactiva:organizacion-cambio', sincronizar);
+  }, [perfil?.id]);
   const modulosPlanos = esCliente ? [] : modulosDisponibles(perfil);
 
 
@@ -203,7 +206,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/pipeline', etiqueta: 'Pipeline', mostrar: true },
         { ruta: '/propiedades', etiqueta: 'Arriendos y ventas', mostrar: true, activo: activaPropiedades },
         { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true, hijo: true },
-        { ruta: '/seo', etiqueta: 'SEO y analítica', mostrar: esAdministracion }
+        { ruta: '/seo', etiqueta: 'SEO y analítica', mostrar: esAdministracion },
+        { ruta: '/plantillas-correo', etiqueta: 'Plantillas de correo', mostrar: puedeConfigurar }
       ]
     : [
         { ruta: '/inicio', etiqueta: 'Inicio', mostrar: true },
@@ -211,6 +215,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
         { ruta: '/bitacora', etiqueta: 'Bitácora', mostrar: true },
         { ruta: '/comunidades', etiqueta: 'Comunidades', mostrar: true },
+        { ruta: '/compromisos', etiqueta: 'Compromisos y avances', mostrar: true },
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true },
         // Proveedores y WhatsApp son de administración. Sus subsecciones
@@ -224,7 +229,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true }
       ];
 
-  const inicio = esCliente ? '/portal' : inicioSegunArea();
+  const inicio = esCliente ? '/portal' : '/';
 
   function volverGlobal() {
     const evento = new CustomEvent('coproactiva:volver', { cancelable: true });
@@ -276,6 +281,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const opcionesOperacion = [
     { id: 'inicio', etiqueta: 'Inicio', ruta: '/inicio' },
     { id: 'comunidades', etiqueta: 'Comunidades', ruta: '/comunidades' },
+    { id: 'compromisos', etiqueta: 'Compromisos', ruta: '/compromisos' },
     { id: 'levantamientos', etiqueta: 'Levantamientos', accion: irLevantamientos },
     { id: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', badge: alertasTotales },
     { id: 'plantillas', etiqueta: 'Plantillas', ruta: '/plantillas', mostrar: puedeConfigurar },
@@ -292,6 +298,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'pipeline', etiqueta: 'Pipeline', ruta: '/pipeline' },
     { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
     { id: 'seo', etiqueta: 'SEO', ruta: '/seo', mostrar: esAdministracion },
+    { id: 'plantillas-correo', etiqueta: 'Plantillas de correo', ruta: '/plantillas-correo', mostrar: puedeConfigurar },
     { id: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', badge: alertasTotales },
     // Mantener el acceso comercial existente (incluida Jefatura), salvo
     // dentro de SEO donde las acciones de propiedades no corresponden.
@@ -375,7 +382,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   function abrirGrupoLateral(item) {
     guardarArea(item.id);
-    if (pathname !== item.ruta) navegar(item.ruta);
+    if (pathname !== item.ruta) navegar(item.ruta, { replace:true });
   }
 
   function esModuloActivo(item) {
@@ -401,7 +408,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   function enlacesDelGrupo() {
     return accesos.filter(item => item.mostrar).map(item => (
-      <Link key={item.ruta} to={item.ruta}
+      <Link key={item.ruta} to={item.ruta} replace
             aria-current={(item.activo ? item.activo(pathname) : activa(pathname, item.ruta)) ? 'page' : undefined}
             className={'enlace-lateral' + (item.hijo ? ' enlace-lateral-hijo' : '') +
               ((item.activo ? item.activo(pathname) : activa(pathname, item.ruta)) ? ' activo' : '')}>
@@ -422,7 +429,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             <>
               <span className="micro apagado etiqueta-lateral">Módulos</span>
               {modulosPlanos.map(item => (
-                <Link key={item.id} to={item.ruta}
+                <Link key={item.id} to={item.ruta} replace
                       onClick={() => { if (item.area) guardarArea(item.area); }}
                       aria-current={esModuloActivo(item) ? 'page' : undefined}
                       className={'enlace-lateral' + (esModuloActivo(item) ? ' activo' : '')}>
@@ -507,7 +514,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             {!esCliente && <Link to="/mi-cuenta">Mi cuenta</Link>}
             {puedeConfigurar && (
               <button type="button" onClick={cambiarArea}>
-                {organizacion === 'modulos' ? 'Cambiar vista o módulo' : 'Cambiar de área'}
+                Ir al inicio
               </button>
             )}
             {!esCliente && tutorialContextual && (
@@ -531,7 +538,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         {/* En el teléfono la barra lateral no existe (se oculta con CSS), así
             que sin esto "Cambiar de área" no tenía dónde vivir y quedaba
             fijo en la que se eligió la primera vez, sin salida. */}
-        {!esCliente && !enAprendizaje && (
+        {!esCliente && !enAprendizaje && pathname !== '/' && (
           <div className="barra-area-movil">
             {(puedeCambiarArea || !['/', '/inicio'].includes(pathname)) && (
               <button type="button" className="barra-area-volver" onClick={volverGlobal}>
@@ -670,7 +677,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                       </Link>
                       {puedeCambiarArea && (
                         <button type="button" onClick={() => { setMasAbierto(false, { alNavegar: true }); cambiarArea(); }}>
-                          {organizacion === 'modulos' ? 'Cambiar vista o módulo' : 'Cambiar de área'}
+                          Ir al inicio
                           <span aria-hidden="true">›</span>
                         </button>
                       )}

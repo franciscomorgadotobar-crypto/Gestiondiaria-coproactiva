@@ -19,7 +19,9 @@ import Pipeline from './paginas/panel/Pipeline';
 import Ayuda from './paginas/panel/Ayuda';
 import PracticaLevantamiento from './paginas/panel/PracticaLevantamiento';
 import Proveedores from './paginas/panel/Proveedores';
-import SeleccionArea from './paginas/SeleccionArea';
+import HomeGeneral from './paginas/panel/HomeGeneral';
+import CompromisosGeneral from './paginas/panel/CompromisosGeneral';
+import PlantillasCorreo from './paginas/panel/PlantillasCorreo';
 import PanelEscritorio from './componentes/PanelEscritorio';
 import AtrasNativoAndroid from './componentes/AtrasNativoAndroid';
 import { guardarArea, limpiarArea } from './lib/area';
@@ -78,9 +80,8 @@ function SoloCliente({ children }) {
   return children;
 }
 
-/* Solo admin, jefatura y superadmin tienen CRM además de la operación: son
- * quienes necesitan elegir. El resto (terreno, etc.) no tiene nada que
- * elegir y va directo a Inicio, sin una capa de por medio. */
+/* Las rutas se conservan; el Home único toma el lugar del selector previo.
+ * Los permisos continúan verificándose en cada pantalla. */
 function tieneCRM(perfil) {
   return Boolean(perfil) && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
 }
@@ -94,8 +95,7 @@ function tieneCRM(perfil) {
 function Entrada() {
   const { perfil } = useSesion();
   if (perfil?.rol === 'cliente') return <Navigate to="/portal" replace />;
-  if (!tieneCRM(perfil)) return <PanelEscritorio><Inicio /></PanelEscritorio>;
-  return <SeleccionArea />;
+  return <PanelEscritorio><HomeGeneral /></PanelEscritorio>;
 }
 
 function Interna({ children, anchoCompleto = false }) {
@@ -212,6 +212,8 @@ export default function App() {
           Inicio" del panel apunta acá, para no quedar en loop de vuelta al
           CRM cuando la área elegida es 'crm'. */}
       <Route path="/inicio" element={<Interna><Inicio /></Interna>} />
+      <Route path="/compromisos" element={<Interna><CompromisosGeneral /></Interna>} />
+      <Route path="/plantillas-correo" element={<Interna><PlantillasCorreo /></Interna>} />
       <Route path="/conocimientos" element={<Interna><Suspense fallback={<p className="cargando">Cargando biblioteca…</p>}><Conocimientos /></Suspense></Interna>} />
       <Route path="/ayuda" element={<Interna><Ayuda /></Interna>} />
       <Route path="/ayuda/practica-levantamiento" element={<Interna><PracticaLevantamiento /></Interna>} />

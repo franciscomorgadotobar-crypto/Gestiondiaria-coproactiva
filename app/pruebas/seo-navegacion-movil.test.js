@@ -45,10 +45,10 @@ test('la vista y el período siguen en URL y se conservan al cambiar de sección
   assert.equal(dashboard.get('dias'),'90');
 });
 
-test('Volver en SEO pasa por Dashboard antes de regresar a Comercial', () => {
+test('Volver en SEO pasa por Dashboard antes de regresar al Home único', () => {
   assert.match(seo, /useVolverGlobal\(\(\) =>/);
   assert.match(seo, /vista !== 'resumen'\) setVista\('resumen', \{ replace: true \}\)/);
-  assert.match(seo, /else navegar\('\/pipeline'\)/);
+  assert.match(seo, /else navegar\('\/', \{replace:true\}\)/);
   assert.match(panel, /replace: desdeMas/);
   assert.match(panel, /aria-haspopup="dialog"/);
   assert.match(panel, /evento\.key === 'Escape'/);

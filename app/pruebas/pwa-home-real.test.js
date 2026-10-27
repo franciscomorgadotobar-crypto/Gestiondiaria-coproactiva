@@ -137,8 +137,8 @@ test('el inicio siempre usa perfil actual, no la preferencia recordada',()=>{
   assert.ok(main.indexOf('prepararArranqueConHome(window.history')<
     main.indexOf('createRoot(document.getElementById('));
   assert.match(app,/if \(perfil\?\.rol === 'cliente'\) return <Navigate to="\/portal" replace \/>/);
-  assert.match(app,/if \(!tieneCRM\(perfil\)\) return <PanelEscritorio><Inicio \/><\/PanelEscritorio>/);
-  assert.match(app,/return <SeleccionArea \/>/);
+  assert.match(app,/return <PanelEscritorio><HomeGeneral \/><\/PanelEscritorio>/);
+  assert.doesNotMatch(app,/<SeleccionArea/);
   assert.match(app,/if \(idUsuario && !esContinuacionDocumento\(/);
   assert.doesNotMatch(app,/RestaurarAreaGuardada|restauracionAutomaticaEjecutada/);
   assert.doesNotMatch(app,/areaGuardada\(\)/);

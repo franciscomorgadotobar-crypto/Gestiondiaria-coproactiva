@@ -24,6 +24,9 @@ jobs:
       - name: Probar criterios y compatibilidad histórica
         working-directory: app
         run: node --test pruebas/criterios.test.js
+      - name: Validar Home y flujo de compromisos y correo
+        working-directory: app
+        run: node --test pruebas/flujo-home-compromisos-correo.test.js
       - name: Validar notificaciones comerciales y correo de prospectos
         working-directory: app
         run: node --test pruebas/notificaciones-crm-correo.test.js

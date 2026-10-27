@@ -40,8 +40,14 @@ test('Atrás Android llega a Home según los permisos reales',()=>{
   assert.deepEqual(decidirAtrasAndroid({pathname:'/portal',rol:'cliente',indice:8}),{
     tipo:'salir'
   });
-  assert.equal(homeAutorizado('terreno'),'/inicio');
+  assert.equal(homeAutorizado('terreno'),'/');
   assert.deepEqual(decidirAtrasAndroid({pathname:'/inicio',rol:'terreno',indice:2}),{
+    tipo:'historial',pasos:-1
+  });
+  assert.deepEqual(decidirAtrasAndroid({pathname:'/inicio',rol:'terreno',indice:0}),{
+    tipo:'home',destino:'/'
+  });
+  assert.deepEqual(decidirAtrasAndroid({pathname:'/',rol:'terreno',indice:2}),{
     tipo:'salir'
   });
   assert.deepEqual(decidirAtrasAndroid({pathname:'/ingreso',rol:undefined,indice:0}),{

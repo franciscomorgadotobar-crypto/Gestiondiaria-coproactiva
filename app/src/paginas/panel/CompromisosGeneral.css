@@ -1,0 +1,15 @@
+.compromisos-general-cuerpo{display:grid;gap:18px}
+.compromisos-general-filtros{display:flex;gap:12px;flex-wrap:wrap}
+.compromisos-general-filtros label{display:grid;gap:7px;flex:1 1 190px;font-size:12px;font-weight:650}
+.compromisos-general-filtros :is(input,select){min-height:44px;width:100%;border:1px solid var(--borde);border-radius:10px;padding:10px;background:white}
+.compromisos-general-lista{display:grid;gap:12px}
+.compromisos-general-grupo{padding:0;overflow:hidden}
+.compromisos-general-desplegar{border:0;background:var(--tarjeta);display:flex;align-items:center;gap:12px;padding:16px 18px;width:100%;text-align:left;cursor:pointer}
+.compromisos-general-desplegar>span:first-child{flex:1;display:grid;gap:4px}
+.compromisos-general-desplegar strong{font-size:15px}
+.compromisos-general-desplegar small{font-size:12px;color:var(--texto-apagado)}
+.compromisos-general-enlaces{display:grid;border-top:1px solid var(--borde)}
+.compromisos-general-enlace{display:grid;gap:6px;padding:14px 20px;border-bottom:1px solid var(--borde-suave);text-decoration:none;color:var(--texto-titulo)}
+.compromisos-general-enlace span{font-size:12px;color:var(--texto-apagado)}
+.compromisos-general-enlace:hover{background:var(--hover)}
+@media(max-width:640px){.compromisos-general-filtros{display:grid}.compromisos-general-desplegar{padding:14px}.compromisos-general-enlace{padding:12px 16px}}

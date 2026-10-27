@@ -5,14 +5,14 @@
  */
 // Inicio de cada grupo del selector: Operaciones, Comercial, Finanzas y
 // Configuración. Desde ahí, Volver llega al selector.
-const RAICES_AREA = new Set(['/inicio', '/pipeline', '/contabilidad', '/configuracion']);
+const RAICES_AREA = new Set(['/inicio', '/pipeline', '/contabilidad', '/configuracion', '/compromisos', '/plantillas-correo']);
 
 // Secciones de Comercial: vuelven al Pipeline, inicio del grupo.
 const MODULOS_COMERCIAL = new Set(['/propiedades', '/seo']);
 
 const MODULOS_OPERACION = new Set([
   '/bitacora', '/plantillas', '/comunidades', '/mantenciones',
-  '/mapa', '/ayuda', '/nuevo', '/proveedores', '/whatsapp'
+  '/mapa', '/ayuda', '/nuevo', '/proveedores', '/whatsapp', '/compromisos'
 ]);
 
 const MODULOS_COMPARTIDOS = new Set(['/mi-cuenta', '/notificaciones']);
@@ -41,14 +41,14 @@ export function destinoVolverPorJerarquia(pathname, inicioDeArea = '/inicio') {
   if (ruta === '/equipo' || ruta === '/clientes') return '/configuracion';
 
   // Mi cuenta y Notificaciones no pertenecen exclusivamente a Operación.
-  if (MODULOS_COMPARTIDOS.has(ruta)) return inicioDeArea;
+  if (MODULOS_COMPARTIDOS.has(ruta)) return '/';
 
-  if (MODULOS_COMERCIAL.has(ruta)) return '/pipeline';
-  if (MODULOS_OPERACION.has(ruta)) return '/inicio';
+  if (MODULOS_COMERCIAL.has(ruta)) return '/';
+  if (MODULOS_OPERACION.has(ruta)) return '/';
 
   // El último Volver en cualquier inicio de área llega al selector.
   if (RAICES_AREA.has(ruta)) return '/';
 
   // Rutas nuevas: no salir inesperadamente de la PWA.
-  return ruta === inicioDeArea ? '/' : inicioDeArea;
+  return '/';
 }
