@@ -502,6 +502,10 @@ export default function Pipeline() {
       </header>
 
       <div className="cuerpo">
+        {prospectoSeleccionado && !accionSeleccionada && (
+          <button type="button" className="boton boton-secundario pipeline-volver-movil"
+            onClick={cerrarGestion}>‹ Volver al embudo</button>
+        )}
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }} role="alert">{error}</div>}
         {avisoCorreo && <div className="aviso" role="status">{avisoCorreo}</div>}
 
