@@ -54,7 +54,8 @@ begin
    raise exception 'En espera: registra fecha próxima acción';
  end if;
  if p_estado <> anterior.estado
-    or p_proxima_accion is distinct from anterior.fecha_proxima_accion then
+    or p_proxima_accion is distinct from anterior.fecha_proxima_accion
+    or nullif(trim(coalesce(p_observacion,'')),'') is not null then
    update public.compromisos_administracion
    set estado=p_estado, fecha_proxima_accion=coalesce(p_proxima_accion,fecha_proxima_accion),
        fecha_inicio=case when p_estado='en_curso' and fecha_inicio is null
@@ -105,10 +106,10 @@ grant select,insert,update,delete on public.plantillas_correo_crm to authenticat
 insert into public.plantillas_correo_crm(nombre,asunto,cuerpo)
 select seed.nombre,seed.asunto,seed.cuerpo from (values
  ('Presentación Coproactiva','Presentación de administración · {{comunidad}}',
-  'Hola {{nombre}},\n\nGracias por contactar a Coproactiva respecto de {{comunidad}}. Podemos revisar las necesidades de la comunidad y las alternativas de administración.\n\nSaludos,\n{{responsable}}'),
+  E'Hola {{nombre}},\n\nGracias por contactar a Coproactiva respecto de {{comunidad}}. Podemos revisar las necesidades de la comunidad y las alternativas de administración.\n\nSaludos,\n{{responsable}}'),
  ('Coordinación de reunión','Reunión para {{comunidad}}',
-  'Hola {{nombre}},\n\nMe gustaría coordinar una reunión para conocer las necesidades de {{comunidad}}. ¿Qué disponibilidad tienes esta semana?\n\nSaludos,\n{{responsable}}'),
+  E'Hola {{nombre}},\n\nMe gustaría coordinar una reunión para conocer las necesidades de {{comunidad}}. ¿Qué disponibilidad tienes esta semana?\n\nSaludos,\n{{responsable}}'),
  ('Seguimiento de propuesta','Seguimiento propuesta · {{comunidad}}',
-  'Hola {{nombre}},\n\nQuisiera consultar si tuvieron oportunidad de revisar la propuesta para {{comunidad}} y si necesitan alguna aclaración.\n\nSaludos,\n{{responsable}}')
+  E'Hola {{nombre}},\n\nQuisiera consultar si tuvieron oportunidad de revisar la propuesta para {{comunidad}} y si necesitan alguna aclaración.\n\nSaludos,\n{{responsable}}')
 ) as seed(nombre,asunto,cuerpo)
 where not exists(select 1 from public.plantillas_correo_crm where nombre=seed.nombre);
