@@ -2,14 +2,14 @@
  * Dos modos de acceso al MISMO sistema: áreas o módulos independientes.
  * Preferencia local por usuario (no afecta permisos, tablas ni rutas).
  */
-const PREFIJO = 'coproactiva_organizacion:';
+const PREFIJO = 'coproactiva_organizacion_modular_v2:'; // El Home restaurado inicia Por módulos, ignorando preferencias de los rediseños descartados.
 
 export function leerOrganizacion(usuarioId) {
-  if (!usuarioId) return 'areas';
+  if (!usuarioId) return 'modulos';
   try {
-    return localStorage.getItem(PREFIJO + usuarioId) === 'modulos' ? 'modulos' : 'areas';
+    return localStorage.getItem(PREFIJO + usuarioId) === 'areas' ? 'areas' : 'modulos';
   } catch {
-    return 'areas';
+    return 'modulos';
   }
 }
 
