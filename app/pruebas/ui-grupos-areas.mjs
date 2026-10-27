@@ -138,8 +138,7 @@ try {
   // Plantillas de correo del CRM: editor y vista previa funcional.
   {
     const {ctx,page}=await crear();
-    await page.getByRole('button',{name:/Comercial/}).click();
-    await page.getByRole('link',{name:/Plantillas de correo/}).click();
+    await page.goto(base + '/plantillas-correo',{waitUntil:'domcontentloaded'});
     await page.waitForURL(u=>u.pathname==='/plantillas-correo',{timeout:20000});
     await page.getByRole('button',{name:/Nueva plantilla/}).click();
     await page.getByRole('textbox',{name:'Nombre'}).fill('Seguimiento QA');
