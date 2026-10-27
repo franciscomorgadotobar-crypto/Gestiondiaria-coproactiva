@@ -83,8 +83,6 @@ async function irPantalla(page,vista) {
   const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
   const grupo=(operacion||ruta.startsWith('/proveedores'))?'Operaciones'
     :ruta.startsWith('/contabilidad')?'Finanzas':'Comercial';
-  await page.getByRole('button',{name:/Cambiar vista/}).click();
-  await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
   const raiz=ruta.startsWith('/nuevo')?'/inicio'
     :ruta.startsWith('/comunidades')?'/inicio'
     :ruta.startsWith('/plantillas')?'/inicio'
@@ -93,7 +91,13 @@ async function irPantalla(page,vista) {
     :ruta.startsWith('/proveedores')?'/proveedores'
     :ruta.startsWith('/contabilidad')?'/contabilidad'
     :ruta.startsWith('/propiedades')?'/propiedades':'/pipeline';
-  await page.locator('.home-general-modulo[href="'+raiz+'"]').click();
+  if (operacion) {
+    await page.locator('.home-general-metricas a[href="/inicio"]').click();
+  } else {
+    await page.getByRole('button',{name:/Cambiar vista/}).click();
+    await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
+    await page.locator('.home-general-modulo[href="'+raiz+'"]').click();
+  }
   await page.waitForURL(u=>u.pathname===raiz,{timeout:12000});
   if(operacion) {
     if(ruta==='/nuevo') await clickDestino(page,'/nuevo','Nuevo levantamiento');
