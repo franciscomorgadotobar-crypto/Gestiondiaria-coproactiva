@@ -8,7 +8,7 @@ import './HomeGeneral.css';
 /* Home principal único. Grupos expandibles como Levantamientos: un primer nivel
    con todo el sistema, sin una segunda pantalla de selección. */
 export default function HomeGeneral() {
-  const { perfil } = useSesion();
+  const { perfil, salir } = useSesion();
   const [resumen, setResumen] = useState({ prospectos:null, compromisos:null, pendientes:null });
   const [aviso, setAviso] = useState('');
   const [filtro, setFiltro] = useState('');
@@ -76,7 +76,7 @@ export default function HomeGeneral() {
       <div className="home-general-saludo">
         <div><h1 className="h3">Hola, {perfil?.nombre?.split(' ')[0]||'equipo'}</h1>
           <p className="chico apagado">Tu espacio de trabajo · Coproactiva</p></div>
-        <Campana miId={perfil?.id}/>
+        <div className="home-general-perfil"><Campana miId={perfil?.id}/><button type="button" className="boton boton-texto" onClick={salir}>Salir</button></div>
       </div>
     </header>
     <div className="cuerpo modulo-contenido home-general-cuerpo">
