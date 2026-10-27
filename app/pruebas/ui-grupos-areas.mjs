@@ -115,7 +115,7 @@ try {
     await page.getByRole('textbox',{name:'Nombre'}).fill('Seguimiento QA');
     await page.getByRole('textbox',{name:'Asunto'}).fill('Hola {{nombre}}');
     await page.getByRole('textbox',{name:'Mensaje'}).fill('Necesidades de {{comunidad}}');
-    await page.getByText('Necesidades de').waitFor();
+    await page.locator('.plantillas-correo-previa').getByText('Necesidades de',{exact:true}).waitFor();
     console.log('Móvil · editor de correos con variables y vista previa: OK');
     await ctx.close();
   }
