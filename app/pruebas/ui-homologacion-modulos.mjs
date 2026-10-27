@@ -80,7 +80,7 @@ try {
       await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
       const grupo=page.locator('.home-general').getByRole('button',{name:new RegExp('^'+area.grupo)});
       if((await grupo.getAttribute('aria-expanded'))==='false')await grupo.click();
-      await page.locator('.home-general a[href="'+area.ruta+'"]').click();
+      await page.locator('.home-general-enlaces a[href="'+area.ruta+'"]').click();
       await page.waitForURL(u=>u.pathname===area.ruta,{timeout:17000});
       await page.getByRole('heading',{name:area.heading}).first().waitFor({timeout:17000});
       const aspecto = await page.evaluate(()=>{
