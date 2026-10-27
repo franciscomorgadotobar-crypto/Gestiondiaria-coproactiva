@@ -78,7 +78,7 @@ async function clickDestino(page,ruta,etiqueta) {
 async function irPantalla(page,vista) {
   // Abre siempre desde el Home único, sin un selector intermedio.
   await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:22000});
-  await page.getByRole('heading',{name:'Dashboards por área'}).waitFor({timeout:12000});
+  await page.getByRole('heading',{name:/Dashboards por área|Módulos de trabajo/}).waitFor({timeout:12000});
   const ruta=vista.ruta;
   const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
   const grupo=(operacion||ruta.startsWith('/proveedores'))?'Operaciones'
