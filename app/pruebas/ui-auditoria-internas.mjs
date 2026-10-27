@@ -96,6 +96,7 @@ async function irPantalla(page,vista) {
   } else {
     await page.getByRole('button',{name:/Cambiar vista/}).click();
     await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
+    await page.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     await page.locator('.home-general-modulo[href="'+raiz+'"]').click();
   }
   await page.waitForURL(u=>u.pathname===raiz,{timeout:12000});
