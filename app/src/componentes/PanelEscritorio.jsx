@@ -222,7 +222,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true }
       ];
 
-  const inicio = esCliente ? '/portal' : inicioSegunArea();
+  const inicio = esCliente ? '/portal' : '/';
 
   function volverGlobal() {
     const evento = new CustomEvent('coproactiva:volver', { cancelable: true });
@@ -375,7 +375,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   function abrirGrupoLateral(item) {
     guardarArea(item.id);
-    if (pathname !== item.ruta) navegar(item.ruta);
+    if (pathname !== item.ruta) navegar(item.ruta, { replace:true });
   }
 
   function esModuloActivo(item) {
@@ -401,7 +401,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   function enlacesDelGrupo() {
     return accesos.filter(item => item.mostrar).map(item => (
-      <Link key={item.ruta} to={item.ruta}
+      <Link key={item.ruta} to={item.ruta} replace
             aria-current={(item.activo ? item.activo(pathname) : activa(pathname, item.ruta)) ? 'page' : undefined}
             className={'enlace-lateral' + (item.hijo ? ' enlace-lateral-hijo' : '') +
               ((item.activo ? item.activo(pathname) : activa(pathname, item.ruta)) ? ' activo' : '')}>
@@ -422,7 +422,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             <>
               <span className="micro apagado etiqueta-lateral">Módulos</span>
               {modulosPlanos.map(item => (
-                <Link key={item.id} to={item.ruta}
+                <Link key={item.id} to={item.ruta} replace
                       onClick={() => { if (item.area) guardarArea(item.area); }}
                       aria-current={esModuloActivo(item) ? 'page' : undefined}
                       className={'enlace-lateral' + (esModuloActivo(item) ? ' activo' : '')}>
