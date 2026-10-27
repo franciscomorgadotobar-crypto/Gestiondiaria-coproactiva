@@ -125,7 +125,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const puedeCambiarArea = Boolean(puedeConfigurar);
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
-  const organizacion = leerOrganizacion(perfil?.id);
+  // El menú lateral utiliza en vivo la misma organización del Home.
+  const [organizacion, setOrganizacion] = useState(() => leerOrganizacion(perfil?.id));
+  useEffect(() => {
+    const sincronizar = () => setOrganizacion(leerOrganizacion(perfil?.id));
+    sincronizar();
+    window.addEventListener('coproactiva:organizacion-cambio', sincronizar);
+    return () => window.removeEventListener('coproactiva:organizacion-cambio', sincronizar);
+  }, [perfil?.id]);
   const modulosPlanos = esCliente ? [] : modulosDisponibles(perfil);
 
 
