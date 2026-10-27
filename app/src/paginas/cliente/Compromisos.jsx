@@ -205,7 +205,10 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   finally{setGuardando(false);}
  }
  async function cambiarEstado(item, siguiente) {
-  if(!administrador || guardando || siguiente===item.estado)return;
+  if(!administrador || guardando)return;
+  const fechaNueva=fechasRapidas[item.id];
+  const notaNueva=observacionesRapidas[item.id]?.trim();
+  if(siguiente===item.estado && (!fechaNueva || fechaNueva===item.fecha_proxima_accion) && !notaNueva)return;
   const proxima=fechasRapidas[item.id]||item.fecha_proxima_accion||null;
   if(siguiente==='en_espera'&&!proxima){
     return setError('Registra la fecha de la próxima acción antes de pasar el compromiso a En espera.');
@@ -287,6 +290,8 @@ export default function Compromisos({ comunidadId, administrador = false }) {
                     value={observacionesRapidas[item.id]||''}
                     onChange={e=>setObservacionesRapidas(x=>({...x,[item.id]:e.target.value}))}/>
                 </label>
+                <button type="button" disabled={guardando} className="boton boton-secundario"
+                  onClick={()=>cambiarEstado(item,item.estado)}>Guardar fecha / seguimiento</button>
                 <button type="button" disabled={guardando} className="boton boton-secundario"
                   onClick={()=>cambiarEstado(item,item.estado==='en_espera'?'en_curso':'en_espera')}>
                   {item.estado==='en_espera'?'Reanudar':'Poner en espera'}
