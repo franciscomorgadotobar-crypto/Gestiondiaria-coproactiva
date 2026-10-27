@@ -83,8 +83,8 @@ async function irPantalla(page,vista) {
   const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
   const grupo=(operacion||ruta.startsWith('/proveedores'))?'Operaciones'
     :ruta.startsWith('/contabilidad')?'Finanzas':'Comercial';
-  const head=page.locator('.home-general').getByRole('button',{name:new RegExp('^'+grupo)});
-  if((await head.getAttribute('aria-expanded'))==='false') await head.click();
+  await page.getByRole('button',{name:/Cambiar vista/}).click();
+  await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
   const raiz=ruta.startsWith('/nuevo')?'/inicio'
     :ruta.startsWith('/comunidades')?'/comunidades'
     :ruta.startsWith('/plantillas')?'/plantillas'
