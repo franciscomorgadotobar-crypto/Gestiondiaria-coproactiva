@@ -61,8 +61,8 @@ begin
    update public.compromisos_administracion
    set estado=p_estado, fecha_proxima_accion=coalesce(p_proxima_accion,fecha_proxima_accion),
        fecha_inicio=case when p_estado='en_curso' and fecha_inicio is null
-         then current_date else fecha_inicio end,
-       fecha_cierre=case when p_estado='completado' then coalesce(fecha_cierre,current_date)
+         then (now() at time zone 'America/Santiago')::date else fecha_inicio end,
+       fecha_cierre=case when p_estado='completado' then coalesce(fecha_cierre,(now() at time zone 'America/Santiago')::date)
          else null end,
        actualizado_en=now()
    where id=p_compromiso_id returning * into actualizado;
