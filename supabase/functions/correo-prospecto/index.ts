@@ -74,7 +74,9 @@ Deno.serve(async req=>{
       .select('codigo,asunto,adjunto_sugerido').eq('id',plantillaId).eq('activa',true).maybeSingle();
     if(plantillaError||!plantilla) return respuesta({error:'Plantilla no disponible'},422);
     if(plantilla.asunto?.startsWith('Re:')||['25','26','30'].includes(plantilla.codigo))
-      return respuesta({error:'Para este correo debes usar el hilo original o incorporar adjuntos. Cópialo y envíalo desde tu correo.'},422);
+      return respuesta({error:'Esta plantilla debe responderse dentro del hilo original desde el correo corporativo'},422);
+    if(plantilla.adjunto_sugerido?.trim()&&!referencias.length)
+      return respuesta({error:'La plantilla requiere seleccionar un adjunto físico antes del envío'},422);
   }
 
   // Límite de seguridad para evitar envíos masivos desde una herramienta
