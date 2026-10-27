@@ -9,7 +9,7 @@ import { useVolverGlobal, volverPorJerarquia } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import { prepararCarpetasDrive } from '../../lib/drive';
-import {completarCorreo} from '../../lib/plantillasCorreo';
+import {completarCorreo,validarBorradorCorreo} from '../../lib/plantillasCorreo';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
  *
@@ -89,10 +89,11 @@ export default function Pipeline() {
   const [avisoCorreo, setAvisoCorreo] = useState(null);
   const [plantillasCorreo,setPlantillasCorreo] = useState([]);
   const [plantillaElegida,setPlantillaElegida] = useState('');
+  const [varianteElegida,setVarianteElegida] = useState('principal');
   useEffect(()=>{
     let activo=true;
-    supabase.from('plantillas_correo_crm').select('id,nombre,asunto,cuerpo')
-      .eq('activa',true).order('nombre').then(({data,error})=>{
+    supabase.from('plantillas_correo_crm').select('id,codigo,nombre,categoria,uso,etapa_crm,adjunto_sugerido,asunto,cuerpo,variantes')
+      .eq('activa',true).order('codigo',{ascending:true,nullsFirst:false}).then(({data,error})=>{
         if(activo&&!error)setPlantillasCorreo(data||[]);
       });
     return()=>{activo=false};
@@ -179,25 +180,46 @@ export default function Pipeline() {
     setAsuntoCorreo('Coproactiva · ' + p.nombre_condominio);
     setMensajeCorreo('');
     setPlantillaElegida('');
+    setVarianteElegida('principal');
     requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
-  function cargarPlantillaCorreo(id) {
+  function cargarPlantillaCorreo(id, variante='principal') {
     const p=plantillasCorreo.find(x=>x.id===id);
     setPlantillaElegida(id);
+    setVarianteElegida(variante);
     if(!p||!correoProspecto)return;
+    const cuerpo=variante==='principal'?p.cuerpo:p.variantes?.[Number(variante)]?.cuerpo||p.cuerpo;
     setAsuntoCorreo(completarCorreo(p.asunto,correoProspecto,perfil?.nombre));
-    setMensajeCorreo(completarCorreo(p.cuerpo,correoProspecto,perfil?.nombre));
+    setMensajeCorreo(completarCorreo(cuerpo,correoProspecto,perfil?.nombre));
+  }
+
+  const plantillaActual=plantillasCorreo.find(p=>p.id===plantillaElegida);
+  const necesitaHilo=Boolean(plantillaActual?.asunto?.startsWith('Re:')||
+    ['25','26','30'].includes(plantillaActual?.codigo));
+  const necesitaAdjunto=Boolean(plantillaActual?.adjunto_sugerido?.trim());
+  const requiereCorreoExterno=necesitaHilo||necesitaAdjunto;
+  async function copiarBorradorCorreo(){
+    const texto='Asunto: '+asuntoCorreo+'\n\n'+mensajeCorreo;
+    try {
+      await navigator.clipboard.writeText(texto);
+      setAvisoCorreo('Borrador copiado. Revisa el hilo, los adjuntos y el CCO en tu correo.');
+    }catch{
+      setError('No se pudo copiar. Puedes seleccionar el asunto y mensaje manualmente.');
+    }
   }
 
   async function enviarCorreo(e) {
     e.preventDefault();
     if (!correoProspecto || enviandoCorreo) return;
-    if (!asuntoCorreo.trim() || !mensajeCorreo.trim()) return setError('Completa el asunto y mensaje.');
+    if (requiereCorreoExterno) return setError('Esta plantilla requiere responder en el hilo original o incorporar adjuntos. Cópiala y utilízala en el correo.');
+    const erroresBorrador=validarBorradorCorreo(asuntoCorreo,mensajeCorreo);
+    if (erroresBorrador.length) return setError(erroresBorrador.join(' '));
     setEnviandoCorreo(true);
     setError(null);
     const { data, error: envioError } = await supabase.functions.invoke('correo-prospecto', {
-      body: { prospecto_id: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim() }
+      body: { prospecto_id: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim(),
+        plantilla_id:plantillaElegida||null }
     });
     setEnviandoCorreo(false);
     if (envioError || !data?.enviado) {
@@ -394,10 +416,23 @@ export default function Pipeline() {
               <span className="etiqueta-campo">Plantilla (opcional)</span>
               <select value={plantillaElegida} onChange={e=>cargarPlantillaCorreo(e.target.value)}>
                 <option value="">Redactar desde cero</option>
-                {plantillasCorreo.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+                {plantillasCorreo.map(p=><option key={p.id} value={p.id}>{p.codigo?p.codigo+' · ':''}{p.nombre} — {p.categoria||'Personalizadas'}</option>)}
               </select>
               <Link to="/plantillas-correo" className="micro">Administrar plantillas de correo</Link>
             </label>
+            {plantillaActual&&<div className="tarjeta pipeline-plantilla-contexto">
+              {plantillaActual.uso&&<p><strong>Cuándo:</strong> {plantillaActual.uso}</p>}
+              {plantillaActual.etapa_crm&&<p><strong>Etapa:</strong> {plantillaActual.etapa_crm}</p>}
+              {Array.isArray(plantillaActual.variantes)&&plantillaActual.variantes.length>0&&
+                <label className="campo">Variante
+                  <select value={varianteElegida} onChange={e=>cargarPlantillaCorreo(plantillaElegida,e.target.value)}>
+                    <option value="principal">A — breve</option>
+                    {plantillaActual.variantes.map((v,i)=><option key={i} value={String(i)}>{v.nombre}</option>)}
+                  </select>
+                </label>}
+              {necesitaHilo&&<p>Esta plantilla es una respuesta o seguimiento: debe enviarse dentro del hilo original. El CRM no dispone de ese enlace automático.</p>}
+              {necesitaAdjunto&&<p>Adjunto indicado: {plantillaActual.adjunto_sugerido}. El envío directo del CRM no incorpora archivos.</p>}
+            </div>}
             <label className="campo">
               <span className="etiqueta-campo">Asunto</span>
               <input value={asuntoCorreo} required maxLength={160}
@@ -408,10 +443,14 @@ export default function Pipeline() {
               <textarea value={mensajeCorreo} required maxLength={5000} rows={6}
                         onChange={e => setMensajeCorreo(e.target.value)} />
             </label>
+            <p className="chico apagado">CCO del catálogo: osmarmeza.adm7@gmail.com y franciscomorgadotobar@gmail.com. Los campos sin completar y los textos entre [corchetes] impiden el envío.</p>
             <div className="fila-botones">
               <button className="boton boton-secundario" type="button" disabled={enviandoCorreo}
                       onClick={() => setCorreoProspecto(null)}>Cancelar</button>
-              <button className="boton" type="submit" disabled={enviandoCorreo}>
+              <button className="boton boton-secundario" type="button" onClick={copiarBorradorCorreo}>
+                Copiar borrador
+              </button>
+              <button className="boton" type="submit" disabled={enviandoCorreo||requiereCorreoExterno}>
                 {enviandoCorreo ? 'Enviando…' : 'Enviar correo'}
               </button>
             </div>

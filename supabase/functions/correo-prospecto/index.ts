@@ -11,6 +11,8 @@ const SMTP_PASS = (Deno.env.get('SMTP_CLAVE') || '').replace(/\s+/g,'');
 const SMTP_HOST = Deno.env.get('SMTP_SERVIDOR') || 'smtp.gmail.com';
 const SMTP_PORT = Number(Deno.env.get('SMTP_PUERTO') || '465');
 const ORIGEN = 'https://app.coproactiva.cl';
+// CCO indicado expresamente en el catálogo de correos Coproactiva v1.0.
+const CCO = ['osmarmeza.adm7@gmail.com','franciscomorgadotobar@gmail.com'];
 
 const cors = {
   'access-control-allow-origin': ORIGEN,
@@ -46,8 +48,19 @@ Deno.serve(async req=>{
   const prospectoId=normal(body?.prospecto_id,36);
   const asunto=normal(body?.asunto,160).replace(/[\r\n]+/g,' ');
   const mensaje=normal(body?.mensaje,5000);
+  const plantillaId=normal(body?.plantilla_id,36);
   if(!uuidValido(prospectoId)||!asunto||!mensaje)
     return respuesta({error:'Selecciona el prospecto y completa asunto y mensaje'},400);
+  if(/{{[\w]+}}|\[[^\]\n]+\]/.test(asunto+'\n'+mensaje))
+    return respuesta({error:'El correo tiene variables pendientes o instrucciones entre corchetes'},422);
+  if(plantillaId){
+    if(!uuidValido(plantillaId)) return respuesta({error:'Plantilla inválida'},400);
+    const {data:plantilla,error:plantillaError}=await admin.from('plantillas_correo_crm')
+      .select('codigo,asunto,adjunto_sugerido').eq('id',plantillaId).eq('activa',true).maybeSingle();
+    if(plantillaError||!plantilla) return respuesta({error:'Plantilla no disponible'},422);
+    if(plantilla.asunto?.startsWith('Re:')||['25','26','30'].includes(plantilla.codigo)||plantilla.adjunto_sugerido?.trim())
+      return respuesta({error:'Para este correo debes usar el hilo original o incorporar adjuntos. Cópialo y envíalo desde tu correo.'},422);
+  }
 
   // Límite de seguridad para evitar envíos masivos desde una herramienta
   // pensada para gestionar un prospecto a la vez.
@@ -77,16 +90,11 @@ Deno.serve(async req=>{
         auth:{username:SMTP_USER,password:SMTP_PASS}}
     });
     try {
-      const saludo=prospecto.nombre_contacto
-        ? 'Hola '+String(prospecto.nombre_contacto).split(' ')[0]+','
-        : 'Estimados,';
-      const pie='Saludos,\n'+(perfil.nombre||'Equipo Coproactiva')+
-        '\nCoproactiva Administración SpA\n'+SMTP_USER;
-      const texto=saludo+'\n\n'+mensaje+'\n\n'+pie;
-      const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36">'+
-        '<p>'+escapar(saludo)+'</p><p>'+escapar(mensaje).replace(/\n/g,'<br>')+
-        '</p><p>'+escapar(pie).replace(/\n/g,'<br>')+'</p></div>';
-      await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,
+      // El editor ya contiene el saludo y la despedida; no duplicarlos.
+      const texto=mensaje;
+      const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36"><p>'+
+        escapar(mensaje).replace(/\n/g,'<br>')+'</p></div>';
+      await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,bcc:CCO,
         subject:asunto,content:texto,html});
       enviado=true;
     }catch(e) {
