@@ -98,7 +98,10 @@ async function irPantalla(page,vista) {
   await page.locator('.seleccion-home__tarjeta').filter({hasText:nombre}).first().click();
   await page.waitForURL(u=>u.pathname===raiz,{timeout:12000});
   if(operacion) {
-    if(ruta==='/nuevo') await clickDestino(page,'/nuevo','Nuevo levantamiento');
+    if(ruta==='/nuevo') {
+      await page.locator('a[href="/nuevo"]:visible').first().waitFor({timeout:12000});
+      await clickDestino(page,'/nuevo','Nuevo levantamiento');
+    }
     else if(ruta.startsWith('/comunidades')) {
       await clickDestino(page,'/comunidades','Comunidades');
       if(ruta!=='/comunidades')
