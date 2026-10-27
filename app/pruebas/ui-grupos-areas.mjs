@@ -142,7 +142,10 @@ try {
   // Plantillas de correo del CRM: editor y vista previa funcional.
   {
     const {ctx,page}=await crear();
-    await page.goto(base + '/plantillas-correo',{waitUntil:'domcontentloaded'});
+    await page.getByRole('button',{name:/Comercial/}).click();
+    await page.locator('.home-general-indicador[href="/pipeline"]').click();
+    await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:/Plantillas de correo/}).click();
     await page.waitForURL(u=>u.pathname==='/plantillas-correo',{timeout:20000});
     await page.getByRole('button',{name:/Nueva plantilla/}).click();
     await page.getByRole('textbox',{name:'Nombre'}).fill('Seguimiento QA');
