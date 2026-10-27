@@ -55,7 +55,7 @@ try {
     assert.equal(url.pathname, '/pipeline', 'abre Pipeline, no el Home');
     assert.equal(url.search, '?etapa=nuevo', 'sin la marca origen');
     assert.equal(await page.evaluate(id => localStorage.getItem('coproactiva_area:' + id), userId), 'comercial');
-    assert.equal(await page.getByText('Módulos de trabajo').count(), 0);
+    assert.equal(await page.locator('.seleccion-home').count(), 0);
     await page.goBack();
     await page.waitForTimeout(500);
     assert.equal(new URL(page.url()).pathname, '/', 'Atrás vuelve al Home');
@@ -66,7 +66,7 @@ try {
   {
     const { ctx, page } = await abrir('/pipeline');
     assert.equal(new URL(page.url()).pathname, '/', 'sin marca mantiene la política de Home');
-    assert.ok(await page.getByText('Módulos de trabajo').count() > 0);
+    assert.ok(await page.locator('.seleccion-home').count() > 0);
     console.log('OK /pipeline sin marca → Home');
     await ctx.close();
   }
