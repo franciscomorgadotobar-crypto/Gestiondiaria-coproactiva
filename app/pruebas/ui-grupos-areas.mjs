@@ -93,6 +93,36 @@ try {
     await ctx.close();
   }
 
+  // Cambiar vista recupera dos decisiones independientes: organización y
+  // presentación. Se mantienen al recargar el Home, sin pantalla intermedia.
+  {
+    const {ctx,page}=await crear({ancho:390,alto:844});
+    await page.getByRole('button',{name:/Cambiar vista/}).click();
+    const dialogo=page.getByRole('dialog',{name:'Opciones de visualización'});
+    assert.equal(await dialogo.getByRole('button',{name:'Por áreas'}).getAttribute('aria-pressed'),'true');
+    assert.equal(await dialogo.getByRole('button',{name:'Lista'}).getAttribute('aria-pressed'),'true');
+    await dialogo.getByRole('button',{name:'Por módulos'}).click();
+    await dialogo.getByRole('button',{name:'Cuadrícula'}).click();
+    assert.equal(await page.locator('.home-general-modulos.vista-cuadricula').count(),1);
+    const ultimo=page.locator('.home-general-modulo').last();
+    assert.match(await ultimo.innerText(),/Configuración/);
+    assert.equal(await page.locator('.home-general-modulo').count(),9);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.getByRole('heading',{name:/Hola/}).waitFor();
+    assert.equal(await page.locator('.home-general-modulos.vista-cuadricula').count(),1);
+    await page.getByRole('button',{name:/Cambiar vista/}).click();
+    const menu=page.getByRole('dialog',{name:'Opciones de visualización'});
+    assert.equal(await menu.getByRole('button',{name:'Por módulos'}).getAttribute('aria-pressed'),'true');
+    assert.equal(await menu.getByRole('button',{name:'Cuadrícula'}).getAttribute('aria-pressed'),'true');
+    await menu.getByRole('button',{name:'Por áreas'}).click();
+    await menu.getByRole('button',{name:'Lista'}).click();
+    assert.equal(await page.locator('.home-general-secciones.vista-lista').count(),1);
+    assert.match(await page.locator('.home-general-seccion').last().innerText(),/Administración y ajustes/);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2),'sin desbordamiento del Home');
+    console.log('Home · cuatro combinaciones, persistencia y Configuración al final: OK');
+    await ctx.close();
+  }
+
   // Operaciones: acceso directo y filtros de compromisos por comunidad.
   {
     const {ctx,page}=await crear({ancho:360,alto:740});
