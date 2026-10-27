@@ -10,6 +10,7 @@ import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import { prepararCarpetasDrive } from '../../lib/drive';
 import {completarCorreo,validarBorradorCorreo} from '../../lib/plantillasCorreo';
+import AdjuntosCorreo from '../../componentes/AdjuntosCorreo';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
  *
@@ -90,6 +91,7 @@ export default function Pipeline() {
   const [plantillasCorreo,setPlantillasCorreo] = useState([]);
   const [plantillaElegida,setPlantillaElegida] = useState('');
   const [varianteElegida,setVarianteElegida] = useState('principal');
+  const [adjuntosCorreo,setAdjuntosCorreo] = useState([]);
   useEffect(()=>{
     let activo=true;
     supabase.from('plantillas_correo_crm').select('id,codigo,nombre,categoria,uso,etapa_crm,adjunto_sugerido,asunto,cuerpo,variantes')
@@ -181,6 +183,7 @@ export default function Pipeline() {
     setMensajeCorreo('');
     setPlantillaElegida('');
     setVarianteElegida('principal');
+    setAdjuntosCorreo([]);
     requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
@@ -198,7 +201,7 @@ export default function Pipeline() {
   const necesitaHilo=Boolean(plantillaActual?.asunto?.startsWith('Re:')||
     ['25','26','30'].includes(plantillaActual?.codigo));
   const necesitaAdjunto=Boolean(plantillaActual?.adjunto_sugerido?.trim());
-  const requiereCorreoExterno=necesitaHilo||necesitaAdjunto;
+  const requiereCorreoExterno=necesitaHilo;
   async function copiarBorradorCorreo(){
     const texto='Asunto: '+asuntoCorreo+'\n\n'+mensajeCorreo;
     try {
@@ -212,14 +215,15 @@ export default function Pipeline() {
   async function enviarCorreo(e) {
     e.preventDefault();
     if (!correoProspecto || enviandoCorreo) return;
-    if (requiereCorreoExterno) return setError('Esta plantilla requiere responder en el hilo original o incorporar adjuntos. Cópiala y utilízala en el correo.');
+    if (requiereCorreoExterno) return setError('Esta plantilla debe enviarse como respuesta al hilo original. Cópiala para responder desde tu correo.');
+    if(necesitaAdjunto&&!adjuntosCorreo.length) return setError('Esta plantilla requiere al menos un adjunto real antes del envío.');
     const erroresBorrador=validarBorradorCorreo(asuntoCorreo,mensajeCorreo);
     if (erroresBorrador.length) return setError(erroresBorrador.join(' '));
     setEnviandoCorreo(true);
     setError(null);
     const { data, error: envioError } = await supabase.functions.invoke('correo-prospecto', {
       body: { prospecto_id: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim(),
-        plantilla_id:plantillaElegida||null }
+        plantilla_id:plantillaElegida||null, adjuntos:adjuntosCorreo }
     });
     setEnviandoCorreo(false);
     if (envioError || !data?.enviado) {
@@ -228,6 +232,7 @@ export default function Pipeline() {
     setAvisoCorreo('Correo enviado a ' + correoProspecto.email);
     setCorreoProspecto(null);
     setMensajeCorreo('');
+    setAdjuntosCorreo([]);
     cargar();
   }
 
@@ -431,7 +436,7 @@ export default function Pipeline() {
                   </select>
                 </label>}
               {necesitaHilo&&<p>Esta plantilla es una respuesta o seguimiento: debe enviarse dentro del hilo original. El CRM no dispone de ese enlace automático.</p>}
-              {necesitaAdjunto&&<p>Adjunto indicado: {plantillaActual.adjunto_sugerido}. El envío directo del CRM no incorpora archivos.</p>}
+              {necesitaAdjunto&&<p>Adjunto sugerido: {plantillaActual.adjunto_sugerido}. Selecciona abajo el archivo real para enviarlo dentro del correo.</p>}
             </div>}
             <label className="campo">
               <span className="etiqueta-campo">Asunto</span>
@@ -443,12 +448,13 @@ export default function Pipeline() {
               <textarea value={mensajeCorreo} required maxLength={5000} rows={6}
                         onChange={e => setMensajeCorreo(e.target.value)} />
             </label>
+            <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}/>
             <p className="chico apagado">CCO del catálogo: osmarmeza.adm7@gmail.com y franciscomorgadotobar@gmail.com. Los campos sin completar y los textos entre [corchetes] impiden el envío.</p>
             <div className="fila-botones">
               <button className="boton boton-secundario" type="button" disabled={enviandoCorreo}
                       onClick={() => setCorreoProspecto(null)}>Cancelar</button>
               <button className="boton boton-secundario" type="button" onClick={copiarBorradorCorreo}>
-                Copiar borrador
+                Copiar texto
               </button>
               <button className="boton" type="submit" disabled={enviandoCorreo||requiereCorreoExterno}>
                 {enviandoCorreo ? 'Enviando…' : 'Enviar correo'}
