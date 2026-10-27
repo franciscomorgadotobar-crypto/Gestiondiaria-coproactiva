@@ -54,14 +54,14 @@ export default function HomeGeneral() {
       ]},
     {id:'finanzas',nombre:'Finanzas',descripcion:'Gestión contable y financiera.',mostrar:administracion,
       enlaces:[['Gestión contable','/contabilidad','Asientos, libro mayor y estados financieros']]},
+    {id:'general',nombre:'Mi espacio',descripcion:'Avisos, información y cuenta personal.',mostrar:true,
+      enlaces:[['Notificaciones','/notificaciones','Avisos pendientes'],['Mi cuenta','/mi-cuenta','Perfil y preferencias'],['Aprendizaje','/conocimientos','Guías y normativas']]},
     {id:'administracion',nombre:'Administración y ajustes',descripcion:'Equipo, usuarios, permisos, accesos de clientes y configuración general.',
       mostrar:administracion,enlaces:[
-        ['Configuración general','/configuracion','Ajustes de la aplicación'],
         ['Equipo y permisos','/equipo','Usuarios y accesos internos'],
-        ...(superadmin?[['Clientes y accesos','/clientes','Permisos del portal cliente']]:[])
-      ]},
-    {id:'general',nombre:'Mi espacio',descripcion:'Avisos, información y cuenta personal.',mostrar:true,
-      enlaces:[['Notificaciones','/notificaciones','Avisos pendientes'],['Mi cuenta','/mi-cuenta','Perfil y preferencias'],['Aprendizaje','/conocimientos','Guías y normativas']]}
+        ...(superadmin?[['Clientes y accesos','/clientes','Permisos del portal cliente']]:[]),
+        ['Configuración general','/configuracion','Ajustes de la aplicación']
+      ]}
   ].filter(g=>g.mostrar),[comercial,administracion,superadmin]);
   const q=filtro.trim().toLocaleLowerCase('es-CL');
   const grupos=secciones.map(g=>({...g,enlaces:g.enlaces.filter(x=>!q||(x[0]+' '+x[2]).toLocaleLowerCase('es-CL').includes(q))}))
