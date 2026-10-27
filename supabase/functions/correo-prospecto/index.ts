@@ -2,6 +2,7 @@
 // en el prospecto. Autenticación obligatoria, control de rol y auditoría.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
+import { driveFetch } from '../_compartido/google-drive.ts';
 
 const BASE = Deno.env.get('SUPABASE_URL') || '';
 const ANON = Deno.env.get('SUPABASE_ANON_KEY') || '';
@@ -13,6 +14,14 @@ const SMTP_PORT = Number(Deno.env.get('SMTP_PUERTO') || '465');
 const ORIGEN = 'https://app.coproactiva.cl';
 // CCO indicado expresamente en el catálogo de correos Coproactiva v1.0.
 const CCO = ['osmarmeza.adm7@gmail.com','franciscomorgadotobar@gmail.com'];
+// Máximo 3 archivos físicos, 8 MiB en total antes de la codificación MIME.
+const MAX_ARCHIVOS=3, MAX_TOTAL=8*1024*1024;
+const MIME_PERMITIDOS=new Set([
+ 'application/pdf','image/jpeg','image/png','image/webp','text/plain','text/csv',
+ 'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+ 'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+ 'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'
+]);
 
 const cors = {
   'access-control-allow-origin': ORIGEN,
@@ -49,6 +58,12 @@ Deno.serve(async req=>{
   const asunto=normal(body?.asunto,160).replace(/[\r\n]+/g,' ');
   const mensaje=normal(body?.mensaje,5000);
   const plantillaId=normal(body?.plantilla_id,36);
+  const referencias=Array.isArray(body?.adjuntos) ? body.adjuntos : [];
+  if(referencias.length>MAX_ARCHIVOS||!referencias.every(x=>typeof x==='string' && /^(b|c):[a-f0-9-]{36}$/i.test(x)))
+    return respuesta({error:'Se permiten hasta tres archivos registrados en la biblioteca o comunidad'},422);
+  const idsUnicos=[...new Set(referencias)];
+  if(idsUnicos.length!==referencias.length)return respuesta({error:'Hay adjuntos repetidos'},422);
+
   if(!uuidValido(prospectoId)||!asunto||!mensaje)
     return respuesta({error:'Selecciona el prospecto y completa asunto y mensaje'},400);
   if(/{{[\w]+}}|\[[^\]\n]+\]/.test(asunto+'\n'+mensaje))
@@ -58,7 +73,7 @@ Deno.serve(async req=>{
     const {data:plantilla,error:plantillaError}=await admin.from('plantillas_correo_crm')
       .select('codigo,asunto,adjunto_sugerido').eq('id',plantillaId).eq('activa',true).maybeSingle();
     if(plantillaError||!plantilla) return respuesta({error:'Plantilla no disponible'},422);
-    if(plantilla.asunto?.startsWith('Re:')||['25','26','30'].includes(plantilla.codigo)||plantilla.adjunto_sugerido?.trim())
+    if(plantilla.asunto?.startsWith('Re:')||['25','26','30'].includes(plantilla.codigo))
       return respuesta({error:'Para este correo debes usar el hilo original o incorporar adjuntos. Cópialo y envíalo desde tu correo.'},422);
   }
 
@@ -76,8 +91,56 @@ Deno.serve(async req=>{
   const destinatario=normal(prospecto.email,254).toLowerCase();
   if(!correoValido(destinatario)) return respuesta({error:'El prospecto no tiene un correo válido'},422);
 
+  // Los IDs se resuelven en el servidor: jamás se aceptan URLs o Drive file IDs
+  // proporcionados por el navegador. Descarga binaria desde Google Drive privado.
+  const adjuntosSMTP:{filename:string;contentType:string;encoding:'binary';content:Uint8Array}[]=[];
+  const auditoriaAdjuntos:{id:string;origen:string;nombre:string;bytes:number}[]=[];
+  let total=0;
+  for(const referencia of idsUnicos){
+    const origen=referencia.slice(0,1),id=referencia.slice(2);
+    if(!uuidValido(id))return respuesta({error:'Referencia de archivo inválida'},422);
+    const tabla=origen==='b'?'correo_archivos_drive':'drive_archivos_comunidad';
+    const {data:doc,error:docError}=await admin.from(tabla).select('*').eq('id',id).is('eliminado_en',null).maybeSingle();
+    if(docError||!doc)return respuesta({error:'Un archivo ya no se encuentra disponible'},422);
+    if(origen==='c'){
+      // Igualar los permisos de lectura existentes de Drive-comunidad.
+      const cid=doc.comunidad_id;
+      if(perfil.rol!=='superadmin'){
+        const {data:permiso}=await admin.from('perfil_comunidades')
+         .select('comunidad_id').eq('perfil_id',user.id).eq('comunidad_id',cid).maybeSingle();
+        if(!permiso)return respuesta({error:'Sin permiso para usar este documento comunitario'},403);
+      }
+      // Jamás se incluye un documento borrado, aunque haya sido visible al portal.
+    }
+    const nombre=normal(doc.nombre,180);
+    const mime=normal(doc.mime,150);
+    const tamano=Number(doc.tamano);
+    if(!MIME_PERMITIDOS.has(mime)||!Number.isSafeInteger(tamano)||tamano<=0||tamano>MAX_TOTAL)
+      return respuesta({error:'Tipo o tamaño de adjunto no permitido'},422);
+    total+=tamano;
+    if(total>MAX_TOTAL)return respuesta({error:'El conjunto de archivos supera 8 MB'},422);
+    const googleId=doc.drive_file_id;
+    if(typeof googleId!=='string'||!googleId)return respuesta({error:'Archivo sin respaldo válido en Drive'},422);
+    let respuestaDrive:Response;
+    try{
+      respuestaDrive=await driveFetch(admin,'/drive/v3/files/'+encodeURIComponent(googleId)+'?alt=media&supportsAllDrives=true');
+    }catch{
+      return respuesta({error:'No se pudo obtener un adjunto desde Drive'},503);
+    }
+    if(!respuestaDrive.ok)return respuesta({error:'No se pudo descargar uno de los adjuntos'},503);
+    const longitud=Number(respuestaDrive.headers.get('content-length')||0);
+    if(longitud>tamano||longitud>MAX_TOTAL-total+tamano){
+      await respuestaDrive.body?.cancel();
+      return respuesta({error:'El archivo descargado excede el tamaño autorizado'},422);
+    }
+    const bytes=new Uint8Array(await respuestaDrive.arrayBuffer());
+    if(bytes.length!==tamano)return respuesta({error:'El archivo cambió de tamaño. Vuelve a seleccionarlo'},422);
+    adjuntosSMTP.push({filename:nombre,contentType:mime,encoding:'binary',content:bytes});
+    auditoriaAdjuntos.push({id,origen:origen==='b'?'biblioteca':'comunidad',nombre,bytes:tamano});
+  }
+
   const {data:registro,error:errorRegistro}=await admin.from('prospecto_correos').insert({
-    prospecto_id:prospectoId,enviado_por:user.id,destinatario,asunto,mensaje,estado:'pendiente'
+    prospecto_id:prospectoId,enviado_por:user.id,destinatario,asunto,mensaje,estado:'pendiente',adjuntos:auditoriaAdjuntos
   }).select('id').single();
   if(errorRegistro||!registro) return respuesta({error:'No se pudo registrar el intento de envío'},503);
 
@@ -95,7 +158,7 @@ Deno.serve(async req=>{
       const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36"><p>'+
         escapar(mensaje).replace(/\n/g,'<br>')+'</p></div>';
       await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,bcc:CCO,
-        subject:asunto,content:texto,html});
+        subject:asunto,content:texto,html,attachments:adjuntosSMTP});
       enviado=true;
     }catch(e) {
       console.error('correo-prospecto SMTP',e instanceof Error?e.name:'unknown');
