@@ -76,23 +76,25 @@ async function clickDestino(page,ruta,etiqueta) {
 }
 
 async function irPantalla(page,vista) {
-  // La PWA reabre SIEMPRE el Home de áreas, por lo que una URL profunda
-  // cargada desde cero no equivale a navegar a esa pantalla.
+  // Abre siempre desde el Home único, sin un selector intermedio.
   await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:22000});
-  await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:12000});
+  await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor({timeout:12000});
   const ruta=vista.ruta;
   const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
-  // Cuatro grupos: Proveedores es de Operaciones; Arriendos y ventas y SEO,
-  // de Comercial. Primero se elige el grupo y luego la sección.
-  const area=(operacion || ruta.startsWith('/proveedores')) ? /Operación de comunidades/
-    : ruta.startsWith('/contabilidad') ? /Gestión contable/
-    : /Gestión comercial/;
-  await page.getByRole('button',{name:area}).first().click();
-  await page.waitForURL(u=>u.pathname!=='/',{timeout:12000});
-  if(ruta.startsWith('/proveedores')) await clickDestino(page,'/proveedores','Proveedores');
-  else if(ruta.startsWith('/propiedades')) await clickDestino(page,'/propiedades','Arriendos y ventas');
-  else if(ruta.startsWith('/seo')) await clickDestino(page,'/seo','SEO');
-
+  const grupo=(operacion||ruta.startsWith('/proveedores'))?'Operaciones'
+    :ruta.startsWith('/contabilidad')?'Finanzas':'Comercial';
+  const head=page.locator('.home-general').getByRole('button',{name:new RegExp('^'+grupo)});
+  if((await head.getAttribute('aria-expanded'))==='false') await head.click();
+  const raiz=ruta.startsWith('/nuevo')?'/inicio'
+    :ruta.startsWith('/comunidades')?'/comunidades'
+    :ruta.startsWith('/plantillas')?'/plantillas'
+    :ruta.startsWith('/bitacora')?'/bitacora'
+    :ruta.startsWith('/mantenciones')?'/mantenciones'
+    :ruta.startsWith('/proveedores')?'/proveedores'
+    :ruta.startsWith('/contabilidad')?'/contabilidad'
+    :ruta.startsWith('/propiedades')?'/propiedades':'/pipeline';
+  await page.locator('.home-general a[href="'+raiz+'"]').click();
+  await page.waitForURL(u=>u.pathname===raiz,{timeout:12000});
   if(operacion) {
     if(ruta==='/nuevo') await clickDestino(page,'/nuevo','Nuevo levantamiento');
     else if(ruta.startsWith('/comunidades')) {
