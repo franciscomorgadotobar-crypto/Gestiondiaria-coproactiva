@@ -51,6 +51,6 @@ test('íconos PNG generados son válidos y tienen dimensiones exactas', () => {
 });
 
 test('sin alteraciones a rutas de Home ni gestión de sesión', () => {
-  assert.match(app, /return <SeleccionArea \/>/);
+  assert.match(app, /return <PanelEscritorio><HomeGeneral \/><\/PanelEscritorio>/);
   assert.match(app, /if \(perfil\?\.rol === 'cliente'\) return <Navigate to="\/portal" replace \/>/);
 });
