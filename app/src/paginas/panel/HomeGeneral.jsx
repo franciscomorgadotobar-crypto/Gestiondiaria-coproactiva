@@ -38,7 +38,6 @@ export default function HomeGeneral() {
   const rol = perfil?.rol;
   const comercial = ['superadmin','admin','jefatura'].includes(rol);
   const administracion = ['superadmin','admin'].includes(rol);
-  const superadmin = rol === 'superadmin';
 
   useEffect(() => {
     setOrganizacion(leerOrganizacion(perfil?.id));
@@ -80,53 +79,33 @@ export default function HomeGeneral() {
     return () => { activo = false; };
   }, [perfil?.id, comercial]);
 
+  // En la organización por áreas se muestran solo tableros de indicadores.
+  // El catálogo de módulos no se duplica aquí: permanece en "Por módulos"
+  // y en la navegación lateral/inferior.
   const secciones = useMemo(() => [
-    {id:'comercial', nombre:'Comercial', descripcion:'Contactos web, prospectos y seguimiento comercial.',
-      area:'comercial', mostrar:comercial, enlaces:[
-        ['Pipeline comercial','/pipeline','Contactos de formularios y etapas de oportunidad'],
-        ['Arriendos y ventas','/propiedades','Propiedades y publicaciones'],
-        ...(administracion ? [['SEO y Analítica','/seo','Resultados de la web y posicionamiento']] : []),
-        ['Plantillas de correo','/plantillas-correo','Mensajes reutilizables para prospectos']
-      ]},
-    {id:'operaciones', nombre:'Operaciones', descripcion:'Comunidades y trabajo en terreno.',
-      area:'operacion', mostrar:true, enlaces:[
-        ['Levantamientos','/inicio','Pendientes y realizados por persona'],
-        ['Comunidades','/comunidades','Fichas, compromisos y documentos'],
-        ['Compromisos y avances','/compromisos','Etapas, fechas y responsables por comunidad'],
-        ['Mantenciones','/mantenciones','Planificación y seguimiento'],
-        ['Bitácora','/bitacora','Incidencias y observaciones'],
-        ['Mapa','/mapa','Ubicaciones y visitas'],
-        ...(administracion ? [
-          ['Red de proveedores','/proveedores','Directorio y comunicaciones'],
-          ['Recepción y atención','/whatsapp','Conversaciones y solicitudes']
-        ] : []),
-        ...(comercial ? [['Plantillas de levantamientos','/plantillas','Formularios operativos']] : [])
-      ]},
-    {id:'finanzas', nombre:'Finanzas', descripcion:'Gestión contable y financiera.',
-      area:'finanzas', mostrar:administracion,
-      enlaces:[['Gestión contable','/contabilidad','Asientos, libro mayor y estados financieros']]},
-    {id:'general', nombre:'Aprendizaje y avisos', descripcion:'Biblioteca educativa y notificaciones personales.',
-      area:null, mostrar:true, enlaces:[
-        ['Notificaciones','/notificaciones','Avisos pendientes'],
-        ['Mi cuenta','/mi-cuenta','Perfil y preferencias'],
-        ['Aprendizaje','/conocimientos','Guías y normativas']
-      ]},
-    // Configuración debe quedar siempre al final, también en vista cuadrícula.
-    {id:'administracion', nombre:'Administración y ajustes',
-      descripcion:'Equipo, usuarios, permisos, accesos de clientes y configuración general.',
-      area:null, mostrar:administracion, enlaces:[
-        ['Equipo y permisos','/equipo','Usuarios y accesos internos'],
-        ...(superadmin ? [['Clientes y accesos','/clientes','Permisos del portal cliente']] : []),
-        ['Configuración general','/configuracion','Ajustes de la aplicación']
-      ]}
-  ].filter(grupo => grupo.mostrar), [comercial,administracion,superadmin]);
+    { id:'comercial', nombre:'Comercial',
+      descripcion:'Prospectos y seguimiento de oportunidades.',
+      area:'comercial', mostrar:comercial },
+    { id:'operaciones', nombre:'Operaciones',
+      descripcion:'Comunidades, compromisos y trabajo en terreno.',
+      area:'operacion', mostrar:true },
+    { id:'finanzas', nombre:'Finanzas',
+      descripcion:'Gestión contable y entidades.',
+      area:'finanzas', mostrar:administracion },
+    { id:'general', nombre:'Aprendizaje y avisos',
+      descripcion:'Biblioteca educativa y notificaciones personales.',
+      area:null, mostrar:true },
+    { id:'administracion', nombre:'Administración y ajustes',
+      descripcion:'Usuarios, permisos y accesos de clientes.',
+      area:null, mostrar:administracion }
+  ].filter(g => g.mostrar), [comercial,administracion]);
 
   // Se consultan solamente los dashboards que están abiertos. Al contraerlos
   // dejan de mostrarse tanto los indicadores como su contenido, sin tocar rutas.
   useEffect(() => {
     if (!perfil?.id || organizacion !== 'areas') return;
     let vigente = true;
-    const visibles = secciones.filter(g => abiertos.has(g.id));
+    const visibles = secciones.filter(g => abiertos.has(g.id) || filtro.trim());
     for (const grupo of visibles) {
       indicadoresHomeArea(grupo.id, perfil.id)
         .then(datos => {
@@ -137,7 +116,7 @@ export default function HomeGeneral() {
         });
     }
     return () => { vigente = false; };
-  }, [perfil?.id, organizacion, abiertos, secciones]);
+  }, [perfil?.id, organizacion, abiertos, secciones, filtro]);
 
   const modulos = useMemo(() => modulosDisponibles(perfil), [perfil]);
   const q = filtro.trim().toLocaleLowerCase('es-CL');
