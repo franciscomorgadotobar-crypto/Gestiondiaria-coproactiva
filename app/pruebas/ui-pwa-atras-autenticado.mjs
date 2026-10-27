@@ -86,7 +86,9 @@ try {
     await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
     assert.equal(new URL(page.url()).searchParams.get('vista'),'business');
     assert.equal(await page.getByRole('combobox',{name:'Período de análisis'}).inputValue(),'90');
-    // Navegación superior vuelve al Home raíz.
+    // Retroceso consecutivo: SEO Business → SEO Resumen → Home.
+    await page.locator('.barra-area-volver').click();
+    await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:15000});
     await page.locator('.barra-area-volver').click();
     await page.waitForURL(url=>url.pathname==='/',{timeout:15000});
     await page.getByRole('heading',{name:'Módulos de trabajo'}).waitFor();
