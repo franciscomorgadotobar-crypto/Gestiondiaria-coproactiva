@@ -11,18 +11,16 @@ const campos=read('componentes/DialogoCampos.jsx');
 const foco=read('lib/focoDialogo.js');
 const css=read('estilos/modulos.css');
 
-test('cambiar de área navega a selector sin reiniciar la PWA',()=>{
-  assert.match(panel,/function cambiarArea\(\)\s*\{\s*limpiarArea\(\);/);
-  assert.match(panel,/const pasos = pasosHastaSelector\(window\.history\.state\)/);
-  assert.match(panel,/if \(pasos !== null\) return navegar\(pasos\)/);
-  assert.match(panel,/navegar\('\/', \{ replace: true, state: \{ selectorCoproactiva: true \} \}\)/);
-  assert.doesNotMatch(panel,/window\.location\.href\s*=\s*import\.meta\.env\.BASE_URL/);
-  assert.match(router,/if \(!tieneCRM\(perfil\)\) return <PanelEscritorio><Inicio \/><\/PanelEscritorio>/);
-  assert.match(router,/return <SeleccionArea \/>/);
-  assert.doesNotMatch(router,/function RestaurarAreaGuardada/);
-  assert.ok((panel.match(/onClick=\{cambiarArea\}/g)||[]).length>=1);
-  assert.match(panel,/organizacion === 'modulos' \? 'Cambiar vista o módulo' : 'Cambiar de área'/);
-  assert.doesNotMatch(panel,/className="barra-area-cambiar"/);
+test('Home único sustituye selector de módulos y conserva navegación SPA',()=>{
+ assert.match(panel,/function cambiarArea\(\)/);
+ assert.match(panel,/navegar\('\/', \{ replace:true \}\)/);
+ assert.doesNotMatch(panel,/window\.location\.href\s*=\s*import\.meta\.env\.BASE_URL/);
+ assert.match(router,/return <PanelEscritorio><HomeGeneral \/><\/PanelEscritorio>/);
+ assert.doesNotMatch(router,/<SeleccionArea/);
+ assert.doesNotMatch(router,/function RestaurarAreaGuardada/);
+ assert.ok((panel.match(/onClick=\{cambiarArea\}/g)||[]).length>=1);
+ assert.match(panel,/Ir al inicio/);
+ assert.doesNotMatch(panel,/className="barra-area-cambiar"/);
 });
 test('los dos diálogos comparten foco accesible y respetan Atrás Android',()=>{
   for(const componente of [confirmar,campos]) {
@@ -51,42 +49,35 @@ test('el móvil respeta teclado virtual, desplazamiento y objetivos táctiles',(
   assert.match(css,/min-height:\s*var\(--tactil\)/);
 });
 
-test('Volver por niveles termina en selección de área, no sale de la PWA',()=>{
-  const verificar = (rutas, inicio='/inicio') => {
-    for (let i=0; i<rutas.length-1; i++)
-      assert.equal(destinoVolverPorJerarquia(rutas[i], inicio), rutas[i+1],
-        'desde ' + rutas[i] + ' debe retroceder a ' + rutas[i+1]);
-  };
-  verificar(['/comunidades/123','/comunidades','/inicio','/']);
-  verificar(['/control/123/editar','/control/123','/inicio','/']);
-  verificar(['/bitacora/nueva','/bitacora','/inicio','/']);
-  verificar(['/plantillas/importar','/plantillas','/inicio','/']);
-  // Grupos: Operaciones incluye Proveedores y WhatsApp; Comercial incluye
-  // Arriendos y ventas y SEO; Finanzas es Contabilidad.
-  verificar(['/proveedores/comunicaciones','/proveedores','/inicio','/']);
-  verificar(['/whatsapp/conversaciones','/whatsapp','/inicio','/']);
-  verificar(['/propiedades/abc','/propiedades','/pipeline','/']);
-  verificar(['/seo','/pipeline','/']);
-  verificar(['/contabilidad/reportes','/contabilidad','/']);
-  verificar(['/equipo','/configuracion','/']);
-  verificar(['/ayuda/practica-levantamiento','/ayuda','/inicio','/']);
-  for(const raiz of ['/inicio','/pipeline','/contabilidad','/configuracion'])
-    assert.equal(destinoVolverPorJerarquia(raiz),'/');
+test('Volver es consecutivo y no acumula pantallas de selección',()=>{
+ const verificar=rutas=>{
+   for(let i=0;i<rutas.length-1;i++)
+     assert.equal(destinoVolverPorJerarquia(rutas[i]),rutas[i+1]);
+ };
+ verificar(['/comunidades/123','/comunidades','/']);
+ verificar(['/control/123/editar','/control/123','/inicio','/']);
+ verificar(['/bitacora/nueva','/bitacora','/']);
+ verificar(['/plantillas/importar','/plantillas','/']);
+ verificar(['/proveedores/comunicaciones','/proveedores','/']);
+ verificar(['/propiedades/abc','/propiedades','/']);
+ verificar(['/seo','/']);
+ verificar(['/compromisos','/']);
+ verificar(['/contabilidad/reportes','/contabilidad','/']);
+ verificar(['/equipo','/configuracion','/']);
+ for(const raiz of ['/inicio','/pipeline','/contabilidad','/configuracion'])
+   assert.equal(destinoVolverPorJerarquia(raiz),'/');
 });
-test('cuenta y notificaciones regresan al inicio del área correcta',()=>{
-  for(const raiz of ['/pipeline','/seo','/contabilidad','/whatsapp','/inicio']){
-    assert.equal(destinoVolverPorJerarquia('/mi-cuenta',raiz),raiz);
-    assert.equal(destinoVolverPorJerarquia('/notificaciones',raiz),raiz);
-  }
+test('cuenta y notificaciones vuelven al Home transversal',()=>{
+ assert.equal(destinoVolverPorJerarquia('/mi-cuenta'),'/');
+ assert.equal(destinoVolverPorJerarquia('/notificaciones'),'/');
 });
 test('portal cliente y entrada no pasan por selector interno',()=>{
   for(const ruta of ['/','/portal','/portal/comunidades/123','/ingreso','/clave'])
     assert.equal(destinoVolverPorJerarquia(ruta),null);
 });
-test('Volver distingue perfiles y marca explícitamente el selector',()=>{
-  const nav=read('lib/navegacion.jsx');
-  assert.match(nav,/if \(!puedeCambiarArea\) return/);
-  assert.match(nav,/replace: true, state: \{ selectorCoproactiva: true \}/);
-  assert.match(nav,/limpiarArea\(\)/);
-  assert.doesNotMatch(nav,/return navegar\(-1\)/);
+test('Volver sigue sin forzar salida de la PWA',()=>{
+ const nav=read('lib/navegacion.jsx');
+ assert.match(nav,/limpiarArea\(\)/);
+ assert.match(nav,/return navegar\('\/', \{ replace:true \}\)/);
+ assert.doesNotMatch(nav,/return navegar\(-1\)/);
 });
