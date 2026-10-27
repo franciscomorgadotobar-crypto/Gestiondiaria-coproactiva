@@ -83,10 +83,9 @@ try {
   page.on('pageerror',e=>errores.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-  // SEO se abre desde su módulo independiente; no se duplica por área.
-  await page.getByRole('button',{name:/Cambiar vista/}).click();
-  await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
-  await page.locator('.home-general-modulo[href="/seo"]').click();
+  // El Home único presenta SEO dentro de la sección Comercial.
+  await page.locator('.home-general').getByRole('button',{name:/Comercial/}).click();
+  await page.getByRole('link',{name:/SEO y Analítica/}).click();
   await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
   await page.getByRole('button',{name:/Apariciones en Google Maps.*Fuente: Business Profile/}).waitFor({timeout:20000});
   await page.getByText('101',{exact:true}).waitFor({timeout:20000});
