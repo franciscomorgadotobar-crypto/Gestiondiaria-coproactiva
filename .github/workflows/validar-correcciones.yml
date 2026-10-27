@@ -30,6 +30,9 @@ jobs:
       - name: Validar notificaciones comerciales y correo de prospectos
         working-directory: app
         run: node --test pruebas/notificaciones-crm-correo.test.js
+      - name: Validar gestión de leads y botón Atrás
+        working-directory: app
+        run: node --test pruebas/pipeline-ficha-gestion.test.js
       - name: Validar selector por áreas y por módulos con permisos
         working-directory: app
         run: node --test pruebas/selector-vistas.test.js
@@ -133,6 +136,9 @@ jobs:
       - name: Enlace del correo de prospecto abre Pipeline directo
         working-directory: app
         run: node pruebas/ui-enlace-correo-pipeline.mjs
+      - name: Recorrer ficha comercial, edición y contacto en móvil/escritorio
+        working-directory: app
+        run: node pruebas/ui-pipeline-ficha.mjs
       - name: Validar pantalla de apertura real en Chromium móvil
         working-directory: app
         run: node pruebas/ui-splash-pwa.mjs

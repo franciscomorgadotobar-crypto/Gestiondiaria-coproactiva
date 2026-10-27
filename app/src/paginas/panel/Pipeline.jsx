@@ -58,6 +58,13 @@ const VACIO = {
   proxima_accion: '', fecha_proxima_accion: '', observaciones: ''
 };
 
+function enlaceTelefono(valor, whatsapp = false) {
+  const numeros=String(valor||'').replace(/\D/g,'');
+  if (!numeros) return null;
+  const internacional=numeros.length===9 && numeros.startsWith('9')?'56'+numeros:numeros;
+  return whatsapp ? 'https://wa.me/'+internacional : 'tel:+'+internacional;
+}
+
 function fechaCL(valor, conHora = false) {
   if (!valor) return null;
   const d = new Date(valor);
@@ -72,7 +79,7 @@ export default function Pipeline() {
   const navegar = useNavigate();
   const location = useLocation();
   const idAbiertoPorUrl = useRef(null);
-  useVolverGlobal(() => volverPorJerarquia(navegar, '/pipeline'));
+  useVolverGlobal(() => volverPipeline());
   const [prospectos, setProspectos] = useState(null);
   const [diagnosticos, setDiagnosticos] = useState(new Map());   // prospecto_id → { control, resultado }
   const [equipo, setEquipo] = useState([]);
@@ -92,6 +99,59 @@ export default function Pipeline() {
   const [plantillaElegida,setPlantillaElegida] = useState('');
   const [varianteElegida,setVarianteElegida] = useState('principal');
   const [adjuntosCorreo,setAdjuntosCorreo] = useState([]);
+  // El prospecto seleccionado y su subvista viven en la URL. Android y el
+  // navegador conservan Atrás: embudo → ficha → editar/correo.
+  const parametros = new URLSearchParams(location.search);
+  const prospectoSeleccionadoId = parametros.get('prospecto');
+  const accionSeleccionada = parametros.get('accion');
+  const prospectoSeleccionado = prospectos?.find(x => x.id === prospectoSeleccionadoId) ?? null;
+
+  function navegarPipeline(params, state = null, replace = false) {
+    navegar({pathname:'/pipeline',search:params.toString() ? '?' + params.toString() : ''},
+      {state,replace,preventScrollReset:true});
+  }
+  function abrirGestion(p) {
+    if (!p) return;
+    setError(null);
+    setAbierto(null);
+    setCorreoProspecto(null);
+    const params=new URLSearchParams(location.search);
+    params.set('prospecto',p.id);
+    params.delete('accion');
+    navegarPipeline(params,{desdeEmbudo:true});
+    window.scrollTo?.({top:0,behavior:'instant'});
+  }
+  function abrirAccion(accion) {
+    const params=new URLSearchParams(location.search);
+    params.set('accion',accion);
+    navegarPipeline(params,{desdeFicha:true});
+  }
+  function volverFicha() {
+    setError(null);
+    setAbierto(null);
+    setCorreoProspecto(null);
+    if (location.state?.desdeFicha) return navegar(-1);
+    const params=new URLSearchParams(location.search);
+    params.delete('accion');
+    navegarPipeline(params,null,true);
+  }
+  function cerrarGestion() {
+    setError(null);
+    setAbierto(null);
+    setCorreoProspecto(null);
+    if (location.state?.desdeEmbudo) return navegar(-1);
+    const params=new URLSearchParams(location.search);
+    params.delete('prospecto');
+    params.delete('accion');
+    navegarPipeline(params,null,true);
+  }
+  function volverPipeline() {
+    if (abierto==='nuevo') return cerrarForm();
+    if (prospectoSeleccionado && (accionSeleccionada || abierto===prospectoSeleccionado.id || correoProspecto))
+      return volverFicha();
+    if (prospectoSeleccionado) return cerrarGestion();
+    return volverPorJerarquia(navegar,'/pipeline');
+  }
   useEffect(()=>{
     let activo=true;
     supabase.from('plantillas_correo_crm').select('id,codigo,nombre,categoria,uso,etapa_crm,adjunto_sugerido,asunto,cuerpo,variantes')
@@ -127,6 +187,32 @@ export default function Pipeline() {
   }
 
   useEffect(() => { cargar(); }, []);
+
+  // Al usar Atrás/Adelante el estado del editor debe seguir a la URL.
+  // Se preservan los formularios solo mientras su subvista está activa.
+  useEffect(() => {
+    if (accionSeleccionada!=='editar') setAbierto(x=>x==='nuevo'?x:null);
+    if (accionSeleccionada!=='correo') setCorreoProspecto(null);
+    if (!prospectoSeleccionado) return;
+    if (accionSeleccionada==='correo') {
+      setCorreoProspecto(x=>x?.id===prospectoSeleccionado.id?x:prospectoSeleccionado);
+    }
+    if (accionSeleccionada==='editar') {
+      setForm({
+        nombre_condominio:prospectoSeleccionado.nombre_condominio??'',
+        direccion:prospectoSeleccionado.direccion??'',comuna:prospectoSeleccionado.comuna??'',
+        unidades:prospectoSeleccionado.unidades??'',nombre_contacto:prospectoSeleccionado.nombre_contacto??'',
+        cargo_contacto:prospectoSeleccionado.cargo_contacto??'',telefono:prospectoSeleccionado.telefono??'',
+        email:prospectoSeleccionado.email??'',tipo_servicio:prospectoSeleccionado.tipo_servicio??'',
+        fuente:prospectoSeleccionado.fuente??'',responsable_id:prospectoSeleccionado.responsable_id??'',
+        proxima_accion:prospectoSeleccionado.proxima_accion??'',
+        fecha_proxima_accion:prospectoSeleccionado.fecha_proxima_accion
+          ?prospectoSeleccionado.fecha_proxima_accion.slice(0,16):'',
+        observaciones:prospectoSeleccionado.observaciones??''
+      });
+      setAbierto(prospectoSeleccionado.id);
+    }
+  },[accionSeleccionada,prospectoSeleccionado?.id]);
 
   const porEtapa = useMemo(() => {
     const m = new Map(ETAPAS.map(([k]) => [k, []]));
@@ -166,9 +252,8 @@ export default function Pipeline() {
     idAbiertoPorUrl.current = id;
     const p = prospectos.find(x => x.id === id);
     if (p) {
-      abrirEdicion(p);
-      setEtapa(p.etapa, { replace: true });
-      requestAnimationFrame(() => document.getElementById('pipeline-formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      // La notificación abre primero la ficha de gestión, nunca la edición.
+      setEtapa(p.etapa,{replace:true});
     } else {
       setError('El prospecto de esta notificación ya no está disponible o no tienes acceso.');
     }
@@ -184,6 +269,7 @@ export default function Pipeline() {
     setPlantillaElegida('');
     setVarianteElegida('principal');
     setAdjuntosCorreo([]);
+    abrirAccion('correo');
     requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
@@ -233,6 +319,7 @@ export default function Pipeline() {
     setCorreoProspecto(null);
     setMensajeCorreo('');
     setAdjuntosCorreo([]);
+    volverFicha();
     cargar();
   }
 
@@ -253,12 +340,15 @@ export default function Pipeline() {
     });
     setAbierto(p.id);
     setCorreoProspecto(null);
+    abrirAccion('editar');
     requestAnimationFrame(() => document.getElementById('pipeline-formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   function cerrarForm() {
+    const eraEdicion=abierto!=='nuevo' && Boolean(prospectoSeleccionado);
     setAbierto(null);
     setForm(VACIO);
+    if (eraEdicion) volverFicha();
   }
 
   async function guardar() {
@@ -316,6 +406,7 @@ export default function Pipeline() {
     setGuardando(false);
     if (error || !data) return setError(error?.message || 'No se pudo actualizar el prospecto.');
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
+    setEtapa(nuevaEtapa,{replace:true});
   }
 
   async function cambiarEtapa(p, nuevaEtapa) {
@@ -394,8 +485,9 @@ export default function Pipeline() {
       )}
       <header className="encabezado modulo-cabecera">
         <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
-          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }} onClick={() => navegar(inicioSegunArea())}>
-            ‹ Inicio
+          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
+            onClick={() => prospectoSeleccionado ? cerrarGestion() : navegar(inicioSegunArea())}>
+            {prospectoSeleccionado ? '‹ Volver al embudo' : '‹ Inicio'}
           </button>
         </div>
         <div className="fila">
@@ -405,13 +497,82 @@ export default function Pipeline() {
               Leads y prospectos hasta ganarse o perderse.
             </p>
           </div>
-          <button type="button" className="boton" onClick={abrirNuevo}>Nuevo lead</button>
+          {!prospectoSeleccionado&&<button type="button" className="boton" onClick={abrirNuevo}>Nuevo lead</button>}
         </div>
       </header>
 
       <div className="cuerpo">
+        {prospectoSeleccionado && !accionSeleccionada && (
+          <button type="button" className="boton boton-secundario pipeline-volver-movil"
+            onClick={cerrarGestion}>‹ Volver al embudo</button>
+        )}
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }} role="alert">{error}</div>}
         {avisoCorreo && <div className="aviso" role="status">{avisoCorreo}</div>}
+
+        {prospectoSeleccionado && (
+          <section className="tarjeta pipeline-ficha" aria-label={'Ficha de gestión de '+prospectoSeleccionado.nombre_condominio}>
+            <div className="pipeline-ficha-encabezado">
+              <div>
+                <span className="chip chip-tipo">{ETAPAS.find(([id])=>id===prospectoSeleccionado.etapa)?.[1]||prospectoSeleccionado.etapa}</span>
+                <h2 className="h3">{prospectoSeleccionado.nombre_condominio}</h2>
+                <p className="chico apagado">{[prospectoSeleccionado.direccion,prospectoSeleccionado.comuna].filter(Boolean).join(' · ')||'Dirección pendiente'}</p>
+              </div>
+              {accionSeleccionada&&<button type="button" className="boton boton-secundario"
+                onClick={volverFicha}>‹ Volver a la ficha</button>}
+            </div>
+            {!accionSeleccionada && (
+              <>
+                <div className="pipeline-ficha-informacion">
+                  <div><span className="etiqueta-campo">Contacto</span><strong>{prospectoSeleccionado.nombre_contacto||'Sin registrar'}</strong></div>
+                  <div><span className="etiqueta-campo">Correo</span><span>{prospectoSeleccionado.email||'Sin registrar'}</span></div>
+                  <div><span className="etiqueta-campo">Teléfono</span><span>{prospectoSeleccionado.telefono||'Sin registrar'}</span></div>
+                  <div><span className="etiqueta-campo">Responsable</span><span>{equipo.find(e=>e.id===prospectoSeleccionado.responsable_id)?.nombre||'Sin asignar'}</span></div>
+                  <div><span className="etiqueta-campo">Próxima acción</span><span>{prospectoSeleccionado.proxima_accion||'No definida'}</span></div>
+                  <div><span className="etiqueta-campo">Fecha próxima acción</span><span>{fechaCL(prospectoSeleccionado.fecha_proxima_accion,true)||'Sin fecha'}</span></div>
+                </div>
+                {prospectoSeleccionado.observaciones&&<div className="pipeline-ficha-notas">
+                  <strong>Observaciones</strong><p>{prospectoSeleccionado.observaciones}</p>
+                </div>}
+                <div className="pipeline-ficha-gestionar">
+                  <h3 className="h4">Gestionar prospecto</h3>
+                  <p className="chico apagado">Elige la acción que necesitas realizar.</p>
+                  <div className="pipeline-ficha-acciones">
+                    <button type="button" className="boton boton-secundario"
+                      onClick={()=>abrirEdicion(prospectoSeleccionado)}>Editar datos</button>
+                    <button type="button" className="boton boton-secundario"
+                      disabled={!prospectoSeleccionado.email}
+                      onClick={()=>comenzarCorreo(prospectoSeleccionado)}>Enviar correo</button>
+                    {enlaceTelefono(prospectoSeleccionado.telefono,true)&&
+                      <a className="boton boton-secundario" href={enlaceTelefono(prospectoSeleccionado.telefono,true)}
+                         target="_blank" rel="noopener noreferrer">WhatsApp</a>}
+                    {enlaceTelefono(prospectoSeleccionado.telefono)&&
+                      <a className="boton boton-secundario" href={enlaceTelefono(prospectoSeleccionado.telefono)}>Llamar</a>}
+                    {diagnosticos.has(prospectoSeleccionado.id)
+                      ?<TarjetaDiagnostico diagnostico={diagnosticos.get(prospectoSeleccionado.id)} equipo={equipo}/>
+                      :!['ganado','perdido'].includes(prospectoSeleccionado.etapa) &&
+                        <Link className="boton boton-secundario" to={'/nuevo?prospecto='+prospectoSeleccionado.id}>Iniciar diagnóstico</Link>}
+                  </div>
+                </div>
+                <div className="pipeline-ficha-etapa">
+                  <label className="campo"><span className="etiqueta-campo">Etapa comercial</span>
+                    <select value={prospectoSeleccionado.etapa} disabled={guardando}
+                       onChange={e=>cambiarEtapa(prospectoSeleccionado,e.target.value)}>
+                      {ETAPAS.map(([id,nombre])=><option key={id} value={id}>{nombre}</option>)}
+                    </select>
+                  </label>
+                  {prospectoSeleccionado.motivo_perdida&&<p className="micro apagado">
+                    Motivo de pérdida: {prospectoSeleccionado.motivo_perdida}</p>}
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {abierto && (
+          <FormularioProspecto form={form} setForm={setForm} equipo={equipo}
+            esNuevo={abierto==='nuevo'} guardando={guardando}
+            onGuardar={guardar} onCancelar={cerrarForm}/>
+        )}
 
         {correoProspecto && (
           <form id="pipeline-correo" className="tarjeta pipeline-correo" onSubmit={enviarCorreo}>
@@ -452,7 +613,7 @@ export default function Pipeline() {
             <p className="chico apagado">CCO del catálogo: osmarmeza.adm7@gmail.com y franciscomorgadotobar@gmail.com. Los campos sin completar y los textos entre [corchetes] impiden el envío.</p>
             <div className="fila-botones">
               <button className="boton boton-secundario" type="button" disabled={enviandoCorreo}
-                      onClick={() => setCorreoProspecto(null)}>Cancelar</button>
+                      onClick={volverFicha}>Cancelar</button>
               <button className="boton boton-secundario" type="button" onClick={copiarBorradorCorreo}>
                 Copiar texto
               </button>
@@ -463,6 +624,7 @@ export default function Pipeline() {
           </form>
         )}
 
+        {!prospectoSeleccionado && <>
         <div className="tablero">
           <div><p className="n">{activos}</p><p className="r">Activos</p></div>
           <div><p className="n">{enDiagnostico}</p><p className="r">En diagnóstico</p></div>
@@ -508,14 +670,6 @@ export default function Pipeline() {
           ))}
         </nav>
 
-        {abierto && (
-          <FormularioProspecto
-            form={form} setForm={setForm} equipo={equipo}
-            esNuevo={abierto === 'nuevo'} guardando={guardando}
-            onGuardar={guardar} onCancelar={cerrarForm}
-          />
-        )}
-
         {prospectos === null && !error && <p className="cargando">Cargando…</p>}
 
         {/* En el teléfono se ve una etapa a la vez, elegida con las pestañas.
@@ -535,86 +689,47 @@ export default function Pipeline() {
                   {deEtapa.map(p => (
                     <TarjetaProspecto key={p.id} p={p} equipo={equipo} guardando={guardando}
                                       diagnostico={diagnosticos.get(p.id)}
-                                      onEditar={() => abrirEdicion(p)}
-                                      onCorreo={() => comenzarCorreo(p)}
-                                      onCambiarEtapa={nuevaEtapa => cambiarEtapa(p, nuevaEtapa)} />
+                                      onGestionar={() => abrirGestion(p)} />
                   ))}
                 </section>
               );
             })}
           </div>
         )}
+        </>}
       </div>
     </div>
   );
 }
 
-function TarjetaProspecto({ p, equipo, guardando, diagnostico, onEditar, onCorreo, onCambiarEtapa }) {
-  const responsable = equipo.find(e => e.id === p.responsable_id);
-  const vencida = p.fecha_proxima_accion && new Date(p.fecha_proxima_accion) < new Date();
-
+function TarjetaProspecto({p,equipo,onGestionar}) {
+  const responsable=equipo.find(e=>e.id===p.responsable_id);
+  const vencida=p.fecha_proxima_accion && new Date(p.fecha_proxima_accion)<new Date();
   return (
-    <article className="tarjeta pipeline-tarjeta" onClick={e => {
-      // Acciones internas mantienen su comportamiento; el espacio restante
-      // y el nombre del prospecto abren la gestión del registro.
-      if (!e.target.closest('button,a,input,select,textarea,label')) onEditar();
-    }}>
-      <div className="fila" style={{ alignItems: 'flex-start', marginBottom: 6 }}>
-        <div className="crece">
-          <button type="button" className="pipeline-titulo-prospecto" onClick={onEditar}
-                   aria-label={'Gestionar prospecto ' + p.nombre_condominio}>{p.nombre_condominio}</button>
-          {(p.comuna || p.direccion) && (
-            <span className="micro apagado">{[p.direccion, p.comuna].filter(Boolean).join(', ')}</span>
-          )}
-        </div>
-        <button type="button" className="editar" onClick={onEditar}>Gestionar</button>
-      </div>
-
-      {(p.nombre_contacto || p.telefono || p.email) && (
-        <p className="micro" style={{ margin: '6px 0 0' }}>
-          {p.nombre_contacto}{p.cargo_contacto ? ` · ${p.cargo_contacto}` : ''}
-          {(p.telefono || p.email) && <span className="apagado"> — {[p.telefono, p.email].filter(Boolean).join(' · ')}</span>}
-        </p>
-      )}
-
-      {p.email && (
-        <button type="button" className="pipeline-correo-accion"
-                onClick={onCorreo}>Enviar correo a {p.nombre_contacto || 'contacto'}</button>
-      )}
-      <div className="fila" style={{ marginTop: 8, flexWrap: 'wrap', gap: 6 }}>
-        {p.fuente && <span className="chip chip-tipo">{p.fuente}</span>}
-        {p.unidades && <span className="chip chip-tipo">{p.unidades} unidades</span>}
-        {responsable && <span className="chip chip-tipo">{responsable.nombre}</span>}
-      </div>
-
-      {p.proxima_accion && (
-        <p className={'micro' + (vencida ? ' pipeline-vencida' : ' apagado')} style={{ margin: '8px 0 0' }}>
-          {vencida ? 'Vencida: ' : 'Próxima acción: '}{p.proxima_accion}
-          {p.fecha_proxima_accion && ` · ${fechaCL(p.fecha_proxima_accion, true)}`}
-        </p>
-      )}
-
-      {p.etapa === 'perdido' && p.motivo_perdida && (
-        <p className="micro apagado" style={{ margin: '8px 0 0' }}>Motivo: {p.motivo_perdida}</p>
-      )}
-
-      <div className="campo" style={{ marginTop: 10, marginBottom: 0 }}>
-        <label className="etiqueta-campo">Etapa</label>
-        <select value={p.etapa} disabled={guardando} onChange={e => onCambiarEtapa(e.target.value)}>
-          {ETAPAS.map(([clave, texto]) => <option key={clave} value={clave}>{texto}</option>)}
-        </select>
-      </div>
-
-      {/* Con un diagnóstico ya creado no se ofrece iniciar otro: se muestra
-          su estado y, si ya tiene resultado, el puntaje, el nivel y la línea. */}
-      {diagnostico ? (
-        <TarjetaDiagnostico diagnostico={diagnostico} equipo={equipo} />
-      ) : p.etapa !== 'ganado' && p.etapa !== 'perdido' && (
-        <Link to={`/nuevo?prospecto=${p.id}`} className="boton boton-secundario boton-ancho"
-              style={{ marginTop: 10, textAlign: 'center' }}>
-          Iniciar diagnóstico
-        </Link>
-      )}
+    <article className="tarjeta pipeline-tarjeta">
+      <button type="button" className="pipeline-tarjeta-abrir" onClick={onGestionar}
+        aria-label={'Gestionar prospecto '+p.nombre_condominio}>
+        <span className="pipeline-tarjeta-fila">
+          <strong className="pipeline-titulo-prospecto">{p.nombre_condominio}</strong>
+          <span className="pipeline-tarjeta-gestion">Gestionar ›</span>
+        </span>
+        {(p.comuna||p.direccion)&&<span className="micro apagado">
+          {[p.direccion,p.comuna].filter(Boolean).join(', ')}</span>}
+        {(p.nombre_contacto||p.telefono||p.email)&&
+          <span className="micro pipeline-tarjeta-contacto">
+            {p.nombre_contacto}{p.cargo_contacto?' · '+p.cargo_contacto:''}
+            {(p.telefono||p.email)&&' — '+[p.telefono,p.email].filter(Boolean).join(' · ')}
+          </span>}
+        <span className="pipeline-tarjeta-tags">
+          {p.fuente&&<span className="chip chip-tipo">{p.fuente}</span>}
+          {p.unidades&&<span className="chip chip-tipo">{p.unidades} unidades</span>}
+          {responsable&&<span className="chip chip-tipo">{responsable.nombre}</span>}
+        </span>
+        {p.proxima_accion&&<span className={'micro pipeline-tarjeta-accion'+(vencida?' pipeline-vencida':' apagado')}>
+          {vencida?'Vencida: ':'Próxima acción: '}{p.proxima_accion}
+          {p.fecha_proxima_accion&&' · '+fechaCL(p.fecha_proxima_accion,true)}
+        </span>}
+      </button>
     </article>
   );
 }

@@ -23,7 +23,9 @@ test('Notificaciones comerciales gestionables y enlazadas a un prospecto',()=>{
 test('Pipeline permite abrir la tarjeta y redactar correo autenticado',()=>{
   assert.match(pipeline,/parametros?|get\('prospecto'\)/);
   assert.match(pipeline,/Gestionar prospecto/);
-  assert.match(pipeline,/onClick=\{onEditar\}/);
+  assert.match(pipeline,/onClick=\{onGestionar\}/);
+  assert.match(pipeline,/abrirGestion\(p\)/);
+  assert.match(pipeline,/Editar datos/);
   assert.match(pipeline,/supabase\.functions\.invoke\('correo-prospecto'/);
   assert.match(pipeline,/id="pipeline-correo"/);
   assert.match(pipeline,/enviandoCorreo \? 'Enviando…' : 'Enviar correo'/);
