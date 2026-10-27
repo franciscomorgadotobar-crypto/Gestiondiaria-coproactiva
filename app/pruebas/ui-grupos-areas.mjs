@@ -93,6 +93,7 @@ try {
     await dialogo.getByRole('button',{name:'Por módulos'}).click();
     await dialogo.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9);
     assert.equal(await page.locator('.seleccion-home__tarjetas.vista-lista').count(),1);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth + 2));
