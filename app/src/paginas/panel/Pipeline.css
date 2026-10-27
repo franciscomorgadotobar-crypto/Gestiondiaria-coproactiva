@@ -132,5 +132,5 @@
 @media(max-width:370px){.pipeline-ficha-acciones{grid-template-columns:1fr}}
 
 /* La navegación-interna global se oculta en móvil: asegurar un botón Atrás propio. */
-.pipeline-volver-movil{display:none}
-@media(max-width:899px){.pipeline-volver-movil{display:inline-flex;align-items:center;min-height:42px;margin-bottom:14px}}
+.modulo-unificado .pipeline-volver-movil{display:none!important}
+@media(max-width:899px){.modulo-unificado .pipeline-volver-movil{display:inline-flex!important;align-items:center;min-height:42px;margin-bottom:14px}}
