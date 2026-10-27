@@ -152,8 +152,9 @@ try {
   // SEO conserva barra Comercial y puede regresar en un solo paso al Home.
   {
     const {ctx,page}=await crear();
-    await page.getByRole('button',{name:/Comercial/}).click();
-    await page.getByRole('link',{name:/SEO y Analítica/}).click();
+    await page.getByRole('button',{name:/Cambiar vista/}).click();
+    await page.getByRole('dialog',{name:'Opciones de visualización'}).getByRole('button',{name:'Por módulos'}).click();
+    await page.locator('.home-general-modulo[href="/seo"]').click();
     await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
     assert.equal(await page.locator('.barra-inferior-movil').count(),1);
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
