@@ -98,3 +98,40 @@
 @media(prefers-reduced-motion:reduce){
   .home-general-modulo{transition:none}
 }
+
+/* Home 27-10: sólo dashboards dentro de cada área. Los módulos se conservan
+   únicamente en la vista independiente "Por módulos" y en la navegación. */
+.home-general-secciones.vista-cuadricula,
+.home-general-secciones.vista-lista{grid-template-columns:minmax(0,1fr)}
+.home-general-encabezado{min-height:64px}
+.home-general-encabezado:hover{background:var(--hover)}
+.home-general-contador{width:auto;min-width:unset;padding:5px 11px;font-weight:650}
+.home-general-chevron{font-size:19px;color:var(--enlace)}
+.home-general-tablero{padding:14px 17px 17px;border-top:1px solid var(--borde);min-width:0}
+.home-general-indicadores{display:grid;gap:10px;min-width:0}
+.home-general-indicadores.vista-cuadricula{grid-template-columns:repeat(4,minmax(0,1fr))}
+.home-general-indicadores.vista-lista{grid-template-columns:repeat(2,minmax(0,1fr))}
+.home-general-indicador{position:relative;display:grid;align-content:start;gap:6px;min-width:0;min-height:108px;padding:15px 30px 15px 17px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);text-decoration:none;color:var(--texto-titulo)}
+.home-general-indicador:hover{border-color:#d9a779;background:var(--hover)}
+.home-general-indicador-valor{font-size:28px;line-height:1.12;font-variant-numeric:tabular-nums}
+.home-general-indicador-texto{font-size:12px;font-weight:650;line-height:1.4}
+.home-general-indicador small{font-size:11px;color:var(--texto-apagado);line-height:1.4}
+.home-general-indicador-ir{position:absolute;right:14px;top:16px;font-size:23px;color:var(--enlace)}
+.home-general-cargando{padding:8px 4px}
+@media(max-width:960px){
+  .home-general-indicadores.vista-cuadricula{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  .home-general-secciones.vista-cuadricula .home-general-encabezado{min-height:64px;align-items:center;padding:15px}
+  .home-general-secciones.vista-cuadricula .home-general-encabezado strong{font-size:16px}
+  .home-general-secciones.vista-cuadricula .home-general-encabezado small{font-size:12px}
+  .home-general-secciones.vista-cuadricula .home-general-contador{display:inline-block}
+  .home-general-tablero{padding:12px}
+  .home-general-indicadores.vista-lista{grid-template-columns:1fr}
+  .home-general-indicador{min-height:96px;padding:13px 24px 13px 13px}
+  .home-general-indicador-valor{font-size:24px}
+}
+@media(max-width:355px){
+  .home-general-indicadores.vista-cuadricula{grid-template-columns:1fr}
+  .home-general-contador{display:none!important}
+}
