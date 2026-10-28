@@ -384,7 +384,14 @@ export default function Pipeline() {
     const bloque='\n\nPara coordinar una reunión '+(agendaModalidad==='presencial'?'presencial':'por videollamada')+
       ', proponemos las siguientes alternativas (hora de Chile):\n'+opciones+
       '\n\nAgradeceremos indicarnos cuál se ajusta mejor a su disponibilidad.';
-    setMensajeCorreo(prev=>(bloqueAgenda?prev.replace(bloqueAgenda,''):prev).trimEnd()+bloque);
+    const primera=new Date(agendaElegidos[0].start);
+    const fecha=primera.toLocaleDateString('es-CL',{timeZone:'America/Santiago',day:'2-digit',month:'long',year:'numeric'});
+    const hora=primera.toLocaleTimeString('es-CL',{timeZone:'America/Santiago',hour:'2-digit',minute:'2-digit',hour12:false});
+    const modalidad=agendaModalidad==='presencial'?'presencial':'por videollamada';
+    const completarFechas=texto=>texto.replace(/{{fecha}}/g,fecha).replace(/{{hora}}/g,hora)
+      .replace(/{{modalidad}}/g,modalidad);
+    setAsuntoCorreo(prev=>completarFechas(prev));
+    setMensajeCorreo(prev=>completarFechas((bloqueAgenda?prev.replace(bloqueAgenda,''):prev).trimEnd())+bloque);
     setBloqueAgenda(bloque);
     setAgendaMensaje('Las fechas se incorporaron al mensaje. Revisa el correo antes de enviarlo.');
   }
