@@ -68,3 +68,20 @@
   .mi-cuenta-preview small { font-size: 7.5px; }
   .mi-cuenta-guardar { width: 100%; justify-self: stretch; }
 }
+
+/* Configuración de firmas individuales */
+.mi-cuenta-firma form{display:grid;gap:14px}
+.mi-cuenta-firma .campo{margin:0}
+.mi-cuenta-firma-check{display:flex;gap:10px;align-items:center;font-size:13px;font-weight:600}
+.mi-cuenta-firma-check input{width:18px;height:18px;flex:none}
+.mi-cuenta-firma-logo{display:grid;gap:8px}
+.mi-cuenta-firma-logo-acciones{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.mi-cuenta-firma-logo-acciones label{cursor:pointer}
+.mi-cuenta-firma-logo-acciones input[type=file]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.mi-cuenta-firma-previa{border:1px solid var(--borde-suave,#ddd);padding:14px;border-radius:12px;background:var(--papel,#fafafa);display:grid;gap:12px}
+.mi-cuenta-firma-previa>strong{font-size:12px}
+.mi-cuenta-firma-preview-fila{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.mi-cuenta-firma-preview-logo{max-height:75px;max-width:170px;object-fit:contain}
+.mi-cuenta-firma-preview-texto{display:grid;gap:3px;font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+.mi-cuenta-firma-preview-texto>strong{font-size:14px}
+.mi-cuenta-firma-adicional{white-space:pre-wrap}
