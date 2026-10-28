@@ -192,3 +192,8 @@
   .pipeline-tabs{display:flex}
   .pipeline-tablero.pipeline-vista-filtrada{grid-auto-columns:minmax(280px,1fr)}
 }
+
+.pipeline-firma-fila{display:flex;gap:15px;align-items:center;flex-wrap:wrap}
+.pipeline-firma-texto{display:grid;gap:2px;line-height:1.55;overflow-wrap:anywhere}
+.pipeline-firma-texto strong{font-size:13px}
+.pipeline-firma-logo{flex:none;max-width:156px;max-height:85px;object-fit:contain}
