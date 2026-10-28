@@ -202,15 +202,36 @@ Deno.serve(async req=>{
           path.split('/').map(encodeURIComponent).join('/')+
           '?v='+encodeURIComponent(String(firmaGuardada?.actualizada_en||'1'))
         : '';
+      // El HTML del correo replica la vista previa de Mi cuenta:
+      // logo a la izquierda y datos a la derecha. Las tablas de presentación
+      // evitan que Gmail apile el logo encima del texto.
       const logoHtml=urlLogo
-        ? '<img src="'+escapar(urlLogo)+'" alt="Logo corporativo" '+
-          'width="160" style="display:block;width:auto;max-width:160px;max-height:85px;height:auto;margin-bottom:10px;border:0" />'
+        ? '<img src="'+escapar(urlLogo)+'" alt="Logo Coproactiva" width="156" '+
+          'style="display:block;width:156px;max-width:156px;height:auto;max-height:85px;border:0;" />'
         : '';
+      const datosHtml=[
+        valor(datos.nombre,120),
+        valor(datos.cargo,120),
+        valor(datos.empresa,140),
+        valor(datos.telefono,60),
+        valor(datos.correo,150),
+        valor(datos.web,150),
+        valor(datos.texto_adicional,750)
+      ].filter(Boolean).map((line:string,j:number)=>
+        (j===0?'<strong style="font-size:13px;line-height:1.5">':'')+
+        '<span style="color:#292f36;text-decoration:none">'+escapar(line).replace(/\n/g,'<br>')+'</span>'+
+        (j===0?'</strong>':'')+(j<6?'<br>':'')
+      ).join('');
+      const tablaFirma='<table role="presentation" cellpadding="0" cellspacing="0" border="0" '+
+        'style="border-collapse:collapse;border:0;margin:0;padding:0;max-width:570px"><tr>'+
+        (logoHtml?'<td valign="middle" style="border:0;padding:0 16px 0 0;vertical-align:middle;width:160px">'+logoHtml+'</td>':'')+
+        '<td valign="middle" style="border:0;padding:0;vertical-align:middle;'+
+          'font:12px/1.55 Arial,sans-serif;color:#292f36">'+datosHtml+'</td>'+
+        '</tr></table>';
       const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36">'+
         '<p>'+escapar(mensaje).replace(/\n/g,'<br>')+'</p>'+
         (firmaActiva&&(lineasHtml||logoHtml)
-          ? '<div style="margin-top:22px;padding-top:12px;border-top:1px solid #e4e0d9;'+
-              'font:12px/1.6 Arial,sans-serif;color:#474747">'+logoHtml+lineasHtml+'</div>'
+          ? '<div style="margin-top:20px;padding-top:10px;border-top:1px solid #e4e0d9">'+tablaFirma+'</div>'
           : '')+'</div>';
       await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,bcc:CCO,
         subject:asunto,content:texto,html,attachments:adjuntosSMTP});
