@@ -37,7 +37,7 @@ export default function Configuracion() {
           <Link to="/mi-cuenta" className="tarjeta tarjeta-enlace">
             <span className="seleccion-area-etiqueta">Personal</span>
             <h2 className="h4">Mi cuenta</h2>
-            <p className="chico apagado">Nombre, teléfono y accesos de la barra inferior.</p>
+            <p className="chico apagado">Nombre, teléfono, firma de correo con logo y accesos de la barra inferior.</p>
           </Link>
           {esAdministracion && (
             <Link to="/equipo" className="tarjeta tarjeta-enlace">
