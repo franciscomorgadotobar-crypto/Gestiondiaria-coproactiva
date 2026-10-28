@@ -21,7 +21,7 @@
 
 /* Escritorio: todas las etapas lado a lado, como un tablero. */
 @media (min-width: 900px) {
-  .pipeline-tabs { display: none; }
+  .pipeline-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
 
   .pipeline-tablero {
     grid-auto-flow: column;
@@ -156,3 +156,39 @@
 @media(max-width:550px){.pipeline-correo-historial-item>summary{grid-template-columns:1fr auto}.pipeline-correo-fecha{grid-column:1/-1}}
 
 .pipeline-firma-logo{max-width:150px;max-height:75px;width:auto;height:auto;object-fit:contain;margin:5px 0}
+
+/* Indicadores accionables y navegación funcional para escritorio y teléfono */
+.pipeline-indicadores .pipeline-indicador{
+  appearance:none;border:1px solid var(--borde-suave,#ddd);border-radius:12px;
+  padding:13px 15px;text-align:left;display:grid;gap:3px;min-width:0;
+  color:var(--texto-titulo);background:var(--papel,#fff);cursor:pointer;
+}
+.pipeline-indicador:hover,.pipeline-indicador:focus-visible,.pipeline-indicador.seleccionado{
+  outline:2px solid var(--naranja,#ed7130);outline-offset:1px;
+}
+.pipeline-indicadores .pipeline-indicador .n{margin:0;font-size:25px;font-weight:750}
+.pipeline-indicadores .pipeline-indicador .r{font-size:12px;margin:0}
+.pipeline-indicador-accion{font-size:11px;color:var(--enlace,#d67b36);font-weight:700;margin-top:3px}
+.pipeline-etapas-encabezado{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:16px 0 8px}
+.pipeline-etapas-encabezado>strong{font-size:14px;color:var(--texto-titulo)}
+.pipeline-etapas-encabezado button{white-space:normal;text-align:right}
+.pipeline-tabs{display:flex;overflow-x:auto;scrollbar-width:thin}
+.pipeline-tabs>button{flex:none}
+.pipeline-columna.pipeline-soltar{outline:3px dashed var(--naranja,#ed7130);outline-offset:-4px;background:rgba(237,113,48,.085)}
+.pipeline-tarjeta[draggable=true]{cursor:grab}
+.pipeline-tarjeta[draggable=true]:active{cursor:grabbing}
+.pipeline-tarjeta.pipeline-arrastrando{opacity:.48}
+.pipeline-tarjeta-etapa-movil{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--borde-suave,#ddd);padding:8px 12px;font-size:12px}
+.pipeline-tarjeta-etapa-movil select{flex:1;max-width:190px;min-height:36px;font-size:13px}
+.pipeline-eliminar{color:#a3372d!important;border-color:#dca9a3!important}
+.pipeline-eliminar:hover{background:#fff2f0!important}
+@media(max-width:899px){
+  .pipeline-tablero.pipeline-mostrar-varias .pipeline-columna.activa{display:grid;margin-bottom:12px}
+  .pipeline-indicadores .pipeline-indicador{padding:11px}
+}
+@media(min-width:900px){
+  .pipeline-tablero.pipeline-vista-filtrada .pipeline-columna:not(.activa){display:none}
+  .pipeline-tarjeta-etapa-movil{display:none}
+  .pipeline-tabs{display:flex}
+  .pipeline-tablero.pipeline-vista-filtrada{grid-auto-columns:minmax(280px,1fr)}
+}
