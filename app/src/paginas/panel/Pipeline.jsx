@@ -100,6 +100,12 @@ export default function Pipeline() {
   const [guardando, setGuardando] = useState(false);
   const [perdidaPendiente, setPerdidaPendiente] = useState(null);
   const [ganarPendiente, setGanarPendiente] = useState(null);
+  const [eliminarPendiente,setEliminarPendiente]=useState(null);
+  const [filtroResumen,setFiltroResumen]=useState(null);
+  const [etapaFocalizada,setEtapaFocalizada]=useState(false);
+  const [vistaCompletaMovil,setVistaCompletaMovil]=useState(false);
+  const [arrastrandoId,setArrastrandoId]=useState(null);
+  const [soltarEn,setSoltarEn]=useState('');
   const [correoProspecto, setCorreoProspecto] = useState(null);
   const [asuntoCorreo, setAsuntoCorreo] = useState('');
   const [mensajeCorreo, setMensajeCorreo] = useState('');
@@ -258,6 +264,49 @@ export default function Pipeline() {
   }).length;
   const enDiagnostico = porEtapa.get('diagnostico')?.length ?? 0;
   const perdidos = porEtapa.get('perdido')?.length ?? 0;
+  const esGanadoEsteMes = p => {
+    if(p.etapa!=='ganado'||!p.editado_en)return false;
+    const d=new Date(p.editado_en),h=new Date();
+    return d.getFullYear()===h.getFullYear()&&d.getMonth()===h.getMonth();
+  };
+  const etapaVisible = clave => {
+    if(filtroResumen==='activos') return clave!=='ganado'&&clave!=='perdido';
+    if(filtroResumen==='diagnostico')return clave==='diagnostico';
+    if(filtroResumen==='ganados')return clave==='ganado';
+    if(filtroResumen==='perdidos')return clave==='perdido';
+    return (vistaCompletaMovil&&!etapaFocalizada) || (!etapaFocalizada?clave===etapa:clave===etapa);
+  };
+  const resumenEtapa = {
+    activos:'Activos',diagnostico:'En diagnóstico',
+    ganados:'Ganados este mes',perdidos:'Perdidos'
+  };
+  function activarResumen(tipo){
+    setFiltroResumen(tipo);
+    setEtapaFocalizada(false);
+    setVistaCompletaMovil(false);
+    setEtapa(({activos:'nuevo',diagnostico:'diagnostico',ganados:'ganado',perdidos:'perdido'})[tipo],{replace:true});
+  }
+  function elegirEtapa(clave){
+    setFiltroResumen(null);
+    setVistaCompletaMovil(false);
+    setEtapaFocalizada(true);
+    setEtapa(clave);
+  }
+  function verTodoElEmbudo(){
+    setFiltroResumen(null);
+    setEtapaFocalizada(false);
+    setVistaCompletaMovil(true);
+  }
+  function soltarProspecto(evento,etapaDestino){
+    evento.preventDefault();
+    const id=evento.dataTransfer.getData('text/plain')||arrastrandoId;
+    setArrastrandoId(null);
+    setSoltarEn('');
+    const actual=(prospectos||[]).find(p=>p.id===id);
+    if(!actual||guardando||actual.etapa===etapaDestino)return;
+    void cambiarEtapa(actual,etapaDestino);
+  }
+
 
   // Los avisos de contacto web abren directamente el prospecto enlazado.
   // Si ya no existe o está restringido, se informa sin seleccionar otro.
@@ -452,6 +501,28 @@ export default function Pipeline() {
     cerrarForm();
   }
 
+  async function confirmarEliminarProspecto(){
+    const p=eliminarPendiente;
+    if(!p||guardando)return;
+    setEliminarPendiente(null);
+    if(perfil?.rol!=='superadmin')return setError('Solo el superadministrador puede eliminar prospectos.');
+    setGuardando(true);
+    setError(null);
+    const {data,error}=await supabase.rpc('eliminar_prospecto_superadmin',{p_prospecto_id:p.id});
+    setGuardando(false);
+    if(error||data!==true)
+      return setError(error?.message||'No fue posible eliminar el prospecto.');
+    setProspectos(xs=>(xs||[]).filter(x=>x.id!==p.id));
+    setHistorialCorreos([]);
+    setCorreoProspecto(null);
+    setAbierto(null);
+    setAvisoCorreo('Prospecto eliminado correctamente.');
+    const params=new URLSearchParams(location.search);
+    params.delete('prospecto');
+    params.delete('accion');
+    navegarPipeline(params,null,true);
+  }
+
   async function guardarEtapa(p, nuevaEtapa, motivo = null) {
     setGuardando(true);
     setError(null);
@@ -532,6 +603,14 @@ export default function Pipeline() {
         />
       )}
 
+      {eliminarPendiente&&<Confirmar
+        titulo="Eliminar prospecto definitivamente"
+        mensaje={`¿Eliminar “${eliminarPendiente.nombre_condominio}”? Se borrarán su historial comercial y los correos asociados. Esta acción no se puede deshacer. No se eliminarán prospectos vinculados a comunidades o gestiones operativas.`}
+        textoConfirmar="Eliminar definitivamente"
+        textoCancelar="Conservar"
+        onConfirmar={confirmarEliminarProspecto}
+        onCancelar={()=>setEliminarPendiente(null)}
+      />}
       {ganarPendiente && (
         <Confirmar
           titulo="Convertir en comunidad"
@@ -601,6 +680,10 @@ export default function Pipeline() {
                     <button type="button" className="boton boton-secundario"
                       disabled={!prospectoSeleccionado.email}
                       onClick={()=>comenzarCorreo(prospectoSeleccionado)}>Enviar correo</button>
+                    {perfil?.rol==='superadmin'&&<button type="button" className="boton boton-secundario pipeline-eliminar"
+                      disabled={guardando} onClick={()=>setEliminarPendiente(prospectoSeleccionado)}>
+                      Eliminar prospecto
+                    </button>}
                     {enlaceTelefono(prospectoSeleccionado.telefono,true)&&
                       <a className="boton boton-secundario" href={enlaceTelefono(prospectoSeleccionado.telefono,true)}
                          target="_blank" rel="noopener noreferrer">WhatsApp</a>}
@@ -723,11 +806,18 @@ export default function Pipeline() {
         )}
 
         {!prospectoSeleccionado && <>
-        <div className="tablero">
-          <div><p className="n">{activos}</p><p className="r">Activos</p></div>
-          <div><p className="n">{enDiagnostico}</p><p className="r">En diagnóstico</p></div>
-          <div className="ok"><p className="n">{ganadosMes}</p><p className="r">Ganados este mes</p></div>
-          <div className={perdidos ? 'alerta' : ''}><p className="n">{perdidos}</p><p className="r">Perdidos</p></div>
+        <div className="tablero pipeline-indicadores">
+          {[
+            ['activos',activos,'Activos'],
+            ['diagnostico',enDiagnostico,'En diagnóstico'],
+            ['ganados',ganadosMes,'Ganados este mes'],
+            ['perdidos',perdidos,'Perdidos']
+          ].map(([clave,cantidad,nombre])=><button key={clave} type="button"
+            className={'pipeline-indicador'+(filtroResumen===clave?' seleccionado':'')}
+            aria-pressed={filtroResumen===clave} onClick={()=>activarResumen(clave)}>
+            <span className="n">{cantidad}</span><span className="r">{nombre}</span>
+            <span className="pipeline-indicador-accion">Ver prospectos ›</span>
+          </button>)}
         </div>
 
         {diagnosticosPendientes.length > 0 && (
@@ -756,12 +846,18 @@ export default function Pipeline() {
           </section>
         )}
 
-        <nav className="pestanas pipeline-tabs" aria-label="Etapas del pipeline">
+        <div className="pipeline-etapas-encabezado">
+          <strong>{filtroResumen?resumenEtapa[filtroResumen]:etapaFocalizada?
+            ETAPAS.find(([id])=>id===etapa)?.[1]:'Todas las etapas'}</strong>
+          {(filtroResumen||etapaFocalizada||vistaCompletaMovil)&&
+            <button type="button" className="boton boton-texto" onClick={verTodoElEmbudo}>Ver todo el embudo</button>}
+        </div>
+        <nav className="pestanas pipeline-tabs" aria-label="Filtrar por etapa del pipeline">
           {ETAPAS.map(([clave, texto]) => (
             <button key={clave} type="button"
-                    className={etapa === clave ? 'activo' : ''}
-                    aria-pressed={etapa === clave}
-                    onClick={() => setEtapa(clave)}>
+                    className={!filtroResumen&&etapa===clave&&(etapaFocalizada||!vistaCompletaMovil)?'activo':''}
+                    aria-pressed={!filtroResumen&&etapaFocalizada&&etapa===clave}
+                    onClick={() => elegirEtapa(clave)}>
               {texto}
               <span className="contador">{porEtapa.get(clave)?.length ?? 0}</span>
             </button>
@@ -773,12 +869,17 @@ export default function Pipeline() {
         {/* En el teléfono se ve una etapa a la vez, elegida con las pestañas.
             En escritorio se ven todas lado a lado, como un tablero. */}
         {prospectos !== null && (
-          <div className="pipeline-tablero">
+          <div className={'pipeline-tablero'+(filtroResumen||etapaFocalizada?' pipeline-vista-filtrada':'')+
+              (vistaCompletaMovil||filtroResumen==='activos'?' pipeline-mostrar-varias':'')}>
             {ETAPAS.map(([clave, texto]) => {
-              const deEtapa = porEtapa.get(clave) ?? [];
+              const deEtapa = (porEtapa.get(clave)||[]).filter(p=>filtroResumen==='ganados'?esGanadoEsteMes(p):true);
+              const visible=etapaVisible(clave);
               return (
-                <section key={clave} aria-label={texto}
-                         className={'pipeline-columna' + (etapa === clave ? ' activa' : '')}>
+                <section key={clave} aria-label={texto} data-pipeline-etapa={clave}
+                         onDragOver={e=>{if(arrastrandoId&&!guardando){e.preventDefault();e.dataTransfer.dropEffect='move';if(soltarEn!==clave)setSoltarEn(clave);}}}
+                         onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setSoltarEn(x=>x===clave?'':x);}}
+                         onDrop={e=>soltarProspecto(e,clave)}
+                         className={'pipeline-columna'+(visible?' activa':'')+(soltarEn===clave?' pipeline-soltar':'')}>
                   <header className="pipeline-columna-cabecera">
                     <span>{texto}</span>
                     <span className="contador">{deEtapa.length}</span>
@@ -786,8 +887,16 @@ export default function Pipeline() {
                   {deEtapa.length === 0 && <p className="vacio">No hay prospectos en esta etapa.</p>}
                   {deEtapa.map(p => (
                     <TarjetaProspecto key={p.id} p={p} equipo={equipo} guardando={guardando}
-                                      diagnostico={diagnosticos.get(p.id)}
-                                      onGestionar={() => abrirGestion(p)} />
+                      onGestionar={() => abrirGestion(p)}
+                      onCambiarEtapa={clave=>void cambiarEtapa(p,clave)}
+                      onInicioArrastre={e=>{
+                        if(guardando){e.preventDefault();return;}
+                        setArrastrandoId(p.id);
+                        e.dataTransfer.effectAllowed='move';
+                        e.dataTransfer.setData('text/plain',p.id);
+                      }}
+                      onFinArrastre={()=>{setArrastrandoId(null);setSoltarEn('');}}
+                      arrastrando={arrastrandoId===p.id}/>
                   ))}
                 </section>
               );
@@ -800,11 +909,12 @@ export default function Pipeline() {
   );
 }
 
-function TarjetaProspecto({p,equipo,onGestionar}) {
+function TarjetaProspecto({p,equipo,onGestionar,onCambiarEtapa,onInicioArrastre,onFinArrastre,arrastrando,guardando}) {
   const responsable=equipo.find(e=>e.id===p.responsable_id);
   const vencida=p.fecha_proxima_accion && new Date(p.fecha_proxima_accion)<new Date();
   return (
-    <article className="tarjeta pipeline-tarjeta">
+    <article className={'tarjeta pipeline-tarjeta'+(arrastrando?' pipeline-arrastrando':'')}
+      draggable={!guardando} onDragStart={onInicioArrastre} onDragEnd={onFinArrastre}>
       <button type="button" className="pipeline-tarjeta-abrir" onClick={onGestionar}
         aria-label={'Gestionar prospecto '+p.nombre_condominio}>
         <span className="pipeline-tarjeta-fila">
@@ -828,6 +938,13 @@ function TarjetaProspecto({p,equipo,onGestionar}) {
           {p.fecha_proxima_accion&&' · '+fechaCL(p.fecha_proxima_accion,true)}
         </span>}
       </button>
+      <label className="pipeline-tarjeta-etapa-movil">
+        <span>Etapa</span>
+        <select value={p.etapa} disabled={guardando} aria-label={'Cambiar etapa de '+p.nombre_condominio}
+          onChange={e=>onCambiarEtapa(e.target.value)}>
+          {ETAPAS.map(([id,nombre])=><option key={id} value={id}>{nombre}</option>)}
+        </select>
+      </label>
     </article>
   );
 }
