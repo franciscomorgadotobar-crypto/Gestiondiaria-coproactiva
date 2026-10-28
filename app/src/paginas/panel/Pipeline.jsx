@@ -81,7 +81,7 @@ function asuntoAutomatico(plantilla, prospecto, nombreRemitente) {
     ? 'Presentación Coproactiva y propuesta de reunión'
     : completarCorreo(plantilla?.asunto||plantilla?.nombre||'Contacto Coproactiva',prospecto,nombreRemitente).trim();
   if (!cliente || asuntoBase.toLocaleLowerCase('es').includes(cliente.toLocaleLowerCase('es'))) return asuntoBase.slice(0,160);
-  if (asuntoBase.startsWith('Re:')) return asuntoBase.slice(0,160);
+  if (/^Re:/i.test(asuntoBase)) return ('Correo de Coproactiva | '+cliente).slice(0,160);
   return (asuntoBase+' | '+cliente).slice(0,160);
 }
 function etiquetaHorario(slot) {
@@ -118,15 +118,15 @@ export default function Pipeline() {
   const [plantillaElegida,setPlantillaElegida] = useState('');
   const [varianteElegida,setVarianteElegida] = useState('principal');
   const [adjuntosCorreo,setAdjuntosCorreo] = useState([]);
-  const [agendaHorarios,setAgendaHorarios]=useState([]);
-  const [agendaCargando,setAgendaCargando]=useState(false);
   const [agendaMensaje,setAgendaMensaje]=useState('');
-  const [agendaAutorizarUrl,setAgendaAutorizarUrl]=useState('');
-  const [agendaOpcion,setAgendaOpcion]=useState('');
   const [agendaElegidos,setAgendaElegidos]=useState([]);
   const [agendaManual,setAgendaManual]=useState('');
   const [agendaModalidad,setAgendaModalidad]=useState('videollamada');
   const [bloqueAgenda,setBloqueAgenda]=useState('');
+  const [historialCorreos,setHistorialCorreos]=useState([]);
+  const [historialCorreosCargando,setHistorialCorreosCargando]=useState(false);
+  const [historialCorreosError,setHistorialCorreosError]=useState('');
+  const [refrescarHistorial,setRefrescarHistorial]=useState(0);
   // El prospecto seleccionado y su subvista viven en la URL. Android y el
   // navegador conservan Atrás: embudo → ficha → editar/correo.
   const parametros = new URLSearchParams(location.search);
@@ -297,10 +297,8 @@ export default function Pipeline() {
     setPlantillaElegida('');
     setVarianteElegida('principal');
     setAdjuntosCorreo([]);
-    setAgendaHorarios([]);
     setAgendaElegidos([]);
     setAgendaMensaje('');
-    setAgendaAutorizarUrl('');
     setAgendaManual('');
     setBloqueAgenda('');
     abrirAccion('correo');
@@ -327,55 +325,35 @@ export default function Pipeline() {
     setBloqueAgenda('');
   }
 
-  const plantillaActual=plantillasCorreo.find(p=>p.id===plantillaElegida);
-  const necesitaHilo=Boolean(plantillaActual?.asunto?.startsWith('Re:')||
-    ['25','26','30'].includes(plantillaActual?.codigo));
-  const necesitaAdjunto=Boolean(plantillaActual?.adjunto_sugerido?.trim());
-  const requiereCorreoExterno=necesitaHilo;
+  useEffect(() => {
+    let activo=true;
+    if (!prospectoSeleccionadoId) {
+      setHistorialCorreos([]);
+      setHistorialCorreosError('');
+      setHistorialCorreosCargando(false);
+      return () => { activo=false; };
+    }
+    setHistorialCorreosCargando(true);
+    setHistorialCorreosError('');
+    supabase.from('prospecto_correos')
+      .select('id,asunto,mensaje,destinatario,estado,creado_en,enviado_en,error,adjuntos')
+      .eq('prospecto_id',prospectoSeleccionadoId)
+      .order('creado_en',{ascending:false}).limit(30)
+      .then(({data,error})=>{
+        if(!activo)return;
+        if(error){
+          setHistorialCorreos([]);
+          setHistorialCorreosError('No fue posible cargar el historial de correos.');
+        } else setHistorialCorreos(data||[]);
+        setHistorialCorreosCargando(false);
+      });
+    return ()=>{activo=false;};
+  },[prospectoSeleccionadoId,refrescarHistorial]);
 
+  const plantillaActual=plantillasCorreo.find(p=>p.id===plantillaElegida);
+  const necesitaAdjunto=Boolean(plantillaActual?.adjunto_sugerido?.trim());
   const requiereReunion=plantillaActual?.codigo==='04' ||
     /reuni[oó]n/i.test(String(plantillaActual?.nombre||''));
-
-  async function consultarAgenda() {
-    if (agendaCargando) return;
-    setAgendaCargando(true);
-    setAgendaMensaje('');
-    setAgendaAutorizarUrl('');
-    try {
-      const {data,error}=await supabase.functions.invoke('calendario-disponibilidad',{
-        body:{days:14,durationMinutes:60}
-      });
-      if (data?.requiresAuthorization) {
-        setAgendaHorarios([]);
-        setAgendaMensaje('Google Calendar aún no está autorizado. Puedes proponer fechas manuales sin validación de disponibilidad.');
-        return;
-      }
-      if(error||!data?.ok) {
-        setAgendaHorarios([]);
-        setAgendaMensaje(data?.error||error?.message||'No se pudo consultar Google Calendar.');
-        return;
-      }
-      setAgendaHorarios(data.slots||[]);
-      setAgendaMensaje((data.slots||[]).length
-        ? 'Horarios disponibles verificados en Google Calendar. Debes confirmar la reunión con el prospecto.'
-        : 'No se encontraron horarios disponibles en los próximos 14 días.');
-    } catch (err) {
-      setAgendaMensaje(err?.message||'No se pudo consultar el calendario.');
-    } finally { setAgendaCargando(false); }
-  }
-
-  async function autorizarAgenda() {
-    setAgendaMensaje('');
-    const {data,error}=await supabase.functions.invoke('drive-oauth',{
-      body:{action:'iniciar_agenda',volver:'/pipeline'}
-    });
-    if(error||!data?.url) {
-      setAgendaMensaje(data?.error||error?.message||'No se pudo iniciar la autorización de Google Calendar.');
-      return;
-    }
-    setAgendaAutorizarUrl(data.url);
-    setAgendaMensaje('Abre la autorización de Google en otra pestaña y luego consulta de nuevo la agenda.');
-  }
 
   function agregarAlternativa(slot) {
     if (!slot || !slot.start) return;
@@ -397,12 +375,12 @@ export default function Pipeline() {
       verified:false
     });
     setAgendaManual('');
-    setAgendaMensaje('Horario manual agregado: no se ha verificado contra Google Calendar.');
+    setAgendaMensaje('Fecha propuesta añadida. La reunión se confirmará con el prospecto.');
   }
 
   function insertarPropuestasCorreo() {
     if(!agendaElegidos.length)return;
-    const opciones=agendaElegidos.map(x=>'- '+etiquetaHorario(x)+(x.verified===false?' (por confirmar)':'')).join('\n');
+    const opciones=agendaElegidos.map(x=>'- '+etiquetaHorario(x)).join('\n');
     const bloque='\n\nPara coordinar una reunión '+(agendaModalidad==='presencial'?'presencial':'por videollamada')+
       ', proponemos las siguientes alternativas (hora de Chile):\n'+opciones+
       '\n\nAgradeceremos indicarnos cuál se ajusta mejor a su disponibilidad.';
@@ -412,10 +390,12 @@ export default function Pipeline() {
   }
 
   async function copiarBorradorCorreo(){
-    const texto='Asunto: '+asuntoCorreo+'\n\n'+mensajeCorreo;
+    const firmaTexto=[perfil?.nombre,'Coproactiva Administración SpA',perfil?.telefono,
+      'contacto@coproactiva.cl','www.coproactiva.cl'].filter(Boolean).join('\n');
+    const texto='Asunto: '+asuntoCorreo+'\n\n'+mensajeCorreo+'\n\n'+firmaTexto;
     try {
       await navigator.clipboard.writeText(texto);
-      setAvisoCorreo('Borrador copiado. Revisa el hilo, los adjuntos y el CCO en tu correo.');
+      setAvisoCorreo('Borrador copiado, con firma. Revisa los adjuntos antes de enviarlo.');
     }catch{
       setError('No se pudo copiar. Puedes seleccionar el asunto y mensaje manualmente.');
     }
@@ -424,7 +404,6 @@ export default function Pipeline() {
   async function enviarCorreo(e) {
     e.preventDefault();
     if (!correoProspecto || enviandoCorreo) return;
-    if (requiereCorreoExterno) return setError('Esta plantilla debe enviarse como respuesta al hilo original. Cópiala para responder desde tu correo.');
     if(necesitaAdjunto&&!adjuntosCorreo.length) return setError('Esta plantilla requiere al menos un adjunto real antes del envío.');
     const erroresBorrador=validarBorradorCorreo(asuntoCorreo,mensajeCorreo);
     if (erroresBorrador.length) return setError(erroresBorrador.join(' '));
@@ -442,6 +421,7 @@ export default function Pipeline() {
     setCorreoProspecto(null);
     setMensajeCorreo('');
     setAdjuntosCorreo([]);
+    setRefrescarHistorial(n=>n+1);
     volverFicha();
     cargar();
   }
@@ -676,6 +656,32 @@ export default function Pipeline() {
                         <Link className="boton boton-secundario" to={'/nuevo?prospecto='+prospectoSeleccionado.id}>Iniciar diagnóstico</Link>}
                   </div>
                 </div>
+                <details className="pipeline-historial-correos">
+                  <summary>
+                    <strong>Historial de correos</strong>
+                    <span>{historialCorreosCargando?'Cargando…':historialCorreos.length+' registro'+(historialCorreos.length===1?'':'s')}</span>
+                  </summary>
+                  <div className="pipeline-historial-contenido">
+                    {historialCorreosError&&<p className="chico" role="alert">{historialCorreosError}</p>}
+                    {!historialCorreosCargando&&!historialCorreosError&&!historialCorreos.length&&
+                      <p className="chico apagado">No hay correos enviados desde este CRM.</p>}
+                    {historialCorreos.map(c=><details key={c.id} className="pipeline-correo-historial-item">
+                      <summary>
+                        <span className="pipeline-correo-fecha">{fechaCL(c.enviado_en||c.creado_en,true)||'Sin fecha'}</span>
+                        <span className="pipeline-correo-asunto">{c.asunto}</span>
+                        <span className={'pipeline-correo-estado '+(c.estado==='enviado'?'ok':'')}>{c.estado==='enviado'?'Enviado':c.estado==='fallido'?'Fallido':'Pendiente'}</span>
+                      </summary>
+                      <div className="pipeline-correo-historial-detalle">
+                        <p className="chico apagado">Para: {c.destinatario}</p>
+                        {c.error&&<p className="chico pipeline-correo-error">{c.error}</p>}
+                        <pre>{c.mensaje}</pre>
+                        {Array.isArray(c.adjuntos)&&c.adjuntos.length>0&&
+                          <p className="chico apagado">Adjuntos: {c.adjuntos.map(a=>a.nombre||'Archivo').join(' · ')}</p>}
+                      </div>
+                    </details>)}
+                    {historialCorreos.length===30&&<p className="micro apagado">Se muestran los 30 registros más recientes.</p>}
+                  </div>
+                </details>
                 <div className="pipeline-ficha-etapa">
                   <label className="campo"><span className="etiqueta-campo">Etapa comercial</span>
                     <select value={prospectoSeleccionado.etapa} disabled={guardando}
@@ -705,23 +711,17 @@ export default function Pipeline() {
               <span className="etiqueta-campo">Plantilla (opcional)</span>
               <select value={plantillaElegida} onChange={e=>cargarPlantillaCorreo(e.target.value)}>
                 <option value="">Redactar desde cero</option>
-                {plantillasCorreo.map(p=><option key={p.id} value={p.id}>{p.codigo?p.codigo+' · ':''}{p.nombre} — {p.categoria||'Personalizadas'}</option>)}
+                {plantillasCorreo.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
               </select>
               <Link to="/plantillas-correo" className="micro">Administrar plantillas de correo</Link>
             </label>
-            {plantillaActual&&<div className="tarjeta pipeline-plantilla-contexto">
-              {plantillaActual.uso&&<p><strong>Cuándo:</strong> {plantillaActual.uso}</p>}
-              {plantillaActual.etapa_crm&&<p><strong>Etapa:</strong> {plantillaActual.etapa_crm}</p>}
-              {Array.isArray(plantillaActual.variantes)&&plantillaActual.variantes.length>0&&
-                <label className="campo">Variante
-                  <select value={varianteElegida} onChange={e=>cargarPlantillaCorreo(plantillaElegida,e.target.value)}>
-                    <option value="principal">A — breve</option>
-                    {plantillaActual.variantes.map((v,i)=><option key={i} value={String(i)}>{v.nombre}</option>)}
-                  </select>
-                </label>}
-              {necesitaHilo&&<p>Esta plantilla es una respuesta o seguimiento: debe enviarse dentro del hilo original. El CRM no dispone de ese enlace automático.</p>}
-              {necesitaAdjunto&&<p>Adjunto sugerido: {plantillaActual.adjunto_sugerido}. Selecciona abajo el archivo real para enviarlo dentro del correo.</p>}
-            </div>}
+            {plantillaActual&&Array.isArray(plantillaActual.variantes)&&plantillaActual.variantes.length>0&&
+              <label className="campo">Variante
+                <select value={varianteElegida} onChange={e=>cargarPlantillaCorreo(plantillaElegida,e.target.value)}>
+                  <option value="principal">Principal</option>
+                  {plantillaActual.variantes.map((v,i)=><option key={i} value={String(i)}>{v.nombre}</option>)}
+                </select>
+              </label>}
             <label className="campo">
               <span className="etiqueta-campo">Asunto</span>
               <input value={asuntoCorreo} required maxLength={160}
@@ -735,49 +735,42 @@ export default function Pipeline() {
 
             {requiereReunion&&<section className="pipeline-agenda" aria-label="Proponer fechas de reunión">
               <div className="pipeline-agenda-titulo">
-                <div><strong>Proponer reunión</strong><p className="chico apagado">Selecciona hasta 3 alternativas de 60 minutos, horario de Chile (Santiago).</p></div>
-                <button type="button" className="boton boton-secundario" disabled={agendaCargando}
-                  onClick={consultarAgenda}>{agendaCargando?'Consultando…':'Ver horarios disponibles'}</button>
+                <strong>Opciones de reunión</strong>
+                <span className="chico apagado">Hasta 3 fechas y horas · Chile continental</span>
               </div>
-              <label className="campo">Modalidad
-                <select value={agendaModalidad} onChange={e=>setAgendaModalidad(e.target.value)}>
-                  <option value="videollamada">Videollamada</option>
-                  <option value="presencial">Presencial</option>
-                </select>
-              </label>
-              {agendaMensaje&&<p className="chico" role="status">{agendaMensaje}</p>}
-              {!agendaHorarios.length&&!agendaCargando&&['superadmin','admin'].includes(perfil?.rol)&&
-                <button type="button" className="boton boton-secundario" onClick={autorizarAgenda}>Autorizar Google Calendar</button>}
-              {agendaAutorizarUrl&&<a className="boton boton-secundario" target="_blank" rel="noopener noreferrer"
-                href={agendaAutorizarUrl}>Abrir autorización de Google</a>}
-              {agendaHorarios.length>0&&<div className="pipeline-agenda-fila">
-                <label className="campo">Horarios libres en Google Calendar
-                  <select value={agendaOpcion} onChange={e=>setAgendaOpcion(e.target.value)}>
-                    <option value="">Seleccionar horario</option>
-                    {agendaHorarios.map(slot=><option key={slot.start} value={slot.start}>{etiquetaHorario(slot)}</option>)}
+              <div className="pipeline-agenda-fila">
+                <label className="campo">Modalidad
+                  <select value={agendaModalidad} onChange={e=>setAgendaModalidad(e.target.value)}>
+                    <option value="videollamada">Videollamada</option>
+                    <option value="presencial">Presencial</option>
                   </select>
                 </label>
-                <button type="button" className="boton boton-secundario" disabled={!agendaOpcion||agendaElegidos.length>=3}
-                  onClick={()=>{agregarAlternativa(agendaHorarios.find(x=>x.start===agendaOpcion));setAgendaOpcion('');}}>Agregar</button>
-              </div>}
-              <div className="pipeline-agenda-fila">
-                <label className="campo">O proponer fecha y hora manual
+                <label className="campo">Fecha y hora
                   <input type="datetime-local" value={agendaManual} onChange={e=>setAgendaManual(e.target.value)}/>
                 </label>
-                <button type="button" className="boton boton-secundario" disabled={agendaElegidos.length>=3}
-                  onClick={agregarFechaManual}>Agregar fecha</button>
+                <button type="button" className="boton boton-secundario"
+                  disabled={!agendaManual||agendaElegidos.length>=3} onClick={agregarFechaManual}>Agregar</button>
               </div>
+              {agendaMensaje&&<p className="chico" role="status">{agendaMensaje}</p>}
               {agendaElegidos.length>0&&<div className="pipeline-agenda-seleccion">
-                <strong>Alternativas elegidas</strong>
                 {agendaElegidos.map(x=><div key={x.start} className="pipeline-agenda-item">
-                  <span>{etiquetaHorario(x)} {x.verified===false?'· Sin verificar':'· Calendario consultado'}</span>
+                  <span>{etiquetaHorario(x)}</span>
                   <button type="button" className="boton boton-secundario"
                     onClick={()=>setAgendaElegidos(v=>v.filter(h=>h.start!==x.start))}>Quitar</button>
                 </div>)}
-                <button type="button" className="boton" onClick={insertarPropuestasCorreo}>Incorporar fechas al correo</button>
-                <p className="chico apagado">Los horarios propuestos no se reservan automáticamente en Google Calendar.</p>
+                <button type="button" className="boton boton-secundario" onClick={insertarPropuestasCorreo}>
+                  {bloqueAgenda?'Actualizar fechas en mensaje':'Añadir fechas al mensaje'}
+                </button>
               </div>}
+              <p className="micro apagado">Son propuestas de horario; no se consulta ni se reserva ninguna agenda.</p>
             </section>}
+            <div className="pipeline-firma" aria-label="Firma corporativa automática">
+              <strong>Firma incorporada al enviar</strong>
+              <span>{perfil?.nombre||'Equipo Coproactiva'}</span>
+              <span>Coproactiva Administración SpA</span>
+              {perfil?.telefono&&<span>{perfil.telefono}</span>}
+              <span>contacto@coproactiva.cl · www.coproactiva.cl</span>
+            </div>
             <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}/>
             {validarBorradorCorreo(asuntoCorreo,mensajeCorreo).map((aviso,i)=><p className="chico pipeline-correo-error" key={i} role="alert">{aviso}</p>)}
             {necesitaAdjunto&&!adjuntosCorreo.length&&<p className="chico pipeline-correo-error">Esta plantilla requiere un adjunto físico.</p>}
@@ -788,7 +781,7 @@ export default function Pipeline() {
               <button className="boton boton-secundario" type="button" onClick={copiarBorradorCorreo}>
                 Copiar texto
               </button>
-              <button className="boton" type="submit" disabled={enviandoCorreo||requiereCorreoExterno||Boolean(validarBorradorCorreo(asuntoCorreo,mensajeCorreo).length)||(necesitaAdjunto&&!adjuntosCorreo.length)}>
+              <button className="boton" type="submit" disabled={enviandoCorreo||Boolean(validarBorradorCorreo(asuntoCorreo,mensajeCorreo).length)||(necesitaAdjunto&&!adjuntosCorreo.length)}>
                 {enviandoCorreo ? 'Enviando…' : 'Enviar correo'}
               </button>
             </div>
