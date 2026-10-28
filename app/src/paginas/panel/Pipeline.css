@@ -136,19 +136,7 @@
 @media(max-width:899px){.modulo-unificado .pipeline-volver-movil{display:inline-flex!important;align-items:center;min-height:42px;margin-bottom:14px}}
 
 
-/* Reuniones desde CRM: horarios reales de Google Calendar o propuesta manual. */
-.pipeline-agenda{display:grid;gap:12px;padding:16px;border:1px solid var(--borde-suave,#ddd);border-radius:12px;background:var(--papel,#fafafa);margin:12px 0}
-.pipeline-agenda-titulo{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
-.pipeline-agenda-titulo strong{font-size:15px}
-.pipeline-agenda-titulo p{margin:5px 0 0}
-.pipeline-agenda-fila{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
-.pipeline-agenda-fila .campo{flex:1 1 240px;min-width:0;margin:0}
-.pipeline-agenda-fila>button{min-height:42px}
-.pipeline-agenda-seleccion{display:grid;gap:8px;padding-top:9px;border-top:1px solid var(--borde-suave,#ddd)}
-.pipeline-agenda-item{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
-.pipeline-agenda-item button{padding:6px 10px;min-height:34px}
 .pipeline-correo-error{color:#a33522;font-weight:600;margin:4px 0}
-@media(max-width:640px){.pipeline-agenda{padding:12px}.pipeline-agenda-fila{display:grid;grid-template-columns:1fr}.pipeline-agenda-fila button{width:100%}}
 
 /* Historial de correos dentro de la ficha: compacto y plegado por defecto */
 .pipeline-historial-correos{border:1px solid var(--borde-suave,#dedede);border-radius:12px;overflow:hidden}
@@ -165,4 +153,6 @@
 .pipeline-correo-historial-detalle pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:12px;line-height:1.55;max-height:220px;overflow-y:auto}
 .pipeline-firma{display:grid;gap:3px;border-left:3px solid var(--naranja,#ed7130);background:var(--papel,#fafafa);padding:10px 13px;font-size:12px}
 .pipeline-firma strong{font-size:11px;margin-bottom:3px}
-@media(max-width:550px){.pipeline-correo-historial-item>summary{grid-template-columns:1fr auto}.pipeline-correo-fecha{grid-column:1/-1}.pipeline-agenda-fila .campo{min-width:0}}
+@media(max-width:550px){.pipeline-correo-historial-item>summary{grid-template-columns:1fr auto}.pipeline-correo-fecha{grid-column:1/-1}}
+
+.pipeline-firma-logo{max-width:150px;max-height:75px;width:auto;height:auto;object-fit:contain;margin:5px 0}
