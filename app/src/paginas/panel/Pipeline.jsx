@@ -352,9 +352,6 @@ export default function Pipeline() {
 
   const plantillaActual=plantillasCorreo.find(p=>p.id===plantillaElegida);
   const necesitaAdjunto=Boolean(plantillaActual?.adjunto_sugerido?.trim());
-  const requiereReunion=plantillaActual?.codigo==='04' ||
-    /reuni[oó]n/i.test(String(plantillaActual?.nombre||''));
-
   function agregarAlternativa(slot) {
     if (!slot || !slot.start) return;
     setAgendaElegidos(prev=>{
@@ -391,7 +388,14 @@ export default function Pipeline() {
     const completarFechas=texto=>texto.replace(/{{fecha}}/g,fecha).replace(/{{hora}}/g,hora)
       .replace(/{{modalidad}}/g,modalidad);
     setAsuntoCorreo(prev=>completarFechas(prev));
-    setMensajeCorreo(prev=>completarFechas((bloqueAgenda?prev.replace(bloqueAgenda,''):prev).trimEnd())+bloque);
+    setMensajeCorreo(prev=>{
+      const base=completarFechas((bloqueAgenda?prev.replace(bloqueAgenda,''):prev).trimEnd());
+      const cierre=/\n\s*(Saludos cordiales|Un cordial saludo|Atentamente|Saludos),?\s*$/i;
+      const resultado=base.match(cierre);
+      return resultado
+        ? base.slice(0,resultado.index).trimEnd()+bloque+'\n\n'+resultado[1]+','
+        : base+bloque;
+    });
     setBloqueAgenda(bloque);
     setAgendaMensaje('Las fechas se incorporaron al mensaje. Revisa el correo antes de enviarlo.');
   }
@@ -740,9 +744,9 @@ export default function Pipeline() {
                         onChange={e => setMensajeCorreo(e.target.value)} />
             </label>
 
-            {requiereReunion&&<section className="pipeline-agenda" aria-label="Proponer fechas de reunión">
+            <details className="pipeline-agenda" aria-label="Proponer fechas de reunión">
+              <summary>Proponer fechas de reunión <span className="chico apagado">(opcional)</span></summary>
               <div className="pipeline-agenda-titulo">
-                <strong>Opciones de reunión</strong>
                 <span className="chico apagado">Hasta 3 fechas y horas · Chile continental</span>
               </div>
               <div className="pipeline-agenda-fila">
@@ -770,7 +774,7 @@ export default function Pipeline() {
                 </button>
               </div>}
               <p className="micro apagado">Son propuestas de horario; no se consulta ni se reserva ninguna agenda.</p>
-            </section>}
+            </details>
             <div className="pipeline-firma" aria-label="Firma corporativa automática">
               <strong>Firma incorporada al enviar</strong>
               <span>{perfil?.nombre||'Equipo Coproactiva'}</span>
