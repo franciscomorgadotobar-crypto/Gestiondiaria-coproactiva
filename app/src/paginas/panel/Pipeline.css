@@ -149,3 +149,20 @@
 .pipeline-agenda-item button{padding:6px 10px;min-height:34px}
 .pipeline-correo-error{color:#a33522;font-weight:600;margin:4px 0}
 @media(max-width:640px){.pipeline-agenda{padding:12px}.pipeline-agenda-fila{display:grid;grid-template-columns:1fr}.pipeline-agenda-fila button{width:100%}}
+
+/* Historial de correos dentro de la ficha: compacto y plegado por defecto */
+.pipeline-historial-correos{border:1px solid var(--borde-suave,#dedede);border-radius:12px;overflow:hidden}
+.pipeline-historial-correos>summary{cursor:pointer;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:13px 15px;font-size:13px}
+.pipeline-historial-correos>summary span{color:var(--texto-secundario,#6b7280);font-size:12px}
+.pipeline-historial-contenido{border-top:1px solid var(--borde-suave,#dedede);padding:9px 12px;display:grid;gap:8px;max-height:320px;overflow-y:auto}
+.pipeline-correo-historial-item{border:1px solid var(--borde-suave,#e0e0e0);border-radius:9px;background:var(--papel,#fafafa)}
+.pipeline-correo-historial-item>summary{cursor:pointer;padding:9px 10px;display:grid;grid-template-columns:minmax(85px,120px) minmax(0,1fr) auto;gap:9px;align-items:center;font-size:12px}
+.pipeline-correo-asunto{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0;font-weight:600}
+.pipeline-correo-fecha{color:var(--texto-secundario,#666)}
+.pipeline-correo-estado{font-size:11px;color:#a65020}
+.pipeline-correo-estado.ok{color:#138154}
+.pipeline-correo-historial-detalle{padding:10px 12px;border-top:1px solid var(--borde-suave,#ddd)}
+.pipeline-correo-historial-detalle pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:12px;line-height:1.55;max-height:220px;overflow-y:auto}
+.pipeline-firma{display:grid;gap:3px;border-left:3px solid var(--naranja,#ed7130);background:var(--papel,#fafafa);padding:10px 13px;font-size:12px}
+.pipeline-firma strong{font-size:11px;margin-bottom:3px}
+@media(max-width:550px){.pipeline-correo-historial-item>summary{grid-template-columns:1fr auto}.pipeline-correo-fecha{grid-column:1/-1}.pipeline-agenda-fila .campo{min-width:0}}
