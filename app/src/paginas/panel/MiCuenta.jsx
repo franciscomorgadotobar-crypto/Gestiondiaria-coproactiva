@@ -228,6 +228,7 @@ function urlLogoFirma(path, version) {
 
 function EditorFirmaCorreo({perfil}) {
   const [firma,setFirma]=useState({...FIRMA_BASE});
+  const [firmaExiste,setFirmaExiste]=useState(false);
   const [logoArchivo,setLogoArchivo]=useState(null);
   const [quitarLogo,setQuitarLogo]=useState(false);
   const [logoVersion,setLogoVersion]=useState(1);
@@ -245,7 +246,7 @@ function EditorFirmaCorreo({perfil}) {
       .then(({data,error})=>{
         if(!activo)return;
         if(error)setError('No se pudo cargar la firma: '+error.message);
-        else setFirma(data||{...FIRMA_BASE,nombre:perfil.nombre||'',telefono:perfil.telefono||''});
+        else {setFirmaExiste(Boolean(data));setFirma(data||{...FIRMA_BASE,nombre:perfil.nombre||'',telefono:perfil.telefono||''});}
         if(data?.actualizada_en)setLogoVersion(new Date(data.actualizada_en).getTime());
         setCargando(false);
       });
@@ -308,6 +309,7 @@ function EditorFirmaCorreo({perfil}) {
       const {error:saveError}=await supabase.from('firmas_correo').upsert(datos,{onConflict:'usuario_id'});
       if(saveError)throw new Error('No se pudo guardar la firma: '+saveError.message);
       setFirma(datos);
+      setFirmaExiste(true);
       setLogoArchivo(null);
       setQuitarLogo(false);
       setLogoVersion(Date.now());
@@ -378,7 +380,7 @@ function EditorFirmaCorreo({perfil}) {
       {error&&<p className="aviso aviso-critico" role="alert">{error}</p>}
       {aviso&&<p className="aviso aviso-ok" role="status">{aviso}</p>}
       <button type="submit" className="boton" disabled={guardando}>
-        {guardando?'Guardando firma…':'Guardar firma'}
+        {guardando?'Guardando firma…':firmaExiste?'Guardar firma':'Agregar firma'}
       </button>
     </form>}
   </section>;
