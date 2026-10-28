@@ -776,16 +776,20 @@ export default function Pipeline() {
               <strong>Firma de correo</strong>
               {firmaCorreo?.activa===false
                 ? <span>No se agregará una firma a este mensaje.</span>
-                : <>
+                : <div className="pipeline-firma-fila">
                   {firmaCorreo?.logo_path&&<img alt="Logo de firma"
                     src={supabase.storage.from('firmas-correo').getPublicUrl(firmaCorreo.logo_path).data.publicUrl+'?v='+encodeURIComponent(String(firmaCorreo.actualizada_en||1))}
                     className="pipeline-firma-logo"/>}
-                  <span>{firmaCorreo?.nombre||perfil?.nombre||'Equipo Coproactiva'}</span>
-                  {firmaCorreo?.cargo&&<span>{firmaCorreo.cargo}</span>}
-                  <span>{firmaCorreo?.empresa??'Coproactiva Administración SpA'}</span>
-                  {(firmaCorreo?.telefono||(!firmaCorreo&&perfil?.telefono))&&<span>{firmaCorreo?.telefono||perfil?.telefono}</span>}
-                  <span>{firmaCorreo?.correo??'contacto@coproactiva.cl'} · {firmaCorreo?.web??'www.coproactiva.cl'}</span>
-                </>}
+                  <div className="pipeline-firma-texto">
+                    <strong>{firmaCorreo?.nombre||perfil?.nombre||'Equipo Coproactiva'}</strong>
+                    {firmaCorreo?.cargo&&<span>{firmaCorreo.cargo}</span>}
+                    <span>{firmaCorreo?.empresa??'Coproactiva Administración SpA'}</span>
+                    {(firmaCorreo?.telefono||(!firmaCorreo&&perfil?.telefono))&&<span>{firmaCorreo?.telefono||perfil?.telefono}</span>}
+                    <span>{firmaCorreo?.correo??'contacto@coproactiva.cl'}</span>
+                    <span>{firmaCorreo?.web??'www.coproactiva.cl'}</span>
+                    {firmaCorreo?.texto_adicional&&<span>{firmaCorreo.texto_adicional}</span>}
+                  </div>
+                </div>}
               <Link to="/mi-cuenta#firma-correo" className="micro">Configurar mi firma y logo</Link>
             </div>
             <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}/>
