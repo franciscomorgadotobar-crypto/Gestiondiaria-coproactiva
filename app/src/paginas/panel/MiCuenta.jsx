@@ -120,7 +120,7 @@ export default function MiCuenta() {
         </div>
         <h1 className="h3">Mi cuenta</h1>
         <p className="chico apagado" style={{ margin: '3px 0 0' }}>
-          Revisa tus datos y personaliza los accesos de la aplicación.
+          Configura tus datos, firma de correo y accesos de la aplicación.
         </p>
       </header>
 
@@ -163,6 +163,7 @@ export default function MiCuenta() {
           </div>
         </section>
 
+        {['superadmin','admin','jefatura'].includes(perfil?.rol)&&<EditorFirmaCorreo perfil={perfil}/>}
         <section className="tarjeta mi-cuenta-seccion">
           <div className="mi-cuenta-seccion-cabecera">
             <div>
@@ -211,4 +212,174 @@ export default function MiCuenta() {
       </div>
     </div>
   );
+}
+
+
+const FIRMA_BASE={
+  nombre:'',cargo:'',empresa:'Coproactiva Administración SpA',telefono:'',
+  correo:'contacto@coproactiva.cl',web:'www.coproactiva.cl',
+  texto_adicional:'',logo_path:null,activa:true
+};
+function urlLogoFirma(path, version) {
+  if(!path)return '';
+  const {data}=supabase.storage.from('firmas-correo').getPublicUrl(path);
+  return data?.publicUrl ? data.publicUrl+'?v='+encodeURIComponent(String(version||1)) : '';
+}
+
+function EditorFirmaCorreo({perfil}) {
+  const [firma,setFirma]=useState({...FIRMA_BASE});
+  const [logoArchivo,setLogoArchivo]=useState(null);
+  const [quitarLogo,setQuitarLogo]=useState(false);
+  const [logoVersion,setLogoVersion]=useState(1);
+  const [logoTemporal,setLogoTemporal]=useState('');
+  const [cargando,setCargando]=useState(true);
+  const [guardando,setGuardando]=useState(false);
+  const [error,setError]=useState('');
+  const [aviso,setAviso]=useState('');
+
+  useEffect(()=>{
+    if(!perfil?.id)return;
+    let activo=true;
+    setCargando(true);
+    supabase.from('firmas_correo').select('*').eq('usuario_id',perfil.id).maybeSingle()
+      .then(({data,error})=>{
+        if(!activo)return;
+        if(error)setError('No se pudo cargar la firma: '+error.message);
+        else setFirma(data||{...FIRMA_BASE,nombre:perfil.nombre||'',telefono:perfil.telefono||''});
+        if(data?.actualizada_en)setLogoVersion(new Date(data.actualizada_en).getTime());
+        setCargando(false);
+      });
+    return ()=>{activo=false;};
+  },[perfil?.id]);
+
+  useEffect(()=>{
+    if(!logoArchivo){setLogoTemporal('');return;}
+    const url=URL.createObjectURL(logoArchivo);
+    setLogoTemporal(url);
+    return ()=>URL.revokeObjectURL(url);
+  },[logoArchivo]);
+
+  function campo(nombre,valor){setFirma(f=>({...f,[nombre]:valor}));setAviso('');setError('');}
+  function elegirLogo(evento){
+    const archivo=evento.target.files?.[0];
+    evento.target.value='';
+    if(!archivo)return;
+    if(!['image/png','image/jpeg','image/webp'].includes(archivo.type)){
+      setError('El logo debe ser PNG, JPG o WebP.');return;
+    }
+    if(archivo.size>500000){
+      setError('El logo debe pesar menos de 500 KB.');return;
+    }
+    setLogoArchivo(archivo);
+    setQuitarLogo(false);
+    setError('');
+    setAviso('Logo seleccionado. Guarda la firma para aplicarlo.');
+  }
+  const rutaLogo=quitarLogo?'':firma.logo_path;
+  const urlPreview=logoTemporal||urlLogoFirma(rutaLogo,logoVersion);
+  async function guardarFirma(e){
+    e.preventDefault();
+    if(guardando||!perfil?.id)return;
+    if(!firma.nombre.trim())return setError('Escribe tu nombre para la firma.');
+    setGuardando(true);setError('');setAviso('');
+    let nuevaRuta=quitarLogo?null:firma.logo_path;
+    const anterior=firma.logo_path;
+    try{
+      if(logoArchivo){
+        const ext=logoArchivo.type==='image/png'?'png':logoArchivo.type==='image/webp'?'webp':'jpg';
+        nuevaRuta=perfil.id+'/logo.'+ext;
+        const {error:uploadError}=await supabase.storage.from('firmas-correo')
+          .upload(nuevaRuta,logoArchivo,{contentType:logoArchivo.type,upsert:true,cacheControl:'3600'});
+        if(uploadError)throw new Error('No se pudo cargar el logo: '+uploadError.message);
+      }
+      const datos={
+        usuario_id:perfil.id,
+        nombre:firma.nombre.trim(),
+        cargo:firma.cargo.trim(),
+        empresa:firma.empresa.trim(),
+        telefono:firma.telefono.trim(),
+        correo:firma.correo.trim(),
+        web:firma.web.trim(),
+        texto_adicional:firma.texto_adicional.trim(),
+        logo_path:nuevaRuta,
+        activa:!!firma.activa,
+        actualizada_en:new Date().toISOString()
+      };
+      const {error:saveError}=await supabase.from('firmas_correo').upsert(datos,{onConflict:'usuario_id'});
+      if(saveError)throw new Error('No se pudo guardar la firma: '+saveError.message);
+      setFirma(datos);
+      setLogoArchivo(null);
+      setQuitarLogo(false);
+      setLogoVersion(Date.now());
+      setAviso('Firma guardada. Se aplicará automáticamente a tus próximos correos.');
+      if(anterior&&anterior!==nuevaRuta){
+        supabase.storage.from('firmas-correo').remove([anterior]).then(({error:removeError})=>{
+          if(removeError)console.warn('No se pudo eliminar el logo anterior',removeError.message);
+        });
+      }
+    }catch(err){setError(err.message||'No se pudo guardar la firma.');}
+    finally{setGuardando(false);}
+  }
+
+  return <section id="firma-correo" className="tarjeta mi-cuenta-seccion mi-cuenta-firma">
+    <div className="mi-cuenta-seccion-cabecera">
+      <div><h2>Firma de correo</h2>
+        <p>Como en Gmail, configura tu propia firma una vez. Se insertará automáticamente en los correos que envíes desde el CRM.</p>
+      </div>
+    </div>
+    {cargando?<p className="chico apagado">Cargando tu firma…</p>:<form onSubmit={guardarFirma}>
+      <label className="mi-cuenta-firma-check">
+        <input type="checkbox" checked={firma.activa} onChange={e=>campo('activa',e.target.checked)}/>
+        Añadir esta firma automáticamente a mis correos
+      </label>
+      <div className="mi-cuenta-form-grid">
+        <label className="campo"><span className="etiqueta-campo">Nombre *</span>
+          <input value={firma.nombre} maxLength={120} required onChange={e=>campo('nombre',e.target.value)}/></label>
+        <label className="campo"><span className="etiqueta-campo">Cargo</span>
+          <input value={firma.cargo} maxLength={120} placeholder="Administración" onChange={e=>campo('cargo',e.target.value)}/></label>
+        <label className="campo"><span className="etiqueta-campo">Empresa</span>
+          <input value={firma.empresa} maxLength={140} onChange={e=>campo('empresa',e.target.value)}/></label>
+        <label className="campo"><span className="etiqueta-campo">Teléfono</span>
+          <input value={firma.telefono} maxLength={60} inputMode="tel" onChange={e=>campo('telefono',e.target.value)}/></label>
+        <label className="campo"><span className="etiqueta-campo">Correo de contacto</span>
+          <input value={firma.correo} maxLength={150} type="email" onChange={e=>campo('correo',e.target.value)}/></label>
+        <label className="campo"><span className="etiqueta-campo">Sitio web</span>
+          <input value={firma.web} maxLength={150} onChange={e=>campo('web',e.target.value)}/></label>
+      </div>
+      <label className="campo"><span className="etiqueta-campo">Texto adicional (opcional)</span>
+        <textarea rows={2} maxLength={750} value={firma.texto_adicional}
+          placeholder="Una frase corporativa o información adicional"
+          onChange={e=>campo('texto_adicional',e.target.value)}/></label>
+      <div className="mi-cuenta-firma-logo">
+        <span className="etiqueta-campo">Logo en la firma</span>
+        <div className="mi-cuenta-firma-logo-acciones">
+          <label className="boton boton-secundario" htmlFor="firma-logo-subir">Agregar o cambiar logo</label>
+          <input id="firma-logo-subir" type="file" accept="image/png,image/jpeg,image/webp" onChange={elegirLogo}/>
+          {(urlPreview||logoArchivo)&&<button type="button" className="boton boton-texto"
+            onClick={()=>{setLogoArchivo(null);setQuitarLogo(true);setAviso('Guarda la firma para quitar el logo.');}}>Quitar logo</button>}
+        </div>
+        <p className="micro apagado">PNG, JPG o WebP · máximo 500 KB. El logo será visible públicamente como imagen de la firma.</p>
+      </div>
+      <div className="mi-cuenta-firma-previa">
+        <strong>Vista previa de tu firma</strong>
+        <div className="mi-cuenta-firma-preview-fila">
+          {urlPreview&&<img src={urlPreview} alt="Logo de firma" className="mi-cuenta-firma-preview-logo"/>}
+          <div className="mi-cuenta-firma-preview-texto">
+            <strong>{firma.nombre||'Nombre'}</strong>
+            {firma.cargo&&<span>{firma.cargo}</span>}
+            {firma.empresa&&<span>{firma.empresa}</span>}
+            {firma.telefono&&<span>{firma.telefono}</span>}
+            {firma.correo&&<span>{firma.correo}</span>}
+            {firma.web&&<span>{firma.web}</span>}
+            {firma.texto_adicional&&<span className="mi-cuenta-firma-adicional">{firma.texto_adicional}</span>}
+          </div>
+        </div>
+      </div>
+      {error&&<p className="aviso aviso-critico" role="alert">{error}</p>}
+      {aviso&&<p className="aviso aviso-ok" role="status">{aviso}</p>}
+      <button type="submit" className="boton" disabled={guardando}>
+        {guardando?'Guardando firma…':'Guardar firma'}
+      </button>
+    </form>}
+  </section>;
 }
