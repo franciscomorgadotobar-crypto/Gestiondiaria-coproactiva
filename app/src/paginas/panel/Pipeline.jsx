@@ -84,15 +84,6 @@ function asuntoAutomatico(plantilla, prospecto, nombreRemitente) {
   if (/^Re:/i.test(asuntoBase)) return ('Correo de Coproactiva | '+cliente).slice(0,160);
   return (asuntoBase+' | '+cliente).slice(0,160);
 }
-function etiquetaHorario(slot) {
-  const fecha=new Date(slot.start);
-  if(Number.isNaN(fecha.getTime()))return 'Horario inválido';
-  return fecha.toLocaleString('es-CL',{
-    timeZone:'America/Santiago',weekday:'short',day:'2-digit',month:'short',
-    hour:'2-digit',minute:'2-digit',hour12:false
-  })+' h';
-}
-
 export default function Pipeline() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
@@ -118,11 +109,7 @@ export default function Pipeline() {
   const [plantillaElegida,setPlantillaElegida] = useState('');
   const [varianteElegida,setVarianteElegida] = useState('principal');
   const [adjuntosCorreo,setAdjuntosCorreo] = useState([]);
-  const [agendaMensaje,setAgendaMensaje]=useState('');
-  const [agendaElegidos,setAgendaElegidos]=useState([]);
-  const [agendaManual,setAgendaManual]=useState('');
-  const [agendaModalidad,setAgendaModalidad]=useState('videollamada');
-  const [bloqueAgenda,setBloqueAgenda]=useState('');
+  const [firmaCorreo,setFirmaCorreo]=useState(null);
   const [historialCorreos,setHistorialCorreos]=useState([]);
   const [historialCorreosCargando,setHistorialCorreosCargando]=useState(false);
   const [historialCorreosError,setHistorialCorreosError]=useState('');
@@ -297,10 +284,6 @@ export default function Pipeline() {
     setPlantillaElegida('');
     setVarianteElegida('principal');
     setAdjuntosCorreo([]);
-    setAgendaElegidos([]);
-    setAgendaMensaje('');
-    setAgendaManual('');
-    setBloqueAgenda('');
     abrirAccion('correo');
     requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
@@ -313,16 +296,7 @@ export default function Pipeline() {
     const cuerpo=variante==='principal'?p.cuerpo:p.variantes?.[Number(variante)]?.cuerpo||p.cuerpo;
     setAsuntoCorreo(asuntoAutomatico(p,correoProspecto,perfil?.nombre));
     const texto=completarCorreo(cuerpo,correoProspecto,perfil?.nombre);
-    // La plantilla 04 requiere escoger horarios, no deja variables técnicas
-    // {{disponibilidad_online}} o {{disponibilidad_presencial}} sin resolver.
-    const limpio=p.codigo==='04'
-      ? texto.replace(/^.*{{disponibilidad_(?:online|presencial)}}.*(?:\n|$)/gm,'')
-        .replace(/Contamos con la siguiente disponibilidad:\s*/g,'')
-        .replace(/\n{3,}/g,'\n\n').trim()
-      : texto;
-    setMensajeCorreo(limpio);
-    setAgendaElegidos([]);
-    setBloqueAgenda('');
+    setMensajeCorreo(texto);
   }
 
   useEffect(() => {
@@ -350,63 +324,34 @@ export default function Pipeline() {
     return ()=>{activo=false;};
   },[prospectoSeleccionadoId,refrescarHistorial]);
 
+  useEffect(()=>{
+    if(!perfil?.id||!correoProspecto){setFirmaCorreo(null);return;}
+    let activa=true;
+    supabase.from('firmas_correo').select('*').eq('usuario_id',perfil.id).maybeSingle()
+      .then(({data,error})=>{
+        if(!activa)return;
+        if(error)console.warn('No se pudo obtener la firma del usuario',error.message);
+        setFirmaCorreo(error?null:data);
+      });
+    return ()=>{activa=false;};
+  },[perfil?.id,correoProspecto?.id]);
+
   const plantillaActual=plantillasCorreo.find(p=>p.id===plantillaElegida);
   const necesitaAdjunto=Boolean(plantillaActual?.adjunto_sugerido?.trim());
-  function agregarAlternativa(slot) {
-    if (!slot || !slot.start) return;
-    setAgendaElegidos(prev=>{
-      if (prev.some(x=>x.start===slot.start)) return prev;
-      return prev.length>=3?prev:[...prev,slot];
-    });
-  }
-
-  function agregarFechaManual() {
-    const inicio=new Date(agendaManual);
-    if(!agendaManual||Number.isNaN(inicio.getTime())||inicio.getTime()<Date.now()+60*60*1000) {
-      setAgendaMensaje('Selecciona una fecha y hora futuras, con al menos una hora de anticipación.');
-      return;
-    }
-    agregarAlternativa({
-      start:inicio.toISOString(),
-      end:new Date(inicio.getTime()+60*60000).toISOString(),
-      verified:false
-    });
-    setAgendaManual('');
-    setAgendaMensaje('Fecha propuesta añadida. La reunión se confirmará con el prospecto.');
-  }
-
-  function insertarPropuestasCorreo() {
-    if(!agendaElegidos.length)return;
-    const opciones=agendaElegidos.map(x=>'- '+etiquetaHorario(x)).join('\n');
-    const bloque='\n\nPara coordinar una reunión '+(agendaModalidad==='presencial'?'presencial':'por videollamada')+
-      ', proponemos las siguientes alternativas (hora de Chile):\n'+opciones+
-      '\n\nAgradeceremos indicarnos cuál se ajusta mejor a su disponibilidad.';
-    const primera=new Date(agendaElegidos[0].start);
-    const fecha=primera.toLocaleDateString('es-CL',{timeZone:'America/Santiago',day:'2-digit',month:'long',year:'numeric'});
-    const hora=primera.toLocaleTimeString('es-CL',{timeZone:'America/Santiago',hour:'2-digit',minute:'2-digit',hour12:false});
-    const modalidad=agendaModalidad==='presencial'?'presencial':'por videollamada';
-    const completarFechas=texto=>texto.replace(/{{fecha}}/g,fecha).replace(/{{hora}}/g,hora)
-      .replace(/{{modalidad}}/g,modalidad);
-    setAsuntoCorreo(prev=>completarFechas(prev));
-    setMensajeCorreo(prev=>{
-      const base=completarFechas((bloqueAgenda?prev.replace(bloqueAgenda,''):prev).trimEnd());
-      const cierre=/\n\s*(Saludos cordiales|Un cordial saludo|Atentamente|Saludos),?\s*$/i;
-      const resultado=base.match(cierre);
-      return resultado
-        ? base.slice(0,resultado.index).trimEnd()+bloque+'\n\n'+resultado[1]+','
-        : base+bloque;
-    });
-    setBloqueAgenda(bloque);
-    setAgendaMensaje('Las fechas se incorporaron al mensaje. Revisa el correo antes de enviarlo.');
-  }
-
   async function copiarBorradorCorreo(){
-    const firmaTexto=[perfil?.nombre,'Coproactiva Administración SpA',perfil?.telefono,
-      'contacto@coproactiva.cl','www.coproactiva.cl'].filter(Boolean).join('\n');
-    const texto='Asunto: '+asuntoCorreo+'\n\n'+mensajeCorreo+'\n\n'+firmaTexto;
+    const firmaTexto=firmaCorreo?.activa===false ? '' : [
+      firmaCorreo?.nombre||perfil?.nombre,
+      firmaCorreo?.cargo,
+      firmaCorreo?.empresa??'Coproactiva Administración SpA',
+      firmaCorreo?.telefono||(!firmaCorreo&&perfil?.telefono),
+      firmaCorreo?.correo??'contacto@coproactiva.cl',
+      firmaCorreo?.web??'www.coproactiva.cl',
+      firmaCorreo?.texto_adicional
+    ].filter(Boolean).join('\n');
+    const texto='Asunto: '+asuntoCorreo+'\n\n'+mensajeCorreo+(firmaTexto?'\n\n'+firmaTexto:'');
     try {
       await navigator.clipboard.writeText(texto);
-      setAvisoCorreo('Borrador copiado, con firma. Revisa los adjuntos antes de enviarlo.');
+      setAvisoCorreo('Texto copiado. El logo y los adjuntos se incorporan al enviar desde el CRM.');
     }catch{
       setError('No se pudo copiar. Puedes seleccionar el asunto y mensaje manualmente.');
     }
@@ -744,43 +689,21 @@ export default function Pipeline() {
                         onChange={e => setMensajeCorreo(e.target.value)} />
             </label>
 
-            <details className="pipeline-agenda" aria-label="Proponer fechas de reunión">
-              <summary>Proponer fechas de reunión <span className="chico apagado">(opcional)</span></summary>
-              <div className="pipeline-agenda-titulo">
-                <span className="chico apagado">Hasta 3 fechas y horas · Chile continental</span>
-              </div>
-              <div className="pipeline-agenda-fila">
-                <label className="campo">Modalidad
-                  <select value={agendaModalidad} onChange={e=>setAgendaModalidad(e.target.value)}>
-                    <option value="videollamada">Videollamada</option>
-                    <option value="presencial">Presencial</option>
-                  </select>
-                </label>
-                <label className="campo">Fecha y hora
-                  <input type="datetime-local" value={agendaManual} onChange={e=>setAgendaManual(e.target.value)}/>
-                </label>
-                <button type="button" className="boton boton-secundario"
-                  disabled={!agendaManual||agendaElegidos.length>=3} onClick={agregarFechaManual}>Agregar</button>
-              </div>
-              {agendaMensaje&&<p className="chico" role="status">{agendaMensaje}</p>}
-              {agendaElegidos.length>0&&<div className="pipeline-agenda-seleccion">
-                {agendaElegidos.map(x=><div key={x.start} className="pipeline-agenda-item">
-                  <span>{etiquetaHorario(x)}</span>
-                  <button type="button" className="boton boton-secundario"
-                    onClick={()=>setAgendaElegidos(v=>v.filter(h=>h.start!==x.start))}>Quitar</button>
-                </div>)}
-                <button type="button" className="boton boton-secundario" onClick={insertarPropuestasCorreo}>
-                  {bloqueAgenda?'Actualizar fechas en mensaje':'Añadir fechas al mensaje'}
-                </button>
-              </div>}
-              <p className="micro apagado">Son propuestas de horario; no se consulta ni se reserva ninguna agenda.</p>
-            </details>
-            <div className="pipeline-firma" aria-label="Firma corporativa automática">
-              <strong>Firma incorporada al enviar</strong>
-              <span>{perfil?.nombre||'Equipo Coproactiva'}</span>
-              <span>Coproactiva Administración SpA</span>
-              {perfil?.telefono&&<span>{perfil.telefono}</span>}
-              <span>contacto@coproactiva.cl · www.coproactiva.cl</span>
+            <div className="pipeline-firma" aria-label="Firma del remitente">
+              <strong>Firma de correo</strong>
+              {firmaCorreo?.activa===false
+                ? <span>No se agregará una firma a este mensaje.</span>
+                : <>
+                  {firmaCorreo?.logo_path&&<img alt="Logo de firma"
+                    src={supabase.storage.from('firmas-correo').getPublicUrl(firmaCorreo.logo_path).data.publicUrl+'?v='+encodeURIComponent(String(firmaCorreo.actualizada_en||1))}
+                    className="pipeline-firma-logo"/>}
+                  <span>{firmaCorreo?.nombre||perfil?.nombre||'Equipo Coproactiva'}</span>
+                  {firmaCorreo?.cargo&&<span>{firmaCorreo.cargo}</span>}
+                  <span>{firmaCorreo?.empresa??'Coproactiva Administración SpA'}</span>
+                  {(firmaCorreo?.telefono||(!firmaCorreo&&perfil?.telefono))&&<span>{firmaCorreo?.telefono||perfil?.telefono}</span>}
+                  <span>{firmaCorreo?.correo??'contacto@coproactiva.cl'} · {firmaCorreo?.web??'www.coproactiva.cl'}</span>
+                </>}
+              <Link to="/mi-cuenta#firma-correo" className="micro">Configurar mi firma y logo</Link>
             </div>
             <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}/>
             {validarBorradorCorreo(asuntoCorreo,mensajeCorreo).map((aviso,i)=><p className="chico pipeline-correo-error" key={i} role="alert">{aviso}</p>)}
