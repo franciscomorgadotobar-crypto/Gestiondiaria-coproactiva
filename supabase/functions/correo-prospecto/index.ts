@@ -48,14 +48,14 @@ Deno.serve(async req=>{
   if(sesionError||!user) return respuesta({error:'Sesión inválida'},401);
   const admin=createClient(BASE,SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:perfil,error:perfilError}=await admin.from('perfiles')
-    .select('id,nombre,rol,activo').eq('id',user.id).maybeSingle();
+    .select('id,nombre,rol,activo,telefono').eq('id',user.id).maybeSingle();
   if(perfilError||!perfil?.activo||!['superadmin','admin','jefatura'].includes(perfil.rol))
     return respuesta({error:'No tienes permiso para enviar correos desde el CRM'},403);
 
   let body:Record<string,unknown>;
   try {body=await req.json();}catch{return respuesta({error:'Solicitud inválida'},400);}
   const prospectoId=normal(body?.prospecto_id,36);
-  const asunto=normal(body?.asunto,160).replace(/[\r\n]+/g,' ');
+  let asunto=normal(body?.asunto,160).replace(/[\r\n]+/g,' ');
   const mensaje=normal(body?.mensaje,5000);
   const plantillaId=normal(body?.plantilla_id,36);
   const referencias=Array.isArray(body?.adjuntos) ? body.adjuntos : [];
@@ -68,13 +68,13 @@ Deno.serve(async req=>{
     return respuesta({error:'Selecciona el prospecto y completa asunto y mensaje'},400);
   if(/{{[\w]+}}|\[[^\]\n]+\]/.test(asunto+'\n'+mensaje))
     return respuesta({error:'El correo tiene variables pendientes o instrucciones entre corchetes'},422);
+  let plantillaCorreo:{codigo?:string;asunto?:string;nombre?:string}|null=null;
   if(plantillaId){
     if(!uuidValido(plantillaId)) return respuesta({error:'Plantilla inválida'},400);
     const {data:plantilla,error:plantillaError}=await admin.from('plantillas_correo_crm')
-      .select('codigo,asunto,adjunto_sugerido').eq('id',plantillaId).eq('activa',true).maybeSingle();
+      .select('codigo,asunto,nombre,adjunto_sugerido').eq('id',plantillaId).eq('activa',true).maybeSingle();
     if(plantillaError||!plantilla) return respuesta({error:'Plantilla no disponible'},422);
-    if(plantilla.asunto?.startsWith('Re:')||['25','26','30'].includes(plantilla.codigo))
-      return respuesta({error:'Esta plantilla debe responderse dentro del hilo original desde el correo corporativo'},422);
+    plantillaCorreo=plantilla;
     if(plantilla.adjunto_sugerido?.trim()&&!referencias.length)
       return respuesta({error:'La plantilla requiere seleccionar un adjunto físico antes del envío'},422);
   }
@@ -92,6 +92,14 @@ Deno.serve(async req=>{
   if(errorProspecto||!prospecto) return respuesta({error:'Prospecto no encontrado'},404);
   const destinatario=normal(prospecto.email,254).toLowerCase();
   if(!correoValido(destinatario)) return respuesta({error:'El prospecto no tiene un correo válido'},422);
+
+  // Plantilla 04: asunto genérico personalizado. Nunca reemplazar un asunto redactado a mano.
+  if(plantillaCorreo?.codigo==='04'){
+    const referencia=normal(prospecto.nombre_condominio||prospecto.nombre_contacto,80);
+    const asuntoPlantilla=normal(plantillaCorreo.asunto,160);
+    const generico=asunto===asuntoPlantilla||/^presentaci[oó]n(?: corporativa)? coproactiva(?:\s*[|–—-].*)?$/i.test(asunto);
+    if(generico) asunto=('Presentación Coproactiva y propuesta de reunión'+(referencia?' | '+referencia:'')).slice(0,160);
+  }
 
   // Los IDs se resuelven en el servidor: jamás se aceptan URLs o Drive file IDs
   // proporcionados por el navegador. Descarga binaria desde Google Drive privado.
@@ -155,10 +163,55 @@ Deno.serve(async req=>{
         auth:{username:SMTP_USER,password:SMTP_PASS}}
     });
     try {
-      // El editor ya contiene el saludo y la despedida; no duplicarlos.
-      const texto=mensaje;
-      const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36"><p>'+
-        escapar(mensaje).replace(/\n/g,'<br>')+'</p></div>';
+      // La firma elegida pertenece al usuario autenticado; no se acepta
+      // contenido HTML ni URLs de imagen suministradas por el navegador.
+      const {data:firmaGuardada,error:firmaError}=await admin.from('firmas_correo')
+        .select('nombre,cargo,empresa,telefono,correo,web,texto_adicional,logo_path,activa,actualizada_en')
+        .eq('usuario_id',user.id).maybeSingle();
+      if(firmaError)throw new Error('No se pudo consultar la firma configurada');
+      const firmaActiva=firmaGuardada?.activa!==false;
+      const datos=firmaGuardada||{
+        nombre:String(perfil.nombre||'Equipo Coproactiva'),
+        cargo:'',
+        empresa:'Coproactiva Administración SpA',
+        telefono:String(perfil.telefono||''),
+        correo:SMTP_USER,
+        web:'www.coproactiva.cl',
+        texto_adicional:''
+      };
+      const valor=(v:unknown,max=160)=>normal(v,max);
+      const firmaLineas=firmaActiva?[
+        valor(datos.nombre,120),
+        valor(datos.cargo,120),
+        valor(datos.empresa,140),
+        valor(datos.telefono,60),
+        valor(datos.correo,150),
+        valor(datos.web,150),
+        valor(datos.texto_adicional,750)
+      ].filter(Boolean):[];
+      const texto=mensaje+(firmaLineas.length?'\n\n'+firmaLineas.join('\n'):'');
+      const lineasHtml=firmaLineas.map((line:string,j:number)=>
+        (j===0?'<strong style="font-size:13px">':'')+
+        escapar(line).replace(/\n/g,'<br>')+
+        (j===0?'</strong>':'')+'<br>').join('');
+      const path=valor(firmaGuardada?.logo_path,150);
+      const logoValido=firmaActiva && path &&
+        new RegExp('^'+user.id+'/logo\\.(png|jpg|webp)$').test(path);
+      const urlLogo=logoValido
+        ? BASE.replace(/\/$/,'')+'/storage/v1/object/public/firmas-correo/'+
+          path.split('/').map(encodeURIComponent).join('/')+
+          '?v='+encodeURIComponent(String(firmaGuardada?.actualizada_en||'1'))
+        : '';
+      const logoHtml=urlLogo
+        ? '<img src="'+escapar(urlLogo)+'" alt="Logo corporativo" '+
+          'width="160" style="display:block;width:auto;max-width:160px;max-height:85px;height:auto;margin-bottom:10px;border:0" />'
+        : '';
+      const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36">'+
+        '<p>'+escapar(mensaje).replace(/\n/g,'<br>')+'</p>'+
+        (firmaActiva&&(lineasHtml||logoHtml)
+          ? '<div style="margin-top:22px;padding-top:12px;border-top:1px solid #e4e0d9;'+
+              'font:12px/1.6 Arial,sans-serif;color:#474747">'+logoHtml+lineasHtml+'</div>'
+          : '')+'</div>';
       await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,bcc:CCO,
         subject:asunto,content:texto,html,attachments:adjuntosSMTP});
       enviado=true;
@@ -174,5 +227,5 @@ Deno.serve(async req=>{
   // No se altera la etapa ni los datos de contacto durante la correspondencia.
   await admin.from('prospectos').update({fecha_ultima_interaccion:new Date().toISOString()})
     .eq('id',prospectoId);
-  return respuesta({enviado:true,id:registro.id});
+  return respuesta({enviado:true,id:registro.id,asunto});
 });
