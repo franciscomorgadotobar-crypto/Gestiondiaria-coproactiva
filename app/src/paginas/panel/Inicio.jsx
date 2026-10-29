@@ -199,36 +199,40 @@ export default function Inicio() {
           </div>
         )}
 
-        <div className="accesos-inicio">
+        <nav className="accesos-inicio" aria-label="Accesos del módulo Levantamientos">
+          <Link to="/comunidades" className="acceso acceso-principal">
+            <span>Comunidades</span>
+            <span aria-hidden="true">›</span>
+          </Link>
           {puedeConfigurar && (
             <>
-              <Link to="/nuevo" className="acceso acceso-principal">
+              <Link to="/nuevo" className="acceso">
                 <span>Nuevo levantamiento</span>
                 <span aria-hidden="true">+</span>
               </Link>
-
-              <Link to="/plantillas" className="acceso">
-                <span>Plantillas</span>
-                <span aria-hidden="true">›</span>
-              </Link>
             </>
           )}
-
+          <Link to="/compromisos" className="acceso">
+            <span>Compromisos y avances</span>
+            <span aria-hidden="true">›</span>
+          </Link>
           <Link to="/bitacora" className="acceso">
             <span>Bitácora</span>
             <span aria-hidden="true">›</span>
           </Link>
-
-          <Link to="/comunidades" className="acceso">
-            <span>Comunidades</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-
           <Link to="/mantenciones" className="acceso">
             <span>Mantenciones</span>
             <span aria-hidden="true">›</span>
           </Link>
-        </div>
+          {puedeConfigurar && <Link to="/plantillas" className="acceso">
+            <span>Plantillas</span>
+            <span aria-hidden="true">›</span>
+          </Link>}
+          <Link to="/mapa" className="acceso">
+            <span>Mapa</span>
+            <span aria-hidden="true">›</span>
+          </Link>
+        </nav>
 
         <div className="inicio-trabajo">
         <div className="grupo-titulo" id="por-hacer" data-tutorial="inicio-por-hacer">
