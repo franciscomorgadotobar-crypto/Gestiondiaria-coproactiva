@@ -36,6 +36,7 @@ const Conocimientos = lazy(() => import('./paginas/panel/Conocimientos'));
 // cargarlo aparte, quien va a terreno con el teléfono también lo bajaría,
 // sin usarlo nunca.
 const PortalCliente = lazy(() => import('./paginas/cliente/PortalCliente'));
+const VistaCliente = lazy(() => import('./paginas/panel/VistaCliente'));
 // Propiedades es de administración: quien va a terreno con el teléfono no
 // tiene por qué descargarla.
 const Propiedades = lazy(() => import('./paginas/propiedades/Propiedades'));
@@ -214,6 +215,11 @@ export default function App() {
           Inicio" del panel apunta acá, para no quedar en loop de vuelta al
           CRM cuando la área elegida es 'crm'. */}
       <Route path="/inicio" element={<Interna><Inicio /></Interna>} />
+      <Route path="/vista-cliente" element={
+        <Interna><Suspense fallback={<p className="cargando">Cargando vista de cliente…</p>}>
+          <VistaCliente/>
+        </Suspense></Interna>
+      } />
       <Route path="/compromisos" element={<Interna><CompromisosGeneral /></Interna>} />
       <Route path="/plantillas-correo" element={<Interna><PlantillasCorreo /></Interna>} />
       <Route path="/conocimientos" element={<Interna><Suspense fallback={<p className="cargando">Cargando biblioteca…</p>}><Conocimientos /></Suspense></Interna>} />
