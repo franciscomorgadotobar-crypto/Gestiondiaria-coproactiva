@@ -419,8 +419,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   return (
-    <div className="layout-escritorio">
-      <nav className={'barra-lateral' + (organizacion === 'modulos' && !esCliente ? ' barra-lateral-modulos' : '')} aria-label="Navegación">
+    <div className={"layout-escritorio" + (!esCliente ? " layout-sin-panel-lateral" : "")}>
+      {esCliente && <nav className={'barra-lateral' + (organizacion === 'modulos' && !esCliente ? ' barra-lateral-modulos' : '')} aria-label="Navegación">
         <Link to={inicio} className="marca-lateral" aria-label="CoproActiva">
           <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva" />
         </Link>
@@ -532,9 +532,29 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             <button type="button" className="usuario-lateral-salir" onClick={salir}>Salir</button>
           </div>
         </div>
-      </nav>
+      </nav>}
 
       <div className={'area-escritorio' + (anchoCompleto ? ' ancho-completo' : '')}>
+        {!esCliente && (
+          <header className="barra-contextual-escritorio" aria-label="Navegación contextual">
+            <button type="button" className="barra-contextual-marca"
+              aria-label="Ir al Home de módulos" onClick={cambiarArea}>
+              <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="Coproactiva" />
+            </button>
+            <div className="barra-contextual-ubicacion">
+              <button type="button" className="barra-contextual-home" onClick={cambiarArea}>
+                ‹ Home de módulos
+              </button>
+              {nombreArea && <span className="barra-contextual-seccion" aria-label={'Área actual: ' + nombreArea}>
+                {nombreArea}
+              </span>}
+            </div>
+            <div className="barra-contextual-cuenta">
+              <Link to="/mi-cuenta">Mi cuenta</Link>
+              <button type="button" onClick={salir}>Salir</button>
+            </div>
+          </header>
+        )}
         {/* En el teléfono la barra lateral no existe (se oculta con CSS), así
             que sin esto "Cambiar de área" no tenía dónde vivir y quedaba
             fijo en la que se eligió la primera vez, sin salida. */}
