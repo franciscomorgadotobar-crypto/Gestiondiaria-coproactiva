@@ -17,6 +17,16 @@
 .vista-cliente-simulacion-cabecera{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 18px;background:var(--tarjeta,#fff);border-bottom:1px solid var(--borde,#ddd);font-size:12px}
 .vista-cliente-simulacion-cabecera span{color:var(--texto-apagado)}
 .vista-cliente-simulacion .portal-pantalla{width:100%;margin:0}
+/* El portal real usa el menú del cliente en escritorio; aquí no existe
+   ese menú lateral, de modo que sus pestañas deben quedar siempre accesibles. */
+.vista-cliente-simulacion .portal-pestanas-movil{
+  display:flex!important;flex-wrap:wrap;overflow-x:auto;
+  gap:7px;margin:0 0 20px;padding-bottom:6px;scrollbar-width:thin;
+}
+.vista-cliente-simulacion .portal-pestanas-movil>button{
+  flex:0 0 auto;min-height:40px;
+}
+
 .vista-cliente-simulacion .portal-pantalla>.encabezado{padding-top:20px}
 .vista-cliente-simulacion .portal-pantalla>.cuerpo{padding-top:20px}
 .vista-cliente-nota{font-size:11px;color:var(--texto-apagado);line-height:1.5;margin:0}
