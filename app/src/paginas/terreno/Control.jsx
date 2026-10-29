@@ -84,6 +84,9 @@ export default function Levantamiento() {
   const [error, setError] = useState(null);
   const [ubicando, setUbicando] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
+  const [excepcionCheckIn, setExcepcionCheckIn] = useState(null);
+  const [pedirExcepcionCheckIn, setPedirExcepcionCheckIn] = useState(false);
+  const [autorizandoExcepcion, setAutorizandoExcepcion] = useState(false);
   const [abierta, setAbierta] = useState(null);   // categoría desplegada
   // null = índice de preguntas; número = pregunta individual abierta.
   // Así cada categoría siempre entra primero por su lista y nunca salta
@@ -97,13 +100,17 @@ export default function Levantamiento() {
    * petición agoniza contra una red que no está. */
   useEffect(() => {
     let vigente = true;
+    setExcepcionCheckIn(null);
 
     (async () => {
       const [c, i, f] = await Promise.all([
         leerControl(id), leerItems(id), leerFotosDeControl(id)
       ]);
       if (!vigente) return;
-      if (c) setControl(c);
+      if (c) {
+        setControl(c);
+        if (c.checkin_excepcion) setExcepcionCheckIn(c.checkin_excepcion);
+      }
       if (i.length) setItems(i.sort(orden));
       setFotos(f);
 
@@ -112,7 +119,7 @@ export default function Levantamiento() {
         return;
       }
 
-      const [rc, ri, rp, ra] = await Promise.all([
+      const [rc, ri, rp, ra, re] = await Promise.all([
         supabase
           .from('controles_con_avance')
           .select('id, comunidad_id, prospecto_id, estado, periodo, programado_para, checkin_en, checkin_precision, creado_en, reabierto_en, motivo_reapertura, destino_nombre, destino_direccion, destino_comuna, destino_tipo, secuencial, plantilla_nombre, responsable_nombre')
@@ -131,7 +138,12 @@ export default function Levantamiento() {
         supabase
           .from('adjuntos')
           .select('id, control_item_id, criterio_id, clase, storage_path, firmante_nombre, firmante_rut, descripcion, orden, tomada_en')
+          .eq('control_id', id),
+        supabase
+          .from('control_checkin_excepciones')
+          .select('control_id,autorizado_por,autorizado_en,motivo')
           .eq('control_id', id)
+          .maybeSingle()
       ]);
       if (!vigente) return;
       if (rp.data) setPausas(rp.data);
@@ -139,8 +151,12 @@ export default function Levantamiento() {
       if (rc.error) { if (!c) setError(rc.error.message); return; }
       if (!rc.data) { if (!c) setError('Este levantamiento no existe o no tienes acceso.'); return; }
 
-      setControl(rc.data);
-      await guardarControl(rc.data);
+      if (re.error) console.warn('No se pudo consultar la excepción de check-in', re.error);
+      const excepcionActual = re.error ? c?.checkin_excepcion ?? null : re.data ?? null;
+      setExcepcionCheckIn(excepcionActual);
+      const controlActual = { ...rc.data, checkin_excepcion: excepcionActual };
+      setControl(controlActual);
+      await guardarControl(controlActual);
 
       if (ri.data) {
         await fusionarItems(id, ri.data);
@@ -268,6 +284,42 @@ export default function Levantamiento() {
   const sinFoto = items.filter(i => i.requiere_foto && !tieneFoto(i.id));
 
   // ------------------------------------------------------------- Check-in
+
+  async function autorizarSinCheckIn({ motivo }) {
+    const razon = String(motivo ?? '').trim();
+    if (razon.length < 12 || razon.length > 500) {
+      setError('El motivo debe contener entre 12 y 500 caracteres.');
+      return;
+    }
+    if (!hayConexion()) {
+      setError('Conéctate a Internet para autorizar esta excepción administrativa.');
+      return;
+    }
+    if (perfil?.rol !== 'superadmin' || !control || control.checkin_en) {
+      setError('Esta autorización solo puede realizarla un superadministrador.');
+      return;
+    }
+    setAutorizandoExcepcion(true);
+    setError(null);
+    try {
+      const { data, error: errorAutorizacion } = await supabase.rpc('autorizar_control_sin_checkin', {
+        p_control_id: id,
+        p_motivo: razon
+      });
+      if (errorAutorizacion) throw errorAutorizacion;
+      const autorizacion = Array.isArray(data) ? data[0] : null;
+      if (!autorizacion?.autorizado_en) throw new Error('No se recibió confirmación de la autorización.');
+      const actualizado = { ...control, checkin_excepcion: autorizacion };
+      setExcepcionCheckIn(autorizacion);
+      setControl(actualizado);
+      await guardarControl(actualizado);
+      setPedirExcepcionCheckIn(false);
+    } catch (e) {
+      setError(e.message || 'No se pudo autorizar la excepción de check-in.');
+    } finally {
+      setAutorizandoExcepcion(false);
+    }
+  }
 
   function hacerCheckIn() {
     if (!navigator.geolocation) {
@@ -554,7 +606,7 @@ export default function Levantamiento() {
       },
       // Quien hizo el levantamiento, no quien genera el informe (puede ser
       // administración revisando el de otra persona).
-      control: { ...control, responsable: control.responsable_nombre ?? perfil?.nombre },
+      control: { ...control, checkin_excepcion: excepcionCheckIn, responsable: control.responsable_nombre ?? perfil?.nombre },
       logo: import.meta.env.BASE_URL + 'logo-coproactiva.svg',
       categorias: categorias.map(c => ({
         nombre: c.nombre,
@@ -593,6 +645,10 @@ export default function Levantamiento() {
   }
 
   async function finalizar() {
+    if (!control?.checkin_en && !excepcionCheckIn) {
+      setError('Falta el check-in o una excepción autorizada por un superadministrador.');
+      return;
+    }
     setFinalizando(true);
     const cambios = { estado: 'enviado', enviado_en: new Date().toISOString() };
     const actualizado = { ...control, ...cambios };
@@ -622,6 +678,25 @@ export default function Levantamiento() {
 
   return (
     <div className="pantalla pantalla-angosta modulo-unificado">
+      {pedirExcepcionCheckIn && (
+        <DialogoCampos
+          titulo="Autorizar finalización sin check-in"
+          mensaje="Solo superadministradores. Se registrarán la fecha, tu usuario y el motivo. No se inventará una ubicación GPS ni un check-in presencial."
+          campos={[{
+            id: 'motivo',
+            label: 'Motivo de la excepción',
+            obligatorio: true,
+            multiline: true,
+            filas: 3,
+            placeholder: 'Ej.: visita realizada, pero no fue posible registrar el check-in por falta de señal.',
+            ayuda: 'Mínimo 12 caracteres; quedará registrado en el historial del levantamiento.'
+          }]}
+          textoConfirmar={autorizandoExcepcion ? 'Autorizando…' : 'Autorizar excepción'}
+          textoCancelar="Cancelar"
+          onConfirmar={autorizarSinCheckIn}
+          onCancelar={() => { if (!autorizandoExcepcion) setPedirExcepcionCheckIn(false); }}
+        />
+      )}
       {pedirMotivoPausa && (
         <DialogoCampos
           titulo="Pausar levantamiento"
@@ -676,11 +751,27 @@ export default function Levantamiento() {
             Check-in {new Date(control.checkin_en).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
             {control.checkin_precision != null && ` · precisión ${Math.round(control.checkin_precision)} m`}
           </p>
+        ) : excepcionCheckIn ? (
+          <div className="aviso" style={{ marginBottom: 10 }}>
+            <strong>Finalización sin check-in autorizada</strong>
+            <p className="chico" style={{ margin: '5px 0 0' }}>
+              No hay ubicación GPS registrada. Autorización del {new Date(excepcionCheckIn.autorizado_en).toLocaleString('es-CL')}.
+            </p>
+            <p className="micro" style={{ margin: '5px 0 0' }}>Motivo: {excepcionCheckIn.motivo}</p>
+          </div>
         ) : (
-          <button className="boton boton-movil boton-ancho" style={{ marginBottom: 10 }}
-                  onClick={hacerCheckIn} disabled={ubicando || cerrado}>
-            {ubicando ? 'Obteniendo ubicación…' : 'Hacer check-in'}
-          </button>
+          <div style={{ display: 'grid', gap: 8, marginBottom: 10 }}>
+            <button className="boton boton-movil boton-ancho"
+                    onClick={hacerCheckIn} disabled={ubicando || cerrado}>
+              {ubicando ? 'Obteniendo ubicación…' : 'Hacer check-in'}
+            </button>
+            {perfil?.rol === 'superadmin' && !cerrado && (
+              <button className="boton boton-secundario boton-movil boton-ancho"
+                      onClick={() => { setError(null); setPedirExcepcionCheckIn(true); }}>
+                Autorizar finalización sin check-in
+              </button>
+            )}
+          </div>
         )}
 
         {control.estado === 'pausado' && (
@@ -919,9 +1010,9 @@ export default function Levantamiento() {
           <button className="boton boton-movil crece"
                   onClick={finalizar}
                   disabled={finalizando || pendientesObligatorios.length > 0 || sinFoto.length > 0
-                            || sinEvidencia.length > 0 || !control.checkin_en}
+                            || sinEvidencia.length > 0 || (!control.checkin_en && !excepcionCheckIn)}
                   title={
-                    !control.checkin_en ? 'Falta el check-in'
+                    !control.checkin_en && !excepcionCheckIn ? 'Falta el check-in o una excepción administrativa'
                     : pendientesObligatorios.length > 0
                       ? (pendientesObligatorios.length === 1
                           ? 'Falta 1 pregunta obligatoria por responder'
