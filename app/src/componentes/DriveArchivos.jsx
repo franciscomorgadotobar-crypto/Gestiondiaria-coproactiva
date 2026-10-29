@@ -18,12 +18,13 @@ const ACCIONES = {
  * autoría e historial; los bytes viven en la carpeta de la comunidad. */
 export default function DriveArchivos({
   comunidadId, origenTipo = 'levantamiento', origenId = null, detalleId = null, categoria = null,
-  titulo, ayuda, permitirSubir = true, compacto = false, ocultarVacio = false, onCambio
+  titulo, ayuda, permitirSubir = true, compacto = false, ocultarVacio = false, onCambio,
+  soloVistaCliente = false
 }) {
   const { perfil } = useSesion();
   const rol = perfil?.rol;
-  const personal = PERSONAL.includes(rol);
-  const puedeSubir = Boolean(origenTipo) && permitirSubir && (personal || (rol === 'terreno' && origenTipo === 'levantamiento'));
+  const personal = PERSONAL.includes(rol) && !soloVistaCliente;
+  const puedeSubir = !soloVistaCliente && Boolean(origenTipo) && permitirSubir && (personal || (rol === 'terreno' && origenTipo === 'levantamiento'));
   const [archivos, setArchivos] = useState([]);
   const [conectada, setConectada] = useState(null);
   const [pendientes, setPendientes] = useState([]);
@@ -44,9 +45,11 @@ export default function DriveArchivos({
       p_incluir_eliminados: personal && verEliminados
     });
     if (err) setError(err.message);
-    else setArchivos((data || []).filter(d => !detalleId || d.detalle_id === String(detalleId)));
+    else setArchivos((data || []).filter(d =>
+      (!soloVistaCliente || (d.visible_cliente===true && !d.eliminado_en)) &&
+      (!detalleId || d.detalle_id === String(detalleId))));
     setCargado(true);
-  }, [comunidadId, origenTipo, origenId, detalleId, personal, verEliminados]);
+  }, [comunidadId, origenTipo, origenId, detalleId, personal, verEliminados, soloVistaCliente]);
 
   useEffect(() => { cargar(); }, [cargar]);
   useEffect(() => {
