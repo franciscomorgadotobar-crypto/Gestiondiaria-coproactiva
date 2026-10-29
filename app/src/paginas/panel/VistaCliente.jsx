@@ -34,6 +34,19 @@ export default function VistaCliente() {
     return ()=>{vigente=false;};
   },[permitido]);
 
+  // Si la administración tiene una sola comunidad, abrir su portal
+  // directamente sin pedir otra selección redundante.
+  useEffect(()=>{
+    if(!permitido || comunidades?.length!==1 || comunidadId)return;
+    setParams(p=>{
+      const next=new URLSearchParams(p);
+      next.set('comunidad',comunidades[0].id);
+      next.delete('cliente');
+      next.delete('seccion');
+      return next;
+    },{replace:true,preventScrollReset:true});
+  },[permitido,comunidades,comunidadId,setParams]);
+
   useEffect(()=>{
     if(!permitido||!UUID.test(comunidadId)){setCuentas([]);return;}
     let vigente=true;
