@@ -228,6 +228,10 @@ export default function Inicio() {
             <span>Plantillas</span>
             <span aria-hidden="true">›</span>
           </Link>}
+          {puedeConfigurar && <Link to="/vista-cliente" className="acceso">
+            <span>Vista de cliente</span>
+            <span aria-hidden="true">›</span>
+          </Link>}
           <Link to="/mapa" className="acceso">
             <span>Mapa</span>
             <span aria-hidden="true">›</span>
