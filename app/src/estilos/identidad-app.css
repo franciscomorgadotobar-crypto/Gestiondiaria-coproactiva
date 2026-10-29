@@ -715,3 +715,44 @@
     color:var(--ca-cobre-oscuro,#985123);
   }
 }
+
+/* Navegación de escritorio: el Home ya organiza módulos y áreas.
+   En las pantallas de trabajo no repetir el panel lateral de módulos. */
+.barra-contextual-escritorio{display:none}
+@media (min-width:900px){
+  .layout-escritorio.layout-sin-panel-lateral{display:block;width:100%;min-height:100vh}
+  .layout-sin-panel-lateral > .area-escritorio{width:100%;max-width:none;min-width:0}
+  .layout-sin-panel-lateral .barra-contextual-escritorio{
+    display:flex;align-items:center;gap:22px;
+    min-height:60px;padding:10px clamp(18px,3vw,42px);
+    background:var(--tarjeta,#fff);
+    border-bottom:1px solid var(--borde-suave,#e3ddd5);
+  }
+  .barra-contextual-marca{
+    border:0;background:transparent;cursor:pointer;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    padding:3px 0;
+  }
+  .barra-contextual-marca img{display:block;width:153px;max-height:35px;object-fit:contain}
+  .barra-contextual-ubicacion{display:flex;align-items:center;gap:14px;flex:1;min-width:0}
+  .barra-contextual-home{
+    border:1px solid var(--borde-suave,#e2ded8);border-radius:9px;
+    background:transparent;cursor:pointer;color:var(--ca-cobre-oscuro,#985123);
+    font:650 12px/1.35 var(--fuente-cuerpo,Arial,sans-serif);
+    padding:9px 12px;white-space:nowrap;
+  }
+  .barra-contextual-home:hover,.barra-contextual-home:focus-visible,
+  .barra-contextual-marca:focus-visible{outline:2px solid var(--ca-cobre,#ed7130);outline-offset:2px}
+  .barra-contextual-seccion{
+    font:600 12px/1.4 var(--fuente-cuerpo,Arial,sans-serif);
+    color:var(--texto-apagado,#737373);overflow:hidden;text-overflow:ellipsis;
+  }
+  .barra-contextual-cuenta{display:flex;align-items:center;gap:16px;flex:none}
+  .barra-contextual-cuenta a,.barra-contextual-cuenta button{
+    background:transparent;border:0;cursor:pointer;text-decoration:none;
+    color:var(--texto-apagado,#646464);font:600 12px/1.3 var(--fuente-cuerpo,Arial,sans-serif);
+  }
+  .barra-contextual-cuenta a:hover,.barra-contextual-cuenta button:hover{
+    color:var(--ca-cobre-oscuro,#985123);text-decoration:underline;
+  }
+}
