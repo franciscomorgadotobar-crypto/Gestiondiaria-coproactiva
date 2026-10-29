@@ -124,13 +124,17 @@ function documentoEsPdf(documento) {
   return mime.includes('pdf') || nombre.endsWith('.pdf') || url.includes('.pdf');
 }
 
-async function cargarDetalleComunidad(comunidadId) {
+async function cargarDetalleComunidad(comunidadId, clienteId = null) {
+  const vista=Boolean(clienteId);
+  const rpc=(tipo)=>supabase.rpc(vista ? 'vista_cliente_'+tipo : 'portal_cliente_'+tipo,
+    vista ? {p_comunidad_id:comunidadId,p_usuario_cliente:clienteId}
+          : {p_comunidad_id:comunidadId});
   const [rl, rm, rr, ri, rd] = await Promise.all([
-    supabase.rpc('portal_cliente_levantamientos', { p_comunidad_id: comunidadId }),
-    supabase.rpc('portal_cliente_mantenciones', { p_comunidad_id: comunidadId }),
-    supabase.rpc('portal_cliente_requerimientos', { p_comunidad_id: comunidadId }),
-    supabase.rpc('portal_cliente_incidencias', { p_comunidad_id: comunidadId }),
-    supabase.rpc('portal_cliente_documentos', { p_comunidad_id: comunidadId })
+    rpc('levantamientos'),
+    rpc('mantenciones'),
+    rpc('requerimientos'),
+    rpc('incidencias'),
+    rpc('documentos')
   ]);
 
   const fallo = [rl, rm, rr, ri, rd].find(r => r.error)?.error;
@@ -303,8 +307,9 @@ function construirVista(comunidad, datos) {
   };
 }
 
-export default function PortalCliente() {
+export default function PortalCliente({ vistaPrevia = null }) {
   const { id } = useParams();
+  if (vistaPrevia) return <DetalleCliente id={vistaPrevia.comunidadId} vistaPrevia={vistaPrevia}/>;
   return id ? <DetalleCliente id={id} /> : <DashboardCliente />;
 }
 
@@ -520,7 +525,7 @@ function ResumenDato({ etiqueta, valor }) {
   );
 }
 
-function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = false }) {
+function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = false, alDetalle = null }) {
   const destino = `/portal/comunidades/${item.comunidadId}?seccion=${item.seccion || 'resumen'}`;
   const documentoUrl = urlDocumento(item.documento);
 
@@ -541,7 +546,9 @@ function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = fal
         {item.detalle && <p className="micro apagado portal-actividad-detalle">{item.detalle}</p>}
         {!fechaDestacada && item.fecha && <span className="micro apagado">{fechaCL(item.fecha, true)}</span>}
         <div className="portal-acciones">
-          <Link className="portal-enlace" to={destino}>Ver detalle</Link>
+          {alDetalle
+            ? <button className="portal-enlace portal-enlace-boton" type="button" onClick={() => alDetalle(item.seccion||'resumen')}>Ver detalle</button>
+            : <Link className="portal-enlace" to={destino}>Ver detalle</Link>}
           {documentoUrl && (
             <a className="portal-enlace portal-enlace-secundario" href={documentoUrl} target="_blank" rel="noreferrer">Abrir PDF</a>
           )}
@@ -575,9 +582,11 @@ function TarjetaDocumento({ documento, mostrarComunidad = false }) {
   );
 }
 
-function DetalleCliente({ id }) {
+function DetalleCliente({ id, vistaPrevia = null }) {
   const navegar = useNavigate();
   const { perfil } = useSesion();
+  const esVistaPrevia = Boolean(vistaPrevia);
+  const clienteId = vistaPrevia?.clienteId || null;
   const [params, setParams] = useSearchParams();
   const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'resumen';
   const tab = tabInicial; // URL permite volver de Documentos a Incidencias con Atrás.
@@ -592,23 +601,34 @@ function DetalleCliente({ id }) {
     async function cargar() {
       setCargando(true);
       setError(null);
-      const rd = await supabase.rpc('portal_cliente_dashboard');
-      if (!vigente) return;
-      if (rd.error) {
-        setError(rd.error.message);
-        setCargando(false);
-        return;
+      let comunidad=null;
+      if (esVistaPrevia) {
+        const rc=await supabase.from('comunidades')
+          .select('id,nombre,direccion,comuna,latitud,longitud').eq('id',id).maybeSingle();
+        if (!vigente)return;
+        if(rc.error||!rc.data){
+          setError('No se pudo abrir la comunidad seleccionada.');
+          setCargando(false);
+          return;
+        }
+        comunidad={...rc.data,comunidad_id:rc.data.id};
+      } else {
+        const rd = await supabase.rpc('portal_cliente_dashboard');
+        if (!vigente) return;
+        if (rd.error) {
+          setError(rd.error.message);
+          setCargando(false);
+          return;
+        }
+        comunidad = (rd.data ?? []).find(x => x.comunidad_id === id);
+        if (!comunidad) {
+          setError('Esta comunidad no está asociada a tu cuenta.');
+          setCargando(false);
+          return;
+        }
       }
-
-      const comunidad = (rd.data ?? []).find(x => x.comunidad_id === id);
-      if (!comunidad) {
-        setError('Esta comunidad no está asociada a tu cuenta.');
-        setCargando(false);
-        return;
-      }
-
       try {
-        const datos = await cargarDetalleComunidad(id);
+        const datos = await cargarDetalleComunidad(id,clienteId);
         if (vigente) setVista(construirVista(comunidad, datos));
       } catch (e) {
         if (vigente) setError(e?.message || 'No se pudo cargar la comunidad.');
@@ -619,7 +639,7 @@ function DetalleCliente({ id }) {
 
     cargar();
     return () => { vigente = false; };
-  }, [id, perfil?.id]);
+  }, [id, perfil?.id, clienteId, esVistaPrevia]);
 
   function cambiarTab(nuevo) {
     if (tab === nuevo || !TABS.some(([clave]) => clave === nuevo)) return;
@@ -634,7 +654,7 @@ function DetalleCliente({ id }) {
   return (
     <div className="pantalla portal-pantalla modulo-unificado">
       <header className="encabezado portal-encabezado modulo-cabecera">
-        {['jefatura'].includes(perfil?.rol) && <button className="boton boton-texto portal-volver" onClick={() => navegar('/portal')}>‹ Mis comunidades</button>}
+        {!esVistaPrevia && ['jefatura'].includes(perfil?.rol) && <button className="boton boton-texto portal-volver" onClick={() => navegar('/portal')}>‹ Mis comunidades</button>}
         <h1 className="h3">{vista?.comunidad?.nombre ?? 'Comunidad'}</h1>
         <p className="chico apagado" style={{ margin: '4px 0 0' }}>
           {[vista?.comunidad?.direccion, vista?.comunidad?.comuna].filter(Boolean).join(' · ')}
@@ -654,12 +674,12 @@ function DetalleCliente({ id }) {
               ))}
             </nav>
 
-            {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} />}
-            {tab === 'compromisos' && <Compromisos comunidadId={id} administrador={['admin','superadmin','jefatura'].includes(perfil?.rol)} />}
+            {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} vistaPrevia={esVistaPrevia} />}
+            {tab === 'compromisos' && <Compromisos comunidadId={id} administrador={!esVistaPrevia && ['admin','superadmin','jefatura'].includes(perfil?.rol)} soloVistaCliente={esVistaPrevia} />}
             {tab === 'incidencias' && <IncidenciasComunidad vista={vista} />}
             {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} />}
             {tab === 'mantencion' && <MantencionesComunidad vista={vista} />}
-            {tab === 'documentos' && <DocumentosComunidad vista={vista} />}
+            {tab === 'documentos' && <DocumentosComunidad vista={vista} vistaPrevia={esVistaPrevia} />}
           </>
         )}
       </div>
@@ -667,7 +687,7 @@ function DetalleCliente({ id }) {
   );
 }
 
-function ResumenComunidad({ vista, cambiarTab }) {
+function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
   return (
     <div className="portal-inicio-redisenado">
@@ -688,8 +708,8 @@ function ResumenComunidad({ vista, cambiarTab }) {
       {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
         <section className="portal-inicio-bloque">
           <h2 className="h4">Últimos movimientos</h2>
-          {atencion.length > 0 && <div className="portal-lista">{atencion.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} />)}</div>}
-          {proximos.length > 0 && <div className="portal-lista">{proximos.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} fechaDestacada />)}</div>}
+          {atencion.length > 0 && <div className="portal-lista">{atencion.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} alDetalle={vistaPrevia ? cambiarTab : null} />)}</div>}
+          {proximos.length > 0 && <div className="portal-lista">{proximos.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} alDetalle={vistaPrevia ? cambiarTab : null} fechaDestacada />)}</div>}
           {realizados.length > 0 && <div className="portal-timeline">{realizados.slice(0, 3).map(item => <FilaTimeline key={item.id} item={item} />)}</div>}
           {informes.length > 0 && <div className="portal-documentos-resumen">{informes.slice(0, 2).map((d, i) => <TarjetaDocumento key={`${d.id}-${i}`} documento={d} />)}</div>}
         </section>
@@ -862,7 +882,7 @@ function MantencionesComunidad({ vista }) {
   );
 }
 
-function DocumentosComunidad({ vista }) {
+function DocumentosComunidad({ vista, vistaPrevia = false }) {
   const pdfs = vista.documentos.filter(documentoEsPdf);
   const otros = vista.documentos.filter(d => !documentoEsPdf(d));
   return (
@@ -887,7 +907,7 @@ function DocumentosComunidad({ vista }) {
 
       {/* Solo documentos que la administración publicó explícitamente desde Drive. */}
       <DriveArchivos comunidadId={vista.comunidad?.comunidad_id} origenTipo={null} permitirSubir={false}
-                     ocultarVacio titulo="Documentos compartidos por la administración" />
+                     soloVistaCliente={vistaPrevia} ocultarVacio titulo="Documentos compartidos por la administración" />
     </section>
   );
 }
