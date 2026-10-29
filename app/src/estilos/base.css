@@ -3588,3 +3588,65 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 @media (max-width: 700px) {
   .acciones-proveedores-cabecera .boton { flex: 1 1 auto; min-width: 0; }
 }
+
+/* Al usar Home modular sin barra lateral, las rutas internas de Operaciones
+   vuelven a estar disponibles directamente en la pantalla Levantamientos. */
+@media (min-width: 900px) {
+  .inicio-pantalla .accesos-inicio {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+    margin:0;
+    width:100%;
+  }
+  .inicio-pantalla .accesos-inicio .acceso {
+    margin:0;
+    justify-content:space-between;
+    gap:12px;
+    min-height:48px;
+    padding:12px 16px;
+    font-size:11px;
+    letter-spacing:.035em;
+    text-transform:none;
+    border:1px solid var(--borde-suave,#e3ddd5);
+    border-radius:12px;
+    background:var(--tarjeta,#fff);
+  }
+  .inicio-pantalla .accesos-inicio .acceso:hover,
+  .inicio-pantalla .accesos-inicio .acceso:focus-visible {
+    border-color:var(--naranja,#ed7130);
+    outline:2px solid var(--naranja,#ed7130);
+    outline-offset:1px;
+  }
+  .inicio-pantalla .accesos-inicio .acceso-principal {
+    border-color:var(--naranja,#ed7130);
+  }
+  .inicio-pantalla .inicio-cuerpo.con-mapa {
+    grid-template-areas:
+      "aviso aviso"
+      "tablero tablero"
+      "accesos accesos"
+      "trabajo mapa";
+    grid-template-rows:auto auto auto auto;
+  }
+  .inicio-pantalla .inicio-cuerpo.con-mapa > .accesos-inicio {
+    grid-area:accesos;
+    align-self:start;
+  }
+}
+@media (max-width:899px) {
+  .inicio-pantalla .accesos-inicio {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(138px,1fr));
+    gap:8px;
+  }
+  .inicio-pantalla .accesos-inicio .acceso {
+    margin:0;
+    min-height:44px;
+    justify-content:space-between;
+    padding:10px 12px;
+    font-size:10px;
+    letter-spacing:.03em;
+    text-transform:none;
+  }
+}
