@@ -8,7 +8,7 @@ const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
 const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '' };
 
-export default function Compromisos({ comunidadId, administrador = false }) {
+export default function Compromisos({ comunidadId, administrador = false, soloVistaCliente = false }) {
  const [compromisos, setCompromisos] = useState([]);
  const [avances, setAvances] = useState([]);
  const [transiciones,setTransiciones] = useState([]);
@@ -37,21 +37,22 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   setCargando(true); setError('');
   const { data, error: err } = await supabase.from('compromisos_administracion').select('*').eq('comunidad_id', comunidadId).order('orden', {ascending:true, nullsFirst:false}).order('creado_en', {ascending:true});
   if (err) { setError('No fue posible cargar compromisos: ' + err.message); setCargando(false); return; }
-  setCompromisos(data || []);
-  const {data: subt,error: errSubt}=await supabase.from('compromisos_subtareas').select('*').in('compromiso_id',(data||[]).map(x=>x.id).length ? (data||[]).map(x=>x.id):['00000000-0000-0000-0000-000000000000']).order('orden',{ascending:true});
+  const visibles=soloVistaCliente ? (data||[]).filter(c=>c.publicado===true) : (data||[]);
+  setCompromisos(visibles);
+  const {data: subt,error: errSubt}=await supabase.from('compromisos_subtareas').select('*').in('compromiso_id',visibles.map(x=>x.id).length ? visibles.map(x=>x.id):['00000000-0000-0000-0000-000000000000']).order('orden',{ascending:true});
   if(errSubt) setError(errSubt.message);
   setSubtareas(subt||[]);
-  const ids = (data || []).map(x => x.id);
+  const ids = visibles.map(x => x.id);
   if (ids.length) {
    const { data: historial, error: err2 } = await supabase.from('compromisos_avances').select('*').in('compromiso_id', ids).order('registrado_en', {ascending:false});
    if (err2) setError(err2.message);
-   setAvances(historial || []);
+   setAvances(soloVistaCliente ? (historial||[]).filter(x=>x.publicado===true) : (historial||[]));
    const {data: trans,error: errTrans}=await supabase.from('compromisos_transiciones')
       .select('id,compromiso_id,estado_anterior,estado_nuevo,observacion,fecha_proxima_accion,cambiado_en')
       .in('compromiso_id', ids).order('cambiado_en',{ascending:false});
    if(errTrans) setError(errTrans.message);
    setTransiciones(trans || []);
-   const avanceIds = (historial || []).map(a => a.id);
+   const avanceIds = (soloVistaCliente ? (historial||[]).filter(x=>x.publicado===true) : (historial||[])).map(a=>a.id);
    if (avanceIds.length) {
     const {data: docs, error: errDocs} = await supabase.from('compromisos_avances_adjuntos').select('*').in('avance_id',avanceIds);
     if (errDocs) setError(errDocs.message);
@@ -60,7 +61,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
   } else { setAvances([]); setAdjuntos([]); setTransiciones([]); }
   setCargando(false);
  }
- useEffect(() => { cargar(); }, [comunidadId]);
+ useEffect(() => { cargar(); }, [comunidadId, soloVistaCliente]);
  useEffect(() => { if (administrador) conexionDrive().then(c => setDriveConectada(Boolean(c?.conectada))); }, [administrador]);
  async function crear(e) {
   e.preventDefault(); setGuardando(true); setError('');
@@ -318,7 +319,7 @@ export default function Compromisos({ comunidadId, administrador = false }) {
                 <summary>Documentos del compromiso</summary>
                 <DriveArchivos key={item.id+'-'+versionDocs} comunidadId={comunidadId}
                   origenTipo="compromiso" origenId={item.id} compacto
-                  titulo="Documentos · Google Drive" permitirSubir={administrador} ocultarVacio={!administrador}/>
+                  titulo="Documentos · Google Drive" permitirSubir={administrador} soloVistaCliente={soloVistaCliente} ocultarVacio={!administrador}/>
               </details>
               {administrador&&<div className="compromisos-acciones">
                 <button type="button" className="boton boton-secundario" disabled={guardando}
