@@ -56,6 +56,9 @@ export function modulosDisponibles(perfil) {
     { id:'conocimientos', titulo:'Base de conocimientos', etiqueta:'APRENDIZAJE',
       descripcion:'Cápsulas breves para aprender la Ley 21.442.',
       ruta:'/conocimientos', area:null, visible:true },
+    { id:'vista-cliente', titulo:'Vista de cliente', etiqueta:'PORTAL CLIENTE',
+      descripcion:'Previsualiza el portal según la comunidad y cuenta cliente, sin editar datos.',
+      ruta:'/vista-cliente', area:'operacion', visible:administracion },
     // Ajustes y configuración siempre al final del catálogo y navegación plana.
     { id:'configuracion', titulo:'Configuración', etiqueta:'AJUSTES',
       descripcion:'Equipo y clientes.', ruta:'/configuracion', area:null, visible:administracion }
