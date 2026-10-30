@@ -122,6 +122,9 @@ jobs:
         run: |
           npm install --no-save playwright
           npx playwright install --with-deps chromium
+      - name: Renderizar informe PDF A4 con 33 puntos y 113 fotografías
+        working-directory: app
+        run: node pruebas/ui-informe-pdf.mjs
       - name: Iniciar servidor de pruebas
         working-directory: app
         run: |
@@ -154,9 +157,6 @@ jobs:
       - name: Auditar formularios, fichas e informes internos en cuatro resoluciones
         working-directory: app
         run: node pruebas/ui-auditoria-internas.mjs
-      - name: Renderizar informe PDF A4 con 33 puntos y 113 fotografías
-        working-directory: app
-        run: node pruebas/ui-informe-pdf.mjs
       - name: Adjuntar capturas de QA
         if: always()
         uses: actions/upload-artifact@v4
