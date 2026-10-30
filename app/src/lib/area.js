@@ -35,7 +35,7 @@ const RUTAS_GRUPO = [
   ['comercial', ['/pipeline', '/propiedades', '/seo', '/plantillas-correo']],
   ['finanzas', ['/contabilidad']],
   ['configuracion', ['/configuracion', '/equipo', '/clientes']],
-  ['operacion', ['/inicio', '/comunidades', '/compromisos', '/mantenciones', '/bitacora', '/plantillas',
+  ['operacion', ['/inicio', '/vista-cliente', '/comunidades', '/compromisos', '/mantenciones', '/bitacora', '/plantillas',
     '/mapa', '/control', '/ayuda', '/proveedores', '/whatsapp']]
 ];
 
