@@ -74,8 +74,8 @@ test('El catálogo fuente incorpora 33 plantillas, siete áreas y dos variantes 
 test('Plantillas mantienen variables sin inventar datos y exigen quitar instrucciones',()=>{
  const caso={nombre_contacto:'María Rojas',nombre_condominio:'Santa Clara',comuna:'San Bernardo',
   direccion:'Los Olivos 234',unidades:109};
- assert.equal(completarCorreo('{{nombre}} en {{comunidad}}, {{comuna}}; {{remitente}}; {{saludo}}',caso,'Francisco'),
-  'María en Santa Clara, San Bernardo; Francisco; {{saludo}}');
+ assert.match(completarCorreo('{{nombre}} en {{comunidad}}, {{comuna}}; {{remitente}}; {{saludo}}',caso,'Francisco'),
+  /^María en Santa Clara, San Bernardo; Francisco; (Buenos días|Buenas tardes|Buenas noches)$/);
  assert.deepEqual(pendientesCorreo('Re: [asunto original]','{{fecha}}: [Opcional]'),{
   variables:['fecha'],instrucciones:['asunto original','Opcional']});
  assert.equal(validarBorradorCorreo('Hola {{comuna}}','Le solicito [completar] su respuesta').length,2);
@@ -85,7 +85,7 @@ test('Plantillas mantienen variables sin inventar datos y exigen quitar instrucc
  const sender=read('../supabase/functions/correo-prospecto/index.ts');
  assert.match(pantalla,/categoriasVisibles\.map/);
  assert.match(pantalla,/adjunto_sugerido/);
- assert.match(pipeline,/requiereCorreoExterno/);
+ assert.match(pipeline,/supabase\.functions\.invoke\('correo-prospecto'/);
  assert.match(sender,/bcc:CCO/);
  assert.doesNotMatch(sender,/const saludo=prospecto\.nombre_contacto/);
 });

@@ -24,6 +24,9 @@ jobs:
       - name: Probar criterios y compatibilidad histórica
         working-directory: app
         run: node --test pruebas/criterios.test.js
+      - name: Probar exportación PDF de levantamientos con 113 fotos
+        working-directory: app
+        run: node --test pruebas/informe-impresion.test.js
       - name: Validar Home y flujo de compromisos y correo
         working-directory: app
         run: node --test pruebas/flujo-home-compromisos-correo.test.js
@@ -119,6 +122,9 @@ jobs:
         run: |
           npm install --no-save playwright
           npx playwright install --with-deps chromium
+      - name: Renderizar informe PDF A4 con 33 puntos y 113 fotografías
+        working-directory: app
+        run: node pruebas/ui-informe-pdf.mjs
       - name: Iniciar servidor de pruebas
         working-directory: app
         run: |

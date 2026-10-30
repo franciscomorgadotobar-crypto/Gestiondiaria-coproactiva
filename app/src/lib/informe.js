@@ -224,7 +224,11 @@ function bloqueItem(item, numero) {
   const cantidadFotos = item.fotos?.filter(f => f?.url).length ?? 0;
   // Un punto con una fila de fotos o menos no se parte entre páginas; uno con
   // muchas sí puede, entre filas, para no dejar media página en blanco.
-  const compacto = cantidadFotos <= 3;
+  // Los puntos con varios criterios o textos extensos deben poder continuar en otra página.
+  const sinCriterios = criteriosDe(item.config).length === 0;
+  const textoBreve = [item.descripcion, item.nota, item.respuesta?.texto]
+    .every(valor => String(valor ?? '').length < 400);
+  const compacto = cantidadFotos <= 3 && sinCriterios && textoBreve;
 
   return `
     <article class="item${compacto ? ' compacto' : ''}${cantidadFotos ? ' con-fotos' : ''}${esEstado(item) ? ` borde-${item.estado ?? 'sin_evaluar'}` : ''}">
@@ -237,12 +241,12 @@ function bloqueItem(item, numero) {
             ? `<span class="cuenta-fotos">${cantidadFotos} foto${cantidadFotos === 1 ? '' : 's'}</span>` : ''}
         </header>
         ${descripcionPunto(item)}
-        ${bloqueCriterios(item)}
         ${valorRespondido(item)}
         ${item.nota ? `<p class="nota"><strong>${
           item.tipo_ingreso === 'opciones' ? 'Comentario'
           : !esEstado(item) ? 'Nota' : item.estado === 'critico' ? 'Hallazgo' : 'Observación'}:</strong> ${escapar(item.nota)}</p>` : ''}
       </div>
+      ${bloqueCriterios(item)}
       ${criteriosDe(item.config).length && !item.respuesta?.opcion
         ? grillaFotos((item.fotos ?? []).filter(f => !f.criterio_id))
         : grillaFotos(item.fotos)}
@@ -412,10 +416,12 @@ export function informeHtml(datos) {
   }
 
   /* ---------------------------------------------------- Requiere atención */
-  .atencion { margin-bottom: 7mm; break-inside: avoid; }
+  /* El listado de hallazgos puede ocupar varias páginas; cada fila queda íntegra. */
+  .atencion { margin-bottom: 7mm; }
   .atencion-fila {
     display: flex; gap: 3mm; align-items: flex-start; padding: 2.5mm 3mm; margin-bottom: 1.5mm;
     border-radius: 1.5mm; border-left: 1.2mm solid;
+    break-inside: avoid; page-break-inside: avoid;
   }
   .atencion-fila.e-critico { background: var(--critico-fondo); border-left-color: var(--critico-texto); }
   .atencion-fila.e-obs     { background: var(--alerta-fondo); border-left-color: var(--naranja); }
@@ -446,9 +452,10 @@ export function informeHtml(datos) {
      un punto corto no se parte: la foto tiene que quedar junto a lo que
      describe o deja de ser evidencia de nada. */
   .item.compacto { break-inside: avoid; page-break-inside: avoid; }
-  .item-cab { break-inside: avoid; }
+  /* No convertir toda la descripción en un bloque indivisible: puede superar A4. */
+  .item-cab { break-inside: auto; }
   .item.con-fotos .item-cab { break-after: avoid; page-break-after: avoid; }
-  .item header { display: flex; align-items: baseline; gap: 2.5mm; }
+  .item header { display: flex; align-items: baseline; gap: 2.5mm; break-after: avoid; page-break-after: avoid; }
   .item h3 { font-size: 10pt; font-weight: 600; flex: 1; line-height: 1.35; }
   .num {
     font: 700 7pt 'Montserrat', sans-serif; color: var(--tenue); letter-spacing: .04em;
@@ -457,9 +464,11 @@ export function informeHtml(datos) {
   .item header + * { margin-top: 2mm; }
 
   .descripcion-categoria { padding: 2.6mm 3mm; background: #f7f4f0; color: var(--pizarra); font-size: 9pt; line-height: 1.5; margin: 0 0 3mm; border-radius: 1mm; }
-  .resultados-criterios { display: grid; gap: 2mm; margin-top: 2.5mm; }
-  .resultado-criterio { padding: 2.2mm 2.5mm; border: .25mm solid var(--borde); border-radius: 1mm; break-inside: avoid; }
-  .resultado-criterio-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 2mm; font-size: 8.5pt; line-height: 1.5; }
+  /* El contenedor vertical no debe ser un grid: sus hijos pueden ocupar más de una hoja. */
+  .resultados-criterios { display: block; margin-top: 2.5mm; }
+  /* Un criterio con muchas evidencias se divide entre filas, nunca dentro de una fotografía. */
+  .resultado-criterio { padding: 2.2mm 2.5mm; margin-bottom: 2mm; border: .25mm solid var(--borde); border-radius: 1mm; break-inside: auto; }
+  .resultado-criterio-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 2mm; font-size: 8.5pt; line-height: 1.5; break-after: avoid; page-break-after: avoid; }
   .resultado-criterio-cab strong { font-weight: 600; }
   .resultado-criterio .fotos { margin-top: 2mm; }
   .descripcion-punto {
@@ -527,6 +536,7 @@ export function informeHtml(datos) {
   .fotos {
     display: grid; grid-template-columns: repeat(var(--columnas, 3), 1fr);
     gap: 2.5mm; margin-top: 3mm;
+    break-inside: auto;
   }
   .fotos figure { margin: 0; break-inside: avoid; page-break-inside: avoid; }
   .fotos .marco {
@@ -658,33 +668,67 @@ export function informeHtml(datos) {
 </html>`;
 }
 
-/* Abre el informe en una ventana nueva y lanza el diálogo de impresión, donde
- * el sistema ofrece "Guardar como PDF". Funciona sin señal porque las imágenes
- * salen de los blobs locales. */
+/* El navegador imprime el mismo HTML que se ve en la vista previa.
+ * No enviamos un informe incompleto a PDF: con decenas de fotografías,
+ * un límite fijo de espera podía iniciar la impresión antes de cargarlas. */
 export function imprimirInforme(html, ventanaExistente = null) {
   const ventana = ventanaExistente ?? window.open('', '_blank');
-  if (!ventana) return false;   // el navegador bloqueó la ventana emergente
+  if (!ventana) return false;
 
-  // La ventana nueva no tiene dirección propia: sin <base>, las rutas del
-  // logotipo y de las tipografías no se resolvían y el logo salía roto.
   const base = `<base href="${window.location.origin}${import.meta.env.BASE_URL}">`;
   ventana.document.open();
   ventana.document.write(html.replace('<head>', `<head>${base}`));
   ventana.document.close();
 
-  // Se espera a que carguen todas las imágenes (y las tipografías) antes de
-  // imprimir: imprimir antes deja huecos en blanco donde deberían ir las fotos.
-  // Con un tope, para que una foto que no carga no deje el informe colgado.
-  const esperarImagenes = () => Promise.all([...ventana.document.images].map(img =>
-    img.complete ? null : new Promise(listo => {
-      img.addEventListener('load', listo, { once: true });
-      img.addEventListener('error', listo, { once: true });
-    })
-  ));
-  const tope = new Promise(listo => setTimeout(listo, 15000));
-  const fuentes = ventana.document.fonts?.ready ?? Promise.resolve();
-  Promise.race([Promise.all([esperarImagenes(), fuentes]), tope]).then(() => {
-    setTimeout(() => { ventana.focus(); ventana.print(); }, 300);
+  // El aviso pertenece solo a la vista previa: nunca se incluye en el PDF.
+  const aviso = ventana.document.createElement('div');
+  aviso.id = 'aviso-impresion-coproactiva';
+  aviso.setAttribute('role', 'status');
+  aviso.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;max-width:90%;padding:12px 18px;background:#2b3138;color:#fff;font:14px sans-serif;box-shadow:0 2px 12px #0003;border-radius:6px;text-align:center';
+  aviso.textContent = 'Preparando PDF: comprobando fotografías y tipografías…';
+  ventana.document.body.prepend(aviso);
+  const reglasAviso = ventana.document.createElement('style');
+  reglasAviso.textContent = '@media print { #aviso-impresion-coproactiva { display: none !important; } }';
+  ventana.document.head.append(reglasAviso);
+
+  const imagenes = Array.from(ventana.document.images);
+  const esperarImagen = img => img.complete
+    ? Promise.resolve()
+    : new Promise(listo => {
+        img.addEventListener('load', listo, { once: true });
+        img.addEventListener('error', listo, { once: true });
+      });
+  const recursos = Promise.all([
+    Promise.all(imagenes.map(esperarImagen)),
+    ventana.document.fonts?.ready ?? Promise.resolve()
+  ]).then(() => 'listo', () => 'error');
+
+  // Si una imagen queda bloqueada no imprimimos un archivo silenciosamente incompleto.
+  let temporizador;
+  const tope = new Promise(listo => {
+    temporizador = setTimeout(() => listo('tiempo-agotado'), 60000);
+  });
+  Promise.race([recursos, tope]).then(resultado => {
+    clearTimeout(temporizador);
+    if (ventana.closed) return;
+
+    const pendientes = imagenes.filter(img => !img.complete || img.naturalWidth === 0);
+    if (resultado !== 'listo' || pendientes.length) {
+      aviso.setAttribute('role', 'alert');
+      aviso.textContent = pendientes.length
+        ? `No se generó el PDF: ${pendientes.length} imagen(es) no cargaron. Verifica la conexión y vuelve a abrir el informe.`
+        : 'No se generó el PDF: la carga tardó demasiado. Vuelve a abrir el informe.';
+      return;
+    }
+
+    aviso.remove();
+    // Tras la última imagen cargada permitimos que el navegador repagine A4.
+    setTimeout(() => {
+      if (!ventana.closed) {
+        ventana.focus();
+        ventana.print();
+      }
+    }, 300);
   });
   return true;
 }
