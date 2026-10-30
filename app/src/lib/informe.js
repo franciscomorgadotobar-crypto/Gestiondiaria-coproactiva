@@ -464,9 +464,10 @@ export function informeHtml(datos) {
   .item header + * { margin-top: 2mm; }
 
   .descripcion-categoria { padding: 2.6mm 3mm; background: #f7f4f0; color: var(--pizarra); font-size: 9pt; line-height: 1.5; margin: 0 0 3mm; border-radius: 1mm; }
-  .resultados-criterios { display: grid; gap: 2mm; margin-top: 2.5mm; }
+  /* El contenedor vertical no debe ser un grid: sus hijos pueden ocupar más de una hoja. */
+  .resultados-criterios { display: block; margin-top: 2.5mm; }
   /* Un criterio con muchas evidencias se divide entre filas, nunca dentro de una fotografía. */
-  .resultado-criterio { padding: 2.2mm 2.5mm; border: .25mm solid var(--borde); border-radius: 1mm; break-inside: auto; }
+  .resultado-criterio { padding: 2.2mm 2.5mm; margin-bottom: 2mm; border: .25mm solid var(--borde); border-radius: 1mm; break-inside: auto; }
   .resultado-criterio-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 2mm; font-size: 8.5pt; line-height: 1.5; break-after: avoid; page-break-after: avoid; }
   .resultado-criterio-cab strong { font-weight: 600; }
   .resultado-criterio .fotos { margin-top: 2mm; }
