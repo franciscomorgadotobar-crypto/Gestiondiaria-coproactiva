@@ -78,7 +78,7 @@ try {
     const {ctx,page}=await crear();
     assert.equal(await page.locator('.seleccion-home').count(),1);
     assert.equal(await page.locator('.home-general').count(),0);
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),10);
     assert.match(await page.locator('.seleccion-home__tarjeta').last().innerText(),/Configuración/);
     await page.getByRole('button',{name:'Cambiar vista'}).click();
     const dialogo=page.getByRole('dialog',{name:'Opciones de visualización'});
@@ -94,7 +94,7 @@ try {
     await dialogo.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     await page.reload({waitUntil:'domcontentloaded'});
     await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),10);
     assert.equal(await page.locator('.seleccion-home__tarjetas.vista-lista').count(),1);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth + 2));
     console.log('Home modular · dos organizaciones, dos presentaciones y persistencia: OK');
@@ -130,7 +130,7 @@ try {
 
   {
     const {ctx,page}=await crear({ancho:1280,alto:850});
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),9);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),10);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
     await page.getByRole('button',{name:/Levantamientos/}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
