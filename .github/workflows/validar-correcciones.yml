@@ -24,6 +24,9 @@ jobs:
       - name: Probar criterios y compatibilidad histórica
         working-directory: app
         run: node --test pruebas/criterios.test.js
+      - name: Probar exportación PDF de levantamientos con 113 fotos
+        working-directory: app
+        run: node --test pruebas/informe-impresion.test.js
       - name: Validar Home y flujo de compromisos y correo
         working-directory: app
         run: node --test pruebas/flujo-home-compromisos-correo.test.js
