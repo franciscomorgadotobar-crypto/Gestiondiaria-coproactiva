@@ -154,6 +154,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const enComercial = grupo === 'comercial';
   const enFinanzas = grupo === 'finanzas';
   const enOperacion = grupo === 'operacion';
+  // Restaurar la navegación lateral de escritorio en Operaciones sin
+  // cambiar el portal cliente ni las pantallas de Comercial/Finanzas.
+  const mostrarPanelIzquierdo = esCliente || enOperacion;
   const enAprendizaje = grupo === 'aprendizaje';
   const alertasTotales = alertasMantencion + alertasGenerales;
   const levantamientosActivo = pathname === '/nuevo'
@@ -216,6 +219,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/bitacora', etiqueta: 'Bitácora', mostrar: true },
         { ruta: '/comunidades', etiqueta: 'Comunidades', mostrar: true },
         { ruta: '/compromisos', etiqueta: 'Compromisos y avances', mostrar: true },
+        { ruta: '/vista-cliente', etiqueta: 'Vista de cliente', mostrar: esAdministracion },
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true },
         // Proveedores y WhatsApp son de administración. Sus subsecciones
@@ -419,8 +423,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   return (
-    <div className={"layout-escritorio" + (!esCliente ? " layout-sin-panel-lateral" : "")}>
-      {esCliente && <nav className={'barra-lateral' + (organizacion === 'modulos' && !esCliente ? ' barra-lateral-modulos' : '')} aria-label="Navegación">
+    <div className={"layout-escritorio" + (!mostrarPanelIzquierdo ? " layout-sin-panel-lateral" : "")}>
+      {mostrarPanelIzquierdo && <nav className={'barra-lateral' + (organizacion === 'modulos' && !esCliente ? ' barra-lateral-modulos' : '')} aria-label="Navegación">
         <Link to={inicio} className="marca-lateral" aria-label="CoproActiva">
           <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva" />
         </Link>
@@ -535,7 +539,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       </nav>}
 
       <div className={'area-escritorio' + (anchoCompleto ? ' ancho-completo' : '')}>
-        {!esCliente && (
+        {!mostrarPanelIzquierdo && (
           <header className="barra-contextual-escritorio" aria-label="Navegación contextual">
             <button type="button" className="barra-contextual-marca"
               aria-label="Ir al Home de módulos" onClick={cambiarArea}>
