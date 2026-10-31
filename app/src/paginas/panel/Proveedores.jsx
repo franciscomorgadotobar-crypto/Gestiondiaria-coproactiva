@@ -507,6 +507,27 @@ export default function Proveedores() {
     );
   }
 
+    const modalComunicacion = comunicacion ? (
+        <Modal>
+          <ComunicacionProveedores
+            perfil={perfil}
+            proveedores={proveedores ?? []}
+            filtrados={listaFiltrada}
+            seleccionIds={comunicacion.destinatarios}
+            alcanceInicial={comunicacion.alcance}
+            filtros={{
+              busqueda: busqueda || null,
+              rubro: rubro || null,
+              comuna: comuna || null,
+              origen: origen || null
+            }}
+            enviando={enviandoComunicacion}
+            onCancelar={() => setComunicacion(null)}
+            onEnviar={enviarComunicacion}
+          />
+        </Modal>
+    ) : null;
+
   if (seleccionado) {
     return (
       <FichaProveedor
@@ -524,6 +545,7 @@ export default function Proveedores() {
         error={error}
         onCerrarAviso={() => setAviso(null)}
       >
+        {modalComunicacion}
         {formulario && (
           <Modal>
             <FormularioProveedor inicial={formulario} onCancelar={() => setFormulario(null)} onGuardar={guardarProveedor} />
@@ -753,7 +775,7 @@ export default function Proveedores() {
                     <div className="acciones-contacto-mini">
                       <button disabled={!p.telefono} onClick={() => abrirContacto(p, 'llamada')} title="Llamar">☎</button>
                       <button disabled={!p.telefono} onClick={() => abrirContacto(p, 'whatsapp')} title="WhatsApp">WA</button>
-                      <button disabled={!p.email} onClick={() => abrirContacto(p, 'correo')} title="Correo">✉</button>
+                      <button disabled={!emailProveedor(p)} onClick={() => abrirContacto(p, 'correo')} title="Correo">✉</button>
                       <button onClick={() => navegar('/proveedores/' + p.id)} title="Ver ficha">›</button>
                     </div>
                   </td>
@@ -764,26 +786,7 @@ export default function Proveedores() {
         </div>
       </div>
 
-      {comunicacion && (
-        <Modal>
-          <ComunicacionProveedores
-            perfil={perfil}
-            proveedores={proveedores ?? []}
-            filtrados={listaFiltrada}
-            seleccionIds={comunicacion.destinatarios}
-            alcanceInicial={comunicacion.alcance}
-            filtros={{
-              busqueda: busqueda || null,
-              rubro: rubro || null,
-              comuna: comuna || null,
-              origen: origen || null
-            }}
-            enviando={enviandoComunicacion}
-            onCancelar={() => setComunicacion(null)}
-            onEnviar={enviarComunicacion}
-          />
-        </Modal>
-      )}
+      {modalComunicacion}
 
       {formulario && (
         <Modal>
@@ -846,7 +849,7 @@ function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto 
       <div className="proveedor-contactos">
         <button disabled={!p.telefono} onClick={() => onContacto('llamada')}>☎ Llamar</button>
         <button disabled={!p.telefono} onClick={() => onContacto('whatsapp')}>WhatsApp</button>
-        <button disabled={!p.email} onClick={() => onContacto('correo')}>✉ Correo</button>
+        <button disabled={!emailProveedor(p)} onClick={() => onContacto('correo')}>✉ Correo</button>
       </div>
     </article>
   );
@@ -871,7 +874,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
         <div className="acciones-proveedor-ficha">
           <button disabled={!p.telefono} onClick={() => onContacto('llamada')}>☎ Llamar</button>
           <button disabled={!p.telefono} onClick={() => onContacto('whatsapp')}>WhatsApp</button>
-          <button disabled={!p.email} onClick={() => onContacto('correo')}>✉ Correo</button>
+          <button disabled={!emailProveedor(p)} onClick={() => onContacto('correo')}>✉ Correo</button>
           {p.sitio_web && <a href={p.sitio_web.match(/^https?:/i) ? p.sitio_web : 'https://' + p.sitio_web} target="_blank" rel="noreferrer">Sitio web</a>}
         </div>
       </header>
