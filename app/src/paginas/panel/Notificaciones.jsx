@@ -117,7 +117,7 @@ export default function Notificaciones() {
 
             if (esAperturaCorreo) {
               const url=n.correo_origen==='proveedores'
-                ? '/proveedores/comunicaciones'
+                ? '/proveedores/comunicaciones'+(n.correo_registro_id?'?destinatario='+encodeURIComponent(n.correo_registro_id):'')
                 : n.prospecto_id
                   ? '/pipeline?prospecto='+encodeURIComponent(n.prospecto_id)
                   : '/pipeline';
