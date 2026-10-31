@@ -2,7 +2,7 @@
  * Lo usan CRM y Proveedores sin trasladar la gestión fuera de sus fichas.
  * SMTP, firma, seguimiento, autorización y evidencias permanecen en servidor.
  */
-import nodemailer from 'npm:nodemailer@6.10.1';
+import nodemailer from 'npm:nodemailer@10.3.1';
 import { Buffer } from 'node:buffer';
 import { LOGO_PNG } from './logo.ts';
 
