@@ -357,3 +357,19 @@
 @media (prefers-reduced-motion: reduce) {
   .seleccion-home__cambiar > svg:last-child { transition: none; }
 }
+
+/* Campana visible en el Home sin empujar el selector fuera del teléfono. */
+.seleccion-home__cabecera > .campana-contenedor { flex:0 0 44px; }
+.seleccion-home__selector-vistas { margin-left:auto; }
+@media (max-width:719px) {
+  .seleccion-home__cabecera { gap:8px; }
+  .seleccion-home__marca { width:min(30vw,130px); }
+  .seleccion-home__selector-vistas .seleccion-home__cambiar { min-height:44px;gap:5px;padding:7px 8px; }
+  .seleccion-home__cambiar-etiqueta small { display:none; }
+  /* El menú de "Cambiar vista" también queda siempre dentro del teléfono. */
+  .seleccion-home__menu-vistas { right:-52px; }
+}
+@media (max-width:359px) {
+  .seleccion-home__marca { width:min(30vw,106px); }
+  .seleccion-home__cambiar > svg:first-child { display:none; }
+}
