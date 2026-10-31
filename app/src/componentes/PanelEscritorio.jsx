@@ -112,10 +112,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     }
 
     actualizarAlertas();
+    // Nuevas aperturas se registran en el servidor; la campana las consulta
+    // periódicamente, incluso sin que se abra la página de notificaciones.
+    const intervalo=window.setInterval(actualizarAlertas,60000);
     const escuchar = () => actualizarAlertas();
     window.addEventListener('coproactiva:notificaciones-cambio', escuchar);
     return () => {
       vigente = false;
+      window.clearInterval(intervalo);
       window.removeEventListener('coproactiva:notificaciones-cambio', escuchar);
     };
   }, [perfil?.id, pathname]);
