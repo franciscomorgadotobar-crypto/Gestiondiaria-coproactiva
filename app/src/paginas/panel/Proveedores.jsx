@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
+import { validarBorradorCorreo } from '../../lib/plantillasCorreo';
 import Confirmar from '../../componentes/Confirmar';
 import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
 import { consultarBaseCompletaProveedores, generarCsvProveedores, nombreArchivoProveedores } from '../../lib/exportarProveedores';
@@ -1153,7 +1154,33 @@ function ComunicacionProveedores({
   const [alcance, setAlcance] = useState(alcanceInicial || 'filtrados');
   const [asunto, setAsunto] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [plantillasCorreo,setPlantillasCorreo]=useState([]);
+  const [plantillaElegida,setPlantillaElegida]=useState('');
+  const [firmaPreview,setFirmaPreview]=useState(null);
   const [incluirTelefono, setIncluirTelefono] = useState(Boolean(perfil?.telefono));
+  useEffect(()=>{
+    let activo=true;
+    Promise.all([
+      supabase.from('plantillas_correo_crm')
+        .select('id,nombre,asunto,cuerpo').eq('activa',true).eq('categoria','Proveedores').order('nombre'),
+      supabase.from('firmas_correo').select('*').eq('usuario_id',perfil?.id).maybeSingle()
+    ]).then(([plantillas,firma])=>{
+      if(!activo)return;
+      if(!plantillas.error)setPlantillasCorreo(plantillas.data||[]);
+      if(!firma.error)setFirmaPreview(firma.data);
+    });
+    return ()=>{activo=false;};
+  },[perfil?.id]);
+  function elegirPlantilla(id){
+    setPlantillaElegida(id);
+    const plantilla=plantillasCorreo.find(x=>x.id===id);
+    if(!plantilla)return;
+    // La personalización de contacto y saludo depende de cada proveedor.
+    // El cuerpo ya recibe saludo y firma en el servidor: no duplicarlos.
+    setAsunto(plantilla.asunto||'');
+    setMensaje((plantilla.cuerpo||'').replace(/\{\{saludo\}\}\s*/gi,'')
+      .replace(/\{\{nombre\}\}/gi,'').trim());
+  }
   const seleccion = useMemo(() => new Set(seleccionIds), [seleccionIds]);
 
   const candidatos = useMemo(() => {
@@ -1170,7 +1197,9 @@ function ComunicacionProveedores({
   }, [candidatos]);
 
   const ejemplo = resumen.enviables[0] || candidatos[0] || null;
-  const puedeEnviar = asunto.trim() && mensaje.trim() && resumen.enviables.length > 0 && !enviando;
+  const erroresBorrador=validarBorradorCorreo(asunto,mensaje);
+  const puedeEnviar = asunto.trim() && mensaje.trim() && resumen.enviables.length > 0 &&
+    !enviando && erroresBorrador.length===0;
 
   async function confirmar() {
     if (!puedeEnviar) return;
@@ -1233,6 +1262,17 @@ function ComunicacionProveedores({
 
       <section className="comunicacion-editor">
         <label className="campo">
+          <span className="etiqueta-campo">Plantilla (opcional)</span>
+          <select value={plantillaElegida} onChange={e=>elegirPlantilla(e.target.value)}>
+            <option value="">Redactar desde cero</option>
+            {plantillasCorreo.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+          </select>
+        </label>
+        <p className="micro apagado">
+          Mismo catálogo y firma configurados en Coproactiva. Las plantillas de Proveedores
+          pueden administrarse desde Plantillas de correo.
+        </p>
+        <label className="campo">
           <span className="etiqueta-campo">Asunto</span>
           <input value={asunto} maxLength={200}
                  onChange={e => setAsunto(e.target.value)}
@@ -1246,6 +1286,7 @@ function ComunicacionProveedores({
                     placeholder="Escribe la comunicación general. El saludo y la firma se agregan automáticamente." />
         </label>
 
+        {erroresBorrador.map((aviso,i)=><p className="chico pipeline-correo-error" role="alert" key={i}>{aviso}</p>)}
         <div className="comunicacion-ayuda">
           <strong>Personalización automática</strong>
           <p>
@@ -1268,13 +1309,23 @@ function ComunicacionProveedores({
         <div className="tarjeta">
           <strong>{ejemplo ? saludoProveedor(ejemplo) : 'Estimados,'}</strong>
           <p>{mensaje.trim() || 'Tu mensaje aparecerá aquí.'}</p>
-          <div className="comunicacion-firma">
-            <span>Saludos,</span>
-            <strong>{perfil?.nombre || 'Equipo CoproActiva'}</strong>
-            <span>CoproActiva Administración SpA</span>
-            {incluirTelefono && perfil?.telefono && <span>{perfil.telefono}</span>}
-            <span>contacto@coproactiva.cl</span>
-          </div>
+          {firmaPreview?.activa===false
+            ? <p className="micro apagado">Firma desactivada desde Mi cuenta</p>
+            : <div className="comunicacion-firma comunicacion-firma-horizontal">
+                {firmaPreview?.logo_path&&<img alt="Logo de firma"
+                  src={supabase.storage.from('firmas-correo').getPublicUrl(firmaPreview.logo_path).data.publicUrl}
+                  style={{maxWidth:130,maxHeight:75,objectFit:'contain'}}/>}
+                <div style={{display:'grid',gap:3}}>
+                  <span>Saludos cordiales,</span>
+                  <strong>{firmaPreview?.nombre||perfil?.nombre||'Equipo Coproactiva'}</strong>
+                  {firmaPreview?.cargo&&<span>{firmaPreview.cargo}</span>}
+                  <span>{firmaPreview?.empresa??'Coproactiva Administración SpA'}</span>
+                  {incluirTelefono&&(firmaPreview?.telefono||perfil?.telefono)&&
+                    <span>{firmaPreview?.telefono||perfil?.telefono}</span>}
+                  <span>{firmaPreview?.correo??'contacto@coproactiva.cl'}</span>
+                  <span>{firmaPreview?.web??'www.coproactiva.cl'}</span>
+                </div>
+              </div>}
         </div>
       </section>
 
