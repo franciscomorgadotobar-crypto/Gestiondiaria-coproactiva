@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
 import { useSesion } from '../../lib/sesion';
@@ -23,6 +23,8 @@ function alcanceTexto(v) {
 export default function ProveedoresComunicaciones() {
   const { perfil } = useSesion();
   const navegar = useNavigate();
+  const [params] = useSearchParams();
+  const idDestinatario=params.get('destinatario')||'';
   const [comunicaciones, setComunicaciones] = useState(null);
   const [autores, setAutores] = useState({});
   const [seleccionada, setSeleccionada] = useState(null);
@@ -57,6 +59,21 @@ export default function ProveedoresComunicaciones() {
     },60000);
     return ()=>window.clearInterval(interval);
   }, [seleccionada?.id]);
+  useEffect(()=>{
+    if(!comunicaciones?.length || !/^[0-9a-f-]{36}$/i.test(idDestinatario)) return;
+    let vigente=true;
+    supabase.from('proveedor_comunicacion_destinatarios')
+      .select('comunicacion_id').eq('id',idDestinatario).maybeSingle()
+      .then(async ({data,error})=>{
+        if(!vigente||error||!data)return;
+        const registrada=comunicaciones.find(x=>x.id===data.comunicacion_id);
+        if(registrada){await abrir(registrada);return;}
+        const r=await supabase.from('proveedor_comunicaciones')
+          .select('*').eq('id',data.comunicacion_id).maybeSingle();
+        if(vigente&&!r.error&&r.data) await abrir(r.data);
+      });
+    return ()=>{vigente=false;};
+  },[comunicaciones,idDestinatario]);
 
   async function abrir(c) {
     setSeleccionada(c);
