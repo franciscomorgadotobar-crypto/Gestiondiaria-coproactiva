@@ -2498,6 +2498,8 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     align-items: center;
   }
 
+  .usuario-lateral-identidad.con-campana {grid-template-columns:34px minmax(0,1fr) 40px}
+
   .usuario-lateral-avatar {
     display: grid;
     width: 34px;
