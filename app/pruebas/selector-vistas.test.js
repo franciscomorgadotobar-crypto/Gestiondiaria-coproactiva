@@ -13,10 +13,11 @@ test('Catálogo no agrega rutas inexistentes y evita duplicados',()=>{
   assert.ok(rutas.has('/inicio'));
   assert.ok(rutas.has('/contabilidad'));
   assert.ok(rutas.has('/configuracion'));
-  assert.equal(modulos.length,9,'Se mantienen los ocho módulos originales y se suma Base de conocimientos');
+  assert.equal(modulos.length,10,'Se conservan los módulos originales, Base de conocimientos y Vista de cliente');
   assert.deepEqual(modulos.map(m=>m.titulo),[
     'Gestión comercial','Levantamientos','Arriendos y ventas','Red de proveedores',
-    'Recepción y atención','Gestión contable','SEO y Analítica','Base de conocimientos','Configuración'
+    'Recepción y atención','Gestión contable','SEO y Analítica','Base de conocimientos',
+    'Vista de cliente','Configuración'
   ]);
   assert.ok(!rutas.has('/mi-cuenta'),'Mi cuenta es transversal, no módulo');
 });
@@ -33,7 +34,7 @@ test('Roles preservan autorizaciones del menú',()=>{
   assert.ok(modulos('admin').includes('contabilidad'));
   assert.ok(!modulos('admin').includes('clientes'));
   assert.ok(modulos('superadmin').includes('configuracion'));
-  assert.equal(modulos('admin').length,9);
+  assert.equal(modulos('admin').length,10);
   assert.equal(modulos('admin').at(-1),'configuracion');
   assert.equal(modulos('superadmin').at(-1),'configuracion');
   assert.equal(modulos('jefatura').at(-1),'conocimientos',
