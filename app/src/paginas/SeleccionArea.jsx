@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { guardarArea } from '../lib/area';
 import { registrarIndiceSelector } from '../lib/historialSelector';
+import Campana from '../componentes/Campana';
 import { leerOrganizacion, guardarOrganizacion, modulosDisponibles } from '../lib/selectorModulos';
 import './SeleccionArea.css';
 
@@ -209,7 +210,10 @@ export default function SeleccionArea() {
         </header>
 
         <section className="seleccion-home__introduccion" aria-label="Selección de destino">
-          <h1>Hola{perfil?.nombre ? ', ' + perfil.nombre.split(' ')[0] : ''}</h1>
+          <div className="seleccion-home__saludo-campana">
+            <h1>Hola{perfil?.nombre ? ', ' + perfil.nombre.split(' ')[0] : ''}</h1>
+            <Campana miId={perfil?.id} />
+          </div>
           <p>{organizacion === 'modulos' ? '¿Qué módulo quieres abrir?' : '¿En qué área vas a trabajar?'}</p>
         </section>
 
