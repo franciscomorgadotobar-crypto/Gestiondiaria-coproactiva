@@ -3,14 +3,13 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { enviarLoteMotor, prepararSeguimiento, firmaEstandar, AVISO_SEGUIMIENTO } from '../_compartido/motor-correo.ts';
 import { driveFetch } from '../_compartido/google-drive.ts';
+import { validarCopiasCorreo } from '../_compartido/copias-correo.ts';
 
 const BASE = Deno.env.get('SUPABASE_URL') || '';
 const ANON = Deno.env.get('SUPABASE_ANON_KEY') || '';
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const SMTP_USER = Deno.env.get('SMTP_USUARIO') || 'contacto@coproactiva.cl';
 const ORIGEN = 'https://app.coproactiva.cl';
-// CCO indicado expresamente en el catálogo de correos Coproactiva v1.0.
-const CCO = ['osmarmeza.adm7@gmail.com','franciscomorgadotobar@gmail.com'];
 // Máximo 3 archivos físicos, 8 MiB en total antes de la codificación MIME.
 const MAX_ARCHIVOS=3, MAX_TOTAL=8*1024*1024;
 const MIME_PERMITIDOS=new Set([
@@ -89,6 +88,9 @@ Deno.serve(async req=>{
   if(errorProspecto||!prospecto) return respuesta({error:'Prospecto no encontrado'},404);
   const destinatario=normal(prospecto.email,254).toLowerCase();
   if(!correoValido(destinatario)) return respuesta({error:'El prospecto no tiene un correo válido'},422);
+  let copias:{cc:string[];cco:string[]};
+  try{copias=validarCopiasCorreo(body,destinatario)}
+  catch(e){return respuesta({error:e instanceof Error?e.message:'Copias inválidas'},422)}
 
   // Plantilla 04: asunto genérico personalizado. Nunca reemplazar un asunto redactado a mano.
   if(plantillaCorreo?.codigo==='04'){
@@ -173,23 +175,11 @@ Deno.serve(async req=>{
       firmaVista.html+seguimientoInfo.html+'</div>';
     // El mismo motor SMTP se usa en CRM y en comunicaciones a Proveedores.
     const resultado=(await enviarLoteMotor([{
-      para:destinatario,asunto,html,texto,adjuntos:adjuntosSMTP
+      para:destinatario,cc:copias.cc,bcc:copias.cco,
+      asunto,html,texto,adjuntos:adjuntosSMTP
     }],{logo:false}))[0];
     if(resultado?.enviado){
       enviado=true;
-      if(CCO.length){
-        // Una copia interna nunca incluye el pixel del prospecto.
-        const copiaHtml=seguimientoInfo.html
-          ? html.replace(seguimientoInfo.html,'') : html;
-        const copiaTexto=seguimiento
-          ? texto.replace('\n\n'+AVISO_SEGUIMIENTO,'') : texto;
-        const copia=(await enviarLoteMotor([{
-          para:CCO[0],bcc:CCO.slice(1),
-          asunto:'[Copia CRM] '+asunto,html:copiaHtml,texto:copiaTexto,
-          adjuntos:adjuntosSMTP
-        }],{logo:false}))[0];
-        if(!copia?.enviado)console.error('correo-prospecto: copia interna fallida');
-      }
     }else motivo='No fue posible entregar el mensaje a SMTP';
   }catch(e){
     console.error('correo-prospecto: motor unificado',e instanceof Error?e.name:'unknown');
