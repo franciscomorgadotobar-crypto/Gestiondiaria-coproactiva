@@ -11,6 +11,7 @@ import { leerAutomaticas, guardarAutomaticas } from '../lib/conocimientos';
 
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
 import IconoNavegacion, { iconoRutaCoproactiva } from './IconoNavegacion';
+import Campana from './Campana';
 
 const ESTADOS_MENU = ['cerrado', 'mas'];
 
@@ -502,7 +503,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
         <div className="crece" />
         <div className="usuario-lateral">
-          <div className="usuario-lateral-identidad">
+          <div className="usuario-lateral-identidad con-campana">
             <span className="usuario-lateral-avatar" aria-hidden="true">
               {(perfil?.nombre || 'U').trim().charAt(0).toUpperCase()}
             </span>
@@ -517,6 +518,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   : perfil?.rol || ''}
               </small>
             </span>
+            <Campana miId={perfil?.id} />
           </div>
           <div className="usuario-lateral-acciones">
             {!esCliente && <Link to="/mi-cuenta">Mi cuenta</Link>}
@@ -558,6 +560,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               </span>}
             </div>
             <div className="barra-contextual-cuenta">
+              <Campana miId={perfil?.id} />
               <Link to="/mi-cuenta">Mi cuenta</Link>
               <button type="button" onClick={salir}>Salir</button>
             </div>
@@ -566,7 +569,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         {/* En el teléfono la barra lateral no existe (se oculta con CSS), así
             que sin esto "Cambiar de área" no tenía dónde vivir y quedaba
             fijo en la que se eligió la primera vez, sin salida. */}
-        {!esCliente && !enAprendizaje && pathname !== '/' && (
+        {pathname !== '/' && (
           <div className="barra-area-movil">
             {(puedeCambiarArea || !['/', '/inicio'].includes(pathname)) && (
               <button type="button" className="barra-area-volver" onClick={volverGlobal}>
@@ -574,6 +577,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               </button>
             )}
             <div className="barra-area-derecha">
+              <Campana miId={perfil?.id} />
               {tutorialContextual && (
                 <button
                   type="button"
