@@ -29,3 +29,20 @@
  .campana-entrada-texto strong{font-size:13px}
  .campana-entrada-texto>span{font-size:12px}
 }
+
+/* Encabezados comunes: desktop con lateral, móvil y rutas profundas. */
+.barra-campana-escritorio{display:none}
+@media (min-width:900px){
+ .barra-campana-escritorio{
+   display:flex;align-items:center;justify-content:flex-end;
+   min-height:60px;padding:7px clamp(18px,3vw,42px);
+   background:var(--tarjeta,#fff);border-bottom:1px solid var(--borde-suave,#e5dfd7)
+ }
+ .barra-contextual-cuenta>.campana-contenedor{margin-right:5px}
+}
+@media (max-width:899px){
+ .barra-area-movil .barra-area-derecha{gap:7px;min-width:0;flex:0 1 auto}
+ .barra-area-movil .barra-area-nombre{max-width:30vw}
+ .barra-area-movil .campana-contenedor{flex:0 0 44px}
+ .barra-area-movil .campana{padding:0;min-width:44px;min-height:44px}
+}
