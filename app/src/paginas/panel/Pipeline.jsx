@@ -125,6 +125,7 @@ export default function Pipeline() {
   const parametros = new URLSearchParams(location.search);
   const prospectoSeleccionadoId = parametros.get('prospecto');
   const accionSeleccionada = parametros.get('accion');
+  const correoDestacado = parametros.get('correo');
   const prospectoSeleccionado = prospectos?.find(x => x.id === prospectoSeleccionadoId) ?? null;
 
   function navegarPipeline(params, state = null, replace = false) {
@@ -700,7 +701,7 @@ export default function Pipeline() {
                         <Link className="boton boton-secundario" to={'/nuevo?prospecto='+prospectoSeleccionado.id}>Iniciar diagnóstico</Link>}
                   </div>
                 </div>
-                <details className="pipeline-historial-correos">
+                <details className="pipeline-historial-correos" defaultOpen={Boolean(correoDestacado)}>
                   <summary>
                     <strong>Historial de correos</strong>
                     <span>{historialCorreosCargando?'Cargando…':historialCorreos.length+' registro'+(historialCorreos.length===1?'':'s')}</span>
@@ -709,7 +710,7 @@ export default function Pipeline() {
                     {historialCorreosError&&<p className="chico" role="alert">{historialCorreosError}</p>}
                     {!historialCorreosCargando&&!historialCorreosError&&!historialCorreos.length&&
                       <p className="chico apagado">No hay correos enviados desde este CRM.</p>}
-                    {historialCorreos.map(c=><details key={c.id} className="pipeline-correo-historial-item">
+                    {historialCorreos.map(c=><details key={c.id} defaultOpen={c.id===correoDestacado} className="pipeline-correo-historial-item">
                       <summary>
                         <span className="pipeline-correo-fecha">{fechaCL(c.enviado_en||c.creado_en,true)||'Sin fecha'}</span>
                         <span className="pipeline-correo-asunto">{c.asunto}</span>
