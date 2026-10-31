@@ -4,6 +4,7 @@ import { useSesion } from '../lib/sesion';
 import { guardarArea } from '../lib/area';
 import { registrarIndiceSelector } from '../lib/historialSelector';
 import { leerOrganizacion, guardarOrganizacion, modulosDisponibles } from '../lib/selectorModulos';
+import Campana from '../componentes/Campana';
 import './SeleccionArea.css';
 
 /* Capa previa a entrar a la app, para roles que tienen acceso tanto al CRM
@@ -206,6 +207,7 @@ export default function SeleccionArea() {
               </div>
             )}
           </div>
+          <Campana miId={perfil?.id} />
         </header>
 
         <section className="seleccion-home__introduccion" aria-label="Selección de destino">
