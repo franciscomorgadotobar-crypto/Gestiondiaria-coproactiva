@@ -11,6 +11,8 @@ import DialogoCampos from '../../componentes/DialogoCampos';
 import { prepararCarpetasDrive } from '../../lib/drive';
 import {completarCorreo,validarBorradorCorreo} from '../../lib/plantillasCorreo';
 import AdjuntosCorreo from '../../componentes/AdjuntosCorreo';
+import CopiasCorreo from '../../componentes/CopiasCorreo';
+import {prepararCopias} from '../../lib/copiasCorreo';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
  *
@@ -109,6 +111,8 @@ export default function Pipeline() {
   const [correoProspecto, setCorreoProspecto] = useState(null);
   const [asuntoCorreo, setAsuntoCorreo] = useState('');
   const [mensajeCorreo, setMensajeCorreo] = useState('');
+  const [ccCorreo,setCcCorreo]=useState('');
+  const [ccoCorreo,setCcoCorreo]=useState('');
   const [enviandoCorreo, setEnviandoCorreo] = useState(false);
   const [avisoCorreo, setAvisoCorreo] = useState(null);
   const [plantillasCorreo,setPlantillasCorreo] = useState([]);
@@ -149,6 +153,7 @@ export default function Pipeline() {
     navegarPipeline(params,{desdeFicha:true});
   }
   function volverFicha() {
+    setCcCorreo('');setCcoCorreo('');
     setError(null);
     setAbierto(null);
     setCorreoProspecto(null);
@@ -415,6 +420,8 @@ export default function Pipeline() {
 
   async function enviarCorreo(e) {
     e.preventDefault();
+    const copias=prepararCopias(ccCorreo,ccoCorreo);
+    if(copias.errores.length)return setError(copias.errores.join(' '));
     if (!correoProspecto || enviandoCorreo) return;
     if(necesitaAdjunto&&!adjuntosCorreo.length) return setError('Esta plantilla requiere al menos un adjunto real antes del envío.');
     const erroresBorrador=validarBorradorCorreo(asuntoCorreo,mensajeCorreo);
@@ -423,7 +430,8 @@ export default function Pipeline() {
     setError(null);
     const { data, error: envioError } = await supabase.functions.invoke('correo-prospecto', {
       body: { prospecto_id: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim(),
-        plantilla_id:plantillaElegida||null, adjuntos:adjuntosCorreo }
+        plantilla_id:plantillaElegida||null, adjuntos:adjuntosCorreo,
+        cc:copias.cc,cco:copias.cco }
     });
     setEnviandoCorreo(false);
     if (envioError || !data?.enviado) {
@@ -432,6 +440,7 @@ export default function Pipeline() {
     setAvisoCorreo('Correo enviado a ' + correoProspecto.email);
     setCorreoProspecto(null);
     setMensajeCorreo('');
+    setCcCorreo('');setCcoCorreo('');
     setAdjuntosCorreo([]);
     setRefrescarHistorial(n=>n+1);
     volverFicha();
@@ -771,6 +780,8 @@ export default function Pipeline() {
           <form id="pipeline-correo" className="tarjeta pipeline-correo" onSubmit={enviarCorreo}>
             <h2 className="h4">Enviar correo a {correoProspecto.nombre_contacto || correoProspecto.nombre_condominio}</h2>
             <p className="chico apagado">Para: {correoProspecto.email} · desde contacto@coproactiva.cl</p>
+            <CopiasCorreo cc={ccCorreo} cco={ccoCorreo} onCC={setCcCorreo} onCCO={setCcoCorreo}
+              errores={prepararCopias(ccCorreo,ccoCorreo).errores}/>
             <label className="campo">
               <span className="etiqueta-campo">Plantilla (opcional)</span>
               <select value={plantillaElegida} onChange={e=>cargarPlantillaCorreo(e.target.value)}>
@@ -827,7 +838,7 @@ export default function Pipeline() {
               <button className="boton boton-secundario" type="button" onClick={copiarBorradorCorreo}>
                 Copiar texto
               </button>
-              <button className="boton" type="submit" disabled={enviandoCorreo||Boolean(validarBorradorCorreo(asuntoCorreo,mensajeCorreo).length)||(necesitaAdjunto&&!adjuntosCorreo.length)}>
+              <button className="boton" type="submit" disabled={enviandoCorreo||Boolean(validarBorradorCorreo(asuntoCorreo,mensajeCorreo).length)||Boolean(prepararCopias(ccCorreo,ccoCorreo).errores.length)||(necesitaAdjunto&&!adjuntosCorreo.length)}>
                 {enviandoCorreo ? 'Enviando…' : 'Enviar correo'}
               </button>
             </div>
