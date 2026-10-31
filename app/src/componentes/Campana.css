@@ -24,3 +24,6 @@
 .campana-vacio{padding:20px;font-size:12px;color:var(--texto-apagado,#777);text-align:center}
 /* El desplazamiento se calcula desde la campana, limitado a los bordes
    del viewport; nunca se usa un right negativo en pantallas pequeñas. */
+
+/* /control/:id utiliza un renderer propio fuera del panel de módulos. */
+.campana-control-encabezado{display:flex;align-items:center;justify-content:flex-end;min-height:48px;padding:4px 16px;background:var(--tarjeta,#fff);border-bottom:1px solid var(--borde-suave,#e5dfd7)}
