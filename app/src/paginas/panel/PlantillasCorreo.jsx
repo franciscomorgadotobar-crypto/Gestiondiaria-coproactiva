@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {useSesion} from '../../lib/sesion';
 import {VARIABLES_CORREO,completarCorreo,pendientesCorreo} from '../../lib/plantillasCorreo';
@@ -11,12 +11,13 @@ const CATEGORIAS=['Captación','Reuniones','Propuesta y dudas comerciales','Cier
 const CCO_RECOMENDADO='osmarmeza.adm7@gmail.com · franciscomorgadotobar@gmail.com';
 export default function PlantillasCorreo(){
  const {perfil}=useSesion();
+ const [params]=useSearchParams();
  const [plantillas,setPlantillas]=useState(null);
  const [actual,setActual]=useState(null);
  const [form,setForm]=useState(vacia);
  const [prospectos,setProspectos]=useState([]);
  const [vista,setVista]=useState('');
- const [categoria,setCategoria]=useState('Todas');
+ const [categoria,setCategoria]=useState(params.get('categoria')==='Proveedores'?'Proveedores':'Todas');
  const [buscar,setBuscar]=useState('');
  const [varianteEditor,setVarianteEditor]=useState('principal');
  const [error,setError]=useState(''),[aviso,setAviso]=useState(''),[guardando,setGuardando]=useState(false);
@@ -67,19 +68,20 @@ export default function PlantillasCorreo(){
  return <div className="pantalla modulo-unificado plantillas-correo">
   <header className="encabezado modulo-cabecera"><div>
     <h1 className="h3">Plantillas de correo</h1>
-    <p className="chico apagado">Catálogo de correos basado en comunicaciones de Coproactiva. El envío se realiza desde la ficha del prospecto.</p>
+    <p className="chico apagado">Plantillas compartidas por CRM y Proveedores, con envío desde cada ficha o módulo.</p>
   </div></header>
   <div className="cuerpo modulo-contenido plantillas-correo-cuerpo">
     {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
     {aviso&&<div className="aviso" role="status">{aviso}</div>}
     <div className="plantillas-correo-cabecera">
-      <Link to="/pipeline" className="boton boton-secundario">‹ Volver a Pipeline</Link>
+      <Link to="/pipeline" className="boton boton-secundario">‹ CRM</Link>
+      <Link to="/proveedores" className="boton boton-secundario">Proveedores</Link>
       <button type="button" className="boton boton-primario" onClick={()=>editar(null)}>+ Nueva plantilla</button>
     </div>
     <p className="chico apagado">Variables frecuentes: {VARIABLES_CORREO.join(' · ')}</p>
     <div className="tarjeta plantillas-correo-criterios"><strong>Convenciones del catálogo</strong>
       <p>Trato de usted; sin firma incorporada. CCO por defecto en envíos desde el CRM: {CCO_RECOMENDADO}.</p>
-      <p>Los campos entre <code>{'{{llaves}}'}</code> y las instrucciones entre [corchetes] se deben completar o eliminar. Los adjuntos mencionados no se incorporan automáticamente. Las respuestas requieren continuar el hilo original.</p>
+      <p>Los campos entre <code>{'{{llaves}}'}</code> y las instrucciones entre [corchetes] deben completarse o eliminarse antes del envío. El motor agrega la firma del usuario y registra las aperturas detectadas si están activadas.</p>
     </div>
     <div className="plantillas-correo-filtros">
       <label>Área<select value={categoria} onChange={e=>setCategoria(e.target.value)}><option value="Todas">Todas las áreas</option>{CATEGORIAS.map(c=><option value={c} key={c}>{c}</option>)}</select></label>
