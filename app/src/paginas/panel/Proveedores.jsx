@@ -1275,6 +1275,8 @@ function ComunicacionProveedores({
 
       <section className="comunicacion-editor">
         <CopiasCorreo cc={cc} cco={cco} onCC={setCc} onCCO={setCco} errores={copias.errores}/>
+        {(copias.cc.length>0||copias.cco.length>0)&&resumen.enviables.length>1&&
+          <p className="micro apagado" role="status">Atención: se enviará una copia a cada dirección CC/CCO por cada uno de los {resumen.enviables.length} correos independientes.</p>}
         <label className="campo">
           <span className="etiqueta-campo">Plantilla (opcional)</span>
           <select value={plantillaElegida} onChange={e=>elegirPlantilla(e.target.value)}>
