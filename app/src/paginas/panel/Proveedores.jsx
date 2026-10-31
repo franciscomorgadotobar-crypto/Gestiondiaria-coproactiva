@@ -271,9 +271,9 @@ export default function Proveedores() {
     setSeleccionIds(seleccionablesFiltrados.map(p => p.id));
   }
 
-  function abrirComunicacion(alcance = null) {
-    const sugerido = alcance || (seleccionIds.length ? 'seleccionados' : 'filtrados');
-    setComunicacion({ alcance: sugerido });
+  function abrirComunicacion(alcance = null, destinatarios = seleccionIds, soloDestinatario = false) {
+    const sugerido = alcance || (destinatarios.length ? 'seleccionados' : 'filtrados');
+    setComunicacion({ alcance: sugerido, destinatarios: [...destinatarios], soloDestinatario });
     setResultadoComunicacion(null);
   }
 
@@ -404,8 +404,9 @@ export default function Proveedores() {
     } else if (canal === 'whatsapp' && p.telefono) {
       const digitos = soloDigitos(p.telefono);
       window.location.href = 'https://wa.me/' + digitos;
-    } else if (canal === 'correo' && p.email) {
-      window.location.href = 'mailto:' + p.email;
+    } else if (canal === 'correo' && emailProveedor(p)) {
+      // El envío se realiza dentro de Proveedores. El usuario no abandona la ficha.
+      abrirComunicacion('seleccionados', [p.id], true);
     }
   }
 
@@ -506,6 +507,28 @@ export default function Proveedores() {
     );
   }
 
+  const modalComunicacion = comunicacion ? (
+        <Modal>
+          <ComunicacionProveedores
+            perfil={perfil}
+            proveedores={proveedores ?? []}
+            filtrados={listaFiltrada}
+            seleccionIds={comunicacion.destinatarios}
+            alcanceInicial={comunicacion.alcance}
+            soloDestinatario={comunicacion.soloDestinatario}
+            filtros={{
+              busqueda: busqueda || null,
+              rubro: rubro || null,
+              comuna: comuna || null,
+              origen: origen || null
+            }}
+            enviando={enviandoComunicacion}
+            onCancelar={() => setComunicacion(null)}
+            onEnviar={enviarComunicacion}
+          />
+        </Modal>
+  ) : null;
+
   if (seleccionado) {
     return (
       <FichaProveedor
@@ -523,6 +546,7 @@ export default function Proveedores() {
         error={error}
         onCerrarAviso={() => setAviso(null)}
       >
+        {modalComunicacion}
         {formulario && (
           <Modal>
             <FormularioProveedor inicial={formulario} onCancelar={() => setFormulario(null)} onGuardar={guardarProveedor} />
@@ -752,7 +776,7 @@ export default function Proveedores() {
                     <div className="acciones-contacto-mini">
                       <button disabled={!p.telefono} onClick={() => abrirContacto(p, 'llamada')} title="Llamar">☎</button>
                       <button disabled={!p.telefono} onClick={() => abrirContacto(p, 'whatsapp')} title="WhatsApp">WA</button>
-                      <button disabled={!p.email} onClick={() => abrirContacto(p, 'correo')} title="Correo">✉</button>
+                      <button disabled={!emailProveedor(p)} onClick={() => abrirContacto(p, 'correo')} title="Correo">✉</button>
                       <button onClick={() => navegar('/proveedores/' + p.id)} title="Ver ficha">›</button>
                     </div>
                   </td>
@@ -763,26 +787,7 @@ export default function Proveedores() {
         </div>
       </div>
 
-      {comunicacion && (
-        <Modal>
-          <ComunicacionProveedores
-            perfil={perfil}
-            proveedores={proveedores ?? []}
-            filtrados={listaFiltrada}
-            seleccionIds={seleccionIds}
-            alcanceInicial={comunicacion.alcance}
-            filtros={{
-              busqueda: busqueda || null,
-              rubro: rubro || null,
-              comuna: comuna || null,
-              origen: origen || null
-            }}
-            enviando={enviandoComunicacion}
-            onCancelar={() => setComunicacion(null)}
-            onEnviar={enviarComunicacion}
-          />
-        </Modal>
-      )}
+      {modalComunicacion}
 
       {formulario && (
         <Modal>
@@ -845,7 +850,7 @@ function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto 
       <div className="proveedor-contactos">
         <button disabled={!p.telefono} onClick={() => onContacto('llamada')}>☎ Llamar</button>
         <button disabled={!p.telefono} onClick={() => onContacto('whatsapp')}>WhatsApp</button>
-        <button disabled={!p.email} onClick={() => onContacto('correo')}>✉ Correo</button>
+        <button disabled={!emailProveedor(p)} onClick={() => onContacto('correo')}>✉ Correo</button>
       </div>
     </article>
   );
@@ -870,7 +875,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
         <div className="acciones-proveedor-ficha">
           <button disabled={!p.telefono} onClick={() => onContacto('llamada')}>☎ Llamar</button>
           <button disabled={!p.telefono} onClick={() => onContacto('whatsapp')}>WhatsApp</button>
-          <button disabled={!p.email} onClick={() => onContacto('correo')}>✉ Correo</button>
+          <button disabled={!emailProveedor(p)} onClick={() => onContacto('correo')}>✉ Correo</button>
           {p.sitio_web && <a href={p.sitio_web.match(/^https?:/i) ? p.sitio_web : 'https://' + p.sitio_web} target="_blank" rel="noreferrer">Sitio web</a>}
         </div>
       </header>
@@ -1146,12 +1151,13 @@ function ComunicacionProveedores({
   filtrados,
   seleccionIds,
   alcanceInicial,
+  soloDestinatario = false,
   filtros,
   enviando,
   onCancelar,
   onEnviar
 }) {
-  const [alcance, setAlcance] = useState(alcanceInicial || 'filtrados');
+  const [alcance, setAlcance] = useState(soloDestinatario ? 'seleccionados' : (alcanceInicial || 'filtrados'));
   const [asunto, setAsunto] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [plantillasCorreo,setPlantillasCorreo]=useState([]);
@@ -1184,10 +1190,11 @@ function ComunicacionProveedores({
   const seleccion = useMemo(() => new Set(seleccionIds), [seleccionIds]);
 
   const candidatos = useMemo(() => {
+    if (soloDestinatario) return proveedores.filter(p => seleccion.has(p.id));
     if (alcance === 'todos') return proveedores;
     if (alcance === 'seleccionados') return proveedores.filter(p => seleccion.has(p.id));
     return filtrados;
-  }, [alcance, proveedores, filtrados, seleccion]);
+  }, [alcance, proveedores, filtrados, seleccion, soloDestinatario]);
 
   const resumen = useMemo(() => {
     const listaNegra = candidatos.filter(p => p.lista_negra).length;
@@ -1236,16 +1243,16 @@ function ComunicacionProveedores({
             <strong>{seleccionIds.length}</strong>
             <span>Seleccionados</span>
           </button>
-          <button type="button" className={alcance === 'filtrados' ? 'activo' : ''}
+          {!soloDestinatario && <button type="button" className={alcance === 'filtrados' ? 'activo' : ''}
                   onClick={() => setAlcance('filtrados')}>
             <strong>{filtrados.length}</strong>
             <span>Filtrados</span>
-          </button>
-          <button type="button" className={alcance === 'todos' ? 'activo' : ''}
+          </button>}
+          {!soloDestinatario && <button type="button" className={alcance === 'todos' ? 'activo' : ''}
                   onClick={() => setAlcance('todos')}>
             <strong>{proveedores.length}</strong>
             <span>Todos</span>
-          </button>
+          </button>}
         </div>
 
         <div className="comunicacion-resumen-destinatarios">
