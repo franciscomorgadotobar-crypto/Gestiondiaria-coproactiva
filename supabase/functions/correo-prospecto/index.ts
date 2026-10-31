@@ -1,16 +1,13 @@
 // Envío individual desde Pipeline, exclusivamente a la dirección YA guardada
 // en el prospecto. Autenticación obligatoria, control de rol y auditoría.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
+import { enviarLoteMotor, prepararSeguimiento, firmaEstandar, AVISO_SEGUIMIENTO } from '../_compartido/motor-correo.ts';
 import { driveFetch } from '../_compartido/google-drive.ts';
 
 const BASE = Deno.env.get('SUPABASE_URL') || '';
 const ANON = Deno.env.get('SUPABASE_ANON_KEY') || '';
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const SMTP_USER = Deno.env.get('SMTP_USUARIO') || 'contacto@coproactiva.cl';
-const SMTP_PASS = (Deno.env.get('SMTP_CLAVE') || '').replace(/\s+/g,'');
-const SMTP_HOST = Deno.env.get('SMTP_SERVIDOR') || 'smtp.gmail.com';
-const SMTP_PORT = Number(Deno.env.get('SMTP_PUERTO') || '465');
 const ORIGEN = 'https://app.coproactiva.cl';
 // CCO indicado expresamente en el catálogo de correos Coproactiva v1.0.
 const CCO = ['osmarmeza.adm7@gmail.com','franciscomorgadotobar@gmail.com'];
@@ -152,18 +149,12 @@ Deno.serve(async req=>{
   // Preferencia del remitente. El enlace solo identifica este mensaje; no
   // incluye datos del cliente y no almacena IP o ubicación de las aperturas.
   const {data:firmaGuardada,error:firmaError}=await admin.from('firmas_correo')
-    .select('nombre,cargo,empresa,telefono,correo,web,texto_adicional,logo_path,activa,actualizada_en,seguimiento_aperturas')
+    .select('usuario_id,nombre,cargo,empresa,telefono,correo,web,texto_adicional,logo_path,activa,actualizada_en,seguimiento_aperturas')
     .eq('usuario_id',user.id).maybeSingle();
   if(firmaError)return respuesta({error:'No se pudo consultar la configuración del correo'},503);
-  const seguimiento=firmaGuardada?.seguimiento_aperturas!==false;
-  let token='';
-  let tokenHash:string|null=null;
-  if(seguimiento){
-    const bytes=crypto.getRandomValues(new Uint8Array(32));
-    token=btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
-    tokenHash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
-  }
+  const seguimientoInfo=await prepararSeguimiento(firmaGuardada?.seguimiento_aperturas!==false);
+  const seguimiento=seguimientoInfo.activo;
+  const tokenHash=seguimientoInfo.tokenHash;
   const {data:registro,error:errorRegistro}=await admin.from('prospecto_correos').insert({
     prospecto_id:prospectoId,enviado_por:user.id,destinatario,asunto,mensaje,
     estado:'pendiente',adjuntos:auditoriaAdjuntos,
@@ -173,113 +164,36 @@ Deno.serve(async req=>{
 
   let enviado=false;
   let motivo='Error SMTP';
-  if(!SMTP_PASS) motivo='SMTP sin configurar';
-  else {
-    const smtp=new SMTPClient({
-      connection:{hostname:SMTP_HOST,port:SMTP_PORT,tls:SMTP_PORT===465,
-        auth:{username:SMTP_USER,password:SMTP_PASS}}
-    });
-    try {
-      // La firma elegida pertenece al usuario autenticado; no se acepta
-      // contenido HTML ni URLs de imagen suministradas por el navegador.
-      const firmaActiva=firmaGuardada?.activa!==false;
-      const datos=firmaGuardada||{
-        nombre:String(perfil.nombre||'Equipo Coproactiva'),
-        cargo:'',
-        empresa:'Coproactiva Administración SpA',
-        telefono:String(perfil.telefono||''),
-        correo:SMTP_USER,
-        web:'www.coproactiva.cl',
-        texto_adicional:''
-      };
-      const valor=(v:unknown,max=160)=>normal(v,max);
-      const firmaLineas=firmaActiva?[
-        valor(datos.nombre,120),
-        valor(datos.cargo,120),
-        valor(datos.empresa,140),
-        valor(datos.telefono,60),
-        valor(datos.correo,150),
-        valor(datos.web,150),
-        valor(datos.texto_adicional,750)
-      ].filter(Boolean):[];
-      const avisoRastreo='Este mensaje puede registrar la carga de imágenes para seguimiento comercial. Esa señal no confirma su lectura.';
-      const texto=mensaje+(firmaLineas.length?'\n\n'+firmaLineas.join('\n'):'')+
-        (seguimiento?'\n\n'+avisoRastreo:'');
-      const lineasHtml=firmaLineas.map((line:string,j:number)=>
-        (j===0?'<strong style="font-size:13px">':'')+
-        escapar(line).replace(/\n/g,'<br>')+
-        (j===0?'</strong>':'')+'<br>').join('');
-      const path=valor(firmaGuardada?.logo_path,150);
-      const logoValido=firmaActiva && path &&
-        new RegExp('^'+user.id+'/logo\\.(png|jpg|webp)$').test(path);
-      const urlLogo=logoValido
-        ? BASE.replace(/\/$/,'')+'/storage/v1/object/public/firmas-correo/'+
-          path.split('/').map(encodeURIComponent).join('/')+
-          '?v='+encodeURIComponent(String(firmaGuardada?.actualizada_en||'1'))
-        : '';
-      // El HTML del correo replica la vista previa de Mi cuenta:
-      // logo a la izquierda y datos a la derecha. Las tablas de presentación
-      // evitan que Gmail apile el logo encima del texto.
-      const logoHtml=urlLogo
-        ? '<img src="'+escapar(urlLogo)+'" alt="Logo Coproactiva" width="156" '+
-          'style="display:block;width:156px;max-width:156px;height:auto;max-height:85px;border:0;" />'
-        : '';
-      const datosHtml=[
-        valor(datos.nombre,120),
-        valor(datos.cargo,120),
-        valor(datos.empresa,140),
-        valor(datos.telefono,60),
-        valor(datos.correo,150),
-        valor(datos.web,150),
-        valor(datos.texto_adicional,750)
-      ].filter(Boolean).map((line:string,j:number)=>
-        (j===0?'<strong style="font-size:13px;line-height:1.5">':'')+
-        '<span style="color:#292f36;text-decoration:none">'+escapar(line).replace(/\n/g,'<br>')+'</span>'+
-        (j===0?'</strong>':'')+(j<6?'<br>':'')
-      ).join('');
-      const tablaFirma='<table role="presentation" cellpadding="0" cellspacing="0" border="0" '+
-        'style="border-collapse:collapse;border:0;margin:0;padding:0;max-width:570px"><tr>'+
-        (logoHtml?'<td valign="middle" style="border:0;padding:0 16px 0 0;vertical-align:middle;width:160px">'+logoHtml+'</td>':'')+
-        '<td valign="middle" style="border:0;padding:0;vertical-align:middle;'+
-          'font:12px/1.55 Arial,sans-serif;color:#292f36">'+datosHtml+'</td>'+
-        '</tr></table>';
-      const enlacePixel=BASE.replace(/\/$/,'')+'/functions/v1/correo-apertura?t='+encodeURIComponent(token);
-      const pixelHtml=seguimiento
-        ? '<img src="'+escapar(enlacePixel)+'" alt="" width="1" height="1" '+
-          'style="display:block;width:1px;height:1px;border:0" />'
-        : '';
-      const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36">'+
-        '<p>'+escapar(mensaje).replace(/\n/g,'<br>')+'</p>'+
-        (firmaActiva&&(lineasHtml||logoHtml)
-          ? '<div style="margin-top:20px;padding-top:10px;border-top:1px solid #e4e0d9">'+tablaFirma+'</div>'
-          : '')+
-        (seguimiento
-          ? '<p style="font:10px/1.4 Arial,sans-serif;color:#777;margin-top:20px">'+
-              escapar(avisoRastreo)+'</p>'+
-            pixelHtml
-          : '')+
-        '</div>';
-      // La copia a las cuentas internas se envía por separado y sin pixel.
-      // Si viaja en el mismo MIME, la apertura de un BCC genera un falso
-      // positivo sobre el prospecto, especialmente con Gmail/Apple Mail.
-      await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,
-        subject:asunto,content:texto,html,attachments:adjuntosSMTP});
+  try {
+    const firmaVista=firmaEstandar(firmaGuardada,perfil,{correoDefault:SMTP_USER});
+    const texto=mensaje+(firmaVista.texto?'\n\n'+firmaVista.texto:'')+
+      (seguimiento?'\n\n'+AVISO_SEGUIMIENTO:'');
+    const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36">'+
+      '<p>'+escapar(mensaje).replace(/\n/g,'<br>')+'</p>'+
+      firmaVista.html+seguimientoInfo.html+'</div>';
+    // El mismo motor SMTP se usa en CRM y en comunicaciones a Proveedores.
+    const resultado=(await enviarLoteMotor([{
+      para:destinatario,asunto,html,texto,adjuntos:adjuntosSMTP
+    }],{logo:false}))[0];
+    if(resultado?.enviado){
       enviado=true;
-      try {
-        if(CCO.length){
-          const htmlCopia=pixelHtml ? html.replace(pixelHtml,'') : html;
-          await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:CCO[0],bcc:CCO.slice(1),
-            subject:'[Copia CRM] '+asunto,content:texto,html:htmlCopia,attachments:adjuntosSMTP});
-        }
-      } catch {
-        // El envío principal fue exitoso. Un problema con la copia interna
-        // no lo convierte en fallido ni dispara un reenvío al prospecto.
-        console.error('correo-prospecto: copia de auditoría interna no entregada');
+      if(CCO.length){
+        // Una copia interna nunca incluye el pixel del prospecto.
+        const copiaHtml=seguimientoInfo.html
+          ? html.replace(seguimientoInfo.html,'') : html;
+        const copiaTexto=seguimiento
+          ? texto.replace('\n\n'+AVISO_SEGUIMIENTO,'') : texto;
+        const copia=(await enviarLoteMotor([{
+          para:CCO[0],bcc:CCO.slice(1),
+          asunto:'[Copia CRM] '+asunto,html:copiaHtml,texto:copiaTexto,
+          adjuntos:adjuntosSMTP
+        }],{logo:false}))[0];
+        if(!copia?.enviado)console.error('correo-prospecto: copia interna fallida');
       }
-    }catch(e) {
-      console.error('correo-prospecto SMTP',e instanceof Error?e.name:'unknown');
-      motivo='No fue posible entregar el mensaje a SMTP';
-    }finally {try{await smtp.close();}catch{/* no invalida el envío */}}
+    }else motivo='No fue posible entregar el mensaje a SMTP';
+  }catch(e){
+    console.error('correo-prospecto: motor unificado',e instanceof Error?e.name:'unknown');
+    motivo='No fue posible procesar el envío';
   }
   await admin.from('prospecto_correos').update(enviado
     ? {estado:'enviado',enviado_en:new Date().toISOString(),error:null}
