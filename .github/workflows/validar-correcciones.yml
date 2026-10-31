@@ -33,6 +33,9 @@ jobs:
       - name: Validar notificaciones comerciales y correo de prospectos
         working-directory: app
         run: node --test pruebas/notificaciones-crm-correo.test.js
+      - name: Validar campana global y posicionamiento móvil
+        working-directory: app
+        run: node --test pruebas/campana-global.test.js
       - name: Validar correo contextual y reutilización del motor técnico
         working-directory: app
         run: node --test pruebas/correos-contextuales.test.js
