@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { enviarLote } from '../_compartido/correo.ts';
 import { firmaEstandar, prepararSeguimiento, AVISO_SEGUIMIENTO } from '../_compartido/motor-correo.ts';
+import { validarCopiasCorreo } from '../_compartido/copias-correo.ts';
 
 const URL = Deno.env.get('SUPABASE_URL')!;
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -121,6 +122,9 @@ Deno.serve(async (req) => {
   if (/\{\{[\w]+\}\}|\[[^\]\n]+\]/.test(asunto+'\n'+mensaje))
     return responder({error:'Completa las variables y elimina las instrucciones de la plantilla antes de enviar'},422);
   if (ids.length > 500) return responder({ error: 'El máximo por comunicación es 500 proveedores.' }, 400);
+  let copias:{cc:string[];cco:string[]};
+  try{copias=validarCopiasCorreo(body,'contacto@coproactiva.cl')}
+  catch(e){return responder({error:e instanceof Error?e.message:'Copias inválidas'},422)}
 
   const { data: proveedores, error: eProveedores } = await admin.from('proveedores')
     .select('id,empresa,contacto_nombre,email,contactos,lista_negra')
@@ -222,6 +226,8 @@ Deno.serve(async (req) => {
     const indicador=seguimientoPorProveedor.get(proveedor.id);
     return {
       para: email,
+      cc:copias.cc.filter(x=>x!==email),
+      bcc:copias.cco.filter(x=>x!==email),
       asunto,
       html: htmlCorreo(proveedor,mensaje,perfil,firmaGuardada,incluirTelefono,indicador?.html||''),
       texto: [
