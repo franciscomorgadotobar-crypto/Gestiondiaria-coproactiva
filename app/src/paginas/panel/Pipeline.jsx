@@ -11,6 +11,7 @@ import DialogoCampos from '../../componentes/DialogoCampos';
 import { prepararCarpetasDrive } from '../../lib/drive';
 import {completarCorreo,validarBorradorCorreo} from '../../lib/plantillasCorreo';
 import AdjuntosCorreo from '../../componentes/AdjuntosCorreo';
+import { enviarCorreoContextual, MODULOS_CORREO } from '../../lib/motorCorreo';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
  *
@@ -414,9 +415,9 @@ export default function Pipeline() {
     if (erroresBorrador.length) return setError(erroresBorrador.join(' '));
     setEnviandoCorreo(true);
     setError(null);
-    const { data, error: envioError } = await supabase.functions.invoke('correo-prospecto', {
-      body: { prospecto_id: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim(),
-        plantilla_id:plantillaElegida||null, adjuntos:adjuntosCorreo }
+    const { data, error: envioError } = await enviarCorreoContextual(supabase, MODULOS_CORREO.CRM, {
+      prospectoId: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim(),
+      plantillaId: plantillaElegida, adjuntos: adjuntosCorreo
     });
     setEnviandoCorreo(false);
     if (envioError || !data?.enviado) {
