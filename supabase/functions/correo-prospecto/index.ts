@@ -149,8 +149,25 @@ Deno.serve(async req=>{
     auditoriaAdjuntos.push({id,origen:origen==='b'?'biblioteca':'comunidad',nombre,bytes:tamano});
   }
 
+  // Preferencia del remitente. El enlace solo identifica este mensaje; no
+  // incluye datos del cliente y no almacena IP o ubicación de las aperturas.
+  const {data:firmaGuardada,error:firmaError}=await admin.from('firmas_correo')
+    .select('nombre,cargo,empresa,telefono,correo,web,texto_adicional,logo_path,activa,actualizada_en,seguimiento_aperturas')
+    .eq('usuario_id',user.id).maybeSingle();
+  if(firmaError)return respuesta({error:'No se pudo consultar la configuración del correo'},503);
+  const seguimiento=firmaGuardada?.seguimiento_aperturas!==false;
+  let token='';
+  let tokenHash:string|null=null;
+  if(seguimiento){
+    const bytes=crypto.getRandomValues(new Uint8Array(32));
+    token=btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
+    tokenHash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+  }
   const {data:registro,error:errorRegistro}=await admin.from('prospecto_correos').insert({
-    prospecto_id:prospectoId,enviado_por:user.id,destinatario,asunto,mensaje,estado:'pendiente',adjuntos:auditoriaAdjuntos
+    prospecto_id:prospectoId,enviado_por:user.id,destinatario,asunto,mensaje,
+    estado:'pendiente',adjuntos:auditoriaAdjuntos,
+    seguimiento_activo:seguimiento,seguimiento_token_hash:tokenHash
   }).select('id').single();
   if(errorRegistro||!registro) return respuesta({error:'No se pudo registrar el intento de envío'},503);
 
@@ -165,10 +182,6 @@ Deno.serve(async req=>{
     try {
       // La firma elegida pertenece al usuario autenticado; no se acepta
       // contenido HTML ni URLs de imagen suministradas por el navegador.
-      const {data:firmaGuardada,error:firmaError}=await admin.from('firmas_correo')
-        .select('nombre,cargo,empresa,telefono,correo,web,texto_adicional,logo_path,activa,actualizada_en')
-        .eq('usuario_id',user.id).maybeSingle();
-      if(firmaError)throw new Error('No se pudo consultar la firma configurada');
       const firmaActiva=firmaGuardada?.activa!==false;
       const datos=firmaGuardada||{
         nombre:String(perfil.nombre||'Equipo Coproactiva'),
@@ -189,7 +202,9 @@ Deno.serve(async req=>{
         valor(datos.web,150),
         valor(datos.texto_adicional,750)
       ].filter(Boolean):[];
-      const texto=mensaje+(firmaLineas.length?'\n\n'+firmaLineas.join('\n'):'');
+      const avisoRastreo='Este mensaje puede registrar la carga de imágenes para seguimiento comercial. Esa señal no confirma su lectura.';
+      const texto=mensaje+(firmaLineas.length?'\n\n'+firmaLineas.join('\n'):'')+
+        (seguimiento?'\n\n'+avisoRastreo:'');
       const lineasHtml=firmaLineas.map((line:string,j:number)=>
         (j===0?'<strong style="font-size:13px">':'')+
         escapar(line).replace(/\n/g,'<br>')+
@@ -228,11 +243,19 @@ Deno.serve(async req=>{
         '<td valign="middle" style="border:0;padding:0;vertical-align:middle;'+
           'font:12px/1.55 Arial,sans-serif;color:#292f36">'+datosHtml+'</td>'+
         '</tr></table>';
+      const enlacePixel=BASE.replace(/\/$/,'')+'/functions/v1/correo-apertura?t='+encodeURIComponent(token);
       const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36">'+
         '<p>'+escapar(mensaje).replace(/\n/g,'<br>')+'</p>'+
         (firmaActiva&&(lineasHtml||logoHtml)
           ? '<div style="margin-top:20px;padding-top:10px;border-top:1px solid #e4e0d9">'+tablaFirma+'</div>'
-          : '')+'</div>';
+          : '')+
+        (seguimiento
+          ? '<p style="font:10px/1.4 Arial,sans-serif;color:#777;margin-top:20px">'+
+              escapar(avisoRastreo)+'</p>'+
+            '<img src="'+escapar(enlacePixel)+'" alt="" width="1" height="1" '+
+              'style="display:block;width:1px;height:1px;border:0" />'
+          : '')+
+        '</div>';
       await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,bcc:CCO,
         subject:asunto,content:texto,html,attachments:adjuntosSMTP});
       enviado=true;
