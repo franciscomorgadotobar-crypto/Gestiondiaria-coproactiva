@@ -26,7 +26,7 @@ export default function Notificaciones() {
     if (!perfil?.id) return;
     const [g, m] = await Promise.all([
       supabase.from('notificaciones')
-        .select('id,tipo,titulo,mensaje,bitacora_id,prospecto_id,leida,creado_en')
+        .select('id,tipo,titulo,mensaje,bitacora_id,prospecto_id,proveedor_id,correo_origen,correo_registro_id,leida,creado_en')
         .eq('destinatario_id', perfil.id)
         .order('creado_en', { ascending: false })
         .limit(100),
@@ -43,7 +43,12 @@ export default function Notificaciones() {
     setMantenciones(m.data ?? []);
   }
 
-  useEffect(() => { cargar(); }, [perfil?.id]);
+  useEffect(() => {
+    if (!perfil?.id) return;
+    cargar();
+    const intervalo=window.setInterval(cargar,60000);
+    return ()=>window.clearInterval(intervalo);
+  }, [perfil?.id]);
 
   async function marcarLeida(tabla, id) {
     await supabase.from(tabla)
@@ -95,11 +100,12 @@ export default function Notificaciones() {
           {todas.map(n => {
             const urgente = n.tipo === 'bitacora_urgente';
             const esProspectoWeb = n.tipo === 'lead_web';
+            const esAperturaCorreo = n.tipo === 'correo_apertura';
             const contenido = (
               <>
                 <div className="notificacion-superior">
                   <span className={'notificacion-tipo ' + (urgente ? 'urgente' : n.origen)}>
-                    {urgente ? 'Urgente' : esProspectoWeb ? 'Comercial' : n.origen === 'bitacora' ? 'Bitácora' : 'Mantención'}
+                    {urgente ? 'Urgente' : esAperturaCorreo ? 'Apertura de correo' : esProspectoWeb ? 'Comercial' : n.origen === 'bitacora' ? 'Bitácora' : 'Mantención'}
                   </span>
                   {!n.leida && <span className="notificacion-nueva">Nueva</span>}
                 </div>
@@ -109,6 +115,21 @@ export default function Notificaciones() {
               </>
             );
 
+            if (esAperturaCorreo) {
+              const url=n.correo_origen==='proveedores'
+                ? '/proveedores/comunicaciones'
+                : n.prospecto_id
+                  ? '/pipeline?prospecto='+encodeURIComponent(n.prospecto_id)
+                  : '/pipeline';
+              return <Link key={n.tabla+n.id} to={url}
+                className={'tarjeta notificacion-item'+(!n.leida?' no-leida':'')}
+                onClick={()=>marcarLeida(n.tabla,n.id)}>
+                  {contenido}
+                  <span className="notificacion-destino">
+                    {n.correo_origen==='proveedores'?'Ver comunicación en Proveedores ›':'Ver correo del prospecto ›'}
+                  </span>
+                </Link>;
+            }
             if (esProspectoWeb) {
               return (
                 <Link key={n.tabla + n.id}
