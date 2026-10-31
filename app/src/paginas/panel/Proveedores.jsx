@@ -5,6 +5,7 @@ import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
+import { enviarCorreoContextual, MODULOS_CORREO } from '../../lib/motorCorreo';
 import { consultarBaseCompletaProveedores, generarCsvProveedores, nombreArchivoProveedores } from '../../lib/exportarProveedores';
 import './WhatsApp.css';
 
@@ -270,9 +271,9 @@ export default function Proveedores() {
     setSeleccionIds(seleccionablesFiltrados.map(p => p.id));
   }
 
-  function abrirComunicacion(alcance = null) {
-    const sugerido = alcance || (seleccionIds.length ? 'seleccionados' : 'filtrados');
-    setComunicacion({ alcance: sugerido });
+  function abrirComunicacion(alcance = null, destinatarios = seleccionIds) {
+    const sugerido = alcance || (destinatarios.length ? 'seleccionados' : 'filtrados');
+    setComunicacion({ alcance: sugerido, destinatarios: [...destinatarios] });
     setResultadoComunicacion(null);
   }
 
@@ -281,9 +282,7 @@ export default function Proveedores() {
     setError(null);
     setResultadoComunicacion(null);
 
-    const { data, error: e } = await supabase.functions.invoke('enviar-comunicacion-proveedores', {
-      body: datos
-    });
+    const { data, error: e } = await enviarCorreoContextual(supabase, MODULOS_CORREO.PROVEEDORES, datos);
 
     setEnviandoComunicacion(false);
     if (e || !data?.ok) {
@@ -403,8 +402,11 @@ export default function Proveedores() {
     } else if (canal === 'whatsapp' && p.telefono) {
       const digitos = soloDigitos(p.telefono);
       window.location.href = 'https://wa.me/' + digitos;
-    } else if (canal === 'correo' && p.email) {
-      window.location.href = 'mailto:' + p.email;
+    } else if (canal === 'correo' && emailProveedor(p)) {
+      if (!puedeGestionar) return setError('No tienes permisos para enviar comunicaciones a proveedores.');
+      // Abrir el editor dentro de Proveedores, con este destinatario ya elegido.
+      // No sacar al usuario a Gmail ni a la app de correo del teléfono.
+      abrirComunicacion('seleccionados', [p.id]);
     }
   }
 
@@ -768,7 +770,7 @@ export default function Proveedores() {
             perfil={perfil}
             proveedores={proveedores ?? []}
             filtrados={listaFiltrada}
-            seleccionIds={seleccionIds}
+            seleccionIds={comunicacion.destinatarios}
             alcanceInicial={comunicacion.alcance}
             filtros={{
               busqueda: busqueda || null,
