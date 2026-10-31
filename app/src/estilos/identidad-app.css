@@ -280,7 +280,8 @@
     background:#fff8f1;
     box-shadow:0 2px 8px rgba(131,77,36,.035);
   }
-  .barra-area-movil .barra-area-derecha { min-width:0; }
+  .barra-area-movil .barra-area-derecha { display:flex;align-items:center;gap:8px;min-width:0; }
+  .barra-area-movil .barra-area-derecha .campana {width:40px;height:40px;flex:none;padding:0;font-size:19px}
   .barra-area-movil .barra-area-nombre {
     display:inline-block; max-width:50vw; overflow:hidden;
     white-space:nowrap; text-overflow:ellipsis;
