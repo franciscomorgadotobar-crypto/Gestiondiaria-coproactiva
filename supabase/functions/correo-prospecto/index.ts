@@ -244,6 +244,10 @@ Deno.serve(async req=>{
           'font:12px/1.55 Arial,sans-serif;color:#292f36">'+datosHtml+'</td>'+
         '</tr></table>';
       const enlacePixel=BASE.replace(/\/$/,'')+'/functions/v1/correo-apertura?t='+encodeURIComponent(token);
+      const pixelHtml=seguimiento
+        ? '<img src="'+escapar(enlacePixel)+'" alt="" width="1" height="1" '+
+          'style="display:block;width:1px;height:1px;border:0" />'
+        : '';
       const html='<div style="font:14px/1.6 Arial,sans-serif;color:#292f36">'+
         '<p>'+escapar(mensaje).replace(/\n/g,'<br>')+'</p>'+
         (firmaActiva&&(lineasHtml||logoHtml)
@@ -252,13 +256,26 @@ Deno.serve(async req=>{
         (seguimiento
           ? '<p style="font:10px/1.4 Arial,sans-serif;color:#777;margin-top:20px">'+
               escapar(avisoRastreo)+'</p>'+
-            '<img src="'+escapar(enlacePixel)+'" alt="" width="1" height="1" '+
-              'style="display:block;width:1px;height:1px;border:0" />'
+            pixelHtml
           : '')+
         '</div>';
-      await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,bcc:CCO,
+      // La copia a las cuentas internas se envía por separado y sin pixel.
+      // Si viaja en el mismo MIME, la apertura de un BCC genera un falso
+      // positivo sobre el prospecto, especialmente con Gmail/Apple Mail.
+      await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,
         subject:asunto,content:texto,html,attachments:adjuntosSMTP});
       enviado=true;
+      try {
+        if(CCO.length){
+          const htmlCopia=pixelHtml ? html.replace(pixelHtml,'') : html;
+          await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:CCO[0],bcc:CCO.slice(1),
+            subject:'[Copia CRM] '+asunto,content:texto,html:htmlCopia,attachments:adjuntosSMTP});
+        }
+      } catch {
+        // El envío principal fue exitoso. Un problema con la copia interna
+        // no lo convierte en fallido ni dispara un reenvío al prospecto.
+        console.error('correo-prospecto: copia de auditoría interna no entregada');
+      }
     }catch(e) {
       console.error('correo-prospecto SMTP',e instanceof Error?e.name:'unknown');
       motivo='No fue posible entregar el mensaje a SMTP';
