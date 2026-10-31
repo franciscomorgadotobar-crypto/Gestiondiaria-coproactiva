@@ -86,6 +86,7 @@ test('Plantillas mantienen variables sin inventar datos y exigen quitar instrucc
  assert.match(pantalla,/categoriasVisibles\.map/);
  assert.match(pantalla,/adjunto_sugerido/);
  assert.match(pipeline,/supabase\.functions\.invoke\('correo-prospecto'/);
- assert.match(sender,/bcc:CCO/);
+ assert.match(sender,/cc:copias\.cc,bcc:copias\.cco/);
+ assert.doesNotMatch(sender,/const CCO\s*=|\[Copia CRM\]/);
  assert.doesNotMatch(sender,/const saludo=prospecto\.nombre_contacto/);
 });
