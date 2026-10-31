@@ -218,7 +218,7 @@ export default function MiCuenta() {
 const FIRMA_BASE={
   nombre:'',cargo:'',empresa:'Coproactiva Administración SpA',telefono:'',
   correo:'contacto@coproactiva.cl',web:'www.coproactiva.cl',
-  texto_adicional:'',logo_path:null,activa:true
+  texto_adicional:'',logo_path:null,activa:true,seguimiento_aperturas:true
 };
 function urlLogoFirma(path, version) {
   if(!path)return '';
@@ -304,6 +304,7 @@ function EditorFirmaCorreo({perfil}) {
         texto_adicional:firma.texto_adicional.trim(),
         logo_path:nuevaRuta,
         activa:!!firma.activa,
+        seguimiento_aperturas:firma.seguimiento_aperturas!==false,
         actualizada_en:new Date().toISOString()
       };
       const {error:saveError}=await supabase.from('firmas_correo').upsert(datos,{onConflict:'usuario_id'});
@@ -334,6 +335,14 @@ function EditorFirmaCorreo({perfil}) {
         <input type="checkbox" checked={firma.activa} onChange={e=>campo('activa',e.target.checked)}/>
         Añadir esta firma automáticamente a mis correos
       </label>
+      <div className="mi-cuenta-seguimiento-correo">
+        <label className="mi-cuenta-firma-check">
+          <input type="checkbox" checked={firma.seguimiento_aperturas!==false}
+            onChange={e=>campo('seguimiento_aperturas',e.target.checked)}/>
+          Registrar aperturas detectadas en los correos enviados desde el CRM
+        </label>
+        <p className="micro apagado">Se añade un indicador de carga de imagen a los nuevos mensajes y una nota informativa al destinatario. No confirma lectura; no registramos IP, ubicación ni dispositivo en el CRM. Puedes desactivarlo para tus próximos envíos.</p>
+      </div>
       <div className="mi-cuenta-form-grid">
         <label className="campo"><span className="etiqueta-campo">Nombre *</span>
           <input value={firma.nombre} maxLength={120} required onChange={e=>campo('nombre',e.target.value)}/></label>
