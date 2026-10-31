@@ -6,6 +6,7 @@ import { diagnosticoHtml } from '../../lib/diagnosticoInforme';
 import { imprimirInforme } from '../../lib/informe';
 import './DiagnosticoComercial.css';
 import { useVolverGlobal } from '../../lib/navegacion';
+import Campana from '../../componentes/Campana';
 
 /* Diagnóstico comercial: el mismo cuestionario y la misma lógica de puntaje
  * del CRM anterior, portados tal cual — mismas preguntas, mismos pesos,
@@ -307,6 +308,7 @@ export default function DiagnosticoComercial({ id }) {
           </button>
           <span className="crece" />
           {control.estado === 'enviado' && <span className="chip chip-cumple">Enviado</span>}
+          <Campana miId={perfil?.id} />
         </div>
         <h1 className="h3">{prospecto.nombre_condominio}</h1>
         <p className="chico apagado" style={{ margin: '3px 0 12px' }}>
