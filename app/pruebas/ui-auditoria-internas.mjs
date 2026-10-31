@@ -142,6 +142,24 @@ async function irPantalla(page,vista) {
   await page.waitForTimeout(120);
 }
 
+async function comprobarCampana(page, ancho, contexto) {
+  const visibles=page.locator('.campana:visible');
+  assert.equal(await visibles.count(),1,'Campana global debe ser única en '+contexto);
+  await visibles.first().click();
+  const panel=page.locator('#campana-panel-global');
+  await panel.waitFor({timeout:5000});
+  // El elemento ya está en document.body; comprobar límites de viewport reales.
+  const rect=await panel.evaluate(el=>{
+    const r=el.getBoundingClientRect();
+    return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
+  });
+  assert.ok(rect.left>=-1 && rect.right<=ancho+1,
+    'Notificaciones desplazadas horizontalmente ('+contexto+' @ '+ancho+'px): '+JSON.stringify(rect));
+  assert.ok(rect.width<=ancho-20,'Panel más ancho que el teléfono en '+contexto);
+  await page.keyboard.press('Escape');
+  await panel.waitFor({state:'detached',timeout:5000});
+}
+
 await mkdir('artifacts/ui/internas',{recursive:true});
 const browser=await chromium.launch({headless:true});
 try {
@@ -188,6 +206,9 @@ try {
    const page=await ctx.newPage();
    const failures=[];
    page.on('pageerror',e=>failures.push(e.message));
+   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:12000});
+   await comprobarCampana(page,width,'Home de módulos');
    for(const vista of vistas) {
      console.log('AUDIT '+vista.slug+' @ '+width+'px');
      await irPantalla(page,vista);
@@ -202,6 +223,7 @@ try {
      }
      // Lazy modules and simulated data may require an extra render.
      await page.waitForTimeout(250);
+     if(vista.slug==='mantenciones') await comprobarCampana(page,width,'módulo Mantenciones');
      const metrics=await page.evaluate(()=>{
        const elems=[...document.querySelectorAll('.pantalla.modulo-unificado, .wa-page.modulo-unificado')];
        const root=elems[0];
