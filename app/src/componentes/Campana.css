@@ -1,10 +1,10 @@
 /* Campana desplegable, compartida con notificaciones de CRM y proveedores. */
-.campana-contenedor{position:relative;display:flex;align-items:center;justify-content:center;z-index:50}
-.campana-panel{position:absolute;top:calc(100% + 10px);right:0;
- width:min(390px,92vw);max-height:min(70vh,620px);overflow:hidden;
+.campana-contenedor{position:relative;display:flex;align-items:center;justify-content:center;flex:none;z-index:50}
+.campana-panel{position:fixed;
+ width:min(390px,calc(100vw - 24px));max-height:min(70dvh,620px);overflow:hidden;
  background:var(--tarjeta,#fff);border:1px solid var(--borde-suave,#e5dfd7);
  border-radius:15px;box-shadow:0 14px 42px rgba(28,33,40,.17);
- z-index:100;display:flex;flex-direction:column}
+ z-index:1100;display:flex;flex-direction:column;box-sizing:border-box}
 .campana-panel-encabezado{padding:15px 17px;border-bottom:1px solid var(--borde-suave,#ddd);display:flex;align-items:center;justify-content:space-between;gap:14px}
 .campana-panel-encabezado>strong{font-size:14px;color:var(--texto-titulo,#2b3138)}
 .campana-panel-encabezado>button{border:0;background:transparent;color:var(--enlace,#bd632e);cursor:pointer;text-decoration:underline;font-size:12px}
@@ -22,4 +22,5 @@
 .campana-entrada-texto small{font-size:10px;color:var(--texto-tenue,#999)}
 .campana-punto{flex:none;margin-top:7px;width:6px;height:6px;background:var(--naranja,#ed7130);border-radius:50%}
 .campana-vacio{padding:20px;font-size:12px;color:var(--texto-apagado,#777);text-align:center}
-@media(max-width:550px){.campana-panel{right:-8px}}
+/* El desplazamiento se calcula desde la campana, limitado a los bordes
+   del viewport; nunca se usa un right negativo en pantallas pequeñas. */
