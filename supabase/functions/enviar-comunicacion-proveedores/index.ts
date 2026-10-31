@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { enviarLote } from '../_compartido/correo.ts';
+import { firmaEstandar, prepararSeguimiento, AVISO_SEGUIMIENTO } from '../_compartido/motor-correo.ts';
 
 const URL = Deno.env.get('SUPABASE_URL')!;
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -46,50 +47,31 @@ function saludoProveedor(p: any) {
   return 'Estimados,';
 }
 
-function firmaTexto(perfil: any, incluirTelefono: boolean) {
-  return [
-    'Saludos,',
-    perfil?.nombre || 'Equipo CoproActiva',
-    'CoproActiva Administración SpA',
-    incluirTelefono && perfil?.telefono ? perfil.telefono : null,
-    'contacto@coproactiva.cl'
-  ].filter(Boolean).join('\n');
+function firmaTexto(perfil: any, firma: any, incluirTelefono: boolean, seguimiento: boolean) {
+  const datos=firmaEstandar(firma,perfil,{incluirTelefono});
+  return ['Saludos cordiales,',datos.texto,
+    seguimiento?AVISO_SEGUIMIENTO:''].filter(Boolean).join('\n\n');
 }
 
-function htmlCorreo(p: any, asunto: string, mensaje: string, perfil: any, incluirTelefono: boolean) {
-  const saludo = escapar(saludoProveedor(p));
-  const cuerpo = escapar(mensaje).replace(/\n/g, '<br>');
-  const telefono = incluirTelefono && perfil?.telefono
-    ? `<br><span style="color:#4a5a68;">${escapar(perfil.telefono)}</span>`
-    : '';
-
-  return `<!doctype html>
-<html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;background:#f7f4f0;padding:24px 12px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-             style="max-width:620px;background:#fff;border:1px solid #e3ded7;">
-        <tr><td style="padding:28px 30px 0;">
-          <img src="cid:logo" alt="CoproActiva" width="150" height="30"
-               style="display:block;width:150px;height:30px;border:0;margin:0 0 24px;">
-          <p style="margin:0 0 16px;font:600 17px/1.4 Arial,Helvetica,sans-serif;color:#2b3138;">${saludo}</p>
-          <div style="font:400 14px/1.65 Arial,Helvetica,sans-serif;color:#2b3138;">${cuerpo}</div>
-        </td></tr>
-        <tr><td style="padding:26px 30px 30px;">
-          <p style="margin:0;padding-top:18px;border-top:1px solid #e9e6e2;font:400 13px/1.55 Arial,Helvetica,sans-serif;color:#2b3138;">
-            Saludos,<br>
-            <strong>${escapar(perfil?.nombre || 'Equipo CoproActiva')}</strong><br>
-            CoproActiva Administración SpA
-            ${telefono}<br>
-            <a href="mailto:contacto@coproactiva.cl" style="color:#4a5a68;">contacto@coproactiva.cl</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+function htmlCorreo(p: any, mensaje: string, perfil: any, firma: any,
+  incluirTelefono: boolean, seguimientoHtml: string) {
+  const saludo=escapar(saludoProveedor(p));
+  const cuerpo=escapar(mensaje).replace(/\n/g,'<br>');
+  const datos=firmaEstandar(firma,perfil,{incluirTelefono});
+  return [
+    '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>',
+    '<body style="margin:0;background:#f7f4f0;padding:24px 12px;">',
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">',
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;background:#fff;border:1px solid #e3ded7;">',
+    '<tr><td style="padding:28px 30px 0;">',
+    '<img src="cid:logo" alt="Coproactiva" width="150" height="30" style="display:block;width:150px;height:30px;border:0;margin:0 0 24px;">',
+    '<p style="margin:0 0 16px;font:600 17px/1.4 Arial,sans-serif;color:#2b3138;">',saludo,'</p>',
+    '<div style="font:400 14px/1.65 Arial,sans-serif;color:#2b3138;">',cuerpo,'</div>',
+    '</td></tr><tr><td style="padding:26px 30px 30px;">',
+    '<p style="font:13px/1.5 Arial,sans-serif;color:#2b3138;margin:0;">Saludos cordiales,</p>',
+    datos.html,seguimientoHtml,
+    '</td></tr></table></td></tr></table></body></html>'
+  ].join('');
 }
 
 Deno.serve(async (req) => {
@@ -116,6 +98,10 @@ Deno.serve(async (req) => {
   if (!perfil?.activo || !['superadmin','admin'].includes(perfil.rol)) {
     return responder({ error: 'Solo administradores y superadministradores pueden enviar comunicaciones.' }, 403);
   }
+  const {data:firmaGuardada,error:errorFirma}=await admin.from('firmas_correo')
+    .select('*').eq('usuario_id',user.id).maybeSingle();
+  if(errorFirma)return responder({error:'No se pudo cargar la firma del remitente'},503);
+  const seguimientoActivo=firmaGuardada?.seguimiento_aperturas!==false;
 
   let body: any = {};
   try { body = await req.json(); } catch { return responder({ error: 'Cuerpo inválido' }, 400); }
@@ -164,6 +150,7 @@ Deno.serve(async (req) => {
 
   const snapshots: any[] = [];
   const enviables: any[] = [];
+  const seguimientoPorProveedor = new Map<string,Awaited<ReturnType<typeof prepararSeguimiento>>>();
 
   for (const id of ids) {
     const p: any = porId.get(id);
@@ -194,7 +181,11 @@ Deno.serve(async (req) => {
       motivo = 'Sin correo válido';
     }
 
+    const indicador=await prepararSeguimiento(seguimientoActivo && estado==='pendiente');
+    if(estado==='pendiente')seguimientoPorProveedor.set(p.id,indicador);
     const fila = {
+      seguimiento_activo:indicador.activo,
+      seguimiento_token_hash:indicador.tokenHash,
       comunicacion_id: comunicacion.id,
       proveedor_id: p.id,
       empresa: p.empresa,
@@ -225,18 +216,18 @@ Deno.serve(async (req) => {
     (filasDest ?? []).filter((x: any) => x.proveedor_id).map((x: any) => [x.proveedor_id,x.id])
   );
 
-  const correos = enviables.map(({ proveedor, email }) => ({
-    para: email,
-    asunto,
-    html: htmlCorreo(proveedor, asunto, mensaje, perfil, incluirTelefono),
-    texto: [
-      saludoProveedor(proveedor),
-      '',
-      mensaje,
-      '',
-      firmaTexto(perfil, incluirTelefono)
-    ].join('\n')
-  }));
+  const correos = enviables.map(({ proveedor, email }) => {
+    const indicador=seguimientoPorProveedor.get(proveedor.id);
+    return {
+      para: email,
+      asunto,
+      html: htmlCorreo(proveedor,mensaje,perfil,firmaGuardada,incluirTelefono,indicador?.html||''),
+      texto: [
+        saludoProveedor(proveedor),'',mensaje,'',
+        firmaTexto(perfil,firmaGuardada,incluirTelefono,indicador?.activo===true)
+      ].join('\n')
+    };
+  });
 
   const resultados = correos.length ? await enviarLote(correos) : [];
   const ahora = new Date().toISOString();
