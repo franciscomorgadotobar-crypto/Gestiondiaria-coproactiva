@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import './Campana.css';
 
 /* Campana global: mismas notificaciones que /notificaciones, con una vista
- * rápida accesible desde el Home. Los mensajes de correo están enlazados a
+ * rápida accesible desde cualquier pantalla. Los mensajes de correo están enlazados a
  * CRM o Proveedores, no a una bandeja central. */
 function destino(n) {
   if(n.tipo==='correo_apertura'){
@@ -30,11 +31,26 @@ function fecha(valor) {
 }
 export default function Campana({ miId }) {
   const navegar=useNavigate();
+  const { pathname, search }=useLocation();
   const [abierta,setAbierta]=useState(false);
   const [total,setTotal]=useState(0);
   const [urgentes,setUrgentes]=useState(0);
   const [ultimas,setUltimas]=useState([]);
   const contenedor=useRef(null);
+  const panelRef=useRef(null);
+  const [posicion,setPosicion]=useState({top:56,left:12,maxHeight:500});
+
+  // El panel se monta en document.body: evita recortes y desplazamientos
+  // debidos a overflow, transformaciones o el ancho del encabezado.
+  function ajustarPanel(){
+    const ancla=contenedor.current?.getBoundingClientRect();
+    if(!ancla)return;
+    const margen=12;
+    const ancho=Math.min(390,Math.max(0,window.innerWidth-margen*2));
+    const izquierda=Math.max(margen,Math.min(ancla.right-ancho,window.innerWidth-margen-ancho));
+    const arriba=Math.max(margen,ancla.bottom+8);
+    setPosicion({top:arriba,left:izquierda,maxHeight:Math.max(120,window.innerHeight-arriba-margen)});
+  }
 
   useEffect(()=>{
     if(!miId)return;
@@ -74,18 +90,29 @@ export default function Campana({ miId }) {
 
   useEffect(()=>{
     if(!abierta)return;
+    ajustarPanel();
+    const ajustar=()=>ajustarPanel();
     const cerrar=(e)=>{
       if(e.type==='keydown'&&e.key!=='Escape')return;
-      if(e.type==='pointerdown'&&contenedor.current?.contains(e.target))return;
+      if(e.type==='pointerdown'&&(
+        contenedor.current?.contains(e.target)||panelRef.current?.contains(e.target)
+      ))return;
       setAbierta(false);
     };
     document.addEventListener('pointerdown',cerrar);
     document.addEventListener('keydown',cerrar);
+    window.addEventListener('resize',ajustar);
+    window.addEventListener('scroll',ajustar,true);
     return ()=>{
       document.removeEventListener('pointerdown',cerrar);
       document.removeEventListener('keydown',cerrar);
+      window.removeEventListener('resize',ajustar);
+      window.removeEventListener('scroll',ajustar,true);
     };
   },[abierta]);
+
+  // El componente no cambia al navegar entre módulos; el desplegable sí.
+  useEffect(()=>setAbierta(false),[pathname,search]);
 
   async function abrirNotificacion(n){
     if(!n.leida){
@@ -101,16 +128,19 @@ export default function Campana({ miId }) {
   return <div className="campana-contenedor" ref={contenedor}>
     <button type="button"
       className={'campana'+(total===0?' sin-pendientes':'')}
-      onClick={()=>setAbierta(a=>!a)}
+      onClick={()=>{if(!abierta)ajustarPanel();setAbierta(a=>!a);}}
       aria-expanded={abierta}
-      aria-haspopup="true"
+      aria-haspopup="dialog"
+      aria-controls={abierta?'campana-panel-global':undefined}
       aria-label={total===0?'Ver notificaciones':total+' notificaciones sin leer'}
       title="Notificaciones">🔔
       {total>0&&<span className={'globo'+(urgentes>0?' critico':'')}>
         {total>99?'99+':total}
       </span>}
     </button>
-    {abierta&&<section className="campana-panel" aria-label="Notificaciones recientes">
+    {abierta&&createPortal(<section id="campana-panel-global" ref={panelRef}
+      className="campana-panel" role="dialog" aria-label="Notificaciones recientes"
+      style={{top:posicion.top,left:posicion.left,maxHeight:posicion.maxHeight}}>
       <div className="campana-panel-encabezado">
         <strong>Notificaciones</strong>
         <button type="button" onClick={()=>{setAbierta(false);navegar('/notificaciones');}}>
@@ -133,6 +163,6 @@ export default function Campana({ miId }) {
           {!n.leida&&<span className="campana-punto" aria-label="No leída"/>}
         </button>)}
       </div>
-    </section>}
+    </section>,document.body)}
   </div>;
 }
