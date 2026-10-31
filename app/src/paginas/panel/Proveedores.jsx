@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
 import { validarBorradorCorreo } from '../../lib/plantillasCorreo';
+import { prepararCopias } from '../../lib/copiasCorreo';
+import CopiasCorreo from '../../componentes/CopiasCorreo';
 import Confirmar from '../../componentes/Confirmar';
 import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
 import { consultarBaseCompletaProveedores, generarCsvProveedores, nombreArchivoProveedores } from '../../lib/exportarProveedores';
@@ -1160,6 +1162,8 @@ function ComunicacionProveedores({
   const [alcance, setAlcance] = useState(soloDestinatario ? 'seleccionados' : (alcanceInicial || 'filtrados'));
   const [asunto, setAsunto] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [cc,setCc]=useState('');
+  const [cco,setCco]=useState('');
   const [plantillasCorreo,setPlantillasCorreo]=useState([]);
   const [plantillaElegida,setPlantillaElegida]=useState('');
   const [firmaPreview,setFirmaPreview]=useState(null);
@@ -1205,8 +1209,9 @@ function ComunicacionProveedores({
 
   const ejemplo = resumen.enviables[0] || candidatos[0] || null;
   const erroresBorrador=validarBorradorCorreo(asunto,mensaje);
+  const copias=prepararCopias(cc,cco);
   const puedeEnviar = asunto.trim() && mensaje.trim() && resumen.enviables.length > 0 &&
-    !enviando && erroresBorrador.length===0;
+    !enviando && erroresBorrador.length===0 && copias.errores.length===0;
 
   async function confirmar() {
     if (!puedeEnviar) return;
@@ -1216,7 +1221,8 @@ function ComunicacionProveedores({
       filtros: alcance === 'filtrados' ? filtros : {},
       asunto: asunto.trim(),
       mensaje: mensaje.trim(),
-      incluir_telefono: incluirTelefono
+      incluir_telefono: incluirTelefono,
+      cc:copias.cc,cco:copias.cco
     });
   }
 
@@ -1268,6 +1274,7 @@ function ComunicacionProveedores({
       </section>
 
       <section className="comunicacion-editor">
+        <CopiasCorreo cc={cc} cco={cco} onCC={setCc} onCCO={setCco} errores={copias.errores}/>
         <label className="campo">
           <span className="etiqueta-campo">Plantilla (opcional)</span>
           <select value={plantillaElegida} onChange={e=>elegirPlantilla(e.target.value)}>
