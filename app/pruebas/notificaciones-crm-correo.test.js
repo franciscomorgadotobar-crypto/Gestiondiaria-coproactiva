@@ -6,11 +6,12 @@ const leer = ruta => readFileSync(new URL('../'+ruta,import.meta.url),'utf8');
 const notificaciones=leer('src/paginas/panel/Notificaciones.jsx');
 const pipeline=leer('src/paginas/panel/Pipeline.jsx');
 const mail=leer('../supabase/functions/correo-prospecto/index.ts');
+const motor=leer('../supabase/functions/_compartido/motor-correo.ts');
 const migration=leer('../supabase/migrations/0100_notificaciones_prospecto_enlazado.sql');
 const historico=leer('../supabase/migrations/0101_prospecto_correos.sql');
 
 test('Notificaciones comerciales gestionables y enlazadas a un prospecto',()=>{
-  assert.match(notificaciones,/prospecto_id,leida,creado_en/);
+  assert.match(notificaciones,/prospecto_id,proveedor_id,correo_origen,correo_registro_id,leida,creado_en/);
   assert.match(notificaciones,/n\.tipo === 'lead_web'/);
   assert.match(notificaciones,/\/pipeline\?prospecto=/);
   assert.match(notificaciones,/Abrir prospecto en Pipeline/);
@@ -38,7 +39,8 @@ test('Servidor restringe el envío a correo registrado y guarda auditoría',()=>
   assert.match(mail,/const destinatario=normal\(prospecto\.email/);
   assert.match(mail,/\(count\|\|0\)>=30/);
   assert.match(mail,/from\('prospecto_correos'\)/);
-  assert.match(mail,/SMTP_PASS/);
+  assert.match(mail,/enviarLoteMotor/);
+  assert.match(motor,/SMTP_CLAVE/);
   assert.match(historico,/enable row level security/);
   assert.match(historico,/revoke all on public\.prospecto_correos/);
 });
