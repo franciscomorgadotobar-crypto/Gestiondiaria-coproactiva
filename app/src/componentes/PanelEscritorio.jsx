@@ -11,6 +11,7 @@ import { leerAutomaticas, guardarAutomaticas } from '../lib/conocimientos';
 
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
 import IconoNavegacion, { iconoRutaCoproactiva } from './IconoNavegacion';
+import Campana from './Campana';
 
 const ESTADOS_MENU = ['cerrado', 'mas'];
 
@@ -558,15 +559,23 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               </span>}
             </div>
             <div className="barra-contextual-cuenta">
+              <Campana miId={perfil?.id} />
               <Link to="/mi-cuenta">Mi cuenta</Link>
               <button type="button" onClick={salir}>Salir</button>
             </div>
           </header>
         )}
+        {/* En escritorio con menú lateral, las alertas también están disponibles
+            sin depender del Home ni de una pantalla funcional específica. */}
+        {mostrarPanelIzquierdo && (
+          <div className="barra-campana-escritorio" aria-label="Notificaciones globales">
+            <Campana miId={perfil?.id} />
+          </div>
+        )}
         {/* En el teléfono la barra lateral no existe (se oculta con CSS), así
             que sin esto "Cambiar de área" no tenía dónde vivir y quedaba
             fijo en la que se eligió la primera vez, sin salida. */}
-        {!esCliente && !enAprendizaje && pathname !== '/' && (
+        {pathname !== '/' && (
           <div className="barra-area-movil">
             {(puedeCambiarArea || !['/', '/inicio'].includes(pathname)) && (
               <button type="button" className="barra-area-volver" onClick={volverGlobal}>
@@ -586,11 +595,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   ?
                 </button>
               )}
-              {nombreArea && (
+              {nombreArea && !esCliente && (
                 <span className="barra-area-nombre" aria-label={'Área actual: ' + nombreArea}>
                   {nombreArea}
                 </span>
               )}
+              <Campana miId={perfil?.id} />
             </div>
           </div>
         )}

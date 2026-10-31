@@ -16,6 +16,7 @@ import { criteriosDe, OPCIONES_CRITERIO, evidenciaDeCriterio, pendienteCriterio 
 import { useVolverGlobal } from '../../lib/navegacion';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import DriveArchivos from '../../componentes/DriveArchivos';
+import Campana from '../../componentes/Campana';
 
 const ESTADOS = [
   ['cumple', 'Conforme'],
@@ -725,6 +726,7 @@ export default function Levantamiento() {
           </button>
           <span className="crece" />
           {control.periodo && <span className="micro">{control.periodo}</span>}
+          <Campana miId={perfil?.id} />
         </div>
 
         <h1 className="h3">{control.destino_nombre ?? control.comunidades?.nombre}</h1>

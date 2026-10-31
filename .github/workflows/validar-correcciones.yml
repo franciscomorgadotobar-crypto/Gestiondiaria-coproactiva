@@ -36,6 +36,9 @@ jobs:
       - name: Validar correo contextual y reutilización del motor técnico
         working-directory: app
         run: node --test pruebas/correos-contextuales.test.js
+      - name: Validar campana transversal y portal sin recortes
+        working-directory: app
+        run: node --test pruebas/campana-global.test.js
       - name: Validar gestión de leads y botón Atrás
         working-directory: app
         run: node --test pruebas/pipeline-ficha-gestion.test.js
@@ -157,6 +160,9 @@ jobs:
       - name: Revisar pantallas homologadas en navegador móvil y escritorio
         working-directory: app
         run: node pruebas/ui-homologacion-modulos.mjs
+      - name: Verificar campana en Home y módulos en 320–1280 px
+        working-directory: app
+        run: node pruebas/ui-campana-global.mjs
       - name: Auditar formularios, fichas e informes internos en cuatro resoluciones
         working-directory: app
         run: node pruebas/ui-auditoria-internas.mjs
