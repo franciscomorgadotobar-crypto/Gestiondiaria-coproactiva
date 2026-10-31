@@ -2,7 +2,8 @@
  * Lo usan CRM y Proveedores sin trasladar la gestión fuera de sus fichas.
  * SMTP, firma, seguimiento, autorización y evidencias permanecen en servidor.
  */
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
+import nodemailer from 'npm:nodemailer@10.3.1';
+import { Buffer } from 'node:buffer';
 import { LOGO_PNG } from './logo.ts';
 
 const remitente=Deno.env.get('SMTP_USUARIO')||'contacto@coproactiva.cl';
@@ -79,7 +80,7 @@ export type MotorAdjunto={
   content:Uint8Array|string;contentID?:string;
 };
 export type MotorMensaje={
-  para:string;asunto:string;html:string;texto:string;bcc?:string[];
+  para:string;asunto:string;html:string;texto:string;cc?:string[];bcc?:string[];
   adjuntos?:MotorAdjunto[];
 };
 export type ResultadoMotor={enviado:boolean;motivo?:string};
@@ -90,11 +91,11 @@ export async function enviarLoteMotor(
 ):Promise<ResultadoMotor[]> {
   if(!mensajes.length)return [];
   if(!clave)return mensajes.map(()=>({enviado:false,motivo:'SMTP sin configurar'}));
-  const cliente=new SMTPClient({
-    connection:{
-      hostname:servidor,port:puerto,tls:puerto===465,
-      auth:{username:remitente,password:clave}
-    }
+  // Nodemailer construye el MIME completo (RFC 2045/2047), codifica UTF-8,
+  // los asuntos y los adjuntos sin exponer las fronteras multipart en Gmail.
+  const cliente=nodemailer.createTransport({
+    host:servidor,port:puerto,secure:puerto===465,
+    auth:{user:remitente,pass:clave}
   });
   const resultados:ResultadoMotor[]=[];
   try{
@@ -103,14 +104,20 @@ export async function enviarLoteMotor(
         const logo=opciones.logo!==false && !mensaje.adjuntos?.some(a=>a.contentID==='logo')
           ? [{contentType:'image/png',filename:'coproactiva.png',encoding:'base64' as const,content:LOGO_PNG,contentID:'logo'}]
           : [];
-        await cliente.send({
-          from:'Coproactiva <'+remitente+'>',
+        await cliente.sendMail({
+          from:{name:'Coproactiva',address:remitente},
           to:mensaje.para,
+          ...(mensaje.cc?.length?{cc:mensaje.cc}:{}),
           ...(mensaje.bcc?.length?{bcc:mensaje.bcc}:{}),
           subject:mensaje.asunto,
-          content:mensaje.texto,
+          text:mensaje.texto,
           html:mensaje.html,
-          attachments:[...logo,...(mensaje.adjuntos||[])]
+          attachments:[...logo,...(mensaje.adjuntos||[])].map(a=>({
+            filename:a.filename,contentType:a.contentType,
+            content:typeof a.content==='string'&&a.encoding==='base64'
+              ? Buffer.from(a.content,'base64') : Buffer.from(a.content),
+            ...(a.contentID?{cid:a.contentID}:{}),
+          }))
         });
         resultados.push({enviado:true});
       }catch(e){
@@ -118,7 +125,7 @@ export async function enviarLoteMotor(
       }
     }
   }finally{
-    try{await cliente.close()}catch{/* envío ya registrado por destinatario */}
+    try{cliente.close()}catch{/* envío ya registrado por destinatario */}
   }
   return resultados;
 }
