@@ -569,7 +569,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         {/* En el teléfono la barra lateral no existe (se oculta con CSS), así
             que sin esto "Cambiar de área" no tenía dónde vivir y quedaba
             fijo en la que se eligió la primera vez, sin salida. */}
-        {pathname !== '/' && (
+        {(
           <div className="barra-area-movil">
             {(puedeCambiarArea || !['/', '/inicio'].includes(pathname)) && (
               <button type="button" className="barra-area-volver" onClick={volverGlobal}>
