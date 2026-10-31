@@ -107,6 +107,9 @@ export async function enviarLote(mensajes: Array<{
   asunto: string;
   html: string;
   texto: string;
+  /** Adjuntos MIME del módulo llamador, ya validados en su Edge Function. */
+  adjuntos?: Array<{filename:string;contentType:string;encoding:'binary';content:Uint8Array}>;
+  cco?: string[];
 }>, opciones: { logo?: boolean } = {}) {
   const conLogo = opciones.logo !== false;
   if (!hayCorreo()) {
@@ -132,14 +135,18 @@ export async function enviarLote(mensajes: Array<{
           subject: mensaje.asunto,
           content: mensaje.texto,
           html: mensaje.html,
-          ...(conLogo ? {
-            attachments: [{
-              contentType: 'image/png',
-              filename: 'coproactiva.png',
-              encoding: 'base64' as const,
-              content: LOGO_PNG,
-              contentID: 'logo'
-            }]
+          ...(mensaje.cco?.length ? { bcc: mensaje.cco } : {}),
+          ...((conLogo || mensaje.adjuntos?.length) ? {
+            attachments: [
+              ...(conLogo ? [{
+                contentType: 'image/png',
+                filename: 'coproactiva.png',
+                encoding: 'base64' as const,
+                content: LOGO_PNG,
+                contentID: 'logo'
+              }] : []),
+              ...(mensaje.adjuntos || [])
+            ]
           } : {})
         });
         resultados.push({ enviado: true });
