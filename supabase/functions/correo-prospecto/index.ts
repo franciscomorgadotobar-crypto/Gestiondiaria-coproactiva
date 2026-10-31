@@ -1,16 +1,13 @@
 // Envío individual desde Pipeline, exclusivamente a la dirección YA guardada
 // en el prospecto. Autenticación obligatoria, control de rol y auditoría.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
+import { enviarLote, hayCorreo } from '../_compartido/correo.ts';
 import { driveFetch } from '../_compartido/google-drive.ts';
 
 const BASE = Deno.env.get('SUPABASE_URL') || '';
 const ANON = Deno.env.get('SUPABASE_ANON_KEY') || '';
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const SMTP_USER = Deno.env.get('SMTP_USUARIO') || 'contacto@coproactiva.cl';
-const SMTP_PASS = (Deno.env.get('SMTP_CLAVE') || '').replace(/\s+/g,'');
-const SMTP_HOST = Deno.env.get('SMTP_SERVIDOR') || 'smtp.gmail.com';
-const SMTP_PORT = Number(Deno.env.get('SMTP_PUERTO') || '465');
 const ORIGEN = 'https://app.coproactiva.cl';
 // CCO indicado expresamente en el catálogo de correos Coproactiva v1.0.
 const CCO = ['osmarmeza.adm7@gmail.com','franciscomorgadotobar@gmail.com'];
@@ -156,12 +153,8 @@ Deno.serve(async req=>{
 
   let enviado=false;
   let motivo='Error SMTP';
-  if(!SMTP_PASS) motivo='SMTP sin configurar';
+  if(!hayCorreo()) motivo='SMTP sin configurar';
   else {
-    const smtp=new SMTPClient({
-      connection:{hostname:SMTP_HOST,port:SMTP_PORT,tls:SMTP_PORT===465,
-        auth:{username:SMTP_USER,password:SMTP_PASS}}
-    });
     try {
       // La firma elegida pertenece al usuario autenticado; no se acepta
       // contenido HTML ni URLs de imagen suministradas por el navegador.
@@ -233,13 +226,17 @@ Deno.serve(async req=>{
         (firmaActiva&&(lineasHtml||logoHtml)
           ? '<div style="margin-top:20px;padding-top:10px;border-top:1px solid #e4e0d9">'+tablaFirma+'</div>'
           : '')+'</div>';
-      await smtp.send({from:'Coproactiva <'+SMTP_USER+'>',to:destinatario,bcc:CCO,
-        subject:asunto,content:texto,html,attachments:adjuntosSMTP});
-      enviado=true;
+      // CRM y Proveedores comparten el mismo transporte, configuración SMTP y
+      // manejo de adjuntos. Cada módulo conserva sus propias reglas y auditoría.
+      const [resultado]=await enviarLote([{
+        para:destinatario,asunto,html,texto,cco:CCO,adjuntos:adjuntosSMTP
+      }],{logo:false});
+      enviado=resultado?.enviado===true;
+      if(!enviado) motivo='No fue posible entregar el mensaje a SMTP';
     }catch(e) {
       console.error('correo-prospecto SMTP',e instanceof Error?e.name:'unknown');
       motivo='No fue posible entregar el mensaje a SMTP';
-    }finally {try{await smtp.close();}catch{/* no invalida el envío */}}
+    }
   }
   await admin.from('prospecto_correos').update(enviado
     ? {estado:'enviado',enviado_en:new Date().toISOString(),error:null}
