@@ -119,7 +119,8 @@ export default function Notificaciones() {
               const url=n.correo_origen==='proveedores'
                 ? '/proveedores/comunicaciones'+(n.correo_registro_id?'?destinatario='+encodeURIComponent(n.correo_registro_id):'')
                 : n.prospecto_id
-                  ? '/pipeline?prospecto='+encodeURIComponent(n.prospecto_id)
+                  ? '/pipeline?prospecto='+encodeURIComponent(n.prospecto_id)+
+                    (n.correo_registro_id?'&correo='+encodeURIComponent(n.correo_registro_id):'')
                   : '/pipeline';
               return <Link key={n.tabla+n.id} to={url}
                 className={'tarjeta notificacion-item'+(!n.leida?' no-leida':'')}
