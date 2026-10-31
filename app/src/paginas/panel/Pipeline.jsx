@@ -177,7 +177,8 @@ export default function Pipeline() {
   useEffect(()=>{
     let activo=true;
     supabase.from('plantillas_correo_crm').select('id,codigo,nombre,categoria,uso,etapa_crm,adjunto_sugerido,asunto,cuerpo,variantes')
-      .eq('activa',true).order('codigo',{ascending:true,nullsFirst:false}).then(({data,error})=>{
+      .eq('activa',true).neq('categoria','Proveedores')
+      .order('codigo',{ascending:true,nullsFirst:false}).then(({data,error})=>{
         if(activo&&!error)setPlantillasCorreo(data||[]);
       });
     return()=>{activo=false};
