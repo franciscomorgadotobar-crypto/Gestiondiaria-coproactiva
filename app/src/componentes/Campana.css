@@ -1,0 +1,25 @@
+/* Campana desplegable, compartida con notificaciones de CRM y proveedores. */
+.campana-contenedor{position:relative;display:flex;align-items:center;justify-content:center;z-index:50}
+.campana-panel{position:absolute;top:calc(100% + 10px);right:0;
+ width:min(390px,92vw);max-height:min(70vh,620px);overflow:hidden;
+ background:var(--tarjeta,#fff);border:1px solid var(--borde-suave,#e5dfd7);
+ border-radius:15px;box-shadow:0 14px 42px rgba(28,33,40,.17);
+ z-index:100;display:flex;flex-direction:column}
+.campana-panel-encabezado{padding:15px 17px;border-bottom:1px solid var(--borde-suave,#ddd);display:flex;align-items:center;justify-content:space-between;gap:14px}
+.campana-panel-encabezado>strong{font-size:14px;color:var(--texto-titulo,#2b3138)}
+.campana-panel-encabezado>button{border:0;background:transparent;color:var(--enlace,#bd632e);cursor:pointer;text-decoration:underline;font-size:12px}
+.campana-panel-lista{overflow-y:auto;min-height:0}
+.campana-entrada{border:0;border-bottom:1px solid var(--borde-suave,#eee);background:transparent;
+ display:flex;gap:10px;align-items:flex-start;width:100%;padding:12px 14px;text-align:left;cursor:pointer;color:inherit}
+.campana-entrada:last-child{border-bottom:0}
+.campana-entrada:hover,.campana-entrada:focus-visible{background:var(--hover,#faf2e9)}
+.campana-simbolo{width:28px;height:28px;flex:none;display:grid;place-items:center;
+ border-radius:50%;background:var(--papel,#f5f5f5);color:var(--texto-suave,#6b6b6b)}
+.campana-simbolo.correo{background:#e7f4eb;color:#1a7946}
+.campana-entrada-texto{display:grid;gap:3px;min-width:0;flex:1}
+.campana-entrada-texto strong{font-size:12px;color:var(--texto-titulo,#292f36)}
+.campana-entrada-texto>span{font-size:11px;line-height:1.4;color:var(--texto-suave,#656565);overflow-wrap:anywhere}
+.campana-entrada-texto small{font-size:10px;color:var(--texto-tenue,#999)}
+.campana-punto{flex:none;margin-top:7px;width:6px;height:6px;background:var(--naranja,#ed7130);border-radius:50%}
+.campana-vacio{padding:20px;font-size:12px;color:var(--texto-apagado,#777);text-align:center}
+@media(max-width:550px){.campana-panel{right:-8px}}
