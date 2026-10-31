@@ -117,7 +117,14 @@ async function irPantalla(page,vista) {
     } else if(ruta.startsWith('/mantenciones'))
       await clickDestino(page,'/mantenciones','Mantenciones');
   } else if(ruta.startsWith('/contabilidad/')) {
-    // Teléfono: barra inferior de Finanzas; escritorio: barra lateral o pestañas.
+    // La ruta raíz cambia antes de montar la vista Contabilidad (React lazy).
+    // Esperar a su navegación real evita una carrera en escritorio.
+    const ancho=page.viewportSize()?.width||1280;
+    if(ancho>=900) {
+      await page.locator('.contabilidad-nav a[href="'+ruta+'"]:visible').first().waitFor({timeout:12000});
+    } else {
+      await page.locator('.barra-inferior-movil:visible').first().waitFor({timeout:12000});
+    }
     const etiquetas={asientos:'Asientos',reportes:'Reportes',plan:'Plan de cuentas',
       configuracion:'Configuración',entidades:'Entidades'};
     await clickDestino(page,ruta,etiquetas[ruta.split('/')[2]]||'Resumen');
