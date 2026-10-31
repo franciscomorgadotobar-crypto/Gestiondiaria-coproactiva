@@ -241,7 +241,9 @@
 .seleccion-home__selector-vistas {
   position: relative;
   flex: 0 0 auto;
-  z-index: 20;
+  /* El menú Cambiar vista debe estar por encima de la campana del saludo.
+     El panel abierto de notificaciones se renderiza en body con z-index mayor. */
+  z-index: 100;
 }
 .seleccion-home__selector-vistas .seleccion-home__cambiar {
   min-height: 52px;
