@@ -197,3 +197,12 @@
 .pipeline-firma-texto{display:grid;gap:2px;line-height:1.55;overflow-wrap:anywhere}
 .pipeline-firma-texto strong{font-size:13px}
 .pipeline-firma-logo{flex:none;max-width:156px;max-height:85px;object-fit:contain}
+
+/* Señales técnicas de apertura del correo en la ficha del prospecto */
+.pipeline-correo-apertura{font-size:11px;color:var(--texto-apagado,#727272);white-space:nowrap}
+.pipeline-correo-apertura.detectada{color:#16804c;font-weight:750}
+.pipeline-correo-apertura-detalle{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:10px 12px;border-radius:9px;background:var(--papel,#f7f8f5);margin:8px 0;font-size:12px}
+.pipeline-correo-apertura-detalle>strong{color:#16804c}
+.pipeline-correo-apertura-detalle>small{flex:0 0 100%;font-size:11px;color:var(--texto-apagado,#777);line-height:1.4}
+.pipeline-correo-historial-item>summary .pipeline-correo-apertura{grid-column:2/4}
+@media(max-width:550px){.pipeline-correo-historial-item>summary .pipeline-correo-apertura{grid-column:1/-1}}
