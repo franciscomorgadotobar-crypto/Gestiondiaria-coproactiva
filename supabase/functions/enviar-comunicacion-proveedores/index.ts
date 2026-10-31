@@ -118,6 +118,8 @@ Deno.serve(async (req) => {
   if (!ids.length) return responder({ error: 'No hay proveedores seleccionados.' }, 400);
   if (!asunto) return responder({ error: 'El asunto es obligatorio.' }, 400);
   if (!mensaje) return responder({ error: 'El mensaje es obligatorio.' }, 400);
+  if (/\{\{[\w]+\}\}|\[[^\]\n]+\]/.test(asunto+'\n'+mensaje))
+    return responder({error:'Completa las variables y elimina las instrucciones de la plantilla antes de enviar'},422);
   if (ids.length > 500) return responder({ error: 'El máximo por comunicación es 500 proveedores.' }, 400);
 
   const { data: proveedores, error: eProveedores } = await admin.from('proveedores')
