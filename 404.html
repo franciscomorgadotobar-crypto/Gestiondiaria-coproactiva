@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fffaf6">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="64x64" href="/iconos/icono-app-20261013-64.png">
+<link rel="apple-touch-icon" href="/iconos/icono-app-20261013-192.png">
+<link rel="preload" as="image" href="/brand/imagologo-vertical.svg">
+<title>Coproactiva App Diaria</title>
+<style>
+/* Cargador del documento: aparece antes de descargar React y sus estilos.
+   Se elimina al resolver la sesión, sin tiempo mínimo artificial. */
+.splash-inicial {
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  box-sizing:border-box;
+  overflow:hidden;
+  background:#fffaf6;
+  isolation:isolate;
+  opacity:1;
+  transition:opacity .22s ease,visibility .22s ease;
+}
+.splash-inicial::before,
+.splash-inicial::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:min(75vw,430px);
+  aspect-ratio:1;
+  border-radius:50%;
+  border:85px solid rgba(213,134,59,.055);
+  pointer-events:none;
+}
+.splash-inicial::before { top:-300px;left:-270px; }
+.splash-inicial::after { bottom:-335px;right:-260px; }
+.splash-centro {
+  width:min(78vw,340px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:clamp(38px,8vh,64px);
+  transform:translateY(-8px);
+}
+.splash-logo { display:block;width:min(75vw,310px);height:auto; }
+.splash-barra {
+  width:min(46vw,168px);
+  height:4px;
+  border-radius:999px;
+  background:#eadbd0;
+  overflow:hidden;
+}
+.splash-barra > span {
+  display:block;
+  width:39%;
+  height:100%;
+  background:#d5863b;
+  border-radius:999px;
+  animation:copro-cargando 1.35s ease-in-out infinite alternate;
+}
+@keyframes copro-cargando {
+  0% { transform:translateX(-90%); }
+  100% { transform:translateX(265%); }
+}
+.splash-inicial.splash-finalizando {
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-inicial { transition:none; }
+  .splash-barra > span { animation:none;transform:translateX(0); }
+}
+</style>
+  <script type="module" crossorigin src="/assets/index-DnYDAmP-.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Bbu5uidP.css">
+<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+<body>
+<div id="splash-inicial" class="splash-inicial" role="status" aria-label="Cargando Coproactiva">
+  <div class="splash-centro">
+    <img class="splash-logo" src="/brand/imagologo-vertical.svg"
+         alt="Coproactiva" width="560" height="259" fetchpriority="high">
+    <div class="splash-barra" aria-hidden="true"><span></span></div>
+  </div>
+</div>
+<div id="raiz"></div>
+</body>
+</html>
