@@ -1269,8 +1269,8 @@ function ComunicacionProveedores({
           </select>
         </label>
         <p className="micro apagado">
-          Mismo catálogo y firma configurados en Coproactiva. Las plantillas de Proveedores
-          pueden administrarse desde Plantillas de correo.
+          El mismo motor de CRM utiliza la firma y el seguimiento.{' '}
+          <Link to="/plantillas-correo?categoria=Proveedores">Administrar plantillas de Proveedores</Link>.
         </p>
         <label className="campo">
           <span className="etiqueta-campo">Asunto</span>
