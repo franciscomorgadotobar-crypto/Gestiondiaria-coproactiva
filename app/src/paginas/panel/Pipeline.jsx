@@ -358,19 +358,24 @@ export default function Pipeline() {
     }
     setHistorialCorreosCargando(true);
     setHistorialCorreosError('');
-    supabase.from('prospecto_correos')
-      .select('id,asunto,mensaje,destinatario,estado,creado_en,enviado_en,error,adjuntos')
-      .eq('prospecto_id',prospectoSeleccionadoId)
-      .order('creado_en',{ascending:false}).limit(30)
-      .then(({data,error})=>{
-        if(!activo)return;
-        if(error){
-          setHistorialCorreos([]);
-          setHistorialCorreosError('No fue posible cargar el historial de correos.');
-        } else setHistorialCorreos(data||[]);
-        setHistorialCorreosCargando(false);
-      });
-    return ()=>{activo=false;};
+    const cargarHistorial=async()=>{
+      const {data,error}=await supabase.from('prospecto_correos')
+        .select('id,asunto,mensaje,destinatario,estado,creado_en,enviado_en,error,adjuntos,seguimiento_activo,primera_apertura,ultima_apertura,aperturas_total')
+        .eq('prospecto_id',prospectoSeleccionadoId)
+        .order('creado_en',{ascending:false}).limit(30);
+      if(!activo)return;
+      if(error){
+        setHistorialCorreosError('No fue posible cargar el historial de correos.');
+      }else{
+        setHistorialCorreos(data||[]);
+        setHistorialCorreosError('');
+      }
+      setHistorialCorreosCargando(false);
+    };
+    void cargarHistorial();
+    // La ficha recupera nuevas señales sin necesidad de recargar la página.
+    const intervalo=window.setInterval(()=>{void cargarHistorial();},60000);
+    return ()=>{activo=false;window.clearInterval(intervalo);};
   },[prospectoSeleccionadoId,refrescarHistorial]);
 
   useEffect(()=>{
@@ -709,9 +714,27 @@ export default function Pipeline() {
                         <span className="pipeline-correo-fecha">{fechaCL(c.enviado_en||c.creado_en,true)||'Sin fecha'}</span>
                         <span className="pipeline-correo-asunto">{c.asunto}</span>
                         <span className={'pipeline-correo-estado '+(c.estado==='enviado'?'ok':'')}>{c.estado==='enviado'?'Enviado':c.estado==='fallido'?'Fallido':'Pendiente'}</span>
+                        {c.estado==='enviado'&&c.seguimiento_activo&&
+                          <span className={'pipeline-correo-apertura'+(c.primera_apertura?' detectada':'')}>
+                            {c.primera_apertura?'◉ Apertura detectada':'○ Sin apertura detectada'}
+                          </span>}
                       </summary>
                       <div className="pipeline-correo-historial-detalle">
                         <p className="chico apagado">Para: {c.destinatario}</p>
+                        {c.estado==='enviado'&&
+                          <div className="pipeline-correo-apertura-detalle">
+                            {!c.seguimiento_activo
+                              ? <span>Este correo no tiene seguimiento de aperturas.</span>
+                              : c.primera_apertura
+                                ? <>
+                                  <strong>Apertura detectada</strong>
+                                  <span>Primera señal: {fechaCL(c.primera_apertura,true)}</span>
+                                  <span>Última señal: {fechaCL(c.ultima_apertura||c.primera_apertura,true)}</span>
+                                  <span>Señales registradas: {c.aperturas_total||1}</span>
+                                </>
+                                : <span>Aún no se ha detectado la carga de imágenes del correo.</span>}
+                            <small>Esta señal no confirma lectura. Gmail, Apple Mail y otros clientes pueden cargar o bloquear imágenes automáticamente.</small>
+                          </div>}
                         {c.error&&<p className="chico pipeline-correo-error">{c.error}</p>}
                         <pre>{c.mensaje}</pre>
                         {Array.isArray(c.adjuntos)&&c.adjuntos.length>0&&
