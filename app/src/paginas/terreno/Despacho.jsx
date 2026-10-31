@@ -1,6 +1,8 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useSesion } from '../../lib/sesion';
+import Campana from '../../componentes/Campana';
 import Levantamiento from './Control';
 
 /* /control/:id sirve dos cosas distintas: un levantamiento normal (el
@@ -18,6 +20,8 @@ const DiagnosticoComercial = lazy(() => import('../comercial/DiagnosticoComercia
 
 export default function Despacho() {
   const { id } = useParams();
+  const { perfil } = useSesion();
+  const campanaGlobal = <div className="campana-control-encabezado"><Campana miId={perfil?.id} /></div>;
   const [esDiagnostico, setEsDiagnostico] = useState(null);
 
   useEffect(() => {
@@ -27,12 +31,13 @@ export default function Despacho() {
     return () => { vigente = false; };
   }, [id]);
 
-  if (esDiagnostico === null) return <p className="cargando">Cargando…</p>;
-  if (!esDiagnostico) return <Levantamiento />;
+  if (esDiagnostico === null) return <>{campanaGlobal}<p className="cargando">Cargando…</p></>;
+  if (!esDiagnostico) return <>{campanaGlobal}<Levantamiento /></>;
 
-  return (
+  return <>
+    {campanaGlobal}
     <Suspense fallback={<p className="cargando">Cargando…</p>}>
       <DiagnosticoComercial id={id} />
     </Suspense>
-  );
+  </>;
 }
