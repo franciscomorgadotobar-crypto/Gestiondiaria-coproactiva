@@ -50,14 +50,20 @@ export default function ProveedoresComunicaciones() {
     }
   }
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    cargar();
+    const interval=window.setInterval(()=>{
+      if(seleccionada)abrir(seleccionada);
+    },60000);
+    return ()=>window.clearInterval(interval);
+  }, [seleccionada?.id]);
 
   async function abrir(c) {
     setSeleccionada(c);
     setDestinatarios([]);
     const { data, error: e } = await supabase
       .from('proveedor_comunicacion_destinatarios')
-      .select('id,proveedor_id,empresa,contacto_nombre,email,estado,motivo_omision,error,enviado_en')
+      .select('id,proveedor_id,empresa,contacto_nombre,email,estado,motivo_omision,error,enviado_en,seguimiento_activo,primera_apertura,ultima_apertura,aperturas_total')
       .eq('comunicacion_id', c.id)
       .order('empresa');
     if (e) setError(e.message);
@@ -163,6 +169,12 @@ export default function ProveedoresComunicaciones() {
                               <span className={'chip ' + (d.estado === 'enviado' ? 'chip-cumple' : d.estado === 'error' ? 'chip-critico' : 'chip-pendiente')}>
                                 {d.estado}
                               </span>
+                              {d.estado==='enviado'&&d.seguimiento_activo&&
+                                <div className="correo-motor-estado">
+                                  <strong>{d.primera_apertura?'◉ Apertura detectada':'○ Sin apertura detectada'}</strong>
+                                  {d.primera_apertura&&
+                                    <span>Primera: {fechaHora(d.primera_apertura)} · Última: {fechaHora(d.ultima_apertura||d.primera_apertura)} · Señales: {d.aperturas_total||1}</span>}
+                                </div>}
                               {(d.motivo_omision || d.error) && <small>{d.motivo_omision || d.error}</small>}
                             </td>
                           </tr>
