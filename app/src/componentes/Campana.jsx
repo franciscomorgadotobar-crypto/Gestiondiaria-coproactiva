@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import './Campana.css';
 
-/* Campana global: mismas notificaciones que /notificaciones, con una vista
- * rápida accesible desde el Home. Los mensajes de correo están enlazados a
- * CRM o Proveedores, no a una bandeja central. */
+/* Campana transversal: un acceso por pantalla en Home y encabezados de módulos.
+ * El panel se monta sobre document.body para no sufrir recortes por contenedores
+ * ni desbordarse cuando el disparador está junto al borde de la pantalla. */
 function destino(n) {
   if(n.tipo==='correo_apertura'){
     if(n.correo_origen==='proveedores') return '/proveedores/comunicaciones'+
@@ -30,11 +31,28 @@ function fecha(valor) {
 }
 export default function Campana({ miId }) {
   const navegar=useNavigate();
+  const { pathname }=useLocation();
   const [abierta,setAbierta]=useState(false);
   const [total,setTotal]=useState(0);
   const [urgentes,setUrgentes]=useState(0);
   const [ultimas,setUltimas]=useState([]);
   const contenedor=useRef(null);
+  const panelRef=useRef(null);
+  const [posicion,setPosicion]=useState(null);
+  // Calcular con coordenadas del viewport: nunca usar right:0 relativo
+  // a la campana, pues en teléfonos el panel se sale por la izquierda.
+  function ubicarPanel(){
+    if(!contenedor.current)return;
+    const rect=contenedor.current.getBoundingClientRect();
+    const anchoViewport=document.documentElement.clientWidth || window.innerWidth;
+    const altoViewport=window.visualViewport?.height || window.innerHeight;
+    const margen=12;
+    const ancho=Math.min(390,Math.max(0,anchoViewport-2*margen));
+    const left=Math.max(margen,Math.min(rect.right-ancho,anchoViewport-ancho-margen));
+    const top=Math.max(margen,Math.min(rect.bottom+8,altoViewport-140));
+    setPosicion({left,top,width:ancho,maxHeight:Math.max(100,altoViewport-top-margen)});
+  }
+
 
   useEffect(()=>{
     if(!miId)return;
@@ -74,18 +92,34 @@ export default function Campana({ miId }) {
 
   useEffect(()=>{
     if(!abierta)return;
-    const cerrar=(e)=>{
-      if(e.type==='keydown'&&e.key!=='Escape')return;
-      if(e.type==='pointerdown'&&contenedor.current?.contains(e.target))return;
+    ubicarPanel();
+    const actualizar=()=>ubicarPanel();
+    const cerrar=e=>{
+      if(e.type==='keydown'){
+        if(e.key!=='Escape')return;
+        e.preventDefault();
+        setAbierta(false);
+        contenedor.current?.querySelector('button')?.focus();
+        return;
+      }
+      if(contenedor.current?.contains(e.target)||panelRef.current?.contains(e.target))return;
       setAbierta(false);
     };
+    window.addEventListener('resize',actualizar);
+    window.addEventListener('scroll',actualizar,true);
+    window.visualViewport?.addEventListener('resize',actualizar);
     document.addEventListener('pointerdown',cerrar);
     document.addEventListener('keydown',cerrar);
     return ()=>{
+      window.removeEventListener('resize',actualizar);
+      window.removeEventListener('scroll',actualizar,true);
+      window.visualViewport?.removeEventListener('resize',actualizar);
       document.removeEventListener('pointerdown',cerrar);
       document.removeEventListener('keydown',cerrar);
     };
   },[abierta]);
+  // La campana no permanece abierta al saltar de un módulo a otro.
+  useEffect(()=>{setAbierta(false);},[pathname]);
 
   async function abrirNotificacion(n){
     if(!n.leida){
@@ -101,7 +135,7 @@ export default function Campana({ miId }) {
   return <div className="campana-contenedor" ref={contenedor}>
     <button type="button"
       className={'campana'+(total===0?' sin-pendientes':'')}
-      onClick={()=>setAbierta(a=>!a)}
+      onClick={()=>{if(!abierta)ubicarPanel();setAbierta(a=>!a);}}
       aria-expanded={abierta}
       aria-haspopup="true"
       aria-label={total===0?'Ver notificaciones':total+' notificaciones sin leer'}
@@ -110,7 +144,9 @@ export default function Campana({ miId }) {
         {total>99?'99+':total}
       </span>}
     </button>
-    {abierta&&<section className="campana-panel" aria-label="Notificaciones recientes">
+    {abierta&&createPortal(<section ref={panelRef} className="campana-panel"
+      role="dialog" aria-modal="false" aria-label="Notificaciones recientes"
+      style={posicion || {left:12,top:75,width:'calc(100vw - 24px)'}}>
       <div className="campana-panel-encabezado">
         <strong>Notificaciones</strong>
         <button type="button" onClick={()=>{setAbierta(false);navegar('/notificaciones');}}>
@@ -133,6 +169,6 @@ export default function Campana({ miId }) {
           {!n.leida&&<span className="campana-punto" aria-label="No leída"/>}
         </button>)}
       </div>
-    </section>}
+    </section>,document.body)}
   </div>;
 }
