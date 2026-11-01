@@ -1,0 +1,25 @@
+.documentos-gestor{display:grid;gap:24px;max-width:1250px;margin:0 auto;padding:8px 0 40px;min-width:0}
+.documentos-gestor-cabecera{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.documentos-gestor-cabecera h1{font-size:clamp(24px,3vw,34px);margin:6px 0;color:var(--texto-titulo,#262b33)}
+.documentos-gestor-cabecera p,.documentos-titulo p{margin:4px 0;color:var(--texto-apagado,#696969)}
+.documentos-kicker{font-size:11px;letter-spacing:.16em;color:#c9792a;font-weight:750}
+.documentos-seccion{display:grid;gap:15px;min-width:0}
+.documentos-titulo h2{font-size:19px;margin:0 0 4px}
+.documentos-plantillas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.documentos-plantilla{display:grid;grid-template-columns:auto minmax(0,1fr);align-content:start;gap:12px;background:var(--tarjeta,#fff);border:1px solid var(--borde,#e4ded7);border-radius:13px;padding:17px;min-height:160px;min-width:0;box-sizing:border-box}
+.documentos-plantilla-num{font-size:15px;font-weight:750;color:#c9792a}
+.documentos-plantilla-contenido{display:grid;gap:6px}
+.documentos-plantilla h3{margin:0;font-size:16px;color:var(--texto-titulo,#292e36)}
+.documentos-plantilla p{margin:0;font-size:13px;line-height:1.5;color:var(--texto,#555)}
+.documentos-plantilla small{font-size:11px;color:#696969}
+.documentos-plantilla>.boton,.documentos-pendiente{grid-column:2;justify-self:start}
+.documentos-pendiente{font-size:12px;font-weight:650;color:#80756b;background:#f5f2ec;padding:8px;border-radius:8px}
+.documentos-recientes{display:grid;gap:6px}
+.documentos-reciente{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--tarjeta,#fff);border:1px solid var(--borde,#ddd);border-radius:10px;padding:12px}
+.documentos-reciente>div{display:grid;gap:4px;min-width:0;overflow-wrap:anywhere}
+.documentos-reciente span{font-size:12px;color:#696969}
+.documentos-vacio,.documentos-origen-correo{background:#fff8f1;border:1px solid #ead1be;border-radius:10px;padding:14px;line-height:1.5}
+.documentos-origen-correo{display:grid;gap:5px}
+.documentos-origen-correo p{font-size:13px;margin:0;color:#4e4944}
+.documentos-origen-correo a{font-size:13px;font-weight:650;color:#ad531e}
+@media(max-width:670px){.documentos-plantillas{grid-template-columns:1fr}.documentos-gestor-cabecera{align-items:stretch}.documentos-reciente{align-items:flex-start}.documentos-reciente .boton{flex:none}}
