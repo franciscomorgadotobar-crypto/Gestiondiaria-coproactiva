@@ -16,3 +16,5 @@
 .selector-drive-acciones{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .selector-drive-acciones .boton{min-height:42px}
 @media(max-width:540px){.selector-drive-fondo{padding:8px;align-items:flex-end}.selector-drive-dialogo{max-height:92dvh;padding:14px;border-radius:16px 16px 0 0}.selector-drive-acciones{display:grid;grid-template-columns:1fr 1fr}.selector-drive-acciones .boton:last-child{grid-column:1/-1}}
+
+.selector-drive-documento{font-size:13px;font-weight:650;line-height:1.45;overflow-wrap:anywhere;color:#b75c26;margin:6px 0}
