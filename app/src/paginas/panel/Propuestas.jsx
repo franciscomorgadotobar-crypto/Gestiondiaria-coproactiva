@@ -61,9 +61,14 @@ export default function Propuestas() {
   const [guardando,setGuardando]=React.useState(false);
   const [aviso,setAviso]=React.useState('');
   const [vistaMovil,setVistaMovil]=React.useState('form');
-  const [d, setD] = React.useState(() => {
-    try { return { ...BLANK, ...JSON.parse(localStorage.getItem(KEY_ACTUAL) || '{}') }; } catch (e) { return { ...BLANK }; }
-  });
+  const [d,setD]=React.useState({...BLANK});
+  const [borradorListo,setBorradorListo]=React.useState(false);
+  React.useEffect(()=>{
+    if(!perfil?.id)return;
+    try{setD({...BLANK,...JSON.parse(localStorage.getItem(KEY_ACTUAL+':'+perfil.id)||'{}')});}
+    catch{setD({...BLANK});}
+    setBorradorListo(true);
+  },[perfil?.id]);
   // La fuente de verdad es Supabase: la antigua API Netlify sigue operativa
   // únicamente durante la migración de las propuestas históricas.
   const [clientes,setClientes]=React.useState({});
@@ -71,7 +76,11 @@ export default function Propuestas() {
   const [opts, setOpts] = React.useState({ portada: true, numeros: true, honorarios: true });
   const [sel, setSel] = React.useState('');
 
-  React.useEffect(() => { localStorage.setItem(KEY_ACTUAL, JSON.stringify(d)); }, [d]);
+  React.useEffect(()=>{
+    if(!perfil?.id||!borradorListo)return;
+    try{localStorage.setItem(KEY_ACTUAL+':'+perfil.id,JSON.stringify(d));}
+    catch{/* El guardado principal de propuestas ocurre en Supabase. */}
+  },[d,perfil?.id,borradorListo]);
 
   React.useEffect(()=>{
     let vigente=true;
@@ -108,6 +117,48 @@ export default function Propuestas() {
       });
     return ()=>{vivo=false;};
   },[busqueda]);
+
+  React.useEffect(()=>{
+    let raf=0;
+    const ajustar=()=>{
+      const envoltura=document.querySelector('.propuesta-docwrap');
+      const pagina=envoltura?.querySelector('doc-page');
+      if(!pagina)return;
+      pagina.style.transform='none';
+      envoltura.style.height='';
+      if(window.innerWidth>980||vistaMovil!=='doc')return;
+      const hoja=pagina.shadowRoot?.querySelector('.sheet');
+      if(!hoja)return;
+      const estilos=getComputedStyle(pagina);
+      const padding=(parseFloat(estilos.paddingLeft)||0)+(parseFloat(estilos.paddingRight)||0);
+      const ancho=hoja.getBoundingClientRect().width+padding;
+      if(!ancho)return;
+      const alto=hoja.getBoundingClientRect().height+
+        (parseFloat(estilos.paddingTop)||0)+(parseFloat(estilos.paddingBottom)||0);
+      const escala=Math.min(1,envoltura.clientWidth/ancho);
+      pagina.style.transformOrigin='top left';
+      pagina.style.transform='scale('+escala+')';
+      envoltura.style.height=Math.ceil(alto*escala)+'px';
+    };
+    const programar=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(ajustar);};
+    const imprimir=()=>{
+      const pagina=document.querySelector('.propuesta-docwrap doc-page');
+      const wrap=document.querySelector('.propuesta-docwrap');
+      if(pagina)pagina.style.transform='';
+      if(wrap)wrap.style.height='';
+    };
+    programar();
+    window.addEventListener('resize',programar);
+    window.addEventListener('beforeprint',imprimir);
+    window.addEventListener('afterprint',programar);
+    document.fonts?.ready?.then(programar);
+    return ()=>{
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize',programar);
+      window.removeEventListener('beforeprint',imprimir);
+      window.removeEventListener('afterprint',programar);
+    };
+  },[vistaMovil,d,opts]);
 
   const set = (k, v) => setD(p => ({ ...p, [k]: v }));
   const calc = computeAll(d);
