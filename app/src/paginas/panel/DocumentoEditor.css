@@ -19,7 +19,7 @@
 .doc-editor-vista{min-width:0;overflow:auto;background:#eae7e3;padding:14px;border-radius:13px}
 .doc-editor-hoja{background:#fff;color:#2b3138;max-width:790px;min-height:980px;box-shadow:0 4px 18px #0002;margin:0 auto;padding:38px 45px 25px;box-sizing:border-box;font-family:Arial,sans-serif}
 .doc-editor-hoja-cabecera{display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:1px solid #dbd6d0;padding-bottom:16px}
-.doc-editor-logo{font-size:20px;font-weight:800;color:#ed7130;letter-spacing:-.04em}
+.doc-editor-logo{display:block;width:auto;height:35px;max-width:190px;object-fit:contain}
 .doc-editor-logo b{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:#ed7130;color:white;border-radius:50%;font-size:12px;letter-spacing:0;margin-right:5px}
 .doc-editor-documento-tipo{font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:#696969}
 .doc-editor-hoja-body{padding:34px 0}
