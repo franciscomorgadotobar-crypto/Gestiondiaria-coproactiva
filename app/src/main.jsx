@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { ProveedorSesion } from './lib/sesion';
 import { ProveedorTutoriales } from './lib/tutorialesContexto';
 import { iniciarSincronizacion } from './lib/sincronizacion';
+import { instalarGuionesGlobales } from './lib/guionesGlobales';
 import { prepararArranqueConHome, esContinuacionDocumento } from './lib/arranqueHistorialPWA';
 import App from './App';
 import './estilos/tokens.css';
@@ -56,6 +57,9 @@ if ('serviceWorker' in navigator && !Capacitor.isNativePlatform()) {
     }
   });
 }
+
+// Incluye el árbol React y los portales que se montan directamente en body.
+instalarGuionesGlobales(document.body);
 
 createRoot(document.getElementById('raiz')).render(
   <StrictMode>
