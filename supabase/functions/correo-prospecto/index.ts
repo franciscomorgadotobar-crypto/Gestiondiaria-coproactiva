@@ -56,11 +56,22 @@ Deno.serve(async req=>{
   const mensaje=normal(body?.mensaje,5000);
   const plantillaId=normal(body?.plantilla_id,36);
   const referencias=Array.isArray(body?.adjuntos) ? body.adjuntos : [];
-  const guardarDrive=body.guardar_drive && typeof body.guardar_drive==='object'&&!Array.isArray(body.guardar_drive)
-    ? body.guardar_drive as Record<string,unknown> : null;
-  if(guardarDrive && (!referencias.length || typeof guardarDrive.carpeta_id!=='string' ||
-    typeof guardarDrive.operacion_id!=='string' || !uuidValido(guardarDrive.operacion_id)))
-    return respuesta({error:'Selecciona archivos y una carpeta de Drive antes de enviar'},422);
+  // La selección de guardado es individual por archivo. No se admiten
+  // destinos globales ni referencias que no formen parte del correo.
+  if(body.guardar_drive!=null && !Array.isArray(body.guardar_drive))
+    return respuesta({error:'El guardado en Drive debe configurarse por documento'},422);
+  const guardarDrive=(body.guardar_drive||[]) as unknown[];
+  const referenciasGuardadas=new Set<string>();
+  if(guardarDrive.length>MAX_ARCHIVOS || guardarDrive.some(item=>{
+    if(!item || typeof item!=='object' || Array.isArray(item))return true;
+    const x=item as Record<string,unknown>;
+    if(typeof x.ref!=='string' || !referencias.includes(x.ref) ||
+      referenciasGuardadas.has(x.ref) || typeof x.carpeta_id!=='string' ||
+      !/^[A-Za-z0-9_-]{8,200}$/.test(x.carpeta_id) ||
+      typeof x.operacion_id!=='string' || !uuidValido(x.operacion_id))return true;
+    referenciasGuardadas.add(x.ref);
+    return false;
+  })) return respuesta({error:'Revisa la carpeta asignada a cada documento'},422);
   if(referencias.length>MAX_ARCHIVOS||!referencias.every(x=>typeof x==='string' && /^(b|c):[a-f0-9-]{36}$/i.test(x)))
     return respuesta({error:'Se permiten hasta tres archivos registrados en la biblioteca o comunidad'},422);
   const idsUnicos=[...new Set(referencias)];
@@ -156,21 +167,24 @@ Deno.serve(async req=>{
     archivosParaDrive.push({ref:referencia,drive_file_id:googleId,nombre});
   }
 
-  // Se guarda la copia física en la carpeta elegida antes de entregar el mensaje.
-  // La operación es idempotente para evitar duplicados si hay un reintento SMTP.
-  if(guardarDrive){
+  // Se copia únicamente cada documento marcado a su carpeta específica.
+  // Las operaciones por documento conservan su ID al reintentar el mismo correo.
+  for(const destino of guardarDrive){
+    const seleccion=destino as {ref:string;carpeta_id:string;operacion_id:string};
+    const archivo=archivosParaDrive.find(a=>a.ref===seleccion.ref);
+    if(!archivo)return respuesta({error:'Documento de Drive no disponible'},422);
     try{
       const resultado=await guardarAdjuntosEnCarpeta(admin,{
-        carpetaId:String(guardarDrive.carpeta_id),operacionId:String(guardarDrive.operacion_id),
-        usuarioId:user.id,archivos:archivosParaDrive
+        carpetaId:seleccion.carpeta_id,operacionId:seleccion.operacion_id,
+        usuarioId:user.id,archivos:[archivo]
       });
-      for(const guardado of resultado.archivos){
-        const registro=auditoriaAdjuntos.find(x=>x.id===guardado.ref.slice(2));
-        if(registro)registro.guardado_drive={carpeta_id:resultado.carpeta_id,carpeta_nombre:resultado.carpeta_nombre};
-      }
+      const registro=auditoriaAdjuntos.find(a=>a.id===seleccion.ref.slice(2));
+      if(registro)registro.guardado_drive={
+        carpeta_id:resultado.carpeta_id,carpeta_nombre:resultado.carpeta_nombre
+      };
     }catch(e){
-      console.error('correo-prospecto: guardado Drive',e instanceof Error?e.name:'unknown');
-      return respuesta({error:e instanceof Error?e.message:'No fue posible guardar los adjuntos en Drive'},503);
+      console.error('correo-prospecto: guardado individual Drive',e instanceof Error?e.name:'unknown');
+      return respuesta({error:e instanceof Error?e.message:'No fue posible guardar un documento en Drive'},503);
     }
   }
 
