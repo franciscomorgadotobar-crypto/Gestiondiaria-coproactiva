@@ -4,6 +4,7 @@ import {
  admin, aPapelera, buscarCarpeta, crearCarpeta, cors, leerConfig, nombreSeguro,
  subirArchivo, validarArchivo, mensajeSeguro, estadoHttp
 } from '../_compartido/google-drive.ts';
+import { navegarCarpetas, agregarCarpeta } from '../_compartido/drive-correo.ts';
 
 const MAX=8*1024*1024;
 const PERSONAL=new Set(['superadmin','admin','jefatura']);
@@ -33,6 +34,17 @@ Deno.serve(async req=>{
      .is('eliminado_en',null).order('creado_en',{ascending:false}).limit(250);
    if(error)throw error;
    return json(req,{ok:true,archivos:data||[]});
+  }
+  if(accion==='carpetas'){
+   const padre=String(get('carpeta_id')||'');
+   const data=await navegarCarpetas(db,padre||undefined);
+   return json(req,{ok:true,...data});
+  }
+  if(accion==='crear_carpeta'){
+   const padre=String(get('carpeta_id')||'');
+   const nombre=String(get('nombre')||'');
+   const carpeta=await agregarCarpeta(db,padre,nombre);
+   return json(req,{ok:true,carpeta});
   }
   if(accion==='upload'){
    const archivo=get('archivo');
