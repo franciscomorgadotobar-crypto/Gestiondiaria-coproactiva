@@ -164,6 +164,7 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
   </div>}
   {seleccionandoCarpeta&&seleccion.includes(seleccionandoCarpeta)&&
    <SelectorCarpetaDrive usuarioId={usuarioId} seleccionActual={guardadosDrive[seleccionandoCarpeta]}
+    documentoNombre={mapa.get(seleccionandoCarpeta)?.nombre||'Documento seleccionado'}
     onCerrar={()=>setSeleccionandoCarpeta(null)}
     onElegir={carpeta=>{
      onGuardarChange({...guardadosDrive,[seleccionandoCarpeta]:{...carpeta,operacion_id:crypto.randomUUID()}});
