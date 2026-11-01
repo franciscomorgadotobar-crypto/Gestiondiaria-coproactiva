@@ -1,4 +1,5 @@
 import { criteriosDe } from './criterios';
+import { normalizarGuiones } from './guionesGlobales';
 
 /* Plantilla del informe de levantamiento.
  *
@@ -32,14 +33,14 @@ const ESTADO_CONTROL = {
 };
 
 function escapar(texto) {
-  return String(texto ?? '').replace(/[&<>"']/g, c => (
+  return normalizarGuiones(String(texto ?? '')).replace(/[&<>"']/g, c => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 }
 
 // Texto dentro de un content: "…" de CSS (pie de página).
 function cadenaCss(texto) {
-  return String(texto ?? '').replace(/[\\"]/g, '\\$&').replace(/[\r\n]+/g, ' ');
+  return normalizarGuiones(String(texto ?? '')).replace(/[\\"]/g, '\\$&').replace(/[\r\n]+/g, ' ');
 }
 
 /* La zona va fija a Chile continental. El informe se puede generar en el

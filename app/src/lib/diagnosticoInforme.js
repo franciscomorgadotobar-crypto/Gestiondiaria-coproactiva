@@ -1,10 +1,11 @@
+import { normalizarGuiones } from './guionesGlobales';
 /* Informe de diagnóstico comercial: dos páginas A4, misma marca y el mismo
  * patrón de impresión que informeHtml/imprimirInforme (lib/informe.js) -
  * comparte la paleta y la tipografía de la app, no la del CRM anterior.
  */
 
 function escapar(texto) {
-  return String(texto ?? '').replace(/[&<>"']/g, c => (
+  return normalizarGuiones(String(texto ?? '')).replace(/[&<>"']/g, c => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 }
