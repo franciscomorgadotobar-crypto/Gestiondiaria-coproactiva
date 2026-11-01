@@ -32,8 +32,8 @@ create table if not exists public.documentos_versiones (
 alter table public.documentos_gestion enable row level security;
 alter table public.documentos_versiones enable row level security;
 revoke all on public.documentos_gestion, public.documentos_versiones from anon, public;
-grant select,insert,update on public.documentos_gestion to authenticated;
-grant select,insert on public.documentos_versiones to authenticated;
+grant select on public.documentos_gestion to authenticated;
+grant select on public.documentos_versiones to authenticated;
 drop policy if exists documentos_gestion_lectura on public.documentos_gestion;
 create policy documentos_gestion_lectura on public.documentos_gestion
  for select to authenticated using (exists (
@@ -58,11 +58,12 @@ create policy documentos_versiones_lectura on public.documentos_versiones
   select 1 from public.documentos_gestion d where d.id=documento_id));
 -- Todas las versiones deben crearse mediante RPC, nunca modificarse o eliminarse.
 revoke insert,update,delete on public.documentos_versiones from authenticated;
+revoke insert,update,delete on public.documentos_gestion from authenticated;
 create or replace function public.guardar_documento_gestion(
  p_id uuid,p_tipo text,p_titulo text,p_estado text,p_contexto_tipo text,
  p_contexto_id uuid,p_contenido jsonb,p_version_esperada integer default null
 ) returns public.documentos_gestion
-language plpgsql security invoker set search_path=public,pg_temp as $$
+language plpgsql security definer set search_path=public,pg_temp as $
 declare v_doc public.documentos_gestion; v_user uuid:=auth.uid();
 begin
  if v_user is null then raise exception 'No autenticado' using errcode='28000'; end if;
@@ -78,6 +79,11 @@ begin
     (p_contexto_tipo is null) <> (p_contexto_id is null) or
     (p_contexto_tipo is not null and p_contexto_tipo not in ('prospecto','comunidad','proveedor'))
     then raise exception 'Documento inválido' using errcode='22023';
+ end if;
+ if p_contexto_tipo='prospecto' and not exists(select 1 from public.prospectos where id=p_contexto_id) or
+    p_contexto_tipo='comunidad' and not exists(select 1 from public.comunidades where id=p_contexto_id) or
+    p_contexto_tipo='proveedor' and not exists(select 1 from public.proveedores where id=p_contexto_id)
+    then raise exception 'Contexto vinculado no encontrado' using errcode='22023';
  end if;
  if p_id is null then
   insert into public.documentos_gestion(tipo,titulo,estado,contexto_tipo,contexto_id,contenido,creado_por,actualizado_por)
