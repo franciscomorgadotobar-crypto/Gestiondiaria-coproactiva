@@ -11,7 +11,7 @@ const guardarUltima=(usuarioId,carpeta)=>{
 };
 
 /** Selector de carpetas autenticado. Solo permite navegar en Documentos comerciales. */
-export default function SelectorCarpetaDrive({usuarioId,seleccionActual,onElegir,onCerrar}){
+export default function SelectorCarpetaDrive({usuarioId,seleccionActual,documentoNombre='',onElegir,onCerrar}){
  const [raiz,setRaiz]=useState(null);
  const [actual,setActual]=useState(null);
  const [pila,setPila]=useState([]);
@@ -67,8 +67,9 @@ export default function SelectorCarpetaDrive({usuarioId,seleccionActual,onElegir
   <section className="selector-drive-dialogo" role="dialog" aria-modal="true" aria-label="Seleccionar carpeta en Google Drive"
    onClick={e=>e.stopPropagation()}>
    <header className="selector-drive-cabecera">
-    <div><strong>Guardar en Google Drive</strong>
-     <p className="micro apagado">Selecciona dónde conservar una copia permanente.</p></div>
+    <div><strong>Guardar documento en Google Drive</strong>
+     {documentoNombre&&<p className="selector-drive-documento">{documentoNombre}</p>}
+     <p className="micro apagado">Selecciona dónde conservar una copia permanente de este archivo.</p></div>
     <button className="selector-drive-icono" type="button" onClick={onCerrar} aria-label="Cerrar selector">×</button>
    </header>
    <nav className="selector-drive-ruta" aria-label="Ubicación en Drive">
