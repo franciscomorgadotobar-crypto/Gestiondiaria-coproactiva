@@ -106,14 +106,16 @@ export default function Propuestas() {
     supabase.from('prospectos').select('id,nombre_condominio,direccion,comuna,nombre_contacto,email')
       .eq('id',id).maybeSingle().then(({data})=>{
         if(!vivo||!data)return;
-        setD(anterior=>({
-          ...anterior,
-          comunidad:anterior.comunidad||data.nombre_condominio||'',
-          direccion:anterior.direccion||data.direccion||'',
-          comuna:anterior.comuna||data.comuna||'',
-          destinatario:anterior.destinatario||data.nombre_contacto||'',
-          email:anterior.email||data.email||''
-        }));
+        // Un prospecto distinto nunca hereda los honorarios del borrador anterior.
+        setD({
+          ...BLANK,
+          comunidad:data.nombre_condominio||'',
+          direccion:data.direccion||'',
+          comuna:data.comuna||'',
+          destinatario:data.nombre_contacto||'',
+          email:data.email||''
+        });
+        setSel('');
       });
     return ()=>{vivo=false;};
   },[busqueda]);
@@ -169,7 +171,7 @@ export default function Propuestas() {
     setGuardando(true);setAviso('');
     const payload={
       nombre,datos:d,opciones:opts,
-      prospecto_id:busqueda.get('prospecto')||registros[sel]?.prospecto_id||null,
+      prospecto_id:registros[sel]?.prospecto_id||busqueda.get('prospecto')||null,
       actualizado_por:perfil?.id
     };
     const {data,error}=await supabase.from('propuestas_comerciales')
