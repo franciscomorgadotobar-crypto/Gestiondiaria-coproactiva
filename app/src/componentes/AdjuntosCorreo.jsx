@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import SelectorCarpetaDrive from './SelectorCarpetaDrive';
 import './AdjuntosCorreo.css';
@@ -14,7 +15,7 @@ const textoTamano=b=>(Number(b)/1048576).toFixed(2).replace('.',',')+' MB';
 
 /* Selector de archivos físicos para correo. Los bytes se transmiten solo desde
  * Drive al SMTP en la Edge Function; aquí se manejan únicamente IDs internos. */
-export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},onGuardarChange=()=>{},usuarioId=''}){
+export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},onGuardarChange=()=>{},usuarioId='',prospectoId=''}){
  const [biblioteca,setBiblioteca]=useState([]);
  const [comunidades,setComunidades]=useState([]);
  const [origen,setOrigen]=useState('biblioteca');
@@ -104,6 +105,13 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
    <span className="micro apagado">{seleccion.length}/{MAX_ARCHIVOS} · {textoTamano(tamanoTotal)} / 8 MB</span>
   </div>
   <p className="micro apagado">Los documentos se enviarán dentro del correo, no como enlaces de Drive.</p>
+  <div className="correo-adjuntos-gestor">
+   <Link target="_blank" rel="noopener noreferrer"
+    to={'/documentos?origen=correo'+(prospectoId?'&prospecto='+encodeURIComponent(prospectoId):'')}>
+    Abrir gestor documental para crear un documento
+   </Link>
+   <small>Se abrirá en otra pestaña para conservar este borrador. Los documentos ya guardados como archivos PDF se seleccionan desde la biblioteca interna.</small>
+  </div>
   <div className="correo-adjuntos-acciones">
    <label className="campo">Categoría en biblioteca
     <select value={categoria} onChange={e=>setCategoria(e.target.value)}>
