@@ -2,6 +2,7 @@ import {useEffect,useMemo,useState} from 'react';
 import {Link,useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from '../../lib/plantillasDocumentales';
+import {descargarPdfDocumento} from '../../lib/documentosPdf';
 import './DocumentoEditor.css';
 
 const tipos=TIPOS_DOCUMENTO.filter(t=>t.id!=='propuesta_comercial');
@@ -104,7 +105,11 @@ export default function DocumentoEditor(){
     <p>{plantilla.titulo} {version?' - Versión '+version:''}</p>
    </div>
    <div className="doc-editor-acciones">
-    <button type="button" className="boton boton-secundario" onClick={()=>window.print()}>Imprimir / Guardar PDF</button>
+    <button type="button" className="boton boton-secundario"
+     onClick={()=>descargarPdfDocumento({tipo,titulo:tituloVista,contenido:datosVista,estado:estadoVista})}>
+      Descargar PDF
+    </button>
+    <button type="button" className="boton boton-secundario" onClick={()=>window.print()}>Imprimir</button>
     <button type="button" className="boton" onClick={guardar} disabled={guardando||Boolean(vistaVersion)}>
       {guardando?'Guardando...':esNuevo?'Guardar documento':'Guardar nueva versión'}
     </button>
