@@ -39,9 +39,9 @@ test('Se validan direcciones separadas y no se crea copia predeterminada',()=>{
 test('El motor crea un único mensaje SMTP con MIME UTF-8 y adjuntos',()=>{
   assert.match(motor,/nodemailer\.createTransport/);
   assert.match(motor,/cliente\.sendMail\(/);
-  assert.match(motor,/subject:mensaje\.asunto/);
-  assert.match(motor,/text:mensaje\.texto/);
-  assert.match(motor,/html:mensaje\.html/);
+  assert.match(motor,/subject:normalizarGuiones\(mensaje\.asunto\)/);
+  assert.match(motor,/text:normalizarGuiones\(mensaje\.texto\)/);
+  assert.match(motor,/html:normalizarGuiones\(mensaje\.html\)/);
   assert.match(motor,/cc:mensaje\.cc/);
   assert.match(motor,/bcc:mensaje\.bcc/);
   assert.doesNotMatch(motor,/denomailer/);
