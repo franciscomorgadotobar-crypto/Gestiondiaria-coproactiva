@@ -83,7 +83,7 @@ export function descargarGuiaPlantilla(plantilla, items = []) {
     const body = filas.map(item => [
       String(numero++),
       item.texto || '',
-      item.ayuda || '—',
+      item.ayuda || '-',
       [
         item.obligatorio ? 'Obligatorio' : 'Opcional',
         item.requiere_foto ? 'Foto' : null,

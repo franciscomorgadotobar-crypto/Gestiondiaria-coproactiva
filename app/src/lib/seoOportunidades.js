@@ -13,7 +13,7 @@ export function construirOportunidades(search, audit, analytics) {
         metricas: { clicks: q.clicks, impresiones: q.impresiones, ctr: q.ctr, posicion: q.posicion },
         detalle: 'Se muestra por tener al menos 30 impresiones, posición media entre 4 y 20 y CTR inferior al 4%.',
         porQue: 'Es una señal de oportunidad, no evidencia suficiente para cambiar el título. Primero se identifica la página real que posiciona y se contrasta su contenido con la intención de búsqueda.',
-        fuente: 'Google Search Console', reglas: 'Impresiones ≥ 30 · Posición 4–20 · CTR < 4%',
+        fuente: 'Google Search Console', reglas: 'Impresiones ≥ 30 · Posición 4-20 · CTR < 4%',
       });
     }
   }
