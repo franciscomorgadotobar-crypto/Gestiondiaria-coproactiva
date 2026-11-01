@@ -9,13 +9,15 @@ test('Catálogo no agrega rutas inexistentes y evita duplicados',()=>{
   assert.equal(modulos.find(x=>x.id==='conocimientos').ruta,'/conocimientos');
   assert.ok(modulos.every(x=>x.tipo!=='popup'),'Todos los módulos abren sus propias pantallas');
   assert.ok(rutas.has('/pipeline'));
+  assert.ok(rutas.has('/documentos'));
+  assert.ok(modulos.find(x=>x.id==='documentos')?.titulo==='Gestor documental');
   assert.ok(rutas.has('/seo'));
   assert.ok(rutas.has('/inicio'));
   assert.ok(rutas.has('/contabilidad'));
   assert.ok(rutas.has('/configuracion'));
-  assert.equal(modulos.length,10,'Se conservan los módulos originales, Base de conocimientos y Vista de cliente');
+  assert.equal(modulos.length,11,'Se conservan los módulos originales y se añade el Gestor documental');
   assert.deepEqual(modulos.map(m=>m.titulo),[
-    'Gestión comercial','Levantamientos','Arriendos y ventas','Red de proveedores',
+    'Gestión comercial','Gestor documental','Levantamientos','Arriendos y ventas','Red de proveedores',
     'Recepción y atención','Gestión contable','SEO y Analítica','Base de conocimientos',
     'Vista de cliente','Configuración'
   ]);
@@ -27,14 +29,14 @@ test('Roles preservan autorizaciones del menú',()=>{
   const jefatura=modulos('jefatura');
   assert.ok(jefatura.includes('crm') && jefatura.includes('propiedades'));
   assert.ok(jefatura.includes('levantamientos'));
-  assert.equal(jefatura.length,4);
+  assert.equal(jefatura.length,5);
   assert.ok(jefatura.includes('conocimientos'));
   for(const id of ['seo','contabilidad','configuracion','whatsapp','proveedores'])
     assert.ok(!jefatura.includes(id),'No visible para jefatura: '+id);
   assert.ok(modulos('admin').includes('contabilidad'));
   assert.ok(!modulos('admin').includes('clientes'));
   assert.ok(modulos('superadmin').includes('configuracion'));
-  assert.equal(modulos('admin').length,10);
+  assert.equal(modulos('admin').length,11);
   assert.equal(modulos('admin').at(-1),'configuracion');
   assert.equal(modulos('superadmin').at(-1),'configuracion');
   assert.equal(modulos('jefatura').at(-1),'conocimientos',
