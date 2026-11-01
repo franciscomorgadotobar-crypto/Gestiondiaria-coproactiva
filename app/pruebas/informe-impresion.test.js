@@ -7,7 +7,9 @@ import { readFileSync } from 'node:fs';
 const ruta = new URL('../src/lib/informe.js', import.meta.url);
 const fuente = readFileSync(ruta, 'utf8');
 const criteriosUrl = new URL('../src/lib/criterios.js', import.meta.url).href;
-const paraNode = fuente.replace("from './criterios';", "from '" + criteriosUrl + "';");
+const guionesUrl = new URL('../src/lib/guionesGlobales.js', import.meta.url).href;
+const paraNode = fuente.replace("from './criterios';", "from '" + criteriosUrl + "';")
+  .replace("from './guionesGlobales';", "from '" + guionesUrl + "';");
 const { informeHtml } = await import('data:text/javascript;base64,' + Buffer.from(paraNode).toString('base64'));
 
 function informeDePrueba() {

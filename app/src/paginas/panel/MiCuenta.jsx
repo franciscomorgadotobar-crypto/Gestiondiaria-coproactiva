@@ -27,7 +27,7 @@ function etiquetaRol(rol) {
     terreno: 'Terreno',
     cliente: 'Cliente'
   };
-  return nombres[rol] || rol || '—';
+  return nombres[rol] || rol || '-';
 }
 
 export default function MiCuenta() {

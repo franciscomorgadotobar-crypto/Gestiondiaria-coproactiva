@@ -227,31 +227,31 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
   const perfil=perfilEmpresa?.disponible;
   return <div className="seo-exec-dashboard">
     <div className="seo-exec-grid-kpis" aria-label="Indicadores de Search Console, Google Analytics y Business Profile">
-      <Metrica nombre="Clics desde Google" fuente="search" icono="clics" valor={sc?.disponible?numero(total.clics):'—'}
+      <Metrica nombre="Clics desde Google" fuente="search" icono="clics" valor={sc?.disponible?numero(total.clics):'-'}
         cambio={cambioClics} onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="Impresiones en Google" fuente="search" icono="impresiones" valor={sc?.disponible?numero(total.impresiones):'—'}
+      <Metrica nombre="Impresiones en Google" fuente="search" icono="impresiones" valor={sc?.disponible?numero(total.impresiones):'-'}
         cambio={cambioImpresiones} onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="CTR orgánico" fuente="search" icono="ctr" valor={sc?.disponible?porcentaje(total.ctr):'—'}
+      <Metrica nombre="CTR orgánico" fuente="search" icono="ctr" valor={sc?.disponible?porcentaje(total.ctr):'-'}
         cambio={cambioCTR}
-        detalle={<span>Posición media: {sc?.disponible?decimal(total.posicion):'—'}
+        detalle={<span>Posición media: {sc?.disponible?decimal(total.posicion):'-'}
           {cambioPosicion && <span className={'seo-exec-posicion-variacion '+cambioPosicion.favorable}>
             {' '}{cambioPosicion.flecha} {cambioPosicion.etiqueta}
           </span>}
         </span>}
         onClick={()=>onNavigate('consultas')} />
-      <Metrica nombre="Sesiones del sitio" fuente="analytics" icono="sesiones" valor={ga?.disponible?numero(ga.totales?.sesiones):'—'}
+      <Metrica nombre="Sesiones del sitio" fuente="analytics" icono="sesiones" valor={ga?.disponible?numero(ga.totales?.sesiones):'-'}
         cambio={gaComparable?compararIndicador(ga.totales?.sesiones,ga.anterior?.sesiones):null}
         onClick={()=>onNavigate('analytics')} />
-      <Metrica nombre="Usuarios del sitio" fuente="analytics" icono="usuarios" valor={ga?.disponible?numero(ga.totales?.usuarios):'—'}
+      <Metrica nombre="Usuarios del sitio" fuente="analytics" icono="usuarios" valor={ga?.disponible?numero(ga.totales?.usuarios):'-'}
         cambio={gaComparable?compararIndicador(ga.totales?.usuarios,ga.anterior?.usuarios):null}
         onClick={()=>onNavigate('analytics')} />
-      <Metrica nombre="Formularios registrados" fuente="analytics" icono="formularios" valor={leads!==null?numero(leads):'—'}
+      <Metrica nombre="Formularios registrados" fuente="analytics" icono="formularios" valor={leads!==null?numero(leads):'-'}
         cambio={leads!==null && ga?.eventosAnteriores
           ? compararIndicador(leads,Number(leadAnterior?.valores?.[0]||0)):null}
         detalle="Evento generate_lead · no ventas" onClick={()=>onNavigate('analytics')} />
     {datosPerfilGoogle(perfilEmpresa).map(indicador=>(
       <Metrica key={indicador.campo} fuente="business" icono={{impresionesMaps:'impresiones',impresionesBusqueda:'busqueda',clicsWeb:'clics',clicsTelefono:'telefono',indicaciones:'indicaciones'}[indicador.campo]}
-        nombre={indicador.titulo} valor={indicador.valor == null ? '—' : numero(indicador.valor)}
+        nombre={indicador.titulo} valor={indicador.valor == null ? '-' : numero(indicador.valor)}
         cambio={perfil ? compararIndicador(indicador.valor,perfilEmpresa.anterior?.resumen?.[indicador.campo]) : null}
         detalle={indicador.detalle} onClick={()=>onNavigate('business')}/>
     ))}
@@ -265,11 +265,11 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       <section className="seo-exec-superficie seo-exec-actividad">
         <div className="seo-exec-seccion-cabecera"><div><h3>Actividad reciente</h3>
           <p>Últimos 30 minutos · GA4 Realtime</p></div></div>
-        <strong className="seo-exec-actividad-numero">{tiempoReal?.disponible?numero(tiempoReal.usuariosActivos):'—'}</strong>
+        <strong className="seo-exec-actividad-numero">{tiempoReal?.disponible?numero(tiempoReal.usuariosActivos):'-'}</strong>
         <span className="seo-exec-ayuda">Usuarios activos</span>
         <div className="seo-exec-actividad-sep"/>
         <div className="seo-exec-fila"><span>Eventos recientes</span>
-          <strong>{tiempoReal?.disponible?numero(tiempoReal.eventos):'—'}</strong></div>
+          <strong>{tiempoReal?.disponible?numero(tiempoReal.eventos):'-'}</strong></div>
         <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('analytics')}>Abrir tiempo real →</button>
       </section>
     </div>
@@ -285,14 +285,14 @@ export default function SEODashboard({sc,ga,perfilEmpresa,tiempoReal,auditoriaIn
       <section className="seo-exec-superficie">
         <div className="seo-exec-seccion-cabecera"><div><h3>Salud técnica de la web</h3><p>Revisión técnica inicial de la portada.</p></div></div>
         <div className="seo-exec-mini-metricas">
-          <div><strong>{auditoriaInicio?.status ?? '—'}</strong><small>Respuesta HTTP</small></div>
-          <div><strong>{auditoriaInicio?numero(auditoriaInicio.problemas?.length):'—'}</strong><small>Observaciones detectadas</small></div>
-          <div><strong>{auditoriaInicio?numero(auditoriaInicio.sitemap?.urls?.length):'—'}</strong><small>URLs en sitemap</small></div>
+          <div><strong>{auditoriaInicio?.status ?? '-'}</strong><small>Respuesta HTTP</small></div>
+          <div><strong>{auditoriaInicio?numero(auditoriaInicio.problemas?.length):'-'}</strong><small>Observaciones detectadas</small></div>
+          <div><strong>{auditoriaInicio?numero(auditoriaInicio.sitemap?.urls?.length):'-'}</strong><small>URLs en sitemap</small></div>
         </div>
         <p className="seo-exec-ayuda">La revisión HTML no reemplaza a PageSpeed ni a la indexación reportada por Google.</p>
         <button type="button" className="seo-exec-enlace" onClick={()=>onNavigate('tecnico')}>Revisar SEO técnico →</button>
       </section>
     </div>
-    <p className="seo-exec-nota">Datos consultados directamente a Google cuando la integración está autorizada. Search Console y Business Profile muestran períodos procesados; GA4 Realtime consulta actividad reciente. «—» significa que no se dispone de la métrica.</p>
+    <p className="seo-exec-nota">Datos consultados directamente a Google cuando la integración está autorizada. Search Console y Business Profile muestran períodos procesados; GA4 Realtime consulta actividad reciente. «-» significa que no se dispone de la métrica.</p>
   </div>;
 }

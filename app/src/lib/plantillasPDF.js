@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { normalizarGuiones } from './guionesGlobales';
 
 const MARCA = {
   tinta: [43, 49, 56],
@@ -41,13 +42,13 @@ export function descargarGuiaPlantilla(plantilla, items = []) {
 
   doc.setTextColor(...MARCA.tinta);
   doc.setFontSize(18);
-  doc.text(plantilla.nombre || 'Plantilla', 14, 34);
+  doc.text(normalizarGuiones(plantilla.nombre || 'Plantilla'), 14, 34);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...MARCA.gris);
   const descripcion = plantilla.descripcion || 'Guía de respaldo de los puntos que deben revisarse.';
-  const desc = doc.splitTextToSize(descripcion, 178);
+  const desc = doc.splitTextToSize(normalizarGuiones(descripcion), 178);
   doc.text(desc, 14, 41);
 
   let y = 41 + desc.length * 4.2 + 5;
@@ -77,13 +78,13 @@ export function descargarGuiaPlantilla(plantilla, items = []) {
     doc.setTextColor(...MARCA.tinta);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text(grupo.toUpperCase(), 16, y + 1);
+    doc.text(normalizarGuiones(grupo.toUpperCase()), 16, y + 1);
     y += 7;
 
     const body = filas.map(item => [
       String(numero++),
-      item.texto || '',
-      item.ayuda || '—',
+      normalizarGuiones(item.texto || ''),
+      normalizarGuiones(item.ayuda || '-'),
       [
         item.obligatorio ? 'Obligatorio' : 'Opcional',
         item.requiere_foto ? 'Foto' : null,
@@ -122,7 +123,7 @@ export function descargarGuiaPlantilla(plantilla, items = []) {
         doc.setFontSize(7.5);
         doc.setTextColor(...MARCA.gris);
         doc.text(
-          `${plantilla.nombre || 'Plantilla'} · Página ${doc.getNumberOfPages()}`,
+          normalizarGuiones(`${plantilla.nombre || 'Plantilla'} · Página ${doc.getNumberOfPages()}`),
           14,
           291
         );

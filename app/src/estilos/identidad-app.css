@@ -192,7 +192,7 @@
 }
 
 /* Alineación real escritorio: la cabecera y el contenido usan la misma
-   columna centrada. Antes el encabezado tenía 18–34 px, mientras la zona de
+   columna centrada. Antes el encabezado tenía 18-34 px, mientras la zona de
    trabajo heredaba 40 px o una anchura máxima específica de la pantalla. */
 @media (min-width:900px) {
   .pantalla.modulo-unificado {
@@ -413,7 +413,7 @@
 
 
 /*
- * AUDITORÍA DE SUBPANTALLAS — Estados semánticos de alta importancia.
+ * AUDITORÍA DE SUBPANTALLAS - Estados semánticos de alta importancia.
  * El diseño corporativo NO puede reemplazar la señal de error contable ni
  * transformar acciones destructivas en botones primarios neutros.
  */

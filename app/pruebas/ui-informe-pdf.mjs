@@ -5,7 +5,9 @@ import { chromium } from 'playwright';
 // Prueba de navegador real: el PDF es una impresión de HTML, no un jsPDF.
 const fuente = readFileSync(new URL('../src/lib/informe.js', import.meta.url), 'utf8');
 const criterios = new URL('../src/lib/criterios.js', import.meta.url).href;
-const codigo = fuente.replace("from './criterios';", "from '" + criterios + "';");
+const guiones = new URL('../src/lib/guionesGlobales.js', import.meta.url).href;
+const codigo = fuente.replace("from './criterios';", "from '" + criterios + "';")
+  .replace("from './guionesGlobales';", "from '" + guiones + "';");
 const { informeHtml } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
 
 const svg = numero => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(

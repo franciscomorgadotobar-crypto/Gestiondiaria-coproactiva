@@ -149,9 +149,9 @@ export default function DriveEstado({ comunidadId }) {
       {aviso && <div role="status" className="aviso aviso-ok">{aviso}</div>}
 
       <div className="drive-estado-grid">
-        <div><span>Cuenta Google vinculada</span><strong>{c?.cuenta_email || (oauth?.cuenta_esperada ? `Pendiente (${oauth.cuenta_esperada})` : '—')}</strong></div>
-        <div><span>Conectada desde</span><strong>{c?.conectada_en && conectada ? fechaHoraCL(c.conectada_en) : '—'}</strong></div>
-        <div><span>Última verificación de conexión</span><strong>{c?.ultima_verificacion ? fechaHoraCL(c.ultima_verificacion) : '—'}</strong></div>
+        <div><span>Cuenta Google vinculada</span><strong>{c?.cuenta_email || (oauth?.cuenta_esperada ? `Pendiente (${oauth.cuenta_esperada})` : '-')}</strong></div>
+        <div><span>Conectada desde</span><strong>{c?.conectada_en && conectada ? fechaHoraCL(c.conectada_en) : '-'}</strong></div>
+        <div><span>Última verificación de conexión</span><strong>{c?.ultima_verificacion ? fechaHoraCL(c.ultima_verificacion) : '-'}</strong></div>
       </div>
       {c?.ultimo_error && <p className="aviso" role="status">{c.ultimo_error}</p>}
 

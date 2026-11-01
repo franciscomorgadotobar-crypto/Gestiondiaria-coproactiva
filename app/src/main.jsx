@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { ProveedorSesion } from './lib/sesion';
 import { ProveedorTutoriales } from './lib/tutorialesContexto';
 import { iniciarSincronizacion } from './lib/sincronizacion';
+import { instalarGuionesGlobales } from './lib/guionesGlobales';
 import { prepararArranqueConHome, esContinuacionDocumento } from './lib/arranqueHistorialPWA';
 import App from './App';
 import './estilos/tokens.css';
@@ -32,7 +33,7 @@ iniciarSincronizacion();
 /* La PWA precarga el bundle para trabajar sin señal. Cuando se publica una
  * versión nueva, Workbox puede activar el service worker nuevo mientras la
  * pestaña abierta sigue ejecutando el JavaScript anterior. Eso hacía que una
- * función recién publicada —por ejemplo el nuevo formato de informes— pareciera
+ * función recién publicada -por ejemplo el nuevo formato de informes- pareciera
  * no existir hasta hacer un hard refresh manual.
  *
  * Forzamos una comprobación al abrir la app y recargamos una sola vez cuando el
@@ -56,6 +57,9 @@ if ('serviceWorker' in navigator && !Capacitor.isNativePlatform()) {
     }
   });
 }
+
+// Incluye el árbol React y los portales que se montan directamente en body.
+instalarGuionesGlobales(document.body);
 
 createRoot(document.getElementById('raiz')).render(
   <StrictMode>

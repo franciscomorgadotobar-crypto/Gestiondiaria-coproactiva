@@ -36,7 +36,7 @@ const sitio = 'https://www.coproactiva.cl';
 function KPI({ titulo, valor, nota, advertencia = false }) {
   return <div className="seo-kpi">
     <span className="seo-kpi-titulo">{titulo}</span>
-    <strong className={advertencia ? 'seo-kpi-dato seo-atencion' : 'seo-kpi-dato'}>{valor ?? '—'}</strong>
+    <strong className={advertencia ? 'seo-kpi-dato seo-atencion' : 'seo-kpi-dato'}>{valor ?? '-'}</strong>
     {nota && <span className="seo-kpi-nota">{nota}</span>}
   </div>;
 }

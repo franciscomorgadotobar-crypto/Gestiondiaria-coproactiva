@@ -39,7 +39,7 @@ export const GUIAS = {
 ],
 "8": [
 "El reglamento ordena la convivencia y las relaciones económicas: derechos y obligaciones, destino y utilización de bienes, administración, distribución de cuotas, fondo común de reserva, infracciones y sanciones. Debe ajustarse a la ley, respetar los derechos de las personas y constar en escritura pública inscrita. No puede prohibir la tenencia de mascotas dentro de unidades; sí puede regular su uso de espacios comunes en condiciones legales. Sus normas alcanzan a propietarios y ocupantes.",
-"Si aparece un reclamo por una mascota, distingue tenencia en la vivienda —que no puede prohibirse genéricamente— de su circulación y condiciones de seguridad en áreas comunes.",
+"Si aparece un reclamo por una mascota, distingue tenencia en la vivienda -que no puede prohibirse genéricamente- de su circulación y condiciones de seguridad en áreas comunes.",
 "Una cláusula no se vuelve válida solo porque esté escrita o se haya practicado durante años; debe ser compatible con la ley y con el régimen del condominio."
 ],
 "9": [

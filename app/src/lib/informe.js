@@ -1,9 +1,10 @@
 import { criteriosDe } from './criterios';
+import { normalizarGuiones } from './guionesGlobales';
 
 /* Plantilla del informe de levantamiento.
  *
  * Una sola plantilla para los dos destinos. En el teléfono se abre en una
- * ventana y se imprime a PDF con el diálogo del sistema —funciona sin señal—;
+ * ventana y se imprime a PDF con el diálogo del sistema -funciona sin señal-;
  * en el servidor se renderiza el mismo HTML con un navegador headless cuando se
  * quiere el archivo definitivo. Si hubiera dos maquetas, el informe saldría
  * distinto según dónde se generó, que es exactamente lo que no puede pasar con
@@ -32,14 +33,14 @@ const ESTADO_CONTROL = {
 };
 
 function escapar(texto) {
-  return String(texto ?? '').replace(/[&<>"']/g, c => (
+  return normalizarGuiones(String(texto ?? '')).replace(/[&<>"']/g, c => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 }
 
 // Texto dentro de un content: "…" de CSS (pie de página).
 function cadenaCss(texto) {
-  return String(texto ?? '').replace(/[\\"]/g, '\\$&').replace(/[\r\n]+/g, ' ');
+  return normalizarGuiones(String(texto ?? '')).replace(/[\\"]/g, '\\$&').replace(/[\r\n]+/g, ' ');
 }
 
 /* La zona va fija a Chile continental. El informe se puede generar en el
@@ -49,7 +50,7 @@ function cadenaCss(texto) {
 const ZONA = 'America/Santiago';
 
 function fecha(iso, conHora = false) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const d = new Date(iso);
   const opciones = conHora
     ? { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: ZONA }
@@ -63,7 +64,7 @@ function oracion(texto) {
 }
 
 function hora(iso) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: ZONA });
 }
 
@@ -326,7 +327,7 @@ export function informeHtml(datos) {
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Levantamiento — ${escapar(comunidad.nombre)}</title>
+<title>Levantamiento - ${escapar(comunidad.nombre)}</title>
 <style>
   @font-face { font-family: 'Montserrat'; src: url('fonts/Montserrat-VariableFont_wght.ttf') format('truetype'); font-weight: 100 900; }
   @font-face { font-family: 'Source Sans Pro'; src: url('fonts/SourceSansPro-Regular.otf') format('opentype'); font-weight: 400; }
@@ -530,7 +531,7 @@ export function informeHtml(datos) {
   .marcadas li::before { position: absolute; left: 0; font-weight: 700; }
   .marcadas .si::before { content: '✓'; color: var(--ok-texto); }
   .marcadas .no { color: var(--tenue); }
-  .marcadas .no::before { content: '—'; color: var(--borde); }
+  .marcadas .no::before { content: '-'; color: var(--borde); }
 
   /* --------------------------------------------------------------- Fotos */
   .fotos {
@@ -606,8 +607,8 @@ export function informeHtml(datos) {
     ${direccion ? `<p class="direccion">${escapar(direccion)}</p>` : ''}
     <dl class="ficha">
       <div><dt>Fecha</dt><dd>${fecha(control.checkin_en ?? control.enviado_en ?? control.creado_en)}</dd></div>
-      <div><dt>Responsable</dt><dd>${escapar(control.responsable ?? '—')}</dd></div>
-      <div><dt>Periodo</dt><dd>${escapar(control.periodo ?? '—')}</dd></div>
+      <div><dt>Responsable</dt><dd>${escapar(control.responsable ?? '-')}</dd></div>
+      <div><dt>Periodo</dt><dd>${escapar(control.periodo ?? '-')}</dd></div>
       <div><dt>Check-in</dt><dd>${control.checkin_en ? `${hora(control.checkin_en)}${
         control.checkin_precision != null ? `<small>Precisión ${Math.round(control.checkin_precision)} m</small>` : ''}`
         : control.checkin_excepcion
@@ -644,7 +645,7 @@ export function informeHtml(datos) {
     <ul>
       ${datos.pausas.map(p => `
         <li>
-          ${fecha(p.pausado_en, true)}${p.motivo ? ` — ${escapar(p.motivo)}` : ''}
+          ${fecha(p.pausado_en, true)}${p.motivo ? ` - ${escapar(p.motivo)}` : ''}
           ${p.reanudado_en ? `<span class="reanuda">Reanudado el ${fecha(p.reanudado_en, true)}</span>` : ''}
         </li>`).join('')}
     </ul>

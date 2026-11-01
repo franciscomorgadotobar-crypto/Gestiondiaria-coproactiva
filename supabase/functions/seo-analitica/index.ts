@@ -268,10 +268,10 @@ async function pagespeed(ruta: string, device: string) {
   return { dispositivo: device, url: ORIGIN + ruta, fecha: result.analysisUTCTimestamp,
     puntajes: { rendimiento: score('performance'), seo: score('seo'),
       accesibilidad: score('accessibility'), buenasPracticas: score('best-practices') },
-    lcp: audits['largest-contentful-paint']?.displayValue || '—',
-    cls: audits['cumulative-layout-shift']?.displayValue || '—',
+    lcp: audits['largest-contentful-paint']?.displayValue || '-',
+    cls: audits['cumulative-layout-shift']?.displayValue || '-',
     inp: result.loadingExperience?.metrics?.INTERACTION_TO_NEXT_PAINT?.percentile ?? null,
-    fcp: audits['first-contentful-paint']?.displayValue || '—',
+    fcp: audits['first-contentful-paint']?.displayValue || '-',
     sugerencias: suggestions
   };
 }

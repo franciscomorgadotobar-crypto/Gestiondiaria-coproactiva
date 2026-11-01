@@ -37,7 +37,7 @@ export default function SEOInventarioOportunidades({
     return (sc.consultas||[]).filter(q=>!detectadas.has(normalizarConsultaSEO(q.clave)) &&
       !yaTrabajadas.has(normalizarConsultaSEO(q.clave)));
   },[sc,lista,gestionSEO]);
-  const inicio=sc?.desde||'—',fin=sc?.hasta||'—';
+  const inicio=sc?.desde||'-',fin=sc?.hasta||'-';
   const resumen=[
     {id:'pendientes',cantidad:nuevas.length,titulo:'Sugerencias'},
     {id:'gestion',cantidad:gestionadas.length,titulo:'Mejoras realizadas'}

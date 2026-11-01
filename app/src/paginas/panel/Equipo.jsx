@@ -16,7 +16,7 @@ import { useVolverGlobal } from '../../lib/navegacion';
  *
  * Crear la cuenta pasa por una función en el servidor, porque dar de alta un
  * usuario exige una clave privilegiada que no puede estar en el navegador. Lo
- * demás —rol, asignaciones, nombre— se escribe directo contra la base, donde
+ * demás -rol, asignaciones, nombre- se escribe directo contra la base, donde
  * las políticas ya limitan quién puede tocar a quién.
  */
 
@@ -39,8 +39,8 @@ export default function Equipo() {
   const [aviso, setAviso] = useState(null);
   const [abierto, setAbierto] = useState(null);
   const [creando, setCreando] = useState(false);
-  // Quien ya no trabaja acá se da de baja, no se borra —queda la historia de
-  // sus levantamientos—, pero no por eso tiene que seguir ocupando espacio en
+  // Quien ya no trabaja acá se da de baja, no se borra -queda la historia de
+  // sus levantamientos-, pero no por eso tiene que seguir ocupando espacio en
   // esta lista cada vez que se busca a alguien del equipo actual.
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -72,7 +72,7 @@ export default function Equipo() {
     // Cliente no es un rol de equipo: es alguien externo, sin comunidades
     // asignadas ni acceso al CRM, que se gestiona aparte en "Clientes y
     // accesos". Mezclarlo acá significaba ofrecer un desplegable de Rol que
-    // ni siquiera tenía "Cliente" como opción —mostraba "Terreno" por
+    // ni siquiera tenía "Cliente" como opción -mostraba "Terreno" por
     // defecto sin serlo, y tocarlo lo hubiera revertido a rol interno sin
     // pasar por esa conversión.
     setGente((p.data ?? []).filter(x => x.rol !== 'cliente'));
@@ -317,7 +317,7 @@ export default function Equipo() {
                   </div>
 
                   {/* Solo el superadmin ve todas las comunidades por su rol. El
-                      resto —admin incluido— ve únicamente lo que se le asigna
+                      resto -admin incluido- ve únicamente lo que se le asigna
                       acá: es lo que decide el superadmin, no el cargo. */}
                   {persona.rol !== 'superadmin' && (
                     <div className="campo">

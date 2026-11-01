@@ -7,7 +7,7 @@ import { useVolverGlobal } from '../../lib/navegacion';
 import './WhatsApp.css';
 
 function fechaHora(valor) {
-  if (!valor) return '—';
+  if (!valor) return '-';
   return new Date(valor).toLocaleString('es-CL', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
@@ -180,8 +180,8 @@ export default function ProveedoresComunicaciones() {
                         {destinatarios.map(d => (
                           <tr key={d.id}>
                             <td><strong>{d.empresa}</strong></td>
-                            <td>{d.contacto_nombre || '—'}</td>
-                            <td>{d.email || '—'}</td>
+                            <td>{d.contacto_nombre || '-'}</td>
+                            <td>{d.email || '-'}</td>
                             <td>
                               <span className={'chip ' + (d.estado === 'enviado' ? 'chip-cumple' : d.estado === 'error' ? 'chip-critico' : 'chip-pendiente')}>
                                 {d.estado}

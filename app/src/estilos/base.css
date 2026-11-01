@@ -203,7 +203,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   padding: 20px;
   box-shadow: 0 -8px 28px rgba(20, 22, 26, 0.22);
 }
-/* En pantallas anchas —de escritorio, no de terreno— un recuadro centrado se
+/* En pantallas anchas -de escritorio, no de terreno- un recuadro centrado se
    lee mejor que una hoja pegada al borde inferior. */
 @media (min-width: 560px) {
   .modal-fondo { align-items: center; }
@@ -1360,8 +1360,8 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 @media (min-width: 900px) {
   :root { --ancho-contenido: 1160px; --margen-escritorio: 40px; }
 
-  /* El encabezado cruza todo el ancho —una franja, no una caja flotando al
-   * centro— y el contenido de ambos se alinea a la misma columna. */
+  /* El encabezado cruza todo el ancho -una franja, no una caja flotando al
+   * centro- y el contenido de ambos se alinea a la misma columna. */
   .pantalla > .encabezado,
   .pantalla > .cuerpo {
     --lado: max(var(--margen-escritorio), calc((100% - var(--ancho-contenido)) / 2));
@@ -2266,7 +2266,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 }
 
 
-/* Inicio Operación — ajuste de densidad y jerarquía en escritorio.
+/* Inicio Operación - ajuste de densidad y jerarquía en escritorio.
  * El cuerpo es flex:1; al convertirlo en grid, align-content:stretch repartía
  * el alto libre entre las filas y generaba grandes vacíos verticales. */
 @media (min-width: 900px) {
@@ -2400,7 +2400,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
 
 /* ========================================================================
-   Sistema visual web — homogeneización transversal
+   Sistema visual web - homogeneización transversal
    Mantiene la experiencia móvil existente y normaliza desktop: marca,
    navegación, encabezados, controles, tarjetas, densidad y estados vacíos.
    ======================================================================== */
@@ -3257,7 +3257,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
 
 /* =========================================================
-   Proveedores — homologación de Proveedores/Postulantes/Correos/Comunicaciones
+   Proveedores - homologación de Proveedores/Postulantes/Correos/Comunicaciones
    ========================================================= */
 
 .proveedores-subnav {

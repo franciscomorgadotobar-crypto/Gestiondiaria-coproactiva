@@ -32,7 +32,7 @@ const Mapa = lazy(() => import('./paginas/panel/Mapa'));
 // Biblioteca legal solo se descarga al ingresar: no recarga el acceso inicial.
 const BaseConocimientos = lazy(() => import('./componentes/BaseConocimientos'));
 const Conocimientos = lazy(() => import('./paginas/panel/Conocimientos'));
-// El portal de cliente arrastra el mismo Leaflet que el mapa interno —de
+// El portal de cliente arrastra el mismo Leaflet que el mapa interno -de
 // cargarlo aparte, quien va a terreno con el teléfono también lo bajaría,
 // sin usarlo nunca.
 const PortalCliente = lazy(() => import('./paginas/cliente/PortalCliente'));

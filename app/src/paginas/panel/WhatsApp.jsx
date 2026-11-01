@@ -6,7 +6,7 @@ import './WhatsApp.css';
 
 const STATES={bot:'Bot',esperando_usuario:'Bot',derivada:'Pendiente',atencion_humana:'Atención humana',cerrada:'Cerrada'};
 const MOTIVES={residente:'Residente / copropietario',cotizacion:'Cotización',postulacion:'Postulación',proveedor:'Proveedor',otro:'Otro motivo'};
-const date=v=>v?new Date(v).toLocaleString('es-CL',{dateStyle:'short',timeStyle:'short'}):'—';
+const date=v=>v?new Date(v).toLocaleString('es-CL',{dateStyle:'short',timeStyle:'short'}):'-';
 export default function WhatsApp() {
  const {perfil}=useSesion();
  if(!perfil?.activo||!['admin','superadmin'].includes(perfil.rol))return <Navigate to="/" replace/>;

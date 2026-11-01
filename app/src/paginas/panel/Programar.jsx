@@ -256,8 +256,8 @@ export default function Programar() {
     navegar(`/control/${nuevo.id}`);
   }
 
-  /* Reabrir un levantamiento enviado es legítimo —se anotó mal un punto, faltó
-   * una foto—, pero queda registrado: el informe pudo haberse entregado ya. */
+  /* Reabrir un levantamiento enviado es legítimo -se anotó mal un punto, faltó
+   * una foto-, pero queda registrado: el informe pudo haberse entregado ya. */
   async function reabrir(motivo) {
     setPedirMotivoReapertura(false);
     setGuardando(true);
@@ -336,7 +336,7 @@ export default function Programar() {
               <optgroup label="Comunidades administradas">
                 {comunidades.map(c => (
                   <option key={c.id} value={`comunidad:${c.id}`}>
-                    {c.nombre}{c.comuna ? ` — ${c.comuna}` : ''}
+                    {c.nombre}{c.comuna ? ` - ${c.comuna}` : ''}
                   </option>
                 ))}
               </optgroup>
@@ -345,7 +345,7 @@ export default function Programar() {
               <optgroup label="Prospectos del CRM">
                 {prospectos.map(p => (
                   <option key={p.id} value={`prospecto:${p.id}`}>
-                    {p.nombre_condominio}{p.comuna ? ` — ${p.comuna}` : ''}
+                    {p.nombre_condominio}{p.comuna ? ` - ${p.comuna}` : ''}
                   </option>
                 ))}
               </optgroup>
@@ -383,7 +383,7 @@ export default function Programar() {
             <option value="">Sin asignar</option>
             {responsablesDisponibles.map(p => (
               <option key={p.id} value={p.id}>
-                {p.nombre} — {p.rol}{p.activo ? '' : ' (inactivo)'}
+                {p.nombre} - {p.rol}{p.activo ? '' : ' (inactivo)'}
               </option>
             ))}
           </select>

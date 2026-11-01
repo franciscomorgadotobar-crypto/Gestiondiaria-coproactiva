@@ -59,7 +59,7 @@ test('sin integración ni campo, el dashboard nunca reporta cero falso', () => {
   assert.equal(indicadorPerfilGoogle(muestra,'indicaciones'),null);
   assert.equal(indicadorPerfilGoogle({disponible:true,resumen:{indicaciones:'NaN'}},'indicaciones'),null);
   assert.deepEqual(datosPerfilGoogle(muestra).map(x=>x.valor),[78,130,0,null,null]);
-  assert.match(dashboard,/indicador.valor == null \? '—' : numero\(indicador.valor\)/);
+  assert.match(dashboard,/indicador.valor == null \? '-' : numero\(indicador.valor\)/);
   assert.match(dashboard,/!perfil && <div className="seo-exec-maps-pendiente"/);
 });
 

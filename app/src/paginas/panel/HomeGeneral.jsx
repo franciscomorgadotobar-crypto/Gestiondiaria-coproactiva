@@ -164,15 +164,15 @@ export default function HomeGeneral() {
       {aviso && <p className="aviso" role="status">{aviso}</p>}
       <div className="home-general-metricas" aria-label="Resumen del sistema">
         {comercial && <Link to="/pipeline" onClick={() => guardarArea('comercial')}>
-          <strong>{resumen.prospectos ?? '—'}</strong><span>Prospectos</span>
+          <strong>{resumen.prospectos ?? '-'}</strong><span>Prospectos</span>
           <small>Ir al Pipeline ›</small>
         </Link>}
         {comercial && <Link to="/compromisos" onClick={() => guardarArea('operacion')}>
-          <strong>{resumen.compromisos ?? '—'}</strong><span>Compromisos abiertos</span>
+          <strong>{resumen.compromisos ?? '-'}</strong><span>Compromisos abiertos</span>
           <small>Ver seguimiento ›</small>
         </Link>}
         <Link to="/inicio" onClick={() => guardarArea('operacion')}>
-          <strong>{resumen.pendientes ?? '—'}</strong><span>Levantamientos pendientes</span>
+          <strong>{resumen.pendientes ?? '-'}</strong><span>Levantamientos pendientes</span>
           <small>Ver levantamientos ›</small>
         </Link>
       </div>

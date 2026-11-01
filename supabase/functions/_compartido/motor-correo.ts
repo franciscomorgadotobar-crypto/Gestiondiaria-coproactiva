@@ -75,6 +75,8 @@ export function firmaEstandar(
   return {texto:lineas.join('\n'),html};
 }
 
+export const normalizarGuiones=(texto:string)=>texto.replace(/[\u2013\u2014]/g,'-');
+
 export type MotorAdjunto={
   filename:string;contentType:string;encoding:'binary'|'base64';
   content:Uint8Array|string;contentID?:string;
@@ -109,9 +111,9 @@ export async function enviarLoteMotor(
           to:mensaje.para,
           ...(mensaje.cc?.length?{cc:mensaje.cc}:{}),
           ...(mensaje.bcc?.length?{bcc:mensaje.bcc}:{}),
-          subject:mensaje.asunto,
-          text:mensaje.texto,
-          html:mensaje.html,
+          subject:normalizarGuiones(mensaje.asunto),
+          text:normalizarGuiones(mensaje.texto),
+          html:normalizarGuiones(mensaje.html),
           attachments:[...logo,...(mensaje.adjuntos||[])].map(a=>({
             filename:a.filename,contentType:a.contentType,
             content:typeof a.content==='string'&&a.encoding==='base64'

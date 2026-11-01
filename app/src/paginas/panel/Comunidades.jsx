@@ -239,7 +239,7 @@ function ListadoComunidades() {
   }, [perfil?.id]);
 
   /* Una comunidad que no pasa por el Pipeline (un cliente recomendado, por
-   * ejemplo). La crea la base en un solo paso —crear_comunidad— y deja
+   * ejemplo). La crea la base en un solo paso -crear_comunidad- y deja
    * asignado a quien la crea: sin eso, un admin no vería la comunidad que
    * acaba de crear. */
   async function crearComunidad() {
@@ -1231,7 +1231,7 @@ function DetalleComunidad({ id }) {
                   <label className="etiqueta-campo">Activo</label>
                   <select value={nuevaActividad.activo_id} onChange={e => setNuevaActividad(x => ({ ...x, activo_id: e.target.value, trabajo: '' }))}>
                     <option value="">Elegir…</option>
-                    {activos.filter(a => a.estado !== 'baja').map(a => <option key={a.id} value={a.id}>{a.nombre} — {a.categoria}</option>)}
+                    {activos.filter(a => a.estado !== 'baja').map(a => <option key={a.id} value={a.id}>{a.nombre} - {a.categoria}</option>)}
                   </select>
                   {nuevaActividad.activo_id && (
                     <div className="comunidad-sugerencias">
@@ -1304,7 +1304,7 @@ function DetalleComunidad({ id }) {
                     <label className="etiqueta-campo">Responsable interno</label>
                     <select value={nuevaActividad.responsable_id} onChange={e => setNuevaActividad(x => ({ ...x, responsable_id: e.target.value }))}>
                       <option value="">Sin asignar</option>
-                      {equipo.map(p => <option key={p.id} value={p.id}>{p.nombre} — {p.rol}</option>)}
+                      {equipo.map(p => <option key={p.id} value={p.id}>{p.nombre} - {p.rol}</option>)}
                     </select>
                   </div>
                   <div className="campo">
@@ -1421,7 +1421,7 @@ function DetalleComunidad({ id }) {
                   <label className="etiqueta-campo">Actividad</label>
                   <select value={nuevoAgendamiento.actividad_id} onChange={e => setNuevoAgendamiento(x => ({ ...x, actividad_id: e.target.value }))}>
                     <option value="">Elegir…</option>
-                    {actividades.map(a => <option key={a.id} value={a.id}>{activosPorId.get(a.activo_id)?.nombre ?? 'Activo'} — {a.trabajo}</option>)}
+                    {actividades.map(a => <option key={a.id} value={a.id}>{activosPorId.get(a.activo_id)?.nombre ?? 'Activo'} - {a.trabajo}</option>)}
                   </select>
                 </div>
                 <div className="comunidad-grid-2">
@@ -1547,7 +1547,7 @@ function DetalleComunidad({ id }) {
                     <label className="etiqueta-campo">Actividad</label>
                     <select value={actividadAlertas} onChange={e => setActividadAlertas(e.target.value)}>
                       <option value="">Elegir…</option>
-                      {actividades.map(a => <option key={a.id} value={a.id}>{activosPorId.get(a.activo_id)?.nombre ?? 'Activo'} — {a.trabajo}</option>)}
+                      {actividades.map(a => <option key={a.id} value={a.id}>{activosPorId.get(a.activo_id)?.nombre ?? 'Activo'} - {a.trabajo}</option>)}
                     </select>
                   </div>
                   <Campo label="Avisar N días antes" valor={formAlertas.dias_antes} onChange={v => setFormAlertas(x => ({ ...x, dias_antes: v }))} placeholder="7,1" />

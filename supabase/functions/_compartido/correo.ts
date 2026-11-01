@@ -1,4 +1,4 @@
-import { enviarLoteMotor, type MotorMensaje } from './motor-correo.ts';
+import { enviarLoteMotor, normalizarGuiones, type MotorMensaje } from './motor-correo.ts';
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 import { LOGO_PNG } from '../_compartido/logo.ts';
 
@@ -20,6 +20,7 @@ const PUERTO    = Number(Deno.env.get('SMTP_PUERTO') ?? '465');
 export const hayCorreo = () => CLAVE.length > 0;
 
 export async function enviar(para: string, asunto: string, html: string, texto: string) {
+  asunto=normalizarGuiones(asunto); html=normalizarGuiones(html); texto=normalizarGuiones(texto);
   if (!hayCorreo()) return { enviado: false, motivo: 'SMTP sin configurar' };
 
   const cliente = new SMTPClient({
@@ -73,6 +74,7 @@ export async function enviar(para: string, asunto: string, html: string, texto: 
 /* Envío HTML simple, sin multipart ni adjuntos. Se usa en alertas breves que
  * deben priorizar compatibilidad con Gmail móvil por sobre diseño con imágenes. */
 export async function enviarSimple(para: string, asunto: string, html: string) {
+  asunto=normalizarGuiones(asunto); html=normalizarGuiones(html);
   if (!hayCorreo()) return { enviado: false, motivo: 'SMTP sin configurar' };
 
   const cliente = new SMTPClient({
@@ -113,6 +115,7 @@ export async function enviarLote(
 /* Alertas operativas: mensaje deliberadamente simple para evitar cualquier
  * interpretación multipart/quoted-printable defectuosa en Gmail móvil. */
 export async function enviarTextoPlano(para: string, asunto: string, texto: string) {
+  asunto=normalizarGuiones(asunto); texto=normalizarGuiones(texto);
   if (!hayCorreo()) return { enviado: false, motivo: 'SMTP sin configurar' };
 
   const cliente = new SMTPClient({
@@ -169,8 +172,8 @@ export function vigencia(horas: number) {
  *
  * Antes iba además la dirección completa al pie, por si el botón no se
  * pintaba. No hace falta: el botón es una celda de tabla con fondo y texto
- * dentro, que es lo que aguanta en todos los clientes de correo —no depende
- * de imágenes, ni de CSS que alguien bloquee, ni de fuentes que no lleguen—.
+ * dentro, que es lo que aguanta en todos los clientes de correo -no depende
+ * de imágenes, ni de CSS que alguien bloquee, ni de fuentes que no lleguen-.
  * Y esa dirección al pie delataba dónde está alojado el sistema.
  *
  * Quien reciba el correo en texto plano igual recibe la dirección entera,

@@ -1,10 +1,11 @@
+import { normalizarGuiones } from './guionesGlobales';
 /* Informe de diagnóstico comercial: dos páginas A4, misma marca y el mismo
- * patrón de impresión que informeHtml/imprimirInforme (lib/informe.js) —
+ * patrón de impresión que informeHtml/imprimirInforme (lib/informe.js) -
  * comparte la paleta y la tipografía de la app, no la del CRM anterior.
  */
 
 function escapar(texto) {
-  return String(texto ?? '').replace(/[&<>"']/g, c => (
+  return normalizarGuiones(String(texto ?? '')).replace(/[&<>"']/g, c => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 }
@@ -118,9 +119,9 @@ function cabecera(pagina, total, prospecto, logo) {
     <h1>Informe de diagnóstico inicial</h1>
     <p class="sub">Diagnóstico preliminar de riesgo y propuesta de administración</p>
     <dl class="ficha">
-      <div><dt>Condominio</dt><dd>${escapar(prospecto.nombre_condominio || '—')}</dd></div>
+      <div><dt>Condominio</dt><dd>${escapar(prospecto.nombre_condominio || '-')}</dd></div>
       <div><dt>Fecha</dt><dd>${fecha}</dd></div>
-      <div><dt>Comuna</dt><dd>${escapar(prospecto.comuna || '—')}${prospecto.unidades ? ` · ${prospecto.unidades} unid.` : ''}</dd></div>
+      <div><dt>Comuna</dt><dd>${escapar(prospecto.comuna || '-')}${prospecto.unidades ? ` · ${prospecto.unidades} unid.` : ''}</dd></div>
       <div><dt>Elaborado por</dt><dd>CoproActiva</dd></div>
     </dl>
     <div class="barra"></div>
@@ -128,7 +129,7 @@ function cabecera(pagina, total, prospecto, logo) {
 }
 
 function pie(fecha) {
-  return `<p class="pie">coproactiva · Comunidades que funcionan. — Documento confidencial — ${fecha}</p>`;
+  return `<p class="pie">coproactiva · Comunidades que funcionan. - Documento confidencial - ${fecha}</p>`;
 }
 
 /**
@@ -164,7 +165,7 @@ export function diagnosticoHtml(datos) {
         </div>
       </div>
 
-      <div class="seccion-titulo">Comparativo por área — de menor a mayor cumplimiento</div>
+      <div class="seccion-titulo">Comparativo por área - de menor a mayor cumplimiento</div>
       ${areasOrdenadas.map(a => {
         const sem = SEMAFORO(a.pct);
         return `<div class="area-fila">
@@ -214,7 +215,7 @@ export function diagnosticoHtml(datos) {
           ${lm.items.map(it => `<div class="item"><div class="ok">OK</div><div class="txt">${escapar(it)}</div></div>`).join('')}
           <div class="valor">
             <div><div class="et">Valor mensual estimado del servicio</div><div class="sub">Sujeto a confirmación en reunión presencial</div></div>
-            <div><div class="monto">$${lm.valMin} – $${lm.valMax}</div><div class="cur" style="text-align:right">CLP / mes</div></div>
+            <div><div class="monto">$${lm.valMin} - $${lm.valMax}</div><div class="cur" style="text-align:right">CLP / mes</div></div>
           </div>
         </div>
       </div>
@@ -232,7 +233,7 @@ export function diagnosticoHtml(datos) {
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Diagnóstico — ${escapar(prospecto.nombre_condominio || '')}</title>
+<title>Diagnóstico - ${escapar(prospecto.nombre_condominio || '')}</title>
 <style>${ESTILOS}</style>
 </head>
 <body>${p1}${p2}</body>

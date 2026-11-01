@@ -100,7 +100,7 @@ export default function PlantillasCorreo(){
       <label>Etapa CRM<input value={form.etapa_crm} onChange={e=>setForm(x=>({...x,etapa_crm:e.target.value}))}/></label>
       <label>Adjunto indicado<input value={form.adjunto_sugerido} onChange={e=>setForm(x=>({...x,adjunto_sugerido:e.target.value}))}/></label>
       {form.variantes?.length>0&&<label>Variante<select value={varianteEditor} onChange={e=>setVarianteEditor(e.target.value)}>
-        <option value="principal">A — breve</option>
+        <option value="principal">A - breve</option>
         {form.variantes.map((v,i)=><option key={i} value={String(i)}>{v.nombre}</option>)}
       </select></label>}
       <label>Mensaje<textarea rows={12} required value={cuerpoEditor}

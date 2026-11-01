@@ -15,7 +15,7 @@ const STATES = [
   ['base_futura','Base futura']
 ];
 
-const date = v => v ? new Date(v).toLocaleDateString('es-CL') : '—';
+const date = v => v ? new Date(v).toLocaleDateString('es-CL') : '-';
 
 export default function ProveedoresRecepcion({ vista }) {
   const { perfil } = useSesion();
@@ -461,11 +461,11 @@ function Recepcion({ vista }) {
                   {postulantesFiltrados.map(p=>(
                     <tr key={p.id}>
                       <td><button className="boton boton-texto proveedores-postulante-nombre" onClick={()=>setForm(p)}>{p.nombre}</button></td>
-                      <td>{p.comuna||'—'}</td>
+                      <td>{p.comuna||'-'}</td>
                       <td>{p.cargo_propuesto||'Por revisar'}</td>
                       <td><span className="chip chip-pendiente">{STATES.find(x=>x[0]===p.estado)?.[1]??p.estado}</span></td>
                       <td>{date(p.fecha_postulacion||p.creado_en)}</td>
-                      <td>{p.email||p.telefono||'—'}</td>
+                      <td>{p.email||p.telefono||'-'}</td>
                     </tr>
                   ))}
                 </tbody>

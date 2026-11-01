@@ -87,8 +87,8 @@ export default function Clientes() {
   }
 
   /* Esta pantalla es solo de clientes: alguien del equipo no aparece acá, ni
-   * para "convertir" a cliente —eso ya no hace falta, "Agregar cliente" crea
-   * la cuenta directo con ese rol— ni por ningún otro motivo. */
+   * para "convertir" a cliente -eso ya no hace falta, "Agregar cliente" crea
+   * la cuenta directo con ese rol- ni por ningún otro motivo. */
   async function cargarBase() {
     setError(null);
     setCargandoLista(true);

@@ -1723,7 +1723,7 @@ export default function Contabilidad() {
                       </td>
                       <td>{cuenta.nivel}</td>
                       <td>{etiquetaTipo(cuenta.tipo_contable, cuenta.naturaleza)}</td>
-                      <td>{cuenta.grupo || '—'}</td>
+                      <td>{cuenta.grupo || '-'}</td>
                       <td>
                         {['4','5'].includes(String(cuenta.codigo || '')[0])
                           ? (cuenta.requiere_centro_costo ? <span className="chip chip-cumple">Requerido</span> : <span className="chip">Opcional</span>)

@@ -147,15 +147,15 @@ async function aplicar(entrada) {
 }
 
 /* Corrige el caso de una foto que el teléfono cree pendiente y el servidor ya
- * tiene. Puede pasar si la subida terminó pero la app se cerró —el sistema
- * operativo puede cortar una pestaña en segundo plano en cualquier punto—
+ * tiene. Puede pasar si la subida terminó pero la app se cerró -el sistema
+ * operativo puede cortar una pestaña en segundo plano en cualquier punto-
  * justo antes de guardar localmente que ya estaba arriba: la foto queda
  * subida de verdad, pero marcada como pendiente para siempre. Sin esto, ese
  * aviso no se resuelve nunca por más veces que se apriete "Subir ahora",
  * porque no hay nada en la cola que reintentar.
  *
- * Se compara contra el servidor solo lo que el teléfono cree pendiente —no
- * todo el levantamiento—, así que el costo es proporcional a lo que hay que
+ * Se compara contra el servidor solo lo que el teléfono cree pendiente -no
+ * todo el levantamiento-, así que el costo es proporcional a lo que hay que
  * revisar, no al tamaño del historial. */
 async function reconciliarFotos() {
   const locales = await leerFotosPendientes();

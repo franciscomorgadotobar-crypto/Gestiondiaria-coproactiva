@@ -18,11 +18,11 @@ import { descargarGuiaPlantilla } from '../../lib/plantillasPDF';
  * cosas distintas.
  *
  * El orden importa y no es decorativo: el recorrido de un edificio tiene una
- * secuencia —se entra por el acceso y se termina en la azotea— y el informe
+ * secuencia -se entra por el acceso y se termina en la azotea- y el informe
  * sale en ese mismo orden.
  *
- * Todo se edita sobre un borrador de la plantilla completa —puntos, categorías,
- * orden, lo que se quita y el orden obligatorio— y un solo botón "Guardar
+ * Todo se edita sobre un borrador de la plantilla completa -puntos, categorías,
+ * orden, lo que se quita y el orden obligatorio- y un solo botón "Guardar
  * plantilla" lo lleva a la base. Se pidió así: se arma o corrige la plantilla
  * entera y se guarda una vez, no punto por punto. Salir con cambios sin
  * guardar pregunta antes.
