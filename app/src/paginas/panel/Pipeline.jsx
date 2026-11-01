@@ -612,7 +612,7 @@ export default function Pipeline() {
   }
 
   return (
-    <div className="pantalla pantalla-ancha modulo-unificado">
+    <div className="pantalla pantalla-ancha modulo-unificado comercial-ui comercial-pipeline">
       {perdidaPendiente && (
         <DialogoCampos
           titulo="Marcar prospecto como perdido"
@@ -659,6 +659,7 @@ export default function Pipeline() {
         </div>
         <div className="fila">
           <div className="crece">
+            <span className="comercial-eyebrow">Comercial · Gestión de prospectos</span>
             <h1 className="h3">Pipeline comercial</h1>
             <p className="chico apagado" style={{ margin: '4px 0 0' }}>
               Leads y prospectos hasta ganarse o perderse.
