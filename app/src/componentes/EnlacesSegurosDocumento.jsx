@@ -5,7 +5,7 @@ import './EnlacesSegurosDocumento.css';
 const fecha=valor=>valor?new Date(valor).toLocaleString('es-CL',{dateStyle:'short',timeStyle:'short'}):'-';
 const activo=enlace=>!enlace.revocado_en&&new Date(enlace.vence_en).getTime()>Date.now();
 
-export default function EnlacesSegurosDocumento({archivo,onInsertarEnCorreo=null}){
+export default function EnlacesSegurosDocumento({archivo,onInsertarEnCorreo=null,onInsertarSoloEnlace=null}){
  const [abierto,setAbierto]=useState(false);
  const [dias,setDias]=useState(7);
  const [destinatario,setDestinatario]=useState('');
@@ -89,7 +89,10 @@ export default function EnlacesSegurosDocumento({archivo,onInsertarEnCorreo=null
     </label>
     <div className="fila-botones">
      <button type="button" className="boton boton-secundario" onClick={copiar}>Copiar enlace</button>
-     {onInsertarEnCorreo&&<button type="button" className="boton" onClick={()=>onInsertarEnCorreo(enlaceNuevo)}>Insertar en correo</button>}
+     {onInsertarEnCorreo&&<button type="button" className="boton boton-secundario"
+       onClick={()=>onInsertarEnCorreo(enlaceNuevo)}>Insertar y mantener adjunto</button>}
+     {onInsertarSoloEnlace&&<button type="button" className="boton"
+       onClick={()=>onInsertarSoloEnlace(enlaceNuevo)}>Solo enlace seguro</button>}
     </div>
    </div>}
    {cargando&&<p className="micro apagado">Actualizando seguimiento...</p>}
