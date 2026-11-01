@@ -143,18 +143,29 @@
 .comercial-seo .seo-exec-superficie{border-radius:var(--comercial-radio)}
 /* Documentos: se mantiene expresamente el layout original de tarjetas móviles */
 .comercial-documentos{
+  /* El encabezado es de borde a borde; el contenido usa un solo inset.
+   * No combinar padding del root con márgenes negativos: produce el recorte
+   * observado en Chrome móvil aunque los tests de texto CSS pasen. */
+  --doc-inset:var(--comercial-gutter,16px);
   width:100%;
-  padding:0 var(--comercial-gutter) 38px;
+  padding:0 0 38px;
   gap:17px;
   margin:0 auto;
   background:var(--ca-fondo,#f7f4f0);
+}
+.comercial-documentos > :not(.documentos-gestor-cabecera){
+  width:auto;
+  min-width:0;
+  max-width:calc(100% - 2 * var(--doc-inset));
+  margin-inline:var(--doc-inset);
+  box-sizing:border-box;
 }
 .comercial-documentos>.documentos-gestor-cabecera{
   background:var(--comercial-superficie);
   border-bottom:1px solid var(--comercial-borde);
   box-sizing:border-box;
-  padding:23px var(--comercial-gutter);
-  margin:0 calc(-1 * var(--comercial-gutter));
+  padding:23px var(--doc-inset);
+  margin:0;
   gap:15px;
   min-width:0;
 }
@@ -209,8 +220,8 @@
  .comercial-seo .seo-exec-grid-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
  .comercial-seo .seo-exec-kpi{padding:13px;min-height:143px}
  .comercial-seo .seo-exec-kpi-numero{font-size:clamp(24px,6.5vw,34px)}
- .comercial-documentos{padding:0 var(--comercial-gutter) 34px}
- .comercial-documentos>.documentos-gestor-cabecera{padding:20px var(--comercial-gutter);gap:12px}
+ .comercial-documentos{padding:0 0 34px}
+ .comercial-documentos>.documentos-gestor-cabecera{padding:20px var(--doc-inset);gap:12px}
  .comercial-documentos .documentos-gestor-cabecera h1{font-size:24px}
  .comercial-documentos .documentos-nuevo{width:100%;min-height:44px}
  .comercial-documentos .documentos-layout{grid-template-columns:minmax(0,1fr)}
@@ -229,4 +240,26 @@
 /* Prioridad explícita sobre SEO.css, que se carga dinámicamente. */
 @media(max-width:700px){
  .pantalla.modulo-unificado.comercial-ui>.encabezado.modulo-cabecera h1.h3{font-size:24px;line-height:1.23;margin:0 0 7px}
+}
+
+/* El contrato responsive se aplica también a la barra de filtros.
+ * Estas son las únicas superficies autorizadas a desplazarse horizontalmente. */
+@media(max-width:899px){
+ .comercial-documentos{--doc-inset:16px}
+ .comercial-documentos > :not(.documentos-gestor-cabecera){
+   min-width:0;
+   width:auto;
+   max-width:calc(100% - 32px);
+   margin-left:16px;
+   margin-right:16px;
+ }
+ .comercial-documentos .documentos-filtros{
+   overflow-x:auto;
+   overflow-y:hidden;
+   white-space:nowrap;
+   scrollbar-width:none;
+   -webkit-overflow-scrolling:touch;
+ }
+ .comercial-documentos .documentos-filtros::-webkit-scrollbar{display:none}
+ .comercial-documentos .documentos-layout{grid-template-columns:minmax(0,1fr)}
 }

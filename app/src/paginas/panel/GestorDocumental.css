@@ -61,7 +61,7 @@
  .documentos-layout{grid-template-columns:minmax(0,1fr)}
 }
 @media(max-width:700px){
- .documentos-gestor{width:100%;max-width:100%;min-width:0;overflow-x:clip}
+ .documentos-gestor{width:100%;max-width:100%;min-width:0}
  .documentos-layout,.documentos-principal,.documentos-seccion,.documentos-plantillas,.documentos-lateral{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
  .documentos-plantillas{grid-template-columns:minmax(0,1fr)}
  .documentos-plantilla{width:100%;min-width:0;max-width:100%;grid-template-columns:36px minmax(0,1fr) auto}

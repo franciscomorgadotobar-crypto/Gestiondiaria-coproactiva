@@ -48,6 +48,9 @@ jobs:
       - name: Validar generador de propuestas integrado en Comercial
         working-directory: app
         run: node --test pruebas/propuestas-integracion.test.js
+      - name: Aplicar contrato estático de diseño antes de compilar
+        working-directory: app
+        run: node --test pruebas/contrato-diseno-estatico.test.js
       - name: Verificar diseño comercial homologado y filtros funcionales
         working-directory: app
         run: node --test pruebas/comercial-homologado.test.js
@@ -184,6 +187,9 @@ jobs:
       - name: Verificar Google Maps y sus métricas en Android simulado
         working-directory: app
         run: node pruebas/ui-seo-google-maps.mjs
+      - name: Contrato visual real en Chromium (320, 360, 390, 412, 768 y 1280 px)
+        working-directory: app
+        run: node pruebas/ui-contrato-diseno.mjs
       - name: Revisar pantallas homologadas en navegador móvil y escritorio
         working-directory: app
         run: node pruebas/ui-homologacion-modulos.mjs
