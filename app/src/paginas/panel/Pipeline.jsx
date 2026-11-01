@@ -226,6 +226,10 @@ export default function Pipeline() {
     if (accionSeleccionada!=='correo') setCorreoProspecto(null);
     if (!prospectoSeleccionado) return;
     if (accionSeleccionada==='correo') {
+      if(correoProspecto?.id && correoProspecto.id!==prospectoSeleccionado.id){
+        setGuardadoDriveCorreo(null);
+        setAdjuntosCorreo([]);
+      }
       setCorreoProspecto(x=>x?.id===prospectoSeleccionado.id?x:prospectoSeleccionado);
     }
     if (accionSeleccionada==='editar') {
