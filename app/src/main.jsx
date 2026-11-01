@@ -33,7 +33,7 @@ iniciarSincronizacion();
 /* La PWA precarga el bundle para trabajar sin señal. Cuando se publica una
  * versión nueva, Workbox puede activar el service worker nuevo mientras la
  * pestaña abierta sigue ejecutando el JavaScript anterior. Eso hacía que una
- * función recién publicada —por ejemplo el nuevo formato de informes— pareciera
+ * función recién publicada -por ejemplo el nuevo formato de informes- pareciera
  * no existir hasta hacer un hard refresh manual.
  *
  * Forzamos una comprobación al abrir la app y recargamos una sola vez cuando el
