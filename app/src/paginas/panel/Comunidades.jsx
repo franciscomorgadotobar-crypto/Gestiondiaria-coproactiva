@@ -1506,6 +1506,10 @@ function DetalleComunidad({ id }) {
         {seccion === 'documentos' && (
           <section>
             <h2 className="h4">Documentos</h2>
+            {puedeGestionar&&<div className="fila ui-acciones" style={{marginBottom:12,flexWrap:"wrap"}}>
+              <Link className="boton boton-secundario" to={"/documentos?comunidad="+id}>Ver en gestor documental</Link>
+              <Link className="boton" to={"/documentos/nuevo?tipo=informe_gestion&contexto=comunidad&contexto_id="+id}>Nuevo informe de gestión</Link>
+            </div>}
             <p className="chico apagado">Archivos guardados en la carpeta de la comunidad en Google Drive. Ningún documento se publica al cliente sin una acción explícita.</p>
             {puedeGestionar ? (
               <>
