@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
@@ -730,6 +730,9 @@ export default function Levantamiento() {
         </div>
 
         <h1 className="h3">{control.destino_nombre ?? control.comunidades?.nombre}</h1>
+        {['superadmin','admin','jefatura'].includes(perfil?.rol)&&control.comunidad_id&&
+         <Link className="boton boton-secundario" to={'/documentos?comunidad='+control.comunidad_id}
+          style={{alignSelf:'flex-start',margin:'7px 0'}}>Documentos de la comunidad</Link>}
         <p className="chico apagado" style={{ margin: '2px 0 4px' }}>
           {[control.destino_direccion, control.destino_comuna].filter(Boolean).join(', ')}
           {control.destino_tipo === 'prospecto' && ' · Diagnóstico comercial'}
