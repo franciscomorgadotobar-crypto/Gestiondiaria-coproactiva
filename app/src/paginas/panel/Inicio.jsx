@@ -27,8 +27,8 @@ export default function Inicio() {
   const [abiertosHechos, setAbiertosHechos] = useState(() => new Set());
 
   const puedeConfigurar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
-  // Borrar un levantamiento se lleva su historia completa —fotos, respuestas,
-  // firma—: un alcance mayor que editarlo, reservado al superadmin.
+  // Borrar un levantamiento se lleva su historia completa -fotos, respuestas,
+  // firma-: un alcance mayor que editarlo, reservado al superadmin.
   const puedeBorrar = perfil?.rol === 'superadmin';
   const [porBorrar, setPorBorrar] = useState(null);
 
@@ -85,8 +85,8 @@ export default function Inicio() {
   const hayMapa = Boolean(controles?.some(c => c.checkin_lat != null));
 
   // La campana es del usuario, no del panel: alguien en terreno ve en esta
-  // pantalla el trabajo de toda su comunidad —para poder cubrir a un
-  // colega—, pero las novedades que le avisan son solo lo suyo, lo que se le
+  // pantalla el trabajo de toda su comunidad -para poder cubrir a un
+  // colega-, pero las novedades que le avisan son solo lo suyo, lo que se le
   // asignó a él.
   const misPendientes = useMemo(
     () => pendientes.filter(c => c.responsable_id === perfil?.id),
@@ -122,7 +122,7 @@ export default function Inicio() {
 
   /* Las fotos y la firma viven en el bucket, no en la fila: borrar el
    * levantamiento sin esto dejaría los archivos huérfanos, ocupando espacio
-   * sin que nada los referencie. El resto —ítems, pausas, adjuntos— se va
+   * sin que nada los referencie. El resto -ítems, pausas, adjuntos- se va
    * solo, en cascada, al borrar la fila. */
   async function borrarLevantamiento() {
     const c = porBorrar;
@@ -287,7 +287,7 @@ export default function Inicio() {
 /* Sin asignar va al final: es lo que falta repartir, no el trabajo de alguien.
  *
  * "Sin asignar" se dice solo cuando de verdad no hay nadie asignado. Que no
- * llegue el nombre es otra cosa —un permiso, un perfil borrado— y decir
+ * llegue el nombre es otra cosa -un permiso, un perfil borrado- y decir
  * entonces "sin asignar" es afirmar algo falso sobre un levantamiento que sí
  * tiene dueño. */
 function agrupar(lista) {
@@ -341,7 +341,7 @@ function Tarjeta({ c, puedeEditar, puedeBorrar, onBorrar }) {
     <article className="tarjeta" style={{ padding: 16, marginBottom: 12 }}>
       {/* El estado va aparte, a la derecha, en una posición fija: si
           compartiera fila con el resto de los chips, el que hubiera más o
-          menos de ellos —según el estado— lo haría saltar de lugar o quedar
+          menos de ellos -según el estado- lo haría saltar de lugar o quedar
           pegado al conteo de avance de más abajo. */}
       <div className="fila" style={{ marginBottom: 8, alignItems: 'flex-start', gap: 8 }}>
         <div className="crece" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
@@ -349,7 +349,7 @@ function Tarjeta({ c, puedeEditar, puedeBorrar, onBorrar }) {
             {c.periodo ?? ''}
           </span>
           {/* El nombre de la plantilla usada ya distingue el tipo de
-              levantamiento —incidencia, control mensual, registro— sin
+              levantamiento -incidencia, control mensual, registro- sin
               necesidad de un campo aparte. */}
           {c.plantilla_nombre && (
             <span className="chip chip-tipo">{c.plantilla_nombre}</span>

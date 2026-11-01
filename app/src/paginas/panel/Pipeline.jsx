@@ -966,7 +966,7 @@ function TarjetaProspecto({p,equipo,onGestionar,onCambiarEtapa,onInicioArrastre,
         {(p.nombre_contacto||p.telefono||p.email)&&
           <span className="micro pipeline-tarjeta-contacto">
             {p.nombre_contacto}{p.cargo_contacto?' · '+p.cargo_contacto:''}
-            {(p.telefono||p.email)&&' — '+[p.telefono,p.email].filter(Boolean).join(' · ')}
+            {(p.telefono||p.email)&&' - '+[p.telefono,p.email].filter(Boolean).join(' · ')}
           </span>}
         <span className="pipeline-tarjeta-tags">
           {p.fuente&&<span className="chip chip-tipo">{p.fuente}</span>}
