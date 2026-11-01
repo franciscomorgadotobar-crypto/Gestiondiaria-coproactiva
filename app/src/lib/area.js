@@ -32,7 +32,7 @@ export function normalizarArea(valor) {
  * /notificaciones, /mi-cuenta) no tienen grupo propio: devuelven null y
  * mandan el grupo elegido. */
 const RUTAS_GRUPO = [
-  ['comercial', ['/pipeline', '/propuestas', '/propiedades', '/seo', '/plantillas-correo']],
+  ['comercial', ['/pipeline', '/documentos', '/propuestas', '/propiedades', '/seo', '/plantillas-correo']],
   ['finanzas', ['/contabilidad']],
   ['configuracion', ['/configuracion', '/equipo', '/clientes']],
   ['operacion', ['/inicio', '/vista-cliente', '/comunidades', '/compromisos', '/mantenciones', '/bitacora', '/plantillas',
