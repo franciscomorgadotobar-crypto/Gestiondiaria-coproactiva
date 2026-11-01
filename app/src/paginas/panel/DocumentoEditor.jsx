@@ -159,7 +159,7 @@ export default function DocumentoEditor(){
    <section className="doc-editor-vista" aria-label="Vista previa del documento">
     <article className="doc-editor-hoja">
      <header className="doc-editor-hoja-cabecera">
-      <span className="doc-editor-logo"><b>CO</b> coproactiva</span>
+      <img className="doc-editor-logo" src={import.meta.env.BASE_URL+"brand/imagologo-horizontal-naranja.svg"} alt="Coproactiva"/>
       <span className="doc-editor-documento-tipo">{plantilla.titulo}</span>
      </header>
      <div className="doc-editor-hoja-body">
