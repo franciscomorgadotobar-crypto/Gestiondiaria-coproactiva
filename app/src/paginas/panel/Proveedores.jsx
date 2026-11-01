@@ -955,6 +955,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
           </Seccion>
 
           <Seccion titulo="Correos y documentos" ancho>
+            <Link className="boton boton-secundario" to={"/documentos?proveedor="+p.id}>Ver documentos en gestor</Link>
             {cargandoCorreos && <p className="micro apagado">Cargando correos…</p>}
             {!cargandoCorreos && correos.length === 0 && (
               <p className="micro apagado">No hay correos guardados todavía.</p>
@@ -1287,6 +1288,7 @@ function ComunicacionProveedores({
         <p className="micro apagado">
           El mismo motor de CRM utiliza la firma y el seguimiento.{' '}
           <Link to="/plantillas-correo?categoria=Proveedores">Administrar plantillas de Proveedores</Link>.
+          <span> También puedes <Link target="_blank" rel="noopener noreferrer" to="/documentos?origen=correo">abrir el gestor documental</Link> para consultar informes sin cerrar esta comunicación.</span>
         </p>
         <label className="campo">
           <span className="etiqueta-campo">Asunto</span>
