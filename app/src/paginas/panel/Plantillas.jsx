@@ -23,8 +23,8 @@ export default function Plantillas() {
   const [descargandoId, setDescargandoId] = useState(null);
 
   const puedeEditar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
-  // Borrar una plantilla se lleva su estructura completa —y la de cualquier
-  // levantamiento que ya la citaba pasa a quedar sin plantilla asociada—: un
+  // Borrar una plantilla se lleva su estructura completa -y la de cualquier
+  // levantamiento que ya la citaba pasa a quedar sin plantilla asociada-: un
   // alcance mayor que editarla, reservado al superadmin.
   const puedeBorrar = perfil?.rol === 'superadmin';
 
