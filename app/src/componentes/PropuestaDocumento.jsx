@@ -122,7 +122,7 @@ function PropuestaDoc({ d, calc, opts }) {
 
       {opts.portada ? (
         <div style={{ breakAfter: 'page' }}>
-          <img src="./logo-coproactiva.svg" alt="CoproActiva" style={{ display: 'block', height: 31, width: 'auto' }} />
+          <img src={import.meta.env.BASE_URL+"brand/imagologo-horizontal-naranja.svg"} alt="CoproActiva" style={{ display: 'block', height: 31, width: 'auto' }} />
           <div style={{ height: 1.5, background: '#2b3138', marginTop: 28 }}></div>
           <div style={{ marginTop: 26, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, letterSpacing: '.36em', textTransform: 'uppercase', color: '#d5863b' }}>Propuesta comercial</div>
           <h1 style={{ margin: '16px 0 0', fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 43, lineHeight: 1.12, letterSpacing: '-.02em', color: '#2b3138' }}>Administración integral de condominios y comunidades</h1>
