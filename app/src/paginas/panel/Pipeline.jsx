@@ -710,7 +710,7 @@ export default function Pipeline() {
                       disabled={!prospectoSeleccionado.email}
                       onClick={()=>comenzarCorreo(prospectoSeleccionado)}>Enviar correo</button>
                     <Link className="boton boton-secundario"
-                      to={'/propuestas?prospecto='+prospectoSeleccionado.id}>Preparar propuesta</Link>
+                      to={'/documentos?prospecto='+prospectoSeleccionado.id}>Crear documento</Link>
                     {perfil?.rol==='superadmin'&&<button type="button" className="boton boton-secundario pipeline-eliminar"
                       disabled={guardando} onClick={()=>setEliminarPendiente(prospectoSeleccionado)}>
                       Eliminar prospecto
