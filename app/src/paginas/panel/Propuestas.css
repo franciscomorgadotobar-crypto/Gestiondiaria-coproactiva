@@ -33,3 +33,8 @@
  body:has(.propuesta-app) .propuesta-docwrap{display:block!important;height:auto!important;overflow:visible!important;padding:0!important}
  body:has(.propuesta-app) .propuesta-docwrap doc-page{overflow:visible!important}
 }
+
+.propuesta-migrar{margin-top:14px;background:#fff5eb;border:1px solid #efd1b6;border-radius:9px;padding:11px;display:grid;gap:5px;color:#695d52}
+.propuesta-migrar label{display:grid;gap:7px;font-size:12px;font-weight:650}
+.propuesta-migrar input{font-size:12px;max-width:100%;box-sizing:border-box}
+.propuesta-migrar small{font-size:11px}
