@@ -42,3 +42,43 @@
 .correo-adjuntos-gestor{display:grid;gap:4px;padding:11px 12px;border:1px solid #edc4a8;border-radius:10px;background:#fff8f1}
 .correo-adjuntos-gestor a{color:#bd5d21;text-decoration:underline;font-size:13px;font-weight:700}
 .correo-adjuntos-gestor small{color:#696969;font-size:11px;line-height:1.5}
+
+
+/* Selector documental homologado en CRM y Proveedores */
+.correo-adjuntos{gap:14px;padding:18px;border-color:#e7dfd8;border-radius:14px;box-shadow:0 4px 18px #2b313807}
+.correo-adjuntos-cabecera{padding-bottom:9px;border-bottom:1px solid #ece5dd}
+.correo-adjuntos-cabecera strong{font-size:15px;color:var(--texto-titulo,#2b3138)}
+.correo-adjuntos-cabecera>span{background:#f7f3ef;border-radius:20px;padding:6px 10px;font-size:11px}
+.correo-adjuntos-gestor{border-color:#f2dac8;background:#fff9f4;gap:6px;padding:14px;border-radius:11px}
+.correo-adjuntos-gestor a{font-size:13px;text-decoration:none}
+.correo-adjuntos-gestor a:hover{text-decoration:underline}
+.correo-adjuntos-acciones select{min-height:43px;border-radius:9px}
+.correo-adjuntos-cargar{min-height:42px;box-sizing:border-box;display:flex;align-items:center;justify-content:center}
+.correo-adjuntos-origen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.correo-adjuntos-origen button{min-height:41px;line-height:1.4;font-size:12px;white-space:normal;padding:9px 8px}
+.correo-adjuntos>input[type=search]{min-height:44px;font-size:14px}
+.correo-adjuntos-lista{max-height:255px;border-radius:10px;background:var(--tarjeta,#fff)}
+.correo-adjuntos-doc{padding:11px 12px;min-height:41px;gap:11px}
+.correo-adjuntos-doc:hover{background:#fff9f4}
+.correo-adjuntos-doc input[type=checkbox]{accent-color:#ed7130}
+.correo-adjuntos-nombre{font-size:12px;line-height:1.5}
+.correo-adjuntos-resumen>strong{font-size:13px}
+.correo-adjuntos-tarjeta{border-radius:11px}
+.correo-adjuntos-tarjeta .correo-guardar-drive{background:#fcf7f1;border-top:1px solid #f0e4d8;padding:12px}
+.correo-adjuntos-tarjeta .enlaces-documentales{padding:11px 12px;border-top:1px solid #eee6dc}
+.correo-adjuntos-tarjeta .enlaces-documentales-panel{margin-top:8px}
+.correo-adjuntos-tarjeta .enlaces-documentales>.boton{width:100%;font-size:12px}
+.correo-adjuntos .boton:focus-visible,.correo-adjuntos button:focus-visible,.correo-adjuntos-cargar:focus-within{outline:2px solid #ed7130;outline-offset:2px}
+@media(max-width:640px){
+ .correo-adjuntos{padding:12px;gap:12px}
+ .correo-adjuntos-origen{grid-template-columns:1fr}
+ .correo-adjuntos-origen button{min-height:40px;text-align:left}
+ .correo-adjuntos-acciones{gap:9px}
+ .correo-adjuntos-acciones .campo{min-width:0}
+ .correo-adjuntos-cargar{width:100%}
+ .correo-adjuntos-doc{flex-wrap:wrap;gap:7px}
+ .correo-adjuntos-doc .boton{margin-left:auto}
+ .correo-adjuntos-tarjeta .correo-adjuntos-doc{padding:10px}
+ .correo-guardar-drive{padding:10px}
+ .correo-adjuntos-tarjeta .enlaces-documentales{padding:10px}
+}

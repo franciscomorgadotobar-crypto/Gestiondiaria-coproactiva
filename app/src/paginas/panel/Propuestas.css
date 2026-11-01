@@ -34,7 +34,32 @@
  body:has(.propuesta-app) .propuesta-docwrap doc-page{overflow:visible!important}
 }
 
-.propuesta-migrar{margin-top:14px;background:#fff5eb;border:1px solid #efd1b6;border-radius:9px;padding:11px;display:grid;gap:5px;color:#695d52}
-.propuesta-migrar label{display:grid;gap:7px;font-size:12px;font-weight:650}
-.propuesta-migrar input{font-size:12px;max-width:100%;box-sizing:border-box}
-.propuesta-migrar small{font-size:11px}
+
+
+/* Presentación clara para propuestas comerciales dentro del Gestor Documental */
+.propuesta-app{border-radius:14px;background:#e9e6e2;border-color:#e8ded4;box-shadow:0 5px 20px #2b31380b}
+.propuesta-panel{padding:23px;border-color:#ebe4df;scrollbar-color:#d0c3b7 transparent}
+.propuesta-panel input,.propuesta-panel select,.propuesta-panel textarea{max-width:100%;box-sizing:border-box}
+.propuesta-panel button{max-width:100%;border-radius:8px;min-height:38px;white-space:normal}
+.propuesta-panel button:focus-visible,.propuesta-panel input:focus-visible,.propuesta-panel select:focus-visible{outline:2px solid #ed7130;outline-offset:2px}
+.propuesta-toolbar{padding-bottom:13px;border-bottom:1px solid #ebe3db;margin-bottom:17px}
+.propuesta-toolbar a{display:inline-flex;align-items:center;min-height:32px;font-size:12px}
+.propuesta-docwrap{background:#ece8e2;scrollbar-color:#cfc5ba transparent;overscroll-behavior:contain}
+.propuesta-aviso{line-height:1.5}
+@media(max-width:980px){
+ .propuesta-app{border-radius:12px}
+ .propuesta-mobile-tabs{border-bottom:1px solid #eadfd5;padding:5px 7px;gap:7px}
+ .propuesta-mobile-tabs button{min-height:43px;border-radius:8px;font-size:12px;box-shadow:none!important}
+ .propuesta-mobile-tabs button.activo{background:#fff1e7;color:#bd5e25;border:1px solid #f1d0b7}
+ .propuesta-panel{padding:17px 16px 25px}
+ .propuesta-docwrap{padding:9px 5px 20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .propuesta-docwrap doc-page{display:block;margin:0 auto;max-width:none;overflow:visible}
+}
+@media(max-width:480px){
+ /* Vista en miniatura sin modificar la impresión a tamaño real. */
+ .propuesta-app.show-doc .propuesta-docwrap{overflow:hidden;text-align:center;padding:3px 0 15px}
+ .propuesta-docwrap doc-page{zoom:.40}
+}
+@media(min-width:481px) and (max-width:690px){.propuesta-docwrap doc-page{zoom:.60}}
+@media(min-width:691px) and (max-width:980px){.propuesta-docwrap doc-page{zoom:.82}}
+@media print{.propuesta-docwrap doc-page{zoom:1!important}.propuesta-docwrap{overflow:visible!important}}

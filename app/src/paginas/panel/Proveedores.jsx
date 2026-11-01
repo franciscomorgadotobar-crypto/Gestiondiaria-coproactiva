@@ -1314,7 +1314,8 @@ function ComunicacionProveedores({
 
         <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}
           usuarioId={perfil?.id} guardadosDrive={guardadosDriveCorreo}
-          onGuardarChange={setGuardadosDriveCorreo}/>
+          onGuardarChange={setGuardadosDriveCorreo}
+          onInsertarEnlace={url=>setMensaje(m=>[m.trim(),'Documento para descarga segura: '+url].filter(Boolean).join('\n\n'))}/>
         {erroresBorrador.map((aviso,i)=><p className="chico pipeline-correo-error" role="alert" key={i}>{aviso}</p>)}
         <div className="comunicacion-ayuda">
           <strong>Personalización automática</strong>

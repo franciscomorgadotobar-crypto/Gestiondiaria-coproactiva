@@ -1,4 +1,5 @@
 import {jsPDF} from 'jspdf';
+import {LOGO_PNG} from './logoCoproactiva.js';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from './plantillasDocumentales.js';
 
 /** Exporta un PDF real con paginación A4, sin depender de capturas de pantalla. */
@@ -12,8 +13,8 @@ export function generarPdfDocumento(documento){
  let y=24,pagina=1;
  const paginaBase=()=>{
   doc.setDrawColor(222,217,211);doc.setLineWidth(.3);
-  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(237,113,48);
-  doc.text('coproactiva',margen,17);
+  // El PDF usa el logotipo oficial, no una reconstrucción tipográfica.
+  doc.addImage('data:image/png;base64,'+LOGO_PNG,'PNG',margen,7.5,49,9.8);
   doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(105,105,105);
   doc.text(tipo.titulo,ancho-margen,15,{align:'right'});
   doc.line(margen,20,ancho-margen,20);

@@ -1,0 +1,54 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const leer=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const sql=leer('../supabase/migrations/202611010005_enlaces_documentales_seguros.sql');
+const fn=leer('../supabase/functions/enlace-documental/index.ts');
+const links=leer('src/componentes/EnlacesSegurosDocumento.jsx');
+const adjuntos=leer('src/componentes/AdjuntosCorreo.jsx');
+const gestor=leer('src/paginas/panel/GestorDocumental.jsx');
+const pipeline=leer('src/paginas/panel/Pipeline.jsx');
+const proveedores=leer('src/paginas/panel/Proveedores.jsx');
+test('Enlaces temporales exigen token aleatorio y almacenan solo SHA-256',()=>{
+ assert.match(fn,/crypto\.getRandomValues\(new Uint8Array\(32\)\)/);
+ assert.match(fn,/crypto\.subtle\.digest\('SHA-256'/);
+ assert.match(fn,/token_hash:await hashHex\(token\)/);
+ assert.match(fn,/if\(!TOKEN\.test\(token\)\)/);
+ assert.match(sql,/token_hash text not null unique/);
+ assert.doesNotMatch(sql,/token_plain|public_url/);
+});
+test('Descarga pública está limitada a PDF privado, vigencia y revocación',()=>{
+ assert.match(fn,/req\.method==='GET'/);
+ assert.match(fn,/enlace\.revocado_en\|\|new Date\(enlace\.vence_en\)/);
+ assert.match(fn,/archivo\.mime!=='application\/pdf'/);
+ assert.match(fn,/driveFetch\(admin,/);
+ assert.match(fn,/bytes\.length!==Number\(archivo\.tamano\)/);
+ assert.match(fn,/admin\.rpc\('registrar_acceso_documental'/);
+ assert.match(fn,/content-disposition/);
+ assert.match(fn,/cache-control':'no-store/);
+ assert.match(fn,/referrer-policy':'no-referrer/);
+});
+test('Solo usuarios internos activos autorizados crean, listan o revocan',()=>{
+ assert.match(fn,/ROLES=new Set\(\['superadmin','admin','jefatura'\]\)/);
+ assert.match(fn,/admin\.auth\.getUser\(jwt\)/);
+ assert.match(fn,/if\(!usuario\)return json\(req,\{error:'Acceso no autorizado'\},403\)/);
+ assert.match(fn,/\.eq\('creado_por',usuario\.id\)/);
+ assert.match(sql,/enable row level security/);
+ assert.match(sql,/revoke all on public\.enlaces_documentales from anon,authenticated/);
+ assert.match(sql,/grant select,insert,update on public\.enlaces_documentales to service_role/);
+ assert.match(sql,/security invoker/);
+ assert.match(sql,/revoke all on function public\.registrar_acceso_documental\(uuid\) from public,anon,authenticated/);
+ assert.match(sql,/revocado_en is null and vence_en>now\(\)/);
+});
+test('Gestor y correos contextuales permiten elegir enlace en lugar de adjunto físico',()=>{
+ assert.match(gestor,/EnlacesSegurosDocumento archivo=\{a\}/);
+ assert.match(gestor,/Enlace seguro/);
+ assert.match(adjuntos,/EnlacesSegurosDocumento archivo=\{mapa\.get\(ref\)\}/);
+ assert.match(adjuntos,/onInsertarEnCorreo=\{onInsertarEnlace\}/);
+ assert.match(pipeline,/onInsertarEnlace=\{url=>setMensajeCorreo/);
+ assert.match(proveedores,/onInsertarEnlace=\{url=>setMensaje/);
+ assert.match(links,/Crear enlace seguro \/ seguimiento/);
+ assert.match(links,/Solicitudes|solicitudes de descarga/);
+ assert.match(links,/Revocar/);
+ assert.match(links,/no prueban lectura ni verifican quién abrió/);
+});
