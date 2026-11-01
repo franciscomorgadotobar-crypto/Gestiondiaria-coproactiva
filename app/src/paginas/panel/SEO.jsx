@@ -357,9 +357,9 @@ function SEOInterno() {
       });
     });
   }
-  return <div className="pantalla seo-pantalla modulo-unificado">
+  return <div className="pantalla seo-pantalla modulo-unificado comercial-ui comercial-seo">
     <header className="encabezado seo-cabecera modulo-cabecera">
-      <div><span className="seleccion-area-etiqueta">Marketing · posicionamiento orgánico</span>
+      <div><span className="seleccion-area-etiqueta comercial-eyebrow">Comercial · Posicionamiento orgánico</span>
         <h1 className="h3">SEO y Analítica</h1>
         <p className="chico apagado">Resultados, audiencia, posicionamiento y decisiones para coproactiva.cl.</p>
       </div>
