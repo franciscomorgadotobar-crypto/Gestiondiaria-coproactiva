@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
  * Leaflet y sus estilos pesan 156 kB, y el inicio es la primera pantalla que
  * abre alguien en terreno con mala señal. Por eso la carga es diferida: la
  * tarjeta se dibuja de inmediato con su marco y sus cifras, y el mapa aparece
- * cuando termina de llegar. Si no llega —sin datos, por ejemplo— la tarjeta
+ * cuando termina de llegar. Si no llega -sin datos, por ejemplo- la tarjeta
  * sigue sirviendo: informa cuántas visitas hay y lleva al mapa completo.
  *
  * No es interactivo a propósito. Arrastrarlo sin querer al desplazar la página
