@@ -155,7 +155,7 @@ export default function GestorDocumental(){
            </button>:<span className="documentos-estado">Disponible para adjuntar</span>}</td>
          </tr>
          {a.mime==='application/pdf'&&enlaceArchivoId===a.id&&
-          <tr><td colSpan={4}><EnlacesSegurosDocumento archivo={a}/></td></tr>}
+          <tr className="documentos-fila-enlace"><td colSpan={4}><EnlacesSegurosDocumento archivo={a}/></td></tr>}
         </Fragment>)}</tbody>
        </table>}
       </div>:
