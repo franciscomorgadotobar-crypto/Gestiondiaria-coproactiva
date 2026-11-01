@@ -878,6 +878,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
           <button disabled={!p.telefono} onClick={() => onContacto('llamada')}>☎ Llamar</button>
           <button disabled={!p.telefono} onClick={() => onContacto('whatsapp')}>WhatsApp</button>
           <button disabled={!emailProveedor(p)} onClick={() => onContacto('correo')}>✉ Correo</button>
+          <Link to={'/documentos?proveedor='+p.id}>Documentos y respaldos</Link>
           {p.sitio_web && <a href={p.sitio_web.match(/^https?:/i) ? p.sitio_web : 'https://' + p.sitio_web} target="_blank" rel="noreferrer">Sitio web</a>}
         </div>
       </header>
