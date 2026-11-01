@@ -4,7 +4,7 @@
  * No modificar identificadores, correos ni código fuente almacenado.
  */
 export const normalizarGuiones = valor =>
-  typeof valor === 'string' ? valor.replace(/[—–]/g, '-') : valor;
+  typeof valor === 'string' ? valor.replace(/[\u2013\u2014]/g, '-') : valor;
 
 /**
  * Normaliza la presentación visible, incluso textos procedentes de Supabase
@@ -15,7 +15,7 @@ export function instalarGuionesGlobales(raiz) {
   const ignorados = 'input,textarea,select,option,script,style,pre,code,[contenteditable]:not([contenteditable="false"]),[data-conservar-guiones]';
   function revisar(nodo) {
     if (nodo.nodeType === 3) {
-      if (!/[—–]/.test(nodo.nodeValue || '')) return;
+      if (!/[\u2013\u2014]/.test(nodo.nodeValue || '')) return;
       if (nodo.parentElement?.closest(ignorados)) return;
       nodo.nodeValue = normalizarGuiones(nodo.nodeValue);
       return;
@@ -26,7 +26,7 @@ export function instalarGuionesGlobales(raiz) {
     const walker = doc.createTreeWalker(nodo, NodeFilter.SHOW_TEXT);
     let texto;
     while ((texto = walker.nextNode())) {
-      if (!/[—–]/.test(texto.nodeValue || '')) continue;
+      if (!/[\u2013\u2014]/.test(texto.nodeValue || '')) continue;
       if (texto.parentElement?.closest(ignorados)) continue;
       texto.nodeValue = normalizarGuiones(texto.nodeValue);
     }
