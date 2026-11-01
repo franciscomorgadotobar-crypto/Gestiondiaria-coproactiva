@@ -55,79 +55,20 @@
 @media(max-width:1180px){.documentos-layout{grid-template-columns:minmax(0,1fr)}.documentos-lateral{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}.documentos-lateral h2,.documentos-lateral>p,.documentos-biblioteca-boton,.documentos-drive-link{grid-column:1/-1}.documentos-lateral-item{border-bottom:0}}
 @media(max-width:700px){.documentos-gestor{gap:12px;padding:0 0 25px}.documentos-gestor-cabecera h1{font-size:23px}.documentos-gestor-cabecera p{font-size:12px}.documentos-nuevo{width:100%;text-align:center}.documentos-filtros{flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px;scrollbar-width:thin}.documentos-plantillas{grid-template-columns:1fr;gap:8px}.documentos-plantilla{min-height:0;display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:8px;padding:11px}.documentos-plantilla-icono{grid-row:1/3;grid-column:1;width:34px;height:34px}.documentos-plantilla h2{grid-column:2;grid-row:1;font-size:13px}.documentos-plantilla p{grid-column:2;grid-row:2;font-size:11px}.documentos-plantilla>.boton{grid-column:3;grid-row:1/3;align-self:center;padding:8px;font-size:11px}.documentos-lateral{grid-template-columns:1fr}.documentos-lateral-item{padding:7px 0;border-bottom:1px solid #eee}.documentos-tabla{min-width:0}.documentos-tabla thead{display:none}.documentos-tabla tr{display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid #eee;padding:12px}.documentos-tabla td{border:0;padding:0!important;min-width:0!important}.documentos-tabla td:first-child{grid-column:1/-1;font-size:12px}.documentos-tabla td:nth-child(2),.documentos-tabla td:nth-child(5){font-size:10px;color:#777}.documentos-tabla td:last-child{grid-column:2;grid-row:2/4;text-align:right}.documentos-tabla-wrap{overflow:hidden}}
 
-
-/* Pulido visual del Gestor Documental: jerarquía editorial y controles táctiles */
-.documentos-gestor{gap:20px;padding:10px 0 42px}
-.documentos-gestor-cabecera{border-bottom:1px solid var(--borde,#e7dfd7);padding-bottom:17px}
-.documentos-gestor-cabecera h1{font-size:clamp(24px,2.8vw,31px);letter-spacing:-.035em;margin:7px 0 8px;line-height:1.2}
-.documentos-gestor-cabecera p{font-size:13px;line-height:1.5;max-width:500px}
-.documentos-cabecera-icono{font-size:28px;display:flex;align-items:center;justify-content:center;width:44px;height:44px;background:#fff1e6;border:1px solid #f6d7c0;border-radius:12px;flex-shrink:0}
-.documentos-gestor-cabecera>.boton{min-height:44px;border-radius:10px;font-weight:750;padding:11px 16px}
-.documentos-caja-busqueda{min-height:47px;border-radius:12px;padding:10px 15px;box-shadow:0 3px 15px rgba(43,49,56,.025);transition:border-color .2s,box-shadow .2s}
-.documentos-caja-busqueda:focus-within{border-color:#ed7130;box-shadow:0 0 0 3px #ed713020}
-.documentos-caja-busqueda input{font-size:14px;min-height:28px}
-.documentos-filtros{gap:7px;padding:1px 0}
-.documentos-filtros button{background:var(--tarjeta,#fff);font-size:12px;min-height:36px;padding:8px 15px;transition:background .15s,border-color .15s;color:var(--texto,#3d444b);border-color:var(--borde,#e7dfd7)}
-.documentos-filtros button:hover:not(.activo){border-color:#eba877;background:#fff9f4}
-.documentos-filtros button.activo{box-shadow:0 2px 8px #ed71302b}
-.documentos-filtros button:focus-visible,.documentos-plantilla .boton:focus-visible,.documentos-abrir:focus-visible,.documentos-tabla button:focus-visible{outline:2px solid #ed7130;outline-offset:2px}
-.documentos-layout{gap:18px;grid-template-columns:minmax(0,1fr) minmax(218px,245px)}
-.documentos-principal{gap:22px}
-.documentos-plantillas{gap:12px}
-.documentos-plantilla{min-height:205px;padding:17px 15px;gap:9px;border-radius:14px;box-shadow:0 5px 20px rgba(31,34,38,.035);transition:transform .15s,box-shadow .15s,border-color .15s}
-.documentos-plantilla:hover{transform:translateY(-2px);border-color:#e8bb9f;box-shadow:0 8px 26px rgba(31,34,38,.07)}
-.documentos-plantilla-icono{width:45px;height:45px;border-radius:11px;font-size:24px}
-.documentos-plantilla h2{font-size:14px;font-weight:750;line-height:1.35}
-.documentos-plantilla p{font-size:12px;line-height:1.55}
-.documentos-plantilla>.boton{border-radius:8px;min-height:39px;font-weight:750}
-.documentos-tabla-titulo{margin-bottom:13px}
-.documentos-tabla-titulo h2{font-size:17px;letter-spacing:-.02em}
-.documentos-tabla-titulo button{min-height:36px;padding:8px;border-radius:8px}
-.documentos-tabla-titulo button:hover{background:#fff2e8}
-.documentos-tabla-wrap{border-radius:13px;box-shadow:0 4px 16px rgba(31,34,38,.022)}
-.documentos-tabla{font-size:12px;line-height:1.45}
-.documentos-tabla th{font-size:11px;padding:13px 14px;background:#f7f4f0}
-.documentos-tabla td{padding:13px 14px}
-.documentos-tabla tbody tr:hover:not(.documentos-fila-enlace){background:#fffaf6}
-.documentos-abrir{display:inline-flex;text-decoration:none;padding:7px 11px;border:1px solid #f0d0b6;background:#fff7f0;border-radius:8px;font-size:12px}
-.documentos-abrir:hover{background:#fae7d9}
-.documentos-tipo-archivo{min-width:30px;margin-right:10px;padding:6px;border-radius:7px}
-.documentos-estado{font-size:11px;padding:5px 10px}
-.documentos-lateral{padding:19px;gap:13px;border-radius:14px;box-shadow:0 4px 20px rgba(31,34,38,.025)}
-.documentos-lateral h2{font-size:16px;letter-spacing:-.015em}
-.documentos-lateral>p{font-size:12px}
-.documentos-lateral-item{padding:12px 0}
-.documentos-lateral-item strong{font-size:13px}
-.documentos-lateral-item small{font-size:11px}
-.documentos-origen-correo,.documentos-contexto{border-radius:12px;padding:13px 16px;line-height:1.5}
-.documentos-tabla .documentos-fila-enlace td{background:#fcfaf7;padding:10px 14px}
-.documentos-tabla .documentos-fila-enlace .enlaces-documentales{margin-top:0}
-.documentos-tabla button.boton{border-radius:8px;min-height:36px;font-size:11px;line-height:1.3;white-space:normal}
-@media(min-width:1181px) and (max-width:1370px){.documentos-layout{grid-template-columns:minmax(0,1fr) 215px}.documentos-plantilla{padding:13px}.documentos-plantilla>.boton{padding:8px;font-size:11px}}
-@media(max-width:1000px){.documentos-plantillas{grid-template-columns:repeat(2,minmax(0,1fr))}.documentos-plantilla{min-height:175px}}
-@media(max-width:700px){
- .documentos-gestor{padding:0 0 30px;gap:14px}
- .documentos-gestor-cabecera{gap:12px;padding:0 0 15px}
- .documentos-gestor-cabecera h1{font-size:22px;letter-spacing:-.03em}
- .documentos-cabecera-icono{height:38px;width:38px;font-size:24px;border-radius:10px}
- .documentos-nuevo{width:100%;min-height:44px}
- .documentos-caja-busqueda{min-height:47px}
- .documentos-filtros{margin-right:-10px;padding:0 10px 8px 0;gap:7px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
- .documentos-filtros::-webkit-scrollbar{display:none}
- .documentos-filtros button{min-height:37px;padding:8px 13px}
- .documentos-plantillas{grid-template-columns:1fr;gap:10px}
- .documentos-plantilla{grid-template-columns:42px minmax(0,1fr);min-height:0;padding:14px;row-gap:7px;column-gap:12px;border-radius:12px}
- .documentos-plantilla-icono{grid-row:1/3;grid-column:1;width:42px;height:42px;border-radius:10px}
- .documentos-plantilla h2{grid-row:1;grid-column:2;font-size:14px}
- .documentos-plantilla p{grid-row:2;grid-column:2;font-size:12px;line-height:1.5}
- .documentos-plantilla>.boton{grid-row:3;grid-column:1/-1;min-height:38px;width:100%;font-size:12px}
- .documentos-tabla{font-size:12px}
- .documentos-tabla tr{gap:10px;padding:14px;border-bottom:1px solid #eee7e0}
- .documentos-tabla td:first-child{font-size:13px;line-height:1.5}
- .documentos-tabla td:nth-child(2),.documentos-tabla td:nth-child(5){font-size:11px}
- .documentos-tabla .documentos-fila-enlace{display:block;padding:9px}
- .documentos-tabla .documentos-fila-enlace td{display:block!important;width:auto!important;padding:0!important}
- .documentos-lateral{gap:9px;padding:15px}
- .documentos-lateral-item{padding:10px 0}
+/* Corrección de encuadre móvil: conserva las tarjetas y composición originales. */
+.documentos-gestor,.documentos-layout,.documentos-principal,.documentos-seccion{min-width:0;max-width:100%;box-sizing:border-box}
+@media(max-width:1180px){
+ .documentos-layout{grid-template-columns:minmax(0,1fr)}
 }
-@media(prefers-reduced-motion:reduce){.documentos-plantilla,.documentos-caja-busqueda{transition:none}.documentos-plantilla:hover{transform:none}}
+@media(max-width:700px){
+ .documentos-gestor{width:100%;max-width:100%;min-width:0;overflow-x:clip}
+ .documentos-layout,.documentos-principal,.documentos-seccion,.documentos-plantillas,.documentos-lateral{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+ .documentos-plantillas{grid-template-columns:minmax(0,1fr)}
+ .documentos-plantilla{width:100%;min-width:0;max-width:100%;grid-template-columns:36px minmax(0,1fr) auto}
+ .documentos-plantilla h2,.documentos-plantilla p{min-width:0;overflow-wrap:break-word}
+ .documentos-plantilla>.boton{max-width:100%;min-width:0}
+ .documentos-filtros{max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain}
+ .documentos-lateral{grid-template-columns:minmax(0,1fr)}
+ .documentos-tabla .documentos-fila-enlace{display:block;padding:10px}
+ .documentos-tabla .documentos-fila-enlace td{display:block!important;width:100%!important;padding:0!important;box-sizing:border-box}
+}

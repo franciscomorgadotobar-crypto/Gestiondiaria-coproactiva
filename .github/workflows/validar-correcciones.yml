@@ -48,6 +48,9 @@ jobs:
       - name: Validar generador de propuestas integrado en Comercial
         working-directory: app
         run: node --test pruebas/propuestas-integracion.test.js
+      - name: Verificar encuadre móvil original del Gestor documental
+        working-directory: app
+        run: node --test pruebas/gestor-encuadre-movil.test.js
       - name: Validar enlaces documentales temporales, revocación y acceso autorizado
         working-directory: app
         run: node --test pruebas/enlaces-documentales.test.js
