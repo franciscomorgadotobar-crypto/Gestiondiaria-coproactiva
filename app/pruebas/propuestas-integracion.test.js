@@ -50,7 +50,7 @@ test('Gestor documental independiente reutilizable desde correos y CRM',()=>{
  assert.match(gestor,/TIPOS_DOCUMENTO\.map/);
  assert.match(gestor,/propuestas_comerciales/);
  assert.match(gestor,/Propuesta comercial/);
- assert.match(gestor,/plantilla en preparación/i);
+ assert.match(gestor,/documentos-plantillas/);
  assert.match(adjuntos,/Abrir gestor documental para crear un documento/);
  assert.match(adjuntos,/target="_blank" rel="noopener noreferrer"/);
  assert.match(adjuntos,/prospectoId/);
@@ -61,5 +61,5 @@ test('Cuatro familias tipográficas desde cinco PDF preservan marca Coproactiva'
   assert.ok(catalogo.includes(tipo),tipo);
  for(const tono of ['#ed7130','#d0a207','#696969','#2b3138'])
   assert.ok(catalogo.includes(tono),tono);
- assert.match(gestor,/Plantilla en preparación/);
+ assert.match(gestor,/documentos-plantillas/);
 });
