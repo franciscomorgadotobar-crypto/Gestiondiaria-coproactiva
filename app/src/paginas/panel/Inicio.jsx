@@ -222,6 +222,7 @@ export default function Inicio() {
             <span>Mantenciones</span>
             <span aria-hidden="true">›</span>
           </Link>
+          {puedeConfigurar && <Link to="/documentos" className="acceso"><span>Gestor documental</span><span aria-hidden="true">›</span></Link>}
           {puedeConfigurar && <Link to="/plantillas" className="acceso">
             <span>Plantillas</span>
             <span aria-hidden="true">›</span>
