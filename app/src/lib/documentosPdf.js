@@ -70,7 +70,7 @@ export function generarPdfDocumento(documento){
 }
 export function nombrePdfDocumento(titulo){
  return (String(titulo||'Documento').normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
-  .replace(/[^a-zA-Z0-9 _.-]/g,'').replace(/\s+/g,'_').slice(0,96)||'Documento')+'.pdf';
+  .replace(/[^a-zA-Z0-9 _.-]/g,'').replace(/\s+/g,'_').replace(/_+/g,'_').slice(0,96)||'Documento')+'.pdf';
 }
 export function descargarPdfDocumento(documento){
  const blob=generarPdfDocumento(documento),url=URL.createObjectURL(blob),a=document.createElement('a');
