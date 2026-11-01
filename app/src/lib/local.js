@@ -207,8 +207,8 @@ export async function marcarIntento(entrada, error) {
  * que poder mirar el teléfono y saber si ya es seguro cerrar la app.
  *
  * Las fotos se cuentan una sola vez, desde el almacén de fotos. Contarlas
- * también desde la cola —donde tienen su propia entrada tipo 'foto' para
- * llevarlas al servidor— las duplicaba: una foto pendiente aparecía a la vez
+ * también desde la cola -donde tienen su propia entrada tipo 'foto' para
+ * llevarlas al servidor- las duplicaba: una foto pendiente aparecía a la vez
  * como "1 cambio" y como "1 foto", cuando era la misma foto. */
 export async function pendientes() {
   const db = await base();
@@ -223,8 +223,8 @@ export async function pendientes() {
 /* Lo mismo, pero por levantamiento: para poder decir "en el Edificio Mirador
  * del Parque" en vez de un número suelto que no dice dónde ir a mirar.
  *
- * Los ítems no guardan su control_id en la entrada de cola —solo el id del
- * ítem—, así que hay que resolverlo contra el almacén de ítems. Es la única
+ * Los ítems no guardan su control_id en la entrada de cola -solo el id del
+ * ítem-, así que hay que resolverlo contra el almacén de ítems. Es la única
  * vuelta extra; control, pausa y foto ya lo traen directo. */
 export async function pendientesPorControl() {
   const db = await base();
