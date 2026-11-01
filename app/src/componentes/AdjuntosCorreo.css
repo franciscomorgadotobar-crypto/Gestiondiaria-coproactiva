@@ -29,3 +29,12 @@
 .correo-guardar-drive-destino{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;font-size:12px;overflow-wrap:anywhere}
 .correo-guardar-drive-destino span{flex:1;min-width:130px}
 @media(max-width:640px){.correo-guardar-drive-destino{display:grid;gap:5px}.correo-guardar-drive-destino button{justify-self:start}}
+
+/* Guardado individual: la ubicación se define debajo del documento correspondiente. */
+.correo-adjuntos-tarjeta{border:1px solid var(--borde,#e0d9d3);border-radius:12px;overflow:hidden;background:var(--tarjeta,#fff);min-width:0}
+.correo-adjuntos-tarjeta .correo-adjuntos-doc{border-bottom:1px solid var(--borde,#e0d9d3);gap:8px;flex-wrap:wrap}
+.correo-adjuntos-tarjeta .correo-adjuntos-doc strong{font-weight:650}
+.correo-adjuntos-tarjeta .correo-guardar-drive{border:0;border-radius:0;padding:11px 12px}
+.correo-adjuntos-resumen{gap:10px}
+.correo-adjuntos-resumen>p{margin:0}
+@media(max-width:640px){.correo-adjuntos-tarjeta .correo-adjuntos-doc .boton{padding:7px 10px}}
