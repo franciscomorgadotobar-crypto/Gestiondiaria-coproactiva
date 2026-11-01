@@ -63,7 +63,7 @@ create or replace function public.guardar_documento_gestion(
  p_id uuid,p_tipo text,p_titulo text,p_estado text,p_contexto_tipo text,
  p_contexto_id uuid,p_contenido jsonb,p_version_esperada integer default null
 ) returns public.documentos_gestion
-language plpgsql security definer set search_path=public,pg_temp as $
+language plpgsql security definer set search_path=public,pg_temp as $$
 declare v_doc public.documentos_gestion; v_user uuid:=auth.uid();
 begin
  if v_user is null then raise exception 'No autenticado' using errcode='28000'; end if;
