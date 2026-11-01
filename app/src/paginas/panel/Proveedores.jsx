@@ -6,6 +6,7 @@ import { useVolverGlobal } from '../../lib/navegacion';
 import { validarBorradorCorreo } from '../../lib/plantillasCorreo';
 import { prepararCopias } from '../../lib/copiasCorreo';
 import CopiasCorreo from '../../componentes/CopiasCorreo';
+import AdjuntosCorreo from '../../componentes/AdjuntosCorreo';
 import Confirmar from '../../componentes/Confirmar';
 import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
 import { consultarBaseCompletaProveedores, generarCsvProveedores, nombreArchivoProveedores } from '../../lib/exportarProveedores';
@@ -1165,6 +1166,8 @@ function ComunicacionProveedores({
   const [mensaje, setMensaje] = useState('');
   const [cc,setCc]=useState('');
   const [cco,setCco]=useState('');
+  const [adjuntosCorreo,setAdjuntosCorreo]=useState([]);
+  const [guardadosDriveCorreo,setGuardadosDriveCorreo]=useState({});
   const [plantillasCorreo,setPlantillasCorreo]=useState([]);
   const [plantillaElegida,setPlantillaElegida]=useState('');
   const [firmaPreview,setFirmaPreview]=useState(null);
@@ -1223,7 +1226,12 @@ function ComunicacionProveedores({
       asunto: asunto.trim(),
       mensaje: mensaje.trim(),
       incluir_telefono: incluirTelefono,
-      cc:copias.cc,cco:copias.cco
+      cc:copias.cc,cco:copias.cco,
+      adjuntos:adjuntosCorreo,
+      guardar_drive:adjuntosCorreo.filter(ref=>guardadosDriveCorreo[ref]?.carpeta_id).map(ref=>({
+        ref,carpeta_id:guardadosDriveCorreo[ref].carpeta_id,
+        operacion_id:guardadosDriveCorreo[ref].operacion_id
+      }))
     });
   }
 
@@ -1304,6 +1312,9 @@ function ComunicacionProveedores({
                     placeholder="Escribe la comunicación general. El saludo y la firma se agregan automáticamente." />
         </label>
 
+        <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}
+          usuarioId={perfil?.id} guardadosDrive={guardadosDriveCorreo}
+          onGuardarChange={setGuardadosDriveCorreo}/>
         {erroresBorrador.map((aviso,i)=><p className="chico pipeline-correo-error" role="alert" key={i}>{aviso}</p>)}
         <div className="comunicacion-ayuda">
           <strong>Personalización automática</strong>
@@ -1350,7 +1361,7 @@ function ComunicacionProveedores({
       <div className="comunicacion-confirmacion">
         <div>
           <strong>{resumen.enviables.length} destinatario{resumen.enviables.length === 1 ? '' : 's'} efectivo{resumen.enviables.length === 1 ? '' : 's'}</strong>
-          <span>Cada proveedor recibe un correo independiente.</span>
+          <span>Cada proveedor recibe un correo independiente{adjuntosCorreo.length ? ' con '+adjuntosCorreo.length+' adjunto(s) físico(s)' : ''}.</span>
         </div>
         <div className="fila-botones">
           <button type="button" className="boton boton-secundario" disabled={enviando} onClick={onCancelar}>
