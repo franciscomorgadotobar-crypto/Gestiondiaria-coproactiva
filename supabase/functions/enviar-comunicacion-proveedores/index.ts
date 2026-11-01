@@ -2,6 +2,18 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { enviarLote } from '../_compartido/correo.ts';
 import { firmaEstandar, prepararSeguimiento, AVISO_SEGUIMIENTO } from '../_compartido/motor-correo.ts';
 import { validarCopiasCorreo } from '../_compartido/copias-correo.ts';
+import { driveFetch } from '../_compartido/google-drive.ts';
+import { guardarAdjuntosEnCarpeta } from '../_compartido/drive-correo.ts';
+
+const MAX_ARCHIVOS = 3;
+const MAX_TOTAL = 8 * 1024 * 1024;
+const UUID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
+const MIME_PERMITIDOS = new Set([
+  'application/pdf','image/jpeg','image/png','image/webp','text/plain','text/csv',
+  'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'
+]);
 
 const URL = Deno.env.get('SUPABASE_URL')!;
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -126,6 +138,31 @@ Deno.serve(async (req) => {
   try{copias=validarCopiasCorreo(body,'contacto@coproactiva.cl')}
   catch(e){return responder({error:e instanceof Error?e.message:'Copias inválidas'},422)}
 
+  // Igual que CRM: referencias opacas de la biblioteca compartida o de una comunidad.
+  // Los bytes y el identificador de Drive nunca vienen del navegador.
+  const referencias = Array.isArray(body.adjuntos) ? body.adjuntos : [];
+  if (referencias.length > MAX_ARCHIVOS ||
+      !referencias.every((ref:unknown) => typeof ref === 'string' && /^(b|c):[a-f0-9-]{36}$/i.test(ref)) ||
+      new Set(referencias).size !== referencias.length)
+    return responder({error:'Selecciona hasta tres archivos distintos desde la biblioteca'},422);
+  if (body.guardar_drive != null && !Array.isArray(body.guardar_drive))
+    return responder({error:'El guardado permanente se configura por archivo'},422);
+  const guardarDrive = (body.guardar_drive || []) as unknown[];
+  const referenciasGuardadas = new Set<string>();
+  if (guardarDrive.length > MAX_ARCHIVOS || guardarDrive.some(item=>{
+    if(!item || typeof item !== 'object' || Array.isArray(item))return true;
+    const d = item as Record<string,unknown>;
+    if(typeof d.ref !== 'string' || !referencias.includes(d.ref) ||
+       referenciasGuardadas.has(d.ref) ||
+       typeof d.carpeta_id !== 'string' || !/^[A-Za-z0-9_-]{8,200}$/.test(d.carpeta_id) ||
+       typeof d.operacion_id !== 'string' || !UUID.test(d.operacion_id))return true;
+    referenciasGuardadas.add(d.ref);
+    return false;
+  }))return responder({error:'Revisa la carpeta de Drive por documento'},422);
+  // Evita envíos excesivamente grandes al mismo tiempo y límites del runtime.
+  if(referencias.length && ids.length > 50)
+    return responder({error:'Con archivos adjuntos selecciona como máximo 50 proveedores por envío'},422);
+
   const { data: proveedores, error: eProveedores } = await admin.from('proveedores')
     .select('id,empresa,contacto_nombre,email,contactos,lista_negra')
     .in('id', ids);
@@ -135,6 +172,67 @@ Deno.serve(async (req) => {
   const porId = new Map((proveedores ?? []).map((p: any) => [p.id,p]));
   const destinos = ids.map(id => porId.get(id)).filter(Boolean);
 
+  const adjuntosSMTP: {filename:string;contentType:string;encoding:'binary';content:Uint8Array}[] = [];
+  const adjuntosAuditoria: {id:string;origen:string;nombre:string;bytes:number;guardado_drive?:{carpeta_id:string;carpeta_nombre:string}}[] = [];
+  const archivosParaDrive: {ref:string;drive_file_id:string;nombre:string}[] = [];
+  let totalBytes = 0;
+  for (const referencia of referencias as string[]) {
+    const origen = referencia.slice(0,1), id = referencia.slice(2);
+    if(!UUID.test(id))return responder({error:'Referencia de documento inválida'},422);
+    const tabla = origen === 'b' ? 'correo_archivos_drive' : 'drive_archivos_comunidad';
+    const {data:archivo,error:eArchivo}=await admin.from(tabla).select('*')
+      .eq('id',id).is('eliminado_en',null).maybeSingle();
+    if(eArchivo || !archivo)return responder({error:'Un archivo ya no está disponible'},422);
+    if(origen === 'c' && perfil.rol !== 'superadmin'){
+      const {data:permiso}=await admin.from('perfil_comunidades')
+        .select('comunidad_id').eq('perfil_id',user.id)
+        .eq('comunidad_id',archivo.comunidad_id).maybeSingle();
+      if(!permiso)return responder({error:'No tienes acceso a ese documento de comunidad'},403);
+    }
+    const nombre = String(archivo.nombre||'').trim().slice(0,180);
+    const mime = String(archivo.mime||'').trim().slice(0,150);
+    const tamano = Number(archivo.tamano);
+    if(!nombre || !MIME_PERMITIDOS.has(mime) ||
+       !Number.isSafeInteger(tamano) || tamano<=0 || tamano>MAX_TOTAL)
+      return responder({error:'Formato o tamaño de archivo no permitido'},422);
+    totalBytes += tamano;
+    if(totalBytes > MAX_TOTAL)return responder({error:'Los adjuntos superan los 8 MB en conjunto'},422);
+    const driveFileId = archivo.drive_file_id;
+    if(typeof driveFileId !== 'string' || !driveFileId)
+      return responder({error:'Archivo sin respaldo válido en Drive'},422);
+    let respuestaDrive:Response;
+    try{
+      respuestaDrive = await driveFetch(admin,'/drive/v3/files/'+encodeURIComponent(driveFileId)+'?alt=media&supportsAllDrives=true');
+    }catch{return responder({error:'No se pudo obtener el archivo desde Drive'},503)}
+    if(!respuestaDrive.ok)return responder({error:'No se pudo descargar un adjunto'},503);
+    const longitud = Number(respuestaDrive.headers.get('content-length')||0);
+    if(longitud>tamano || longitud>MAX_TOTAL){
+      await respuestaDrive.body?.cancel();
+      return responder({error:'El archivo descargado excede el tamaño permitido'},422);
+    }
+    const bytes = new Uint8Array(await respuestaDrive.arrayBuffer());
+    if(bytes.length !== tamano)
+      return responder({error:'El archivo cambió de tamaño; vuelve a seleccionarlo'},422);
+    adjuntosSMTP.push({filename:nombre,contentType:mime,encoding:'binary',content:bytes});
+    adjuntosAuditoria.push({id,origen:origen==='b'?'biblioteca':'comunidad',nombre,bytes:tamano});
+    archivosParaDrive.push({ref:referencia,drive_file_id:driveFileId,nombre});
+  }
+  for(const item of guardarDrive){
+    const seleccion = item as {ref:string;carpeta_id:string;operacion_id:string};
+    const archivo = archivosParaDrive.find(a=>a.ref===seleccion.ref);
+    if(!archivo)return responder({error:'No se encontró el archivo para guardar en Drive'},422);
+    try{
+      const guardado=await guardarAdjuntosEnCarpeta(admin,{
+        carpetaId:seleccion.carpeta_id,operacionId:seleccion.operacion_id,
+        usuarioId:user.id,archivos:[archivo]
+      });
+      const registro=adjuntosAuditoria.find(a=>a.id===seleccion.ref.slice(2));
+      if(registro)registro.guardado_drive={carpeta_id:guardado.carpeta_id,carpeta_nombre:guardado.carpeta_nombre};
+    }catch(e){
+      return responder({error:e instanceof Error?e.message:'No se pudo guardar la copia en Drive'},503);
+    }
+  }
+
   const { data: comunicacion, error: eComunicacion } = await admin
     .from('proveedor_comunicaciones')
     .insert({
@@ -142,6 +240,7 @@ Deno.serve(async (req) => {
       mensaje,
       alcance,
       filtros,
+      adjuntos: adjuntosAuditoria,
       incluir_telefono: incluirTelefono,
       destinatarios_total: ids.length,
       creado_por: user.id,
@@ -233,7 +332,8 @@ Deno.serve(async (req) => {
       texto: [
         saludoProveedor(proveedor),'',mensaje,'',
         firmaTexto(perfil,firmaGuardada,incluirTelefono,indicador?.activo===true)
-      ].join('\n')
+      ].join('\n'),
+      adjuntos: adjuntosSMTP
     };
   });
 
@@ -288,6 +388,7 @@ Deno.serve(async (req) => {
     ok: true,
     comunicacion_id: comunicacion.id,
     destinatarios: ids.length,
+    adjuntos: adjuntosAuditoria.length,
     enviados,
     fallidos,
     omitidos,
