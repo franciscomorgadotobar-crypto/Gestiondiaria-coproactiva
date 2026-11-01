@@ -169,8 +169,8 @@ export function vigencia(horas: number) {
  *
  * Antes iba además la dirección completa al pie, por si el botón no se
  * pintaba. No hace falta: el botón es una celda de tabla con fondo y texto
- * dentro, que es lo que aguanta en todos los clientes de correo —no depende
- * de imágenes, ni de CSS que alguien bloquee, ni de fuentes que no lleguen—.
+ * dentro, que es lo que aguanta en todos los clientes de correo -no depende
+ * de imágenes, ni de CSS que alguien bloquee, ni de fuentes que no lleguen-.
  * Y esa dirección al pie delataba dónde está alojado el sistema.
  *
  * Quien reciba el correo en texto plano igual recibe la dirección entera,

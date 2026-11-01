@@ -111,7 +111,7 @@ const SEPARADOR = '<div style="height:1px;background:rgba(48,70,96,0.08);margin:
 export function confirmacionContacto(d: DatosFormulario) {
   const nombre = linea(d.nombre, 80);
   const condominio = linea(d.condominio, 120);
-  const asunto = linea(`Gracias por contactarnos — ${condominio}`, 160);
+  const asunto = linea(`Gracias por contactarnos - ${condominio}`, 160);
   const cuerpo = `
       <p style="margin:0;font-size:10px;font-weight:700;color:#d5863b;letter-spacing:0.14em;text-transform:uppercase">Hola</p>
       <p style="margin:6px 0 20px;font-size:26px;font-weight:800;color:#2f2f2f;letter-spacing:-0.5px;line-height:1.1">${escapar(nombre)}</p>
@@ -163,7 +163,7 @@ export function avisoNuevoProspecto(d: DatosFormulario) {
       <table cellpadding="0" cellspacing="0" style="margin-top:6px;margin-bottom:20px">
         <tr>
           <td style="width:6px;height:6px;background:#d5863b;border-radius:3px;vertical-align:middle"></td>
-          <td style="padding-left:7px;font-size:12px;color:#6f6f6f;font-weight:500">Primer contacto — responder en menos de 24 horas</td>
+          <td style="padding-left:7px;font-size:12px;color:#6f6f6f;font-weight:500">Primer contacto - responder en menos de 24 horas</td>
         </tr>
       </table>
       ${SEPARADOR}
@@ -191,7 +191,7 @@ export function avisoNuevoProspecto(d: DatosFormulario) {
 
   const texto = [
     'Nuevo prospecto desde coproactiva.cl',
-    'Primer contacto — responder en menos de 24 horas',
+    'Primer contacto - responder en menos de 24 horas',
     '',
     `Condominio: ${condominio}`,
     `Contacto: ${nombre}`,

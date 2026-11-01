@@ -10,8 +10,8 @@ import { renovacion, enviar, hayCorreo } from '../_compartido/correo.ts';
  * Es la única función que se abre sin sesión, así que asume que quien llama es
  * hostil y se defiende de tres cosas:
  *
- *  1. Averiguar quién trabaja acá. La respuesta es siempre la misma —exista el
- *     correo o no, esté activo o no— y el envío sale en segundo plano, para que
+ *  1. Averiguar quién trabaja acá. La respuesta es siempre la misma -exista el
+ *     correo o no, esté activo o no- y el envío sale en segundo plano, para que
  *     tampoco el tiempo de respuesta delate la diferencia.
  *
  *  2. Usarla para llenarle la bandeja a alguien, o para quemar la cuota diaria
@@ -41,8 +41,8 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
-/* Una sola respuesta para todos los caminos. Cualquier variación —un texto
- * distinto, un código distinto— convierte a esta función en un buscador de
+/* Una sola respuesta para todos los caminos. Cualquier variación -un texto
+ * distinto, un código distinto- convierte a esta función en un buscador de
  * correos registrados. */
 function recibido() {
   return new Response(
