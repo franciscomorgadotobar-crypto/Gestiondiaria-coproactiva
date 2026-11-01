@@ -166,6 +166,18 @@ export default function ProveedoresComunicaciones() {
                     <p>{seleccionada.mensaje}</p>
                   </div>
 
+                  {Array.isArray(seleccionada.adjuntos) && seleccionada.adjuntos.length>0 && (
+                    <div className="comunicaciones-mensaje" aria-label="Documentos adjuntos">
+                      <span className="etiqueta-campo">Adjuntos reales ({seleccionada.adjuntos.length})</span>
+                      <ul>
+                        {seleccionada.adjuntos.map((a,i)=><li key={a.id||i}>
+                          <strong>{a.nombre}</strong> <span className="micro apagado">({(Number(a.bytes||0)/1048576).toFixed(2)} MB)</span>
+                          {a.guardado_drive?.carpeta_nombre&&<small> · Copia guardada en {a.guardado_drive.carpeta_nombre}</small>}
+                        </li>)}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="comunicaciones-resumen">
                     <div><strong>{seleccionada.destinatarios_total}</strong><span>Objetivos</span></div>
                     <div><strong>{seleccionada.enviados}</strong><span>Enviados</span></div>
