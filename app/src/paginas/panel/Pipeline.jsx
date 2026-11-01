@@ -119,6 +119,7 @@ export default function Pipeline() {
   const [plantillaElegida,setPlantillaElegida] = useState('');
   const [varianteElegida,setVarianteElegida] = useState('principal');
   const [adjuntosCorreo,setAdjuntosCorreo] = useState([]);
+  const [guardadoDriveCorreo,setGuardadoDriveCorreo] = useState(null);
   const [firmaCorreo,setFirmaCorreo]=useState(null);
   const [historialCorreos,setHistorialCorreos]=useState([]);
   const [historialCorreosCargando,setHistorialCorreosCargando]=useState(false);
@@ -431,6 +432,7 @@ export default function Pipeline() {
     const { data, error: envioError } = await supabase.functions.invoke('correo-prospecto', {
       body: { prospecto_id: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim(),
         plantilla_id:plantillaElegida||null, adjuntos:adjuntosCorreo,
+        ...(guardadoDriveCorreo?.carpeta_id ? {guardar_drive:{carpeta_id:guardadoDriveCorreo.carpeta_id,operacion_id:guardadoDriveCorreo.operacion_id}} : {}),
         cc:copias.cc,cco:copias.cco }
     });
     setEnviandoCorreo(false);
@@ -442,6 +444,7 @@ export default function Pipeline() {
     setMensajeCorreo('');
     setCcCorreo('');setCcoCorreo('');
     setAdjuntosCorreo([]);
+    setGuardadoDriveCorreo(null);
     setRefrescarHistorial(n=>n+1);
     volverFicha();
     cargar();
@@ -828,7 +831,8 @@ export default function Pipeline() {
                 </div>}
               <Link to="/mi-cuenta#firma-correo" className="micro">Configurar mi firma y logo</Link>
             </div>
-            <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}/>
+            <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}
+              usuarioId={perfil?.id} guardadoDrive={guardadoDriveCorreo} onGuardarChange={setGuardadoDriveCorreo}/>
             {validarBorradorCorreo(asuntoCorreo,mensajeCorreo).map((aviso,i)=><p className="chico pipeline-correo-error" key={i} role="alert">{aviso}</p>)}
             {necesitaAdjunto&&!adjuntosCorreo.length&&<p className="chico pipeline-correo-error">Esta plantilla requiere un adjunto físico.</p>}
             <p className="chico apagado">Los adjuntos viajan dentro del correo. Las variables pendientes o instrucciones sin completar impiden el envío.</p>
