@@ -42,6 +42,9 @@ jobs:
       - name: Validar selección de carpetas y guardado físico de adjuntos en Drive
         working-directory: app
         run: node --test pruebas/correo-guardar-drive.test.js
+      - name: Validar Gestor documental y mockup responsive
+        working-directory: app
+        run: node --test pruebas/gestor-documental-mockup.test.js
       - name: Validar generador de propuestas integrado en Comercial
         working-directory: app
         run: node --test pruebas/propuestas-integracion.test.js
