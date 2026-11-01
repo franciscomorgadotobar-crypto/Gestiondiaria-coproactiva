@@ -3,6 +3,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { enviarLoteMotor, prepararSeguimiento, firmaEstandar, AVISO_SEGUIMIENTO } from '../_compartido/motor-correo.ts';
 import { driveFetch } from '../_compartido/google-drive.ts';
+import { guardarAdjuntosEnCarpeta } from '../_compartido/drive-correo.ts';
 import { validarCopiasCorreo } from '../_compartido/copias-correo.ts';
 
 const BASE = Deno.env.get('SUPABASE_URL') || '';
@@ -55,6 +56,11 @@ Deno.serve(async req=>{
   const mensaje=normal(body?.mensaje,5000);
   const plantillaId=normal(body?.plantilla_id,36);
   const referencias=Array.isArray(body?.adjuntos) ? body.adjuntos : [];
+  const guardarDrive=body.guardar_drive && typeof body.guardar_drive==='object'&&!Array.isArray(body.guardar_drive)
+    ? body.guardar_drive as Record<string,unknown> : null;
+  if(guardarDrive && (!referencias.length || typeof guardarDrive.carpeta_id!=='string' ||
+    typeof guardarDrive.operacion_id!=='string' || !uuidValido(guardarDrive.operacion_id)))
+    return respuesta({error:'Selecciona archivos y una carpeta de Drive antes de enviar'},422);
   if(referencias.length>MAX_ARCHIVOS||!referencias.every(x=>typeof x==='string' && /^(b|c):[a-f0-9-]{36}$/i.test(x)))
     return respuesta({error:'Se permiten hasta tres archivos registrados en la biblioteca o comunidad'},422);
   const idsUnicos=[...new Set(referencias)];
@@ -103,7 +109,8 @@ Deno.serve(async req=>{
   // Los IDs se resuelven en el servidor: jamás se aceptan URLs o Drive file IDs
   // proporcionados por el navegador. Descarga binaria desde Google Drive privado.
   const adjuntosSMTP:{filename:string;contentType:string;encoding:'binary';content:Uint8Array}[]=[];
-  const auditoriaAdjuntos:{id:string;origen:string;nombre:string;bytes:number}[]=[];
+  const auditoriaAdjuntos:{id:string;origen:string;nombre:string;bytes:number;guardado_drive?:{carpeta_id:string;carpeta_nombre:string}}[]=[];
+  const archivosParaDrive:{ref:string;drive_file_id:string;nombre:string}[]=[];
   let total=0;
   for(const referencia of idsUnicos){
     const origen=referencia.slice(0,1),id=referencia.slice(2);
@@ -146,6 +153,25 @@ Deno.serve(async req=>{
     if(bytes.length!==tamano)return respuesta({error:'El archivo cambió de tamaño. Vuelve a seleccionarlo'},422);
     adjuntosSMTP.push({filename:nombre,contentType:mime,encoding:'binary',content:bytes});
     auditoriaAdjuntos.push({id,origen:origen==='b'?'biblioteca':'comunidad',nombre,bytes:tamano});
+    archivosParaDrive.push({ref:referencia,drive_file_id:googleId,nombre});
+  }
+
+  // Se guarda la copia física en la carpeta elegida antes de entregar el mensaje.
+  // La operación es idempotente para evitar duplicados si hay un reintento SMTP.
+  if(guardarDrive){
+    try{
+      const resultado=await guardarAdjuntosEnCarpeta(admin,{
+        carpetaId:String(guardarDrive.carpeta_id),operacionId:String(guardarDrive.operacion_id),
+        usuarioId:user.id,archivos:archivosParaDrive
+      });
+      for(const guardado of resultado.archivos){
+        const registro=auditoriaAdjuntos.find(x=>x.id===guardado.ref.slice(2));
+        if(registro)registro.guardado_drive={carpeta_id:resultado.carpeta_id,carpeta_nombre:resultado.carpeta_nombre};
+      }
+    }catch(e){
+      console.error('correo-prospecto: guardado Drive',e instanceof Error?e.name:'unknown');
+      return respuesta({error:e instanceof Error?e.message:'No fue posible guardar los adjuntos en Drive'},503);
+    }
   }
 
   // Preferencia del remitente. El enlace solo identifica este mensaje; no

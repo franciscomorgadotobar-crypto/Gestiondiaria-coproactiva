@@ -1,0 +1,18 @@
+.selector-drive-fondo{position:fixed;inset:0;background:rgba(17,24,39,.6);display:flex;align-items:center;justify-content:center;padding:12px;z-index:1300}
+.selector-drive-dialogo{background:var(--tarjeta,#fff);color:var(--texto-titulo,#242a33);border:1px solid var(--borde,#dedede);border-radius:16px;width:min(540px,100%);max-height:min(88dvh,740px);overflow:auto;display:grid;gap:12px;padding:18px;box-shadow:0 15px 50px #0003;box-sizing:border-box}
+.selector-drive-cabecera{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.selector-drive-cabecera strong{font-size:18px}
+.selector-drive-cabecera p{margin:3px 0}
+.selector-drive-icono{border:0;background:transparent;font-size:28px;cursor:pointer}
+.selector-drive-ruta{background:#fff4ea;border-radius:9px;padding:9px 11px;font-size:12px;color:#7b3b19;overflow-wrap:anywhere}
+.selector-drive-ruta button{color:inherit;border:0;background:transparent;font:inherit;text-decoration:underline;cursor:pointer;padding:0}
+.selector-drive-lista{display:grid;gap:4px;overflow:auto;min-height:120px;max-height:40dvh}
+.selector-drive-item{display:flex;align-items:center;gap:12px;width:100%;border:1px solid var(--borde,#dedede);border-radius:9px;background:var(--tarjeta,#fff);text-align:left;padding:12px;cursor:pointer;font-size:14px;color:inherit}
+.selector-drive-item span:last-child{margin-left:auto}
+.selector-drive-item:hover,.selector-drive-item:focus-visible{border-color:#ed7130;background:#fff5ec}
+.selector-drive-ultima{border:0;background:transparent;color:#b65b25;text-align:left;text-decoration:underline;cursor:pointer;font-size:12px}
+.selector-drive-nueva{display:flex;align-items:end;gap:8px}
+.selector-drive-nueva .campo{min-width:0;flex:1}
+.selector-drive-acciones{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.selector-drive-acciones .boton{min-height:42px}
+@media(max-width:540px){.selector-drive-fondo{padding:8px;align-items:flex-end}.selector-drive-dialogo{max-height:92dvh;padding:14px;border-radius:16px 16px 0 0}.selector-drive-acciones{display:grid;grid-template-columns:1fr 1fr}.selector-drive-acciones .boton:last-child{grid-column:1/-1}}

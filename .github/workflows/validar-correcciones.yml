@@ -39,6 +39,9 @@ jobs:
       - name: Validar copias opcionales y compatibilidad MIME del correo
         working-directory: app
         run: node --test pruebas/correos-copias-mime.test.js
+      - name: Validar selección de carpetas y guardado físico de adjuntos en Drive
+        working-directory: app
+        run: node --test pruebas/correo-guardar-drive.test.js
       - name: Validar correo contextual y reutilización del motor técnico
         working-directory: app
         run: node --test pruebas/correos-contextuales.test.js

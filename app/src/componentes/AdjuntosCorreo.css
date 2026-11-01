@@ -19,3 +19,13 @@
 .correo-adjuntos-resumen>strong{font-size:12px}
 .correo-adjuntos-resumen .boton{flex:none}
 @media(max-width:640px){.correo-adjuntos-acciones{display:grid}.correo-adjuntos-cargar{width:100%}}
+
+.correo-guardar-drive{border:1px solid #f5c3a3;background:#fff5ed;border-radius:12px;padding:12px;display:grid;gap:8px;min-width:0}
+.correo-guardar-drive-check{display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.correo-guardar-drive-check input{width:20px;height:20px;flex:none;accent-color:#ed7130;margin-top:2px}
+.correo-guardar-drive-check span{display:grid;gap:4px}
+.correo-guardar-drive-check strong{font-size:13px}
+.correo-guardar-drive-check small{color:#696969;font-size:12px}
+.correo-guardar-drive-destino{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;font-size:12px;overflow-wrap:anywhere}
+.correo-guardar-drive-destino span{flex:1;min-width:130px}
+@media(max-width:640px){.correo-guardar-drive-destino{display:grid;gap:5px}.correo-guardar-drive-destino button{justify-self:start}}
