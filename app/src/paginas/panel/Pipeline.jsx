@@ -154,6 +154,8 @@ export default function Pipeline() {
     navegarPipeline(params,{desdeFicha:true});
   }
   function volverFicha() {
+    setGuardadoDriveCorreo(null);
+    setAdjuntosCorreo([]);
     setCcCorreo('');setCcoCorreo('');
     setError(null);
     setAbierto(null);
@@ -341,6 +343,7 @@ export default function Pipeline() {
     setPlantillaElegida('');
     setVarianteElegida('principal');
     setAdjuntosCorreo([]);
+    setGuardadoDriveCorreo(null);
     abrirAccion('correo');
     requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
