@@ -213,44 +213,6 @@ export default function Propuestas() {
     }
     setGuardando(false);
   };
-  async function importarAnterior(evento){
-    const archivo=evento.target.files?.[0];
-    evento.target.value='';
-    if(!archivo)return;
-    if(archivo.size>5*1024*1024){setAviso('El respaldo supera 5 MB.');return;}
-    setGuardando(true);setAviso('');
-    try{
-      const json=JSON.parse(await archivo.text());
-      if(!json||typeof json!=='object'||Array.isArray(json))
-        throw new Error('El respaldo debe contener un objeto JSON por nombre de comunidad');
-      const entradas=Object.entries(json);
-      if(entradas.length>1000)throw new Error('Máximo 1.000 propuestas por importación');
-      const conocidas=new Set(Object.keys(clientes));
-      const importables=entradas.flatMap(([nombre,datos])=>{
-        const n=String(nombre).trim();
-        if(!n||n.length>160||conocidas.has(n)||!datos||typeof datos!=='object'||Array.isArray(datos))
-          return [];
-        conocidas.add(n);
-        return [{nombre:n,datos,opciones:{portada:true,numeros:true,honorarios:true},
-          creado_por:perfil.id,actualizado_por:perfil.id}];
-      });
-      if(!importables.length){setAviso('No hay propuestas nuevas en el respaldo.');return;}
-      let incorporadas=0;
-      for(let i=0;i<importables.length;i+=50){
-        const {data,error}=await supabase.from('propuestas_comerciales')
-          .upsert(importables.slice(i,i+50),{onConflict:'nombre',ignoreDuplicates:true})
-          .select('id,nombre,datos,opciones,prospecto_id,actualizado_en');
-        if(error)throw error;
-        const nuevos={};const indices={};
-        for(const item of data||[]){nuevos[item.nombre]=item.datos;indices[item.nombre]=item;}
-        setClientes(v=>({...v,...nuevos}));setRegistros(v=>({...v,...indices}));
-        incorporadas+=(data||[]).length;
-      }
-      setAviso('Se importaron '+incorporadas+' propuestas. Las originales siguen en Netlify.');
-    }catch(e){setAviso('Error de importación: '+(e?.message||'archivo inválido'));}
-    finally{setGuardando(false);}
-  }
-
   const nueva=()=>{setD({...BLANK});setSel('');setAviso('');};
 
   const p = panelStyles;
@@ -283,13 +245,6 @@ export default function Propuestas() {
             <button style={p.btnGhost} onClick={nueva}>Nueva</button>
             <button style={p.btnGhost} onClick={eliminar} disabled={!sel||guardando}>Borrar</button>
           </div>
-          {perfil?.rol==='superadmin'&&<div className="propuesta-migrar">
-            <label>Importar propuestas anteriores (respaldo JSON)
-              <input type="file" accept=".json,application/json" disabled={guardando||cargando}
-                onChange={importarAnterior}/>
-            </label>
-            <small>No sobrescribe propuestas ya guardadas ni elimina el origen.</small>
-          </div>}
         </div>
 
         <div style={p.group}>
