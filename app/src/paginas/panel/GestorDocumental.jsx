@@ -1,7 +1,8 @@
-import {useEffect,useMemo,useState} from 'react';
+import {Fragment,useEffect,useMemo,useState} from 'react';
 import {Link,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from '../../lib/plantillasDocumentales';
+import EnlacesSegurosDocumento from '../../componentes/EnlacesSegurosDocumento';
 import './GestorDocumental.css';
 
 const FILTROS=[
@@ -25,6 +26,7 @@ export default function GestorDocumental(){
  const [error,setError]=useState('');
  const [bibliotecaError,setBibliotecaError]=useState('');
  const [verBiblioteca,setVerBiblioteca]=useState(params.get('vista')==='biblioteca');
+ const [enlaceArchivoId,setEnlaceArchivoId]=useState(null);
  const prospecto=params.get('prospecto')||'';
  const comunidad=params.get('comunidad')||'';
  const proveedor=params.get('proveedor')||'';
@@ -141,11 +143,20 @@ export default function GestorDocumental(){
        {!bibliotecaError&&!archivosFiltrados.length&&<p className="documentos-vacio">No hay archivos que coincidan con la búsqueda.</p>}
        {!!archivosFiltrados.length&&<table className="documentos-tabla">
         <thead><tr><th>Archivo</th><th>Categoría</th><th>Tamaño</th><th>Acción</th></tr></thead>
-        <tbody>{archivosFiltrados.map(a=><tr key={a.id}>
-         <td><span className="documentos-tipo-archivo">PDF</span>{a.nombre}</td>
-         <td>{a.categoria||'General'}</td><td>{(Number(a.tamano||0)/1048576).toFixed(2)} MB</td>
-         <td><span className="documentos-estado">Disponible para adjuntar</span></td>
-        </tr>)}</tbody>
+        <tbody>{archivosFiltrados.map(a=><Fragment key={a.id}>
+         <tr>
+          <td><span className="documentos-tipo-archivo">{a.mime==='application/pdf'?'PDF':'FILE'}</span>{a.nombre}</td>
+          <td>{a.categoria||'General'}</td><td>{(Number(a.tamano||0)/1048576).toFixed(2)} MB</td>
+          <td>{a.mime==='application/pdf'?
+           <button type="button" className="boton boton-secundario"
+             aria-expanded={enlaceArchivoId===a.id}
+             onClick={()=>setEnlaceArchivoId(v=>v===a.id?null:a.id)}>
+             {enlaceArchivoId===a.id?'Cerrar seguimiento':'Enlace seguro'}
+           </button>:<span className="documentos-estado">Disponible para adjuntar</span>}</td>
+         </tr>
+         {a.mime==='application/pdf'&&enlaceArchivoId===a.id&&
+          <tr><td colSpan={4}><EnlacesSegurosDocumento archivo={a}/></td></tr>}
+        </Fragment>)}</tbody>
        </table>}
       </div>:
       <div className="documentos-tabla-wrap">
