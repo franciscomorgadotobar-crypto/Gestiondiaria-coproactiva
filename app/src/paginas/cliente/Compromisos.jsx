@@ -352,7 +352,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
               <details className="compromisos-historial">
                 <summary>Avances e historial ({historico.length+movimientos.length})</summary>
                 {historico.map(a=><details key={a.id} className="compromisos-avance-item">
-                  <summary>{fecha(a.registrado_en)} · {a.porcentaje??'—'}% · {NOMBRES[a.estado]||'Avance'}</summary>
+                  <summary>{fecha(a.registrado_en)} · {a.porcentaje??'-'}% · {NOMBRES[a.estado]||'Avance'}</summary>
                   <p>{a.descripcion}</p>
                   {a.evidencia_url&&/^https:\/\//i.test(a.evidencia_url)&&
                     <a href={a.evidencia_url} target="_blank" rel="noreferrer">Ver evidencia</a>}

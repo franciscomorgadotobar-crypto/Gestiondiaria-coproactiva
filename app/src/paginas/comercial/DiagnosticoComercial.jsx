@@ -9,7 +9,7 @@ import { useVolverGlobal } from '../../lib/navegacion';
 import Campana from '../../componentes/Campana';
 
 /* Diagnóstico comercial: el mismo cuestionario y la misma lógica de puntaje
- * del CRM anterior, portados tal cual — mismas preguntas, mismos pesos,
+ * del CRM anterior, portados tal cual - mismas preguntas, mismos pesos,
  * misma escala, misma fórmula de línea sugerida. Lo único nuevo es dónde
  * vive: ahora es un levantamiento más (control_items) contra un prospecto,
  * no una herramienta aparte con su propio backend.
@@ -409,9 +409,9 @@ function PasoContexto({ prospecto, items, respuestas, onResponder }) {
         <p className="micro" style={{ margin: 0 }}>Estos datos vienen del prospecto y se editan desde el Pipeline.</p>
         <div className="diag-datos-prospecto">
           <ResumenDato etiqueta="Condominio" valor={prospecto.nombre_condominio} />
-          <ResumenDato etiqueta="Dirección" valor={[prospecto.direccion, prospecto.comuna].filter(Boolean).join(', ') || '—'} />
-          <ResumenDato etiqueta="Unidades" valor={prospecto.unidades ?? '—'} />
-          <ResumenDato etiqueta="Contacto" valor={prospecto.nombre_contacto ? `${prospecto.nombre_contacto}${prospecto.cargo_contacto ? ' · ' + prospecto.cargo_contacto : ''}` : '—'} />
+          <ResumenDato etiqueta="Dirección" valor={[prospecto.direccion, prospecto.comuna].filter(Boolean).join(', ') || '-'} />
+          <ResumenDato etiqueta="Unidades" valor={prospecto.unidades ?? '-'} />
+          <ResumenDato etiqueta="Contacto" valor={prospecto.nombre_contacto ? `${prospecto.nombre_contacto}${prospecto.cargo_contacto ? ' · ' + prospecto.cargo_contacto : ''}` : '-'} />
         </div>
       </div>
       <div className="diag-lista diag-lista-doble">

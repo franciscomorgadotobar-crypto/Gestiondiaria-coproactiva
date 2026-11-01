@@ -28,8 +28,8 @@ const ESTADOS = [
  * foto por tener una fotografía adjunta, los de opciones por la opción elegida
  * y su evidencia si la exige, los demás por tener respuesta.
  *
- * El de foto es aparte porque no escribe en `respuesta` —la fotografía misma
- * es la respuesta—, y antes eso se leía como "siempre respondido" apenas
+ * El de foto es aparte porque no escribe en `respuesta` -la fotografía misma
+ * es la respuesta-, y antes eso se leía como "siempre respondido" apenas
  * existía el punto, sin importar si alguien había sacado la foto o no: un
  * levantamiento podía marcarse completo con puntos de foto vacíos.
  *
@@ -167,7 +167,7 @@ export default function Levantamiento() {
 
       /* Las fotos que este teléfono no tomó no están en su IndexedDB: viven
        * solo en el bucket. Sin esto, revisar un levantamiento desde otro
-       * teléfono —o el mismo, después de un tiempo— mostraba el punto
+       * teléfono -o el mismo, después de un tiempo- mostraba el punto
        * marcado como evaluado pero sin ninguna fotografía que mostrar, como
        * si se hubiera perdido evidencia que en realidad sí estaba subida. */
       const idsLocales = new Set(f.map(x => x.id));
@@ -220,8 +220,8 @@ export default function Levantamiento() {
   const tieneFoto = (itemId, criterioId = null) => fotosDe(itemId)
     .some(f => criterioId == null || String(f.criterio_id ?? '') === String(criterioId));
 
-  /* El recorrido tiene una secuencia —se entra por el acceso y se termina en la
-   * azotea— y el orden de las categorías la refleja.
+  /* El recorrido tiene una secuencia -se entra por el acceso y se termina en la
+   * azotea- y el orden de las categorías la refleja.
    *
    * Depende también de `fotos`: un punto tipo foto cambia de evaluado a no
    * evaluado según haya o no una fotografía, y sin esa dependencia el avance
@@ -246,7 +246,7 @@ export default function Levantamiento() {
   /* Con la plantilla en modo secuencial no basta con impedir saltar puntos
    * dentro de una categoría: hay que impedir abrir una categoría posterior
    * mientras quede algo pendiente en una anterior. Esta es esa primera
-   * categoría con algo por responder —o -1 si ya está todo evaluado—. */
+   * categoría con algo por responder -o -1 si ya está todo evaluado-. */
   const primeraCategoriaPendiente = useMemo(
     () => categorias.findIndex(cat => cat.evaluados < cat.items.length),
     [categorias]
@@ -267,8 +267,8 @@ export default function Levantamiento() {
   }, [control, categorias, primeraCategoriaPendiente, fotos]);
   const faltantes = items.length - evaluados;
 
-  /* Lo que de verdad impide enviar. `faltantes` cuenta todo —incluye lo
-   * opcional— porque el avance de arriba tiene que mostrar cuánto se
+  /* Lo que de verdad impide enviar. `faltantes` cuenta todo -incluye lo
+   * opcional- porque el avance de arriba tiene que mostrar cuánto se
    * contestó de verdad. Enviar es otra pregunta: solo lo obligatorio puede
    * trabar el botón; un punto marcado como opcional en la plantilla se puede
    * dejar en blanco y el levantamiento igual se manda. */
@@ -363,7 +363,7 @@ export default function Levantamiento() {
 
   /* Pausar deja el levantamiento donde está y registra por qué. Lo evaluado no
    * se toca: al volver, el recorrido sigue desde donde iba. El motivo no es
-   * burocracia — tres levantamientos pausados porque nadie tenía la llave del
+   * burocracia - tres levantamientos pausados porque nadie tenía la llave del
    * subterráneo son un hallazgo de la administración. */
   async function pausar(motivo) {
     setPedirMotivoPausa(false);
@@ -474,7 +474,7 @@ export default function Levantamiento() {
    * encuentra nada. Copiarla antes de tocar el input es obligatorio.
    *
    * La foto se guarda de inmediato y las coordenadas se agregan después. Al
-   * revés —esperando primero al GPS— la interfaz queda muda varios segundos
+   * revés -esperando primero al GPS- la interfaz queda muda varios segundos
    * después de disparar la cámara, y da la impresión de que no guardó. */
   async function agregarFotos(item, archivos, criterioId = null) {
     if (!archivos.length) return;

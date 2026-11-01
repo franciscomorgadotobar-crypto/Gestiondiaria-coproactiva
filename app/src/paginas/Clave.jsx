@@ -15,7 +15,7 @@ import { supabase } from '../lib/supabase';
  *
  * Vencer es lo normal, no la excepción: el correo llega mientras la persona
  * está en terreno y lo abre horas después. Por eso la pantalla de vencido no es
- * un callejón sin salida —pídeselo a administración— sino el lugar donde pide
+ * un callejón sin salida -pídeselo a administración- sino el lugar donde pide
  * otro enlace y sigue.
  */
 const MARCA = 'coproactiva:enlace-canjeado';

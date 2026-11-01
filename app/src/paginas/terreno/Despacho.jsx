@@ -5,13 +5,13 @@ import Levantamiento from './Control';
 
 /* /control/:id sirve dos cosas distintas: un levantamiento normal (el
  * renderer genérico de Control.jsx) o un diagnóstico comercial (puntaje
- * ponderado, ítems condicionales, línea sugerida) — que necesita su propia
+ * ponderado, ítems condicionales, línea sugerida) - que necesita su propia
  * pantalla y no calza en el renderer genérico sin arriesgar los
  * levantamientos reales.
  *
  * Este despachador decide cuál mostrar según `controles.es_diagnostico`, fijado
  * al crear el levantamiento (Programar.jsx). Así todo lo que ya enlaza a
- * /control/:id —tarjetas del inicio, comunidades, etc.— sigue funcionando sin
+ * /control/:id -tarjetas del inicio, comunidades, etc.- sigue funcionando sin
  * tocarlo.
  */
 const DiagnosticoComercial = lazy(() => import('../comercial/DiagnosticoComercial'));
