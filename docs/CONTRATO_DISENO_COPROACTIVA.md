@@ -14,7 +14,7 @@ Este documento contiene restricciones comprobables, no una autorización para re
 Si hay dos reglas contradictorias, se modifica la fuente original en lugar de añadir excepciones.
 
 ## Reglas obligatorias de construcción
-1. Móvil 320, 360, 390 y 412 px: 16 px de separación lateral objetivo, **mínimo real de 12 px**. Ningún título, tarjeta, campo ni acción debe tocar el borde del dispositivo.
+1. Móvil 320, 360, 390 y 412 px: **margen lateral real de 16 px** como objetivo, **mínimo real de 12 px**. Ningún título, tarjeta, campo ni acción debe tocar el borde del dispositivo.
 2. Tablet y escritorio 768 y 1280 px: alineación de cabeceras y contenidos; columnas fluidas minmax(0,1fr).
 3. Un encabezado puede tener fondo de borde a borde, pero el texto no. Prohibida la combinación de padding lateral en raíz más márgenes negativos compensatorios en cabecera.
 4. No debe existir scroll horizontal del documento. Únicamente chips y tablas con contenedor independiente pueden desplazarse. No esconder errores con overflow-x:hidden o clip en el módulo principal.
