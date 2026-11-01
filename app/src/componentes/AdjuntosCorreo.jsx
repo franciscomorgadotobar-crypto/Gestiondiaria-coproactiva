@@ -14,7 +14,7 @@ const textoTamano=b=>(Number(b)/1048576).toFixed(2).replace('.',',')+' MB';
 
 /* Selector de archivos físicos para correo. Los bytes se transmiten solo desde
  * Drive al SMTP en la Edge Function; aquí se manejan únicamente IDs internos. */
-export default function AdjuntosCorreo({seleccion=[],onChange,guardadoDrive=null,onGuardarChange=()=>{},usuarioId=''}){
+export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},onGuardarChange=()=>{},usuarioId=''}){
  const [biblioteca,setBiblioteca]=useState([]);
  const [comunidades,setComunidades]=useState([]);
  const [origen,setOrigen]=useState('biblioteca');
@@ -24,7 +24,7 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadoDrive=null
  const [aviso,setAviso]=useState('');
  const [ocupado,setOcupado]=useState(false);
  const [cargando,setCargando]=useState(true);
- const [seleccionandoCarpeta,setSeleccionandoCarpeta]=useState(false);
+ const [seleccionandoCarpeta,setSeleccionandoCarpeta]=useState(null);
  const cargar=async()=>{
   setCargando(true);
   const [b,c]=await Promise.all([
@@ -56,7 +56,12 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadoDrive=null
    setError('');
    if(seleccion.includes(ref)){
     const restantes=seleccion.filter(x=>x!==ref);
-    if(!restantes.length)onGuardarChange(null);
+    if(guardadosDrive[ref]){
+     const siguiente={...guardadosDrive};
+     delete siguiente[ref];
+     onGuardarChange(siguiente);
+    }
+    if(seleccionandoCarpeta===ref)setSeleccionandoCarpeta(null);
     return onChange(restantes);
    }
    const documento=mapa.get(ref);
@@ -90,7 +95,7 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadoDrive=null
     }catch(e){setError(archivo.name+': '+e.message);}
    }
    onChange(seleccionados);
-   if(count)setAviso(count===1?'Archivo guardado y adjuntado.':count+' archivos guardados y adjuntados.');
+   if(count)setAviso(count===1?'Archivo incorporado a la biblioteca y adjuntado.':count+' archivos incorporados a la biblioteca y adjuntados.');
    setOcupado(false);
  }
  return <section className="correo-adjuntos" aria-label="Adjuntos del correo">
@@ -100,7 +105,7 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadoDrive=null
   </div>
   <p className="micro apagado">Los documentos se enviarán dentro del correo, no como enlaces de Drive.</p>
   <div className="correo-adjuntos-acciones">
-   <label className="campo">Guardar como
+   <label className="campo">Categoría en biblioteca
     <select value={categoria} onChange={e=>setCategoria(e.target.value)}>
      {['General','Comercial','Presentaciones','Propuestas','Contratos','Informes','Otros'].map(x=><option key={x}>{x}</option>)}
     </select>
@@ -127,27 +132,42 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadoDrive=null
    {!opciones.length&&<p className="micro apagado">No hay documentos disponibles. Puedes subirlos desde el teléfono.</p>}
   </div>}
   {!!seleccion.length&&<div className="correo-adjuntos-resumen">
-   <strong>Se adjuntarán al correo:</strong>
-   {seleccion.map(ref=><div className="correo-adjuntos-doc" key={ref}>
-    <span className="correo-adjuntos-nombre">{mapa.get(ref)?.nombre||'Archivo no disponible'}</span>
-    <button type="button" className="boton boton-texto" onClick={()=>alternar(ref)}>Quitar</button>
-   </div>)}
+   <strong>Documentos seleccionados ({seleccion.length})</strong>
+   <p className="micro apagado">Cada documento puede enviarse como adjunto y, opcionalmente, guardarse en una carpeta diferente de Google Drive.</p>
+   {seleccion.map(ref=><article className="correo-adjuntos-tarjeta" key={ref}>
+    <div className="correo-adjuntos-doc">
+     <span className="correo-adjuntos-nombre"><strong>{mapa.get(ref)?.nombre||'Archivo no disponible'}</strong></span>
+     <span className="micro apagado">{textoTamano(mapa.get(ref)?.tamano||0)}</span>
+     <button type="button" className="boton boton-texto" onClick={()=>alternar(ref)}>Quitar</button>
+    </div>
+    <div className="correo-guardar-drive">
+     <label className="correo-guardar-drive-check">
+      <input type="checkbox" checked={Boolean(guardadosDrive[ref]?.carpeta_id)}
+       aria-label={'Guardar copia permanente de '+(mapa.get(ref)?.nombre||'este documento')+' en Google Drive'}
+       onChange={e=>{
+        if(e.target.checked)setSeleccionandoCarpeta(ref);
+        else {
+         const siguiente={...guardadosDrive};
+         delete siguiente[ref];
+         onGuardarChange(siguiente);
+        }
+       }}/>
+      <span><strong>Guardar copia permanente en Google Drive</strong>
+       <small>Selecciona una carpeta solo para este documento.</small></span>
+     </label>
+     {guardadosDrive[ref]?.carpeta_id&&<div className="correo-guardar-drive-destino">
+      <span>Carpeta: {guardadosDrive[ref].ruta||guardadosDrive[ref].carpeta_nombre}</span>
+      <button type="button" className="boton boton-secundario" onClick={()=>setSeleccionandoCarpeta(ref)}>Cambiar carpeta</button>
+     </div>}
+    </div>
+   </article>)}
   </div>}
-  <div className="correo-guardar-drive">
-   <label className="correo-guardar-drive-check">
-    <input type="checkbox" disabled={!seleccion.length} checked={Boolean(guardadoDrive?.carpeta_id)}
-      onChange={e=>e.target.checked?setSeleccionandoCarpeta(true):onGuardarChange(null)}/>
-    <span><strong>Guardar copia permanente en Google Drive</strong>
-     <small>Elige la carpeta donde guardar los documentos seleccionados.</small></span>
-   </label>
-   {guardadoDrive?.carpeta_id&&<div className="correo-guardar-drive-destino">
-    <span>Carpeta: {guardadoDrive.ruta||guardadoDrive.carpeta_nombre}</span>
-    <button type="button" className="boton boton-secundario" onClick={()=>setSeleccionandoCarpeta(true)}>Cambiar carpeta</button>
-   </div>}
-   {guardadoDrive?.carpeta_id&&<p className="micro apagado">Se guardará una copia del archivo real al enviar el correo. El original permanece en la biblioteca.</p>}
-  </div>
-  {seleccionandoCarpeta&&<SelectorCarpetaDrive usuarioId={usuarioId} seleccionActual={guardadoDrive}
-    onCerrar={()=>setSeleccionandoCarpeta(false)}
-    onElegir={carpeta=>{onGuardarChange({...carpeta,operacion_id:crypto.randomUUID()});setSeleccionandoCarpeta(false);}}/>}
+  {seleccionandoCarpeta&&seleccion.includes(seleccionandoCarpeta)&&
+   <SelectorCarpetaDrive usuarioId={usuarioId} seleccionActual={guardadosDrive[seleccionandoCarpeta]}
+    onCerrar={()=>setSeleccionandoCarpeta(null)}
+    onElegir={carpeta=>{
+     onGuardarChange({...guardadosDrive,[seleccionandoCarpeta]:{...carpeta,operacion_id:crypto.randomUUID()}});
+     setSeleccionandoCarpeta(null);
+    }}/>}
  </section>;
 }
