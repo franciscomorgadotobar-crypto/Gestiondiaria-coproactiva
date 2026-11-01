@@ -1,0 +1,35 @@
+/* Integración del generador original en la navegación de Gestión Diaria. */
+.propuesta-app{--font-display:'Montserrat',sans-serif;--font-body:'Source Sans Pro',Arial,sans-serif;display:grid;grid-template-columns:minmax(290px,355px) minmax(0,1fr);background:#eeeae4;min-width:0;border-radius:12px;border:1px solid #ded6ce;overflow:hidden;align-items:start}
+.propuesta-panel{background:#fff;padding:22px;min-width:0;max-height:calc(100dvh - 80px);overflow:auto;border-right:1px solid #ded6ce;box-sizing:border-box}
+.propuesta-docwrap{min-width:0;height:calc(100dvh - 80px);overflow:auto;padding:14px 0 24px;box-sizing:border-box}
+.propuesta-docwrap doc-page{display:block;max-width:100%;overflow-x:auto}
+.propuesta-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12px;margin:0 0 16px}
+.propuesta-toolbar a{color:#c46020;font-weight:700}
+.propuesta-toolbar span{color:#696969}
+.propuesta-aviso{margin:0 0 12px;padding:10px 12px;border-radius:8px;background:#fff2e8;border:1px solid #edb78d;color:#7c431c;font-size:13px}
+.propuesta-mobile-tabs{display:none}
+@media(max-width:980px){
+ .propuesta-app{grid-template-columns:1fr;display:block}
+ .propuesta-mobile-tabs{display:flex;position:sticky;top:0;z-index:9;background:white;border-bottom:1px solid #ddd7cf}
+ .propuesta-mobile-tabs button{flex:1;padding:13px;border:0;background:transparent;font-weight:750;color:#696969}
+ .propuesta-mobile-tabs button.activo{color:#ed7130;box-shadow:inset 0 -3px #ed7130}
+ .propuesta-panel{max-height:none;overflow:visible;border-right:0;padding:16px}
+ .propuesta-docwrap{height:auto;overflow:hidden;padding:10px 0}
+ .propuesta-app:not(.show-doc) .propuesta-docwrap{display:none}
+ .propuesta-app.show-doc .propuesta-panel{display:none}
+ .propuesta-panel .row{grid-template-columns:1fr!important}
+ .propuesta-panel input,.propuesta-panel select{font-size:16px!important}
+ .propuesta-docwrap doc-page{margin:auto;max-width:100%;overflow:auto}
+}
+@media print{
+ body:has(.propuesta-app) .barra-inferior-movil,
+ body:has(.propuesta-app) .barra-area-movil,
+ body:has(.propuesta-app) .navegacion-lateral,
+ body:has(.propuesta-app) .usuario-lateral,
+ body:has(.propuesta-app) .barra-contextual,
+ body:has(.propuesta-app) .propuesta-panel,
+ body:has(.propuesta-app) .propuesta-mobile-tabs{display:none!important}
+ body:has(.propuesta-app) .propuesta-app{display:block!important;border:0!important;overflow:visible!important;background:white!important}
+ body:has(.propuesta-app) .propuesta-docwrap{display:block!important;height:auto!important;overflow:visible!important;padding:0!important}
+ body:has(.propuesta-app) .propuesta-docwrap doc-page{overflow:visible!important}
+}
