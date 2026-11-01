@@ -1,5 +1,5 @@
 import {jsPDF} from 'jspdf';
-import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from './plantillasDocumentales';
+import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from './plantillasDocumentales.js';
 
 /** Exporta un PDF real con paginación A4, sin depender de capturas de pantalla. */
 export function generarPdfDocumento(documento){
