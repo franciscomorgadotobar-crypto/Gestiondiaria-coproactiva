@@ -88,9 +88,9 @@ export default function GestorDocumental(){
   if(estado)nuevos.set('vista','biblioteca');else nuevos.delete('vista');
   setParams(nuevos,{replace:true});
  }
- return <main className="documentos-gestor">
+ return <main className="documentos-gestor comercial-ui comercial-documentos">
   <header className="documentos-gestor-cabecera">
-   <div><span className="documentos-kicker">DOCUMENTACIÓN CENTRALIZADA</span>
+   <div><span className="documentos-kicker comercial-eyebrow">Comercial · Documentación centralizada</span>
     <h1><span className="documentos-cabecera-icono" aria-hidden="true">▱</span> Gestor documental</h1>
     <p>Plantillas, documentos, versiones y biblioteca central.</p>
    </div>

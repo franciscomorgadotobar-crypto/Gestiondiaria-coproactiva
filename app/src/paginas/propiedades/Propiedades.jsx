@@ -234,16 +234,18 @@ function ListadoPropiedades() {
   }
 
   return (
-    <div className="pantalla modulo-unificado">
+    <div className="pantalla modulo-unificado comercial-ui comercial-propiedades">
       <header className="encabezado propiedades-encabezado modulo-cabecera">
         <div className="propiedades-encabezado-contenido">
           <div className="crece">
+            <span className="comercial-eyebrow">Comercial · Gestión inmobiliaria</span>
             <h1 className="h3">Propiedades</h1>
             <p className="chico apagado propiedades-descripcion">
               Gestiona arriendos y ventas publicados en{' '}
               <a href={SITIO} target="_blank" rel="noopener noreferrer">coproactiva.cl/propiedades</a>.
             </p>
           </div>
+          <Link to={`/propiedades/nueva${operacion === 'venta' ? '?operacion=venta' : ''}`} className="boton propiedades-nueva">+ Nueva propiedad</Link>
         </div>
       </header>
 
