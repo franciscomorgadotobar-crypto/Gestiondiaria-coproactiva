@@ -46,6 +46,7 @@ const ProveedoresComunicaciones = lazy(() => import('./paginas/panel/Proveedores
 const Contabilidad = lazy(() => import('./paginas/panel/Contabilidad'));
 const SEO = lazy(() => import('./paginas/panel/SEO'));
 const Propuestas = lazy(() => import('./paginas/panel/Propuestas'));
+const GestorDocumental = lazy(() => import('./paginas/panel/GestorDocumental'));
 // Importar plantillas desde Excel es de oficina; el lector de Excel, además,
 // se carga recién al usarlo (ver lib/excelPlantillas.js).
 const ImportarPlantillas = lazy(() => import('./paginas/panel/ImportarPlantillas'));
@@ -249,6 +250,7 @@ export default function App() {
       <Route path="/equipo" element={<Interna><Equipo /></Interna>} />
       <Route path="/clientes" element={<Interna><Clientes /></Interna>} />
       <Route path="/pipeline" element={<Interna><Pipeline /></Interna>} />
+      <Route path="/documentos" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando gestor documental...</p>}><GestorDocumental/></Suspense></SoloComercial></Interna>} />
       <Route path="/propuestas" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando propuestas comerciales…</p>}><Propuestas/></Suspense></SoloComercial></Interna>} />
       <Route path="/comunidades" element={<Interna><Comunidades /></Interna>} />
       <Route path="/comunidades/:id" element={<Interna><Comunidades /></Interna>} />
