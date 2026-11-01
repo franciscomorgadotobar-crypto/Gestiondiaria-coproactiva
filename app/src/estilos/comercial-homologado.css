@@ -131,7 +131,7 @@
   background:var(--comercial-superficie);
 }
 /* SEO: igual ritmo que los demás módulos; se conserva su selector de vistas */
-.pantalla.modulo-unificado.comercial-seo>.encabezado.seo-cabecera.modulo-cabecera{
+.pantalla.modulo-unificado.comercial-ui.comercial-seo>.encabezado.seo-cabecera.modulo-cabecera{
   padding:23px var(--comercial-gutter);
 }
 .comercial-seo .seo-cabecera-acciones{gap:9px}
@@ -169,7 +169,7 @@
 @media(max-width:899px){
   .comercial-ui{--comercial-gutter:var(--ca-margen-contenido-movil,16px)}
   .pantalla.modulo-unificado.comercial-ui>.encabezado.modulo-cabecera,
-  .pantalla.modulo-unificado.comercial-seo>.encabezado.seo-cabecera.modulo-cabecera{
+  .pantalla.modulo-unificado.comercial-ui.comercial-seo>.encabezado.seo-cabecera.modulo-cabecera{
     padding:20px var(--comercial-gutter);
   }
   .pantalla.modulo-unificado.comercial-ui>.cuerpo,
@@ -225,3 +225,8 @@
  .comercial-seo .seo-exec-kpi{padding:11px}
 }
 @media(prefers-reduced-motion:reduce){.comercial-ui :is(.tarjeta,.boton,.documentos-plantilla){transition:none}}
+
+/* Prioridad explícita sobre SEO.css, que se carga dinámicamente. */
+@media(max-width:700px){
+ .pantalla.modulo-unificado.comercial-ui>.encabezado.modulo-cabecera h1.h3{font-size:24px;line-height:1.23;margin:0 0 7px}
+}
