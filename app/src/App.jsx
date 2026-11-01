@@ -45,6 +45,9 @@ const ProveedoresRecepcion = lazy(() => import('./paginas/panel/ProveedoresRecep
 const ProveedoresComunicaciones = lazy(() => import('./paginas/panel/ProveedoresComunicaciones'));
 const Contabilidad = lazy(() => import('./paginas/panel/Contabilidad'));
 const SEO = lazy(() => import('./paginas/panel/SEO'));
+const Propuestas = lazy(() => import('./paginas/panel/Propuestas'));
+const GestorDocumental = lazy(() => import('./paginas/panel/GestorDocumental'));
+const DocumentoEditor = lazy(() => import('./paginas/panel/DocumentoEditor'));
 // Importar plantillas desde Excel es de oficina; el lector de Excel, además,
 // se carga recién al usarlo (ver lib/excelPlantillas.js).
 const ImportarPlantillas = lazy(() => import('./paginas/panel/ImportarPlantillas'));
@@ -83,6 +86,13 @@ function SoloCliente({ children }) {
 
 /* El inicio vuelve al selector de tarjetas original.
  * No se alteran rutas ni controles de permisos de las pantallas internas. */
+function SoloComercial({children}) {
+  const {perfil,cargando}=useSesion();
+  if(cargando)return <p className="cargando">Cargando…</p>;
+  if(!['superadmin','admin','jefatura'].includes(perfil?.rol))return <Navigate to="/inicio" replace/>;
+  return children;
+}
+
 function tieneCRM(perfil) {
   return Boolean(perfil) && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
 }
@@ -241,6 +251,10 @@ export default function App() {
       <Route path="/equipo" element={<Interna><Equipo /></Interna>} />
       <Route path="/clientes" element={<Interna><Clientes /></Interna>} />
       <Route path="/pipeline" element={<Interna><Pipeline /></Interna>} />
+      <Route path="/documentos" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando gestor documental...</p>}><GestorDocumental/></Suspense></SoloComercial></Interna>} />
+      <Route path="/documentos/nuevo" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando editor...</p>}><DocumentoEditor/></Suspense></SoloComercial></Interna>} />
+      <Route path="/documentos/:id" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando documento...</p>}><DocumentoEditor/></Suspense></SoloComercial></Interna>} />
+      <Route path="/propuestas" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando propuestas comerciales…</p>}><Propuestas/></Suspense></SoloComercial></Interna>} />
       <Route path="/comunidades" element={<Interna><Comunidades /></Interna>} />
       <Route path="/comunidades/:id" element={<Interna><Comunidades /></Interna>} />
       <Route path="/mantenciones" element={<Interna><Mantenciones /></Interna>} />

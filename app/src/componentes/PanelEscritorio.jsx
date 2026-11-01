@@ -212,6 +212,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     ? [
         // "Inicio" del grupo Comercial es el Pipeline.
         { ruta: '/pipeline', etiqueta: 'Pipeline', mostrar: true },
+        { ruta: '/documentos', etiqueta: 'Gestor documental', mostrar: true },
+        { ruta: '/propuestas', etiqueta: 'Propuestas comerciales', mostrar: true, hijo: true },
         { ruta: '/propiedades', etiqueta: 'Arriendos y ventas', mostrar: true, activo: activaPropiedades },
         { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true, hijo: true },
         { ruta: '/seo', etiqueta: 'SEO y analítica', mostrar: esAdministracion },
@@ -305,6 +307,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // Las secciones de SEO son navegación interna, no reemplazan esta barra.
   const opcionesComercial = [
     { id: 'pipeline', etiqueta: 'Pipeline', ruta: '/pipeline' },
+    { id: 'documentos', etiqueta: 'Documentos', ruta: '/documentos' },
     { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
     { id: 'seo', etiqueta: 'SEO', ruta: '/seo', mostrar: esAdministracion },
     { id: 'plantillas-correo', etiqueta: 'Plantillas de correo', ruta: '/plantillas-correo', mostrar: puedeConfigurar },

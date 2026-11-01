@@ -38,3 +38,7 @@
 .correo-adjuntos-resumen{gap:10px}
 .correo-adjuntos-resumen>p{margin:0}
 @media(max-width:640px){.correo-adjuntos-tarjeta .correo-adjuntos-doc .boton{padding:7px 10px}}
+
+.correo-adjuntos-gestor{display:grid;gap:4px;padding:11px 12px;border:1px solid #edc4a8;border-radius:10px;background:#fff8f1}
+.correo-adjuntos-gestor a{color:#bd5d21;text-decoration:underline;font-size:13px;font-weight:700}
+.correo-adjuntos-gestor small{color:#696969;font-size:11px;line-height:1.5}

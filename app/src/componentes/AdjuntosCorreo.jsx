@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import SelectorCarpetaDrive from './SelectorCarpetaDrive';
 import './AdjuntosCorreo.css';
@@ -14,9 +15,10 @@ const textoTamano=b=>(Number(b)/1048576).toFixed(2).replace('.',',')+' MB';
 
 /* Selector de archivos físicos para correo. Los bytes se transmiten solo desde
  * Drive al SMTP en la Edge Function; aquí se manejan únicamente IDs internos. */
-export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},onGuardarChange=()=>{},usuarioId=''}){
+export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},onGuardarChange=()=>{},usuarioId='',prospectoId=''}){
  const [biblioteca,setBiblioteca]=useState([]);
  const [comunidades,setComunidades]=useState([]);
+ const [documentosGestor,setDocumentosGestor]=useState([]);
  const [origen,setOrigen]=useState('biblioteca');
  const [filtro,setFiltro]=useState('');
  const [categoria,setCategoria]=useState('General');
@@ -27,15 +29,18 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
  const [seleccionandoCarpeta,setSeleccionandoCarpeta]=useState(null);
  const cargar=async()=>{
   setCargando(true);
-  const [b,c]=await Promise.all([
+  const [b,c,d]=await Promise.all([
    supabase.functions.invoke('correo-archivos',{body:{action:'list'}}),
    supabase.from('drive_archivos_comunidad')
     .select('id,nombre,mime,tamano,comunidad_id,creado_en')
-    .is('eliminado_en',null).order('creado_en',{ascending:false}).limit(150)
+    .is('eliminado_en',null).order('creado_en',{ascending:false}).limit(150),
+   supabase.from('documentos_gestion').select('id,tipo,titulo,estado,version,contenido,actualizado_en')
+    .in('estado',['aprobado','emitido']).order('actualizado_en',{ascending:false}).limit(80)
   ]);
   if(b.error||!b.data?.ok)setError(b.data?.error||b.error?.message||'No se pudo abrir la biblioteca.');
   else setBiblioteca(b.data.archivos||[]);
   if(!c.error)setComunidades(c.data||[]);
+  if(!d.error)setDocumentosGestor(d.data||[]);
   setCargando(false);
  };
  useEffect(()=>{let activo=true;
@@ -44,7 +49,7 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
  },[]);
  const opciones=useMemo(()=>{
    const todos=origen==='biblioteca'?biblioteca.map(f=>({...f,ref:'b:'+f.id})):
-    comunidades.map(f=>({...f,ref:'c:'+f.id,categoria:'Documento de comunidad'}));
+    origen==='comunidad'?comunidades.map(f=>({...f,ref:'c:'+f.id,categoria:'Documento de comunidad'})):[];
    return todos.filter(f=>f.nombre.toLocaleLowerCase('es-CL').includes(filtro.toLocaleLowerCase('es-CL')));
  },[biblioteca,comunidades,origen,filtro]);
  const mapa=useMemo(()=>new Map([
@@ -70,6 +75,25 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
    if(seleccion.length>=MAX_ARCHIVOS)return setError('Máximo tres archivos por correo.');
    if(tamanoTotal+Number(documento.tamano)>MAX_BYTES)return setError('Los archivos juntos no deben superar 8 MB.');
    onChange([...seleccion,ref]);
+ }
+ async function adjuntarDocumentoGestor(documento){
+   if(ocupado)return;
+   if(seleccion.length>=MAX_ARCHIVOS)return setError('Máximo tres archivos por correo.');
+   setOcupado(true);setError('');setAviso('');
+   try{
+    const {generarPdfDocumento,nombrePdfDocumento}=await import('../lib/documentosPdf');
+    const blob=generarPdfDocumento(documento);
+    if(blob.size+tamanoTotal>MAX_BYTES)throw new Error('Este PDF supera el límite total de 8 MB');
+    const nombre=nombrePdfDocumento(documento.titulo);
+    const archivo=new File([blob],nombre,{type:'application/pdf'});
+    const fd=new FormData();fd.append('action','upload');fd.append('categoria','Informes');fd.append('archivo',archivo,nombre);
+    const {data,error:e}=await supabase.functions.invoke('correo-archivos',{body:fd});
+    if(e||!data?.ok)throw new Error(data?.error||e?.message||'No fue posible adjuntar el documento');
+    setBiblioteca(anterior=>[data.archivo,...anterior]);
+    onChange([...seleccion,'b:'+data.archivo.id]);
+    setAviso('PDF generado y adjuntado desde el Gestor documental: '+nombre);
+   }catch(e){setError(e.message||'No fue posible generar el PDF');}
+   finally{setOcupado(false);}
  }
  async function subir(event){
    const files=Array.from(event.target.files||[]);
@@ -104,6 +128,13 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
    <span className="micro apagado">{seleccion.length}/{MAX_ARCHIVOS} · {textoTamano(tamanoTotal)} / 8 MB</span>
   </div>
   <p className="micro apagado">Los documentos se enviarán dentro del correo, no como enlaces de Drive.</p>
+  <div className="correo-adjuntos-gestor">
+   <Link target="_blank" rel="noopener noreferrer"
+    to={'/documentos?origen=correo'+(prospectoId?'&prospecto='+encodeURIComponent(prospectoId):'')}>
+    Abrir gestor documental para crear un documento
+   </Link>
+   <small>Se abrirá en otra pestaña para conservar el borrador. Los documentos aprobados o emitidos pueden adjuntarse como PDF real desde la pestaña Gestor documental.</small>
+  </div>
   <div className="correo-adjuntos-acciones">
    <label className="campo">Categoría en biblioteca
     <select value={categoria} onChange={e=>setCategoria(e.target.value)}>
@@ -118,12 +149,21 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
   <div className="correo-adjuntos-origen" role="group" aria-label="Origen de los adjuntos">
    <button type="button" className={origen==='biblioteca'?'activo':''} aria-pressed={origen==='biblioteca'} onClick={()=>setOrigen('biblioteca')}>Biblioteca interna</button>
    <button type="button" className={origen==='comunidad'?'activo':''} aria-pressed={origen==='comunidad'} onClick={()=>setOrigen('comunidad')}>Documentos de comunidades</button>
+   <button type="button" className={origen==='gestor'?'activo':''} aria-pressed={origen==='gestor'} onClick={()=>setOrigen('gestor')}>Gestor documental</button>
   </div>
   <input aria-label="Buscar adjuntos" type="search" placeholder="Buscar por nombre…" value={filtro} onChange={e=>setFiltro(e.target.value)}/>
   {error&&<p className="aviso aviso-critico" role="alert">{error}</p>}
   {aviso&&<p className="aviso" role="status">{aviso}</p>}
   {cargando?<p className="micro apagado">Cargando biblioteca…</p>
-  :<div className="correo-adjuntos-lista">
+  :origen==='gestor'?<div className="correo-adjuntos-lista">
+    {documentosGestor.filter(d=>d.titulo.toLocaleLowerCase('es-CL').includes(filtro.toLocaleLowerCase('es-CL'))).map(d=>
+      <div className="correo-adjuntos-doc" key={d.id}>
+       <span className="correo-adjuntos-nombre">{d.titulo} - v{d.version}</span>
+       <button type="button" className="boton boton-secundario" disabled={ocupado||seleccion.length>=MAX_ARCHIVOS}
+        onClick={()=>adjuntarDocumentoGestor(d)}>Adjuntar PDF</button>
+      </div>)}
+    {!documentosGestor.length&&<p className="micro apagado">No hay documentos aprobados o emitidos disponibles. Crea y aprueba uno en el gestor.</p>}
+   </div>:<div className="correo-adjuntos-lista">
    {opciones.slice(0,70).map(doc=><label key={doc.ref} className="correo-adjuntos-doc">
     <input type="checkbox" checked={seleccion.includes(doc.ref)} onChange={()=>alternar(doc.ref)}/>
     <span className="correo-adjuntos-nombre">{doc.nombre}</span>
