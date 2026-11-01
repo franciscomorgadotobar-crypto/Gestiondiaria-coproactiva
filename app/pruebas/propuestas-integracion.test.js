@@ -9,13 +9,19 @@ const pipeline=leer('src/paginas/panel/Pipeline.jsx');
 const nav=leer('src/componentes/PanelEscritorio.jsx');
 const area=leer('src/lib/area.js');
 const sql=leer('../supabase/migrations/202611010002_propuestas_comerciales.sql');
+const gestor=leer('src/paginas/panel/GestorDocumental.jsx');
+const catalogo=leer('src/lib/plantillasDocumentales.js');
+const adjuntos=leer('src/componentes/AdjuntosCorreo.jsx');
+const selector=leer('src/lib/selectorModulos.js');
 
 test('El módulo se abre desde Comercial y la ficha del prospecto',()=>{
   assert.match(app,/Route path="\/propuestas"/);
   assert.match(app,/SoloComercial/);
-  assert.match(nav,/Cotizaciones y propuestas/);
-  assert.match(area,/\['comercial', \['\/pipeline', '\/propuestas'/);
-  assert.match(pipeline,/to=\{'\/propuestas\?prospecto='\+prospectoSeleccionado\.id\}/);
+  assert.match(app,/Route path="\/documentos"/);
+  assert.match(nav,/Gestor documental/);
+  assert.match(selector,/id:'documentos', titulo:'Gestor documental'/);
+  assert.match(area,/\['comercial', \['\/pipeline', '\/documentos', '\/propuestas'/);
+  assert.match(pipeline,/to=\{'\/documentos\?prospecto='\+prospectoSeleccionado\.id\}/);
 });
 test('Se conserva el generador comercial y su documento',()=>{
   for(const texto of ['Base mensual GG.CC.','Porcentaje (%)','Honorario neto','IVA (19%)','Imprimir / PDF','Cargar propuesta'])
@@ -37,4 +43,23 @@ test('La tabla solo admite roles comerciales y permite enlazar el CRM',()=>{
   assert.match(sql,/alter table public\.propuestas_comerciales enable row level security/);
   assert.match(sql,/p\.rol::text in \('superadmin','admin','jefatura'\)/);
   assert.doesNotMatch(sql,/drop table|truncate table/i);
+});
+
+test('Gestor documental independiente reutilizable desde correos y CRM',()=>{
+ assert.match(gestor,/function GestorDocumental/);
+ assert.match(gestor,/TIPOS_DOCUMENTO\.map/);
+ assert.match(gestor,/propuestas_comerciales/);
+ assert.match(gestor,/Propuesta comercial/);
+ assert.match(gestor,/plantilla en preparación/i);
+ assert.match(adjuntos,/Abrir gestor documental para crear un documento/);
+ assert.match(adjuntos,/target="_blank" rel="noopener noreferrer"/);
+ assert.match(adjuntos,/prospectoId/);
+ assert.match(propuestas,/busqueda\.get\('documento'\)/);
+});
+test('Cuatro familias tipográficas desde cinco PDF preservan marca Coproactiva',()=>{
+ for(const tipo of ['propuesta_comercial','seguimiento_documental','primera_administracion','informe_gestion'])
+  assert.ok(catalogo.includes(tipo),tipo);
+ for(const tono of ['#ed7130','#d0a207','#696969','#2b3138'])
+  assert.ok(catalogo.includes(tono),tono);
+ assert.match(gestor,/Plantilla en preparación/);
 });
