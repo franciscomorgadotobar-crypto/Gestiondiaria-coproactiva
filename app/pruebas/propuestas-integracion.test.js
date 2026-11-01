@@ -63,7 +63,7 @@ test('Cuatro familias tipográficas desde cinco PDF preservan marca Coproactiva'
   assert.ok(catalogo.includes(tipo),tipo);
  for(const tono of ['#ed7130','#d0a207','#696969','#2b3138'])
   assert.ok(catalogo.includes(tono),tono);
- assert.match(catalogo,/disponible:true,ruta:\/documentos/);
+ assert.match(catalogo,/disponible:true,ruta:'\/documentos/);
 });
 
 const editor=leer('src/paginas/panel/DocumentoEditor.jsx');
