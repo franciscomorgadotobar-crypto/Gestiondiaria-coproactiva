@@ -30,6 +30,7 @@ export default function DocumentoEditor(){
  const [versiones,setVersiones]=useState([]);
  const [vistaVersion,setVistaVersion]=useState(null);
  const [guardando,setGuardando]=useState(false);
+ const [vistaMovil,setVistaMovil]=useState('editar');
  const [cargando,setCargando]=useState(!esNuevo);
  const [error,setError]=useState('');const [aviso,setAviso]=useState('');
  const plantilla=tipos.find(t=>t.id===tipo);
@@ -117,8 +118,23 @@ export default function DocumentoEditor(){
   </header>
   {error&&<p className="aviso aviso-critico no-imprimir" role="alert">{error}</p>}
   {aviso&&<p className="aviso aviso-ok no-imprimir" role="status">{aviso}</p>}
-  <div className="doc-editor-layout">
+  <nav className="doc-editor-vistas-movil no-imprimir" aria-label="Vista del documento">
+    <button type="button" className={vistaMovil==='editar'?'activo':''}
+      aria-pressed={vistaMovil==='editar'} onClick={()=>setVistaMovil('editar')}>
+      Editar contenido
+    </button>
+    <button type="button" className={vistaMovil==='vista'?'activo':''}
+      aria-pressed={vistaMovil==='vista'} onClick={()=>setVistaMovil('vista')}>
+      Vista previa
+    </button>
+  </nav>
+  <div className={'doc-editor-layout '+(vistaMovil==='vista'?'mostrando-vista':'mostrando-form')}>
    <section className="doc-editor-form no-imprimir" aria-label="Datos editables del documento">
+    <div className="doc-editor-form-titulo">
+      <span className="doc-editor-form-paso">01 / EDICIÓN</span>
+      <h2>Contenido del documento</h2>
+      <p>Completa las secciones y revisa la vista previa antes de emitir.</p>
+    </div>
     <label>Tipo de documento
      <input disabled readOnly value={plantilla.titulo}/>
     </label>
@@ -157,6 +173,10 @@ export default function DocumentoEditor(){
      </div>}
    </section>
    <section className="doc-editor-vista" aria-label="Vista previa del documento">
+    <div className="doc-editor-vista-cabecera no-imprimir">
+      <strong>Vista previa del documento</strong>
+      <span>Formato A4 · Diseño Coproactiva</span>
+    </div>
     <article className="doc-editor-hoja">
      <header className="doc-editor-hoja-cabecera">
       <img className="doc-editor-logo" src={import.meta.env.BASE_URL+"brand/imagologo-horizontal-naranja.svg"} alt="Coproactiva"/>
