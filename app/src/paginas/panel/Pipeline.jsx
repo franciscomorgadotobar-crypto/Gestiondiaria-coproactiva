@@ -119,7 +119,7 @@ export default function Pipeline() {
   const [plantillaElegida,setPlantillaElegida] = useState('');
   const [varianteElegida,setVarianteElegida] = useState('principal');
   const [adjuntosCorreo,setAdjuntosCorreo] = useState([]);
-  const [guardadoDriveCorreo,setGuardadoDriveCorreo] = useState(null);
+  const [guardadosDriveCorreo,setGuardadosDriveCorreo] = useState({});
   const [firmaCorreo,setFirmaCorreo]=useState(null);
   const [historialCorreos,setHistorialCorreos]=useState([]);
   const [historialCorreosCargando,setHistorialCorreosCargando]=useState(false);
@@ -154,7 +154,7 @@ export default function Pipeline() {
     navegarPipeline(params,{desdeFicha:true});
   }
   function volverFicha() {
-    setGuardadoDriveCorreo(null);
+    setGuardadosDriveCorreo({});
     setAdjuntosCorreo([]);
     setCcCorreo('');setCcoCorreo('');
     setError(null);
@@ -227,7 +227,7 @@ export default function Pipeline() {
     if (!prospectoSeleccionado) return;
     if (accionSeleccionada==='correo') {
       if(correoProspecto?.id && correoProspecto.id!==prospectoSeleccionado.id){
-        setGuardadoDriveCorreo(null);
+        setGuardadosDriveCorreo({});
         setAdjuntosCorreo([]);
       }
       setCorreoProspecto(x=>x?.id===prospectoSeleccionado.id?x:prospectoSeleccionado);
@@ -347,7 +347,7 @@ export default function Pipeline() {
     setPlantillaElegida('');
     setVarianteElegida('principal');
     setAdjuntosCorreo([]);
-    setGuardadoDriveCorreo(null);
+    setGuardadosDriveCorreo({});
     abrirAccion('correo');
     requestAnimationFrame(() => document.getElementById('pipeline-correo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
@@ -439,7 +439,10 @@ export default function Pipeline() {
     const { data, error: envioError } = await supabase.functions.invoke('correo-prospecto', {
       body: { prospecto_id: correoProspecto.id, asunto: asuntoCorreo.trim(), mensaje: mensajeCorreo.trim(),
         plantilla_id:plantillaElegida||null, adjuntos:adjuntosCorreo,
-        ...(guardadoDriveCorreo?.carpeta_id ? {guardar_drive:{carpeta_id:guardadoDriveCorreo.carpeta_id,operacion_id:guardadoDriveCorreo.operacion_id}} : {}),
+        guardar_drive:adjuntosCorreo.filter(ref=>guardadosDriveCorreo[ref]?.carpeta_id).map(ref=>({
+          ref,carpeta_id:guardadosDriveCorreo[ref].carpeta_id,
+          operacion_id:guardadosDriveCorreo[ref].operacion_id
+        })),
         cc:copias.cc,cco:copias.cco }
     });
     setEnviandoCorreo(false);
@@ -451,7 +454,7 @@ export default function Pipeline() {
     setMensajeCorreo('');
     setCcCorreo('');setCcoCorreo('');
     setAdjuntosCorreo([]);
-    setGuardadoDriveCorreo(null);
+    setGuardadosDriveCorreo({});
     setRefrescarHistorial(n=>n+1);
     volverFicha();
     cargar();
@@ -841,7 +844,7 @@ export default function Pipeline() {
               <Link to="/mi-cuenta#firma-correo" className="micro">Configurar mi firma y logo</Link>
             </div>
             <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}
-              usuarioId={perfil?.id} guardadoDrive={guardadoDriveCorreo} onGuardarChange={setGuardadoDriveCorreo}/>
+              usuarioId={perfil?.id} guardadosDrive={guardadosDriveCorreo} onGuardarChange={setGuardadosDriveCorreo}/>
             {validarBorradorCorreo(asuntoCorreo,mensajeCorreo).map((aviso,i)=><p className="chico pipeline-correo-error" key={i} role="alert">{aviso}</p>)}
             {necesitaAdjunto&&!adjuntosCorreo.length&&<p className="chico pipeline-correo-error">Esta plantilla requiere un adjunto físico.</p>}
             <p className="chico apagado">Los adjuntos viajan dentro del correo. Las variables pendientes o instrucciones sin completar impiden el envío.</p>
