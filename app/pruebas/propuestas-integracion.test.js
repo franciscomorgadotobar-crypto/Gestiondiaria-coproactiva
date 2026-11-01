@@ -49,8 +49,10 @@ test('Gestor documental independiente reutilizable desde correos y CRM',()=>{
  assert.match(gestor,/function GestorDocumental/);
  assert.match(gestor,/TIPOS_DOCUMENTO\.map/);
  assert.match(gestor,/propuestas_comerciales/);
- assert.match(gestor,/Propuesta comercial/);
- assert.match(gestor,/plantilla en preparación/i);
+ assert.match(gestor,/TIPOS_DOCUMENTO.map/);
+ assert.match(gestor,/Crear documento/);
+ assert.match(gestor,/documentos_gestion/);
+ assert.match(gestor,/documentos-layout/);
  assert.match(adjuntos,/Abrir gestor documental para crear un documento/);
  assert.match(adjuntos,/target="_blank" rel="noopener noreferrer"/);
  assert.match(adjuntos,/prospectoId/);
@@ -61,5 +63,50 @@ test('Cuatro familias tipográficas desde cinco PDF preservan marca Coproactiva'
   assert.ok(catalogo.includes(tipo),tipo);
  for(const tono of ['#ed7130','#d0a207','#696969','#2b3138'])
   assert.ok(catalogo.includes(tono),tono);
- assert.match(gestor,/Plantilla en preparación/);
+ assert.match(catalogo,/disponible:true,ruta:\/documentos/);
+});
+
+const editor=leer('src/paginas/panel/DocumentoEditor.jsx');
+const styles=leer('src/paginas/panel/GestorDocumental.css');
+const sqlVersiones=leer('../supabase/migrations/202611010003_gestor_documental_versiones.sql');
+const comunidad=leer('src/paginas/panel/Comunidades.jsx');
+const proveedores=leer('src/paginas/panel/Proveedores.jsx');
+const inicio=leer('src/paginas/panel/Inicio.jsx');
+
+test('El mockup se implementa con búsqueda, filtros, tarjetas, tabla y panel lateral',()=>{
+ for(const criterio of ['documentos-caja-busqueda','documentos-filtros','documentos-plantillas','documentos-tabla','documentos-lateral','documentos-biblioteca-boton'])
+  assert.match(gestor,new RegExp(criterio));
+ assert.match(styles,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+ assert.match(styles,/@media\(max-width:700px\)/);
+ assert.match(gestor,/TIPOS_DOCUMENTO\.map/);
+ assert.match(gestor,/archivosFiltrados/);
+ assert.match(gestor,/supabase\.functions\.invoke\('correo-archivos'/);
+});
+test('El editor permite tres tipos, vista previa, PDF e historial con versión optimista',()=>{
+ assert.match(app,/Route path="\/documentos\/nuevo"/);
+ assert.match(app,/Route path="\/documentos\/:id"/);
+ assert.match(editor,/CAMPOS_POR_TIPO/);
+ assert.match(editor,/supabase\.rpc\('guardar_documento_gestion'/);
+ assert.match(editor,/p_version_esperada:version/);
+ assert.match(editor,/supabase\.from\('documentos_versiones'\)/);
+ assert.match(editor,/window\.print\(\)/);
+ assert.match(editor,/doc-editor-hoja/);
+});
+test('Versiones inmutables y guardado transaccional protegido por permiso',()=>{
+ assert.match(sqlVersiones,/create table if not exists public\.documentos_versiones/);
+ assert.match(sqlVersiones,/unique\(documento_id,version\)/);
+ assert.match(sqlVersiones,/security definer/);
+ assert.match(sqlVersiones,/version=version\+1/);
+ assert.match(sqlVersiones,/where id=p_id and tipo=p_tipo and version=p_version_esperada/);
+ assert.match(sqlVersiones,/revoke insert,update,delete on public\.documentos_gestion/);
+ assert.match(sqlVersiones,/p\.rol::text in \('superadmin','admin','jefatura'\)/);
+});
+test('Accesos contextuales desde CRM, Correo, Comunidades, Proveedores y Operaciones',()=>{
+ assert.match(comunidad,/Ver en gestor documental/);
+ assert.match(comunidad,/Nuevo informe de gestión/);
+ assert.match(proveedores,/Ver documentos en gestor/);
+ assert.match(proveedores,/abrir el gestor documental/);
+ assert.match(inicio,/to="\/documentos"/);
+ assert.match(pipeline,/to=\{'\/documentos\?prospecto='\+prospectoSeleccionado\.id\}/);
+ assert.match(adjuntos,/Abrir gestor documental para crear un documento/);
 });
