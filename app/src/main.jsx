@@ -12,6 +12,7 @@ import './estilos/tokens.css';
 import './estilos/base.css';
 import './estilos/modulos.css';
 import './estilos/identidad-app.css';
+import './estilos/comercial-homologado.css';
 
 /* Si la app se publica bajo una subcarpeta (github.io/<repositorio>/), el
  * router tiene que descontar ese prefijo o ninguna ruta calza. BASE_URL lo
