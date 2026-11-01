@@ -16,7 +16,7 @@
 
 .pantalla.modulo-unificado { min-width: 0; max-width: 100%; color: var(--texto-cuerpo); }
 
-/* Encabezado — mismo tamaño y espaciado en todos los módulos */
+/* Encabezado - mismo tamaño y espaciado en todos los módulos */
 .modulo-unificado > .encabezado.modulo-cabecera {
   /* Mantener la estructura de cada cabecera (fila, nav, acciones):
      sólo se unifican espaciados y apariencia. */
