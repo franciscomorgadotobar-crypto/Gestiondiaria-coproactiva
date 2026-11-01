@@ -846,7 +846,7 @@ export default function Pipeline() {
               <Link to="/mi-cuenta#firma-correo" className="micro">Configurar mi firma y logo</Link>
             </div>
             <AdjuntosCorreo seleccion={adjuntosCorreo} onChange={setAdjuntosCorreo}
-              usuarioId={perfil?.id} guardadosDrive={guardadosDriveCorreo} onGuardarChange={setGuardadosDriveCorreo}/>
+              usuarioId={perfil?.id} prospectoId={correoProspecto?.id} guardadosDrive={guardadosDriveCorreo} onGuardarChange={setGuardadosDriveCorreo}/>
             {validarBorradorCorreo(asuntoCorreo,mensajeCorreo).map((aviso,i)=><p className="chico pipeline-correo-error" key={i} role="alert">{aviso}</p>)}
             {necesitaAdjunto&&!adjuntosCorreo.length&&<p className="chico pipeline-correo-error">Esta plantilla requiere un adjunto físico.</p>}
             <p className="chico apagado">Los adjuntos viajan dentro del correo. Las variables pendientes o instrucciones sin completar impiden el envío.</p>
