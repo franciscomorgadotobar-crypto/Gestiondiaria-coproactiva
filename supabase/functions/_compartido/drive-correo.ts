@@ -16,7 +16,7 @@ export async function raizComercial(db:SupabaseClient) {
 export async function carpetaAutorizada(db:SupabaseClient,id:string) {
   const raiz=await raizComercial(db);
   const destino=String(id||'');
-  if(!destino || destino.length>200)throw new DriveError(400,'Selecciona una carpeta válida');
+  if(!/^[A-Za-z0-9_-]{8,200}$/.test(destino))throw new DriveError(400,'Selecciona una carpeta válida');
   if(destino!==raiz.id && !(await esDescendiente(db,destino,raiz.id,12)))
     throw new DriveError(403,'Esta carpeta no pertenece a Documentos comerciales');
   const metadatos=await obtener(db,destino);
@@ -57,7 +57,7 @@ export async function guardarAdjuntosEnCarpeta(
     // Idempotencia: al reintentar un envío no duplicamos copias ya guardadas.
     const hash=await sha256Hex(args.usuarioId+':'+args.operacionId+':'+archivo.ref+':'+carpeta.id);
     const q=new URLSearchParams({
-      q:`'${carpeta.id.replace(/'/g,"\\'")}' in parents and appProperties has { key='coproactiva_guardado' and value='${hash}' } and trashed = false`,
+      q:`'${carpeta.id}' in parents and appProperties has { key='coproactiva_guardado' and value='${hash}' } and trashed = false`,
       fields:'files(id,name)',pageSize:'1',supportsAllDrives:'true',includeItemsFromAllDrives:'true'
     });
     const existente=await driveJson(db,'/drive/v3/files?'+q);
