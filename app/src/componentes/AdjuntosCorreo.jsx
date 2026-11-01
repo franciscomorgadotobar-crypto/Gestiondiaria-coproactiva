@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import SelectorCarpetaDrive from './SelectorCarpetaDrive';
+import EnlacesSegurosDocumento from './EnlacesSegurosDocumento';
 import './AdjuntosCorreo.css';
 
 const MAX_BYTES=8*1024*1024;
@@ -15,7 +16,7 @@ const textoTamano=b=>(Number(b)/1048576).toFixed(2).replace('.',',')+' MB';
 
 /* Selector de archivos físicos para correo. Los bytes se transmiten solo desde
  * Drive al SMTP en la Edge Function; aquí se manejan únicamente IDs internos. */
-export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},onGuardarChange=()=>{},usuarioId='',prospectoId=''}){
+export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},onGuardarChange=()=>{},usuarioId='',prospectoId='',onInsertarEnlace=null}){
  const [biblioteca,setBiblioteca]=useState([]);
  const [comunidades,setComunidades]=useState([]);
  const [documentosGestor,setDocumentosGestor]=useState([]);
@@ -200,6 +201,8 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
       <button type="button" className="boton boton-secundario" onClick={()=>setSeleccionandoCarpeta(ref)}>Cambiar carpeta</button>
      </div>}
     </div>
+    {ref.startsWith('b:')&&mapa.get(ref)?.mime==='application/pdf'&&
+      <EnlacesSegurosDocumento archivo={mapa.get(ref)} onInsertarEnCorreo={onInsertarEnlace}/>}
    </article>)}
   </div>}
   {seleccionandoCarpeta&&seleccion.includes(seleccionandoCarpeta)&&
