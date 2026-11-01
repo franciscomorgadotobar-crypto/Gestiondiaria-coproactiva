@@ -192,6 +192,15 @@ export default function Propuestas() {
       setOpts({...{portada:true,numeros:true,honorarios:true},...registros[nombre]?.opciones});
     }
   };
+  React.useEffect(()=>{
+    const id=busqueda.get('documento');
+    if(!id || cargando)return;
+    const registro=Object.values(registros).find(r=>r.id===id);
+    if(!registro)return;
+    setSel(registro.nombre);
+    setD({...BLANK,...registro.datos});
+    setOpts({...{portada:true,numeros:true,honorarios:true},...registro.opciones});
+  },[busqueda,registros,cargando]);
   const eliminar=async ()=>{
     if(!sel||!registros[sel]||!window.confirm('¿Eliminar esta propuesta guardada?'))return;
     setGuardando(true);setAviso('');
@@ -258,7 +267,7 @@ export default function Propuestas() {
           <img src={import.meta.env.BASE_URL+'brand/imagologo-horizontal-naranja.svg'} alt="Coproactiva" style={{height:28,width:'auto'}} />
         </div>
         <p style={{margin:'10px 0 14px',fontSize:13,lineHeight:1.5,color:'#6b7480'}}>Generador de propuestas comerciales integrado con Gestión Diaria.</p>
-        <div className="propuesta-toolbar"><Link to="/pipeline">Volver al CRM</Link><span>Comercial / Propuestas</span></div>
+        <div className="propuesta-toolbar"><Link to="/documentos">Volver al gestor documental</Link><span>Documentos / Propuestas</span></div>
         {aviso&&<p role="status" className="propuesta-aviso">{aviso}</p>}
 
         <div style={p.group}>
