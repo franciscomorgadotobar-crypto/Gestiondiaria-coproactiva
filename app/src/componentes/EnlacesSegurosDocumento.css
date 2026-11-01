@@ -1,0 +1,13 @@
+.enlaces-documentales{margin-top:10px;min-width:0}
+.enlaces-documentales-panel{margin-top:10px;padding:16px;border:1px solid #e6ddd4;border-radius:12px;background:#fdfbf9;display:grid;gap:12px}
+.enlaces-documentales-panel>p{margin:0;line-height:1.5}
+.enlaces-documentales-campos{display:grid;grid-template-columns:minmax(96px,125px) minmax(150px,1fr) auto;gap:10px;align-items:end}
+.enlaces-documentales-campos .campo{display:grid;gap:5px;min-width:0}
+.enlaces-documentales-campos input,.enlaces-documentales-campos select,.enlaces-documentales-nuevo input{min-width:0;width:100%;box-sizing:border-box}
+.enlaces-documentales-nuevo{display:grid;gap:9px;padding:12px;background:#fff;border:1px solid #e6ddd4;border-radius:8px}
+.enlaces-documentales-historial{display:grid;gap:9px}
+.enlaces-documentales-fila{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid #ebe7e1}
+.enlaces-documentales-fila>div{display:grid;gap:5px;min-width:0}
+.enlaces-documentales-fila small{font-size:11px;color:#696969;line-height:1.4;overflow-wrap:anywhere}
+.enlaces-documentales-fila .boton{justify-self:end}
+@media(max-width:700px){.enlaces-documentales-panel{padding:12px}.enlaces-documentales-campos{grid-template-columns:minmax(0,1fr)}.enlaces-documentales-fila{align-items:flex-start}.enlaces-documentales-fila>div:last-child{flex-shrink:0}}
