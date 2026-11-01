@@ -48,6 +48,9 @@ jobs:
       - name: Validar generador de propuestas integrado en Comercial
         working-directory: app
         run: node --test pruebas/propuestas-integracion.test.js
+      - name: Validar enlaces documentales temporales, revocación y acceso autorizado
+        working-directory: app
+        run: node --test pruebas/enlaces-documentales.test.js
       - name: Probar adjuntos físicos y trazabilidad documental en comunicaciones a Proveedores
         working-directory: app
         run: node --test pruebas/proveedores-adjuntos-gestor.test.js
