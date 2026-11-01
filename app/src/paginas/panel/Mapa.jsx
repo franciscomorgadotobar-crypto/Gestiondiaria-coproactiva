@@ -14,7 +14,7 @@ import { useVolverGlobal } from '../../lib/navegacion';
  * si dos quedaron sin visitar.
  *
  * Los mapas son de OpenStreetMap: no necesitan clave ni tarjeta. A cambio, esta
- * pantalla sí necesita señal —las baldosas se descargan— y por eso es de
+ * pantalla sí necesita señal -las baldosas se descargan- y por eso es de
  * oficina, no de terreno.
  */
 
