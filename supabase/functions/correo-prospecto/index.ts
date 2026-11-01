@@ -96,7 +96,7 @@ Deno.serve(async req=>{
   if(plantillaCorreo?.codigo==='04'){
     const referencia=normal(prospecto.nombre_condominio||prospecto.nombre_contacto,80);
     const asuntoPlantilla=normal(plantillaCorreo.asunto,160);
-    const generico=asunto===asuntoPlantilla||/^presentaci[oó]n(?: corporativa)? coproactiva(?:\s*[|---].*)?$/i.test(asunto);
+    const generico=asunto===asuntoPlantilla||/^presentaci[oó]n(?: corporativa)? coproactiva(?:\s*[|\u2013\u2014-].*)?$/i.test(asunto);
     if(generico) asunto=('Presentación Coproactiva y propuesta de reunión'+(referencia?' | '+referencia:'')).slice(0,160);
   }
 

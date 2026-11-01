@@ -238,7 +238,7 @@ function dominioCorporativo(email: string | null) {
 
 function empresaDesdeCorreo(asunto: string | null, email: string | null) {
   const a = String(asunto || '').trim();
-  const m = a.match(/(?:presentaci[oó]n|propuesta|servicios|cotizaci[oó]n|presupuesto|oferta)\s+(?:de\s+)?([^|---]{2,55})/i);
+  const m = a.match(/(?:presentaci[oó]n|propuesta|servicios|cotizaci[oó]n|presupuesto|oferta)\s+(?:de\s+)?([^|\u2013\u2014-]{2,55})/i);
   if (m?.[1]) {
     const candidata = m[1].trim().replace(/\s{2,}/g, ' ');
     if (candidata.length >= 2 && candidata.length <= 55) return candidata;
