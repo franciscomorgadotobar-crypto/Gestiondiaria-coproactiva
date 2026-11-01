@@ -202,7 +202,9 @@ export default function AdjuntosCorreo({seleccion=[],onChange,guardadosDrive={},
      </div>}
     </div>
     {ref.startsWith('b:')&&mapa.get(ref)?.mime==='application/pdf'&&
-      <EnlacesSegurosDocumento archivo={mapa.get(ref)} onInsertarEnCorreo={onInsertarEnlace}/>}
+      <EnlacesSegurosDocumento archivo={mapa.get(ref)}
+        onInsertarEnCorreo={onInsertarEnlace}
+        onInsertarSoloEnlace={onInsertarEnlace?url=>{onInsertarEnlace(url);alternar(ref);}:null}/>}
    </article>)}
   </div>}
   {seleccionandoCarpeta&&seleccion.includes(seleccionandoCarpeta)&&
