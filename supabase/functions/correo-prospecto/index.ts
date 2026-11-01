@@ -109,7 +109,7 @@ Deno.serve(async req=>{
   // Los IDs se resuelven en el servidor: jamás se aceptan URLs o Drive file IDs
   // proporcionados por el navegador. Descarga binaria desde Google Drive privado.
   const adjuntosSMTP:{filename:string;contentType:string;encoding:'binary';content:Uint8Array}[]=[];
-  const auditoriaAdjuntos:{id:string;origen:string;nombre:string;bytes:number;guardado_drive?:{carpeta_id:string;drive_file_id:string}}[]=[];
+  const auditoriaAdjuntos:{id:string;origen:string;nombre:string;bytes:number;guardado_drive?:{carpeta_id:string;carpeta_nombre:string}}[]=[];
   const archivosParaDrive:{ref:string;drive_file_id:string;nombre:string}[]=[];
   let total=0;
   for(const referencia of idsUnicos){
@@ -166,7 +166,7 @@ Deno.serve(async req=>{
       });
       for(const guardado of resultado.archivos){
         const registro=auditoriaAdjuntos.find(x=>x.id===guardado.ref.slice(2));
-        if(registro)registro.guardado_drive={carpeta_id:resultado.carpeta_id,drive_file_id:guardado.drive_file_id};
+        if(registro)registro.guardado_drive={carpeta_id:resultado.carpeta_id,carpeta_nombre:resultado.carpeta_nombre};
       }
     }catch(e){
       console.error('correo-prospecto: guardado Drive',e instanceof Error?e.name:'unknown');
