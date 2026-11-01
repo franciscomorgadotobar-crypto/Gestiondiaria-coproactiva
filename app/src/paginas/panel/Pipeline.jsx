@@ -755,7 +755,9 @@ export default function Pipeline() {
                         {c.error&&<p className="chico pipeline-correo-error">{c.error}</p>}
                         <pre>{c.mensaje}</pre>
                         {Array.isArray(c.adjuntos)&&c.adjuntos.length>0&&
-                          <p className="chico apagado">Adjuntos: {c.adjuntos.map(a=>a.nombre||'Archivo').join(' · ')}</p>}
+                          <div className="pipeline-correo-documentos"><p className="chico apagado">Adjuntos: {c.adjuntos.map(a=>a.nombre||'Archivo').join(' · ')}</p>
+                            {c.adjuntos.filter(a=>a.guardado_drive).map((a,i)=><p className="chico" key={a.id||i}>Guardado en Drive: {a.nombre} - {a.guardado_drive.carpeta_nombre}</p>)}
+                          </div>}
                       </div>
                     </details>)}
                     {historialCorreos.length===30&&<p className="micro apagado">Se muestran los 30 registros más recientes.</p>}
