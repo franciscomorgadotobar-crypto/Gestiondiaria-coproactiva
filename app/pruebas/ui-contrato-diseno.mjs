@@ -205,8 +205,14 @@ try{
      assert.equal(m.fecha,m.expected,'Fecha local del dispositivo '+JSON.stringify(m));
      assert.equal(m.placeholder,item.placeholder);
      assert.ok(m.font>=16,'Entrada muy pequeña provoca zoom móvil '+JSON.stringify(m));
+     // Todos los modelos incluyen casillas reales y estados persistentes
+     // en la previsualización; ninguna tabla requiere escritura manual.
+     const casilla=page.locator('.doc-check-item input[type="checkbox"]').first();
+     await casilla.check();
+     assert.ok(await casilla.isChecked(),item.nombre+' casilla no quedó marcada');
      await page.getByRole('button',{name:'Vista previa',exact:true}).click();
      await page.locator('.doc-editor-vista:visible').waitFor();
+     await page.locator('.doc-editor-vista .doc-bloques-estado').first().waitFor();
      await page.screenshot({path:'artifacts/ui/contrato-editor-'+item.nombre.replaceAll(' ','-')+'-'+width+'.png',fullPage:false});
      await page.getByRole('button',{name:'Editar contenido',exact:true}).click();
      await page.locator('.doc-editor-form:visible').waitFor();
