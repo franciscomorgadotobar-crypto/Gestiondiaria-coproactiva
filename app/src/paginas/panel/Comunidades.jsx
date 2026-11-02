@@ -10,6 +10,7 @@ import ModalEjecucionMantencion from '../../componentes/ModalEjecucionMantencion
 import './Comunidades.css';
 import DriveEstado from '../../componentes/DriveEstado';
 import DriveArchivos from '../../componentes/DriveArchivos';
+import DocumentosVinculados from '../../componentes/DocumentosVinculados';
 import { conexionDrive, eliminarDeDrive, prepararCarpetasDrive, subirADrive, validarArchivoDrive } from '../../lib/drive';
 import Compromisos from '../cliente/Compromisos';
 
@@ -1510,6 +1511,7 @@ function DetalleComunidad({ id }) {
               <Link className="boton boton-secundario" to={"/documentos?comunidad="+id}>Ver en gestor documental</Link>
               <Link className="boton" to={"/documentos/nuevo?tipo=informe_gestion&contexto=comunidad&contexto_id="+id}>Nuevo informe de gestión</Link>
             </div>}
+            {puedeGestionar&&<DocumentosVinculados tipo="comunidad" id={id}/>}
             <p className="chico apagado">Archivos guardados en la carpeta de la comunidad en Google Drive. Ningún documento se publica al cliente sin una acción explícita.</p>
             {puedeGestionar ? (
               <>
