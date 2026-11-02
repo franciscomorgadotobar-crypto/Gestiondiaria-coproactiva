@@ -170,6 +170,17 @@ try{
      await page.locator('.documentos-plantilla').filter({hasText:item.nombre})
        .getByRole('link',{name:/Crear/}).click();
      await page.getByRole('heading',{name:'Crear documento'}).waitFor({timeout:12000});
+     const vinculacion=page.locator('.documento-vinculacion');
+     await vinculacion.getByLabel('Buscar lead o prospecto (CRM)').waitFor();
+     await vinculacion.getByLabel('Buscar comunidad').waitFor();
+     const lead=await vinculacion.getByLabel('Asociar lead / prospecto').inputValue();
+     const comunidad=await vinculacion.getByLabel('Asociar comunidad').inputValue();
+     assert.equal(lead,'','nuevo documento sin contexto no preselecciona lead');
+     assert.equal(comunidad,'','nuevo documento sin contexto no preselecciona comunidad');
+     const box=await vinculacion.boundingBox();
+     assert.ok(box&&box.x>=12&&box.x+box.width<=width-12,
+      'Selector bidireccional fuera de margen móvil '+width+'px');
+
      const m=await page.evaluate(()=>{
       const r=selector=>{const el=document.querySelector(selector);if(!el)return null;
        const box=el.getBoundingClientRect();return {
