@@ -168,3 +168,34 @@
  .doc-editor{padding:0!important;margin:0!important;max-width:none!important}
  .doc-editor-layout .doc-editor-vista{display:block!important}
 }
+
+
+/* Modelos escritos, con tratamiento editorial de texto y matrices. */
+.doc-editor-modelo{
+ display:grid;gap:8px;padding:14px;border:1px solid #e8cbae;
+ border-radius:11px;background:#fff7ef;color:#4c4c4c;line-height:1.5;font-size:13px;
+}
+.doc-editor-modelo strong{color:#934e22;font-size:13px}
+.doc-editor-modelo small{color:#715d4a;font-size:12px}
+.doc-editor-modelo>.boton{width:fit-content;min-height:40px;max-width:100%;white-space:normal}
+.doc-editor-texto .doc-bloques{display:grid;gap:12px;line-height:1.55}
+.doc-editor-texto .doc-bloques-parrafo{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.doc-editor-texto .doc-bloques-lista{margin:0;padding-left:18px;display:grid;gap:6px;list-style:disc}
+.doc-editor-texto .doc-bloques-lista li{overflow-wrap:anywhere}
+.doc-editor-texto .doc-bloques-tabla-wrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.doc-editor-texto .doc-bloques-tabla{border-collapse:collapse;width:100%;min-width:340px;text-align:left;font-size:11px;line-height:1.5}
+.doc-editor-texto .doc-bloques-tabla th{background:#f4f1ec;font-weight:750;color:#30353b;border-bottom:1px solid #d5ccc3}
+.doc-editor-texto .doc-bloques-tabla :is(th,td){padding:9px 8px;vertical-align:top;border-bottom:1px solid #e5dfd8;overflow-wrap:anywhere}
+.doc-editor-texto .doc-bloques-tabla tr:nth-child(even) td{background:#fbfaf8}
+@media(max-width:700px){
+ .doc-editor-modelo{padding:12px}
+ .doc-editor-modelo>.boton{width:100%;min-height:44px}
+ .doc-editor-texto .doc-bloques-tabla{font-size:10px;min-width:300px}
+ .doc-editor-texto .doc-bloques-tabla :is(th,td){padding:7px 6px}
+}
+@media print{
+ .doc-editor-modelo{display:none!important}
+ .doc-editor-texto .doc-bloques-tabla-wrap{overflow:visible!important}
+ .doc-editor-texto .doc-bloques-tabla{min-width:0!important;width:100%!important}
+ .doc-editor-texto .doc-bloques-tabla tr{break-inside:avoid}
+}
