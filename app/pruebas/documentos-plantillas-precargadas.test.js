@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {crearContenidoBaseDocumental,tieneDatosPorConfirmar,REFERENCIAS_MODELO} from '../src/lib/contenidoBaseDocumental.js';
+import {crearContenidoBaseDocumental,tieneDatosPorConfirmar,REFERENCIAS_MODELO,personalizarModeloConEntidad} from '../src/lib/contenidoBaseDocumental.js';
 import {CAMPOS_POR_TIPO} from '../src/lib/plantillasDocumentales.js';
 import {analizarBloquesDocumento} from '../src/lib/bloquesDocumento.js';
 import {generarPdfDocumento} from '../src/lib/documentosPdf.js';
@@ -58,4 +58,14 @@ test('Modelos y visualización incluyen listas y tablas interpretables',()=>{
  assert.ok(secciones.some(b=>b.tipo==='tabla'));
  assert.ok(secciones.some(b=>b.tipo==='parrafo'));
  assert.ok(analizarBloquesDocumento('1. Uno\n2. Dos').some(b=>b.tipo==='lista'));
+});
+
+test('El nombre real de la comunidad completa el modelo sin borrar texto',()=>{
+ const antes=crearContenidoBaseDocumental('informe_gestion');
+ const despues=personalizarModeloConEntidad(antes,'Edificio Prueba');
+ assert.match(despues.resumen,/Edificio Prueba/);
+ assert.ok(!despues.resumen.includes('[nombre de la comunidad]'));
+ assert.match(antes.resumen,/\[nombre de la comunidad\]/);
+ assert.equal(despues.gestiones,antes.gestiones);
+ assert.match(fuente,/personalizarModeloConEntidad\(actual,data\[campo\]\)/);
 });
