@@ -5,6 +5,7 @@ import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO,EJEMPLOS_TITULO_DOCUMEN
 import {descargarPdfDocumento} from '../../lib/documentosPdf';
 import {crearContenidoBaseDocumental,REFERENCIAS_MODELO,tieneDatosPorConfirmar,personalizarModeloConEntidad} from '../../lib/contenidoBaseDocumental';
 import BloquesDocumento from '../../componentes/BloquesDocumento';
+import VinculacionDocumento from '../../componentes/VinculacionDocumento';
 import './DocumentoEditor.css';
 
 const tipos=TIPOS_DOCUMENTO.filter(t=>t.id!=='propuesta_comercial');
@@ -27,7 +28,34 @@ export default function DocumentoEditor(){
   const cid=params.get('contexto_id')||params.get(clave)||'';
   return contextoValido(t)&&uuid.test(cid)?{tipo:t,id:cid}:{tipo:'',id:''};
  });
+ const [prospectoId,setProspectoId]=useState(()=>params.get('prospecto')||(
+  (params.get('contexto')==='prospecto'&&uuid.test(params.get('contexto_id')||''))?params.get('contexto_id'):''));
+ const [comunidadId,setComunidadId]=useState(()=>params.get('comunidad')||(
+  (params.get('contexto')==='comunidad'&&uuid.test(params.get('contexto_id')||''))?params.get('contexto_id'):''));
  const [entidad,setEntidad]=useState('');
+
+ function elegirProspecto(valor,registro){
+  setProspectoId(valor);
+  if(valor&&registro){
+   setContexto({tipo:'prospecto',id:valor});
+   setEntidad(registro.nombre_condominio||'');
+   if(esNuevo){
+    setTitulo(t=>t||plantilla?.titulo+' - '+registro.nombre_condominio);
+    setContenido(c=>personalizarModeloConEntidad(c,registro.nombre_condominio));
+   }
+  }else if(!comunidadId){setEntidad('');setContexto({tipo:'',id:''});}
+ }
+ function elegirComunidad(valor,registro){
+  setComunidadId(valor);
+  if(valor&&registro){
+   setContexto({tipo:'comunidad',id:valor});
+   setEntidad(registro.nombre||'');
+   if(esNuevo){
+    setTitulo(t=>t||plantilla?.titulo+' - '+registro.nombre);
+    setContenido(c=>personalizarModeloConEntidad(c,registro.nombre));
+   }
+  }else if(!prospectoId){setEntidad('');setContexto({tipo:'',id:''});}
+ }
  const [version,setVersion]=useState(null);
  const [versiones,setVersiones]=useState([]);
  const [vistaVersion,setVistaVersion]=useState(null);
@@ -67,6 +95,8 @@ export default function DocumentoEditor(){
    else{
     const d=doc.data;setTipo(d.tipo);setTitulo(d.titulo);setContenido(d.contenido||{});
     setEstado(d.estado);setVersion(d.version);setContexto({tipo:d.contexto_tipo||'',id:d.contexto_id||''});
+    setProspectoId(d.prospecto_id||(d.contexto_tipo==='prospecto'?d.contexto_id:'')||'');
+    setComunidadId(d.comunidad_id||(d.contexto_tipo==='comunidad'?d.contexto_id:'')||'');
     if(history.error)setError('No se pudo consultar el historial: '+history.error.message);
     else setVersiones(history.data||[]);
    }
@@ -101,9 +131,9 @@ export default function DocumentoEditor(){
   if(totalLetras>100000)return setError('El documento supera el límite de texto permitido');
   if(['aprobado','emitido'].includes(estado)&&pendientesModelo)return setError('Para aprobar o emitir, reemplaza o elimina los datos [por confirmar] del modelo. Puedes guardar el borrador mientras tanto.');
   setGuardando(true);setError('');setAviso('');
-  const {data,error:e}=await supabase.rpc('guardar_documento_gestion',{
+  const {data,error:e}=await supabase.rpc('guardar_documento_con_relaciones',{
    p_id:esNuevo?null:id,p_tipo:tipo,p_titulo:titulo.trim(),
-   p_estado:estado,p_contexto_tipo:contexto.tipo||null,p_contexto_id:contexto.id||null,
+   p_estado:estado,p_prospecto_id:prospectoId||null,p_comunidad_id:comunidadId||null,
    p_contenido:contenido,p_version_esperada:version
   });
   if(e)setError('No se pudo guardar: '+e.message);
@@ -176,8 +206,12 @@ export default function DocumentoEditor(){
       {Object.entries(ETIQUETAS_ESTADO).map(([key,value])=><option key={key} value={key}>{value}</option>)}
      </select>
     </label>
-    <div className="doc-editor-contexto">Contexto: <strong>{entidad||'Documento independiente'}</strong>
-      {contexto.tipo&&<small>{contextoNombre[contexto.tipo]}</small>}
+    <VinculacionDocumento prospectoId={prospectoId} comunidadId={comunidadId}
+      onProspecto={elegirProspecto} onComunidad={elegirComunidad}
+      disabled={Boolean(vistaVersion)||guardando}/>
+    <div className="doc-editor-contexto">
+      Relaciones: <strong>{prospectoId&&comunidadId?'Lead del CRM y comunidad':
+        comunidadId?'Comunidad':prospectoId?'Lead / prospecto':entidad||'Documento independiente'}</strong>
     </div>
     <label>Fecha del documento
      <input type="date" value={contenido.fecha||''} disabled={Boolean(vistaVersion)}
