@@ -3,14 +3,14 @@ name: Construir APK Android con Capacitor
 on:
   pull_request:
     branches:
-      - claude/figma-coproactiva-interface-9y82xq
+      - develop
     paths:
       - "app/**"
       - ".github/workflows/construir-apk-android.yml"
       - ".github/workflows/publicar-app.yml"
   push:
     branches:
-      - claude/figma-coproactiva-interface-9y82xq
+      - develop
     paths:
       - "app/**"
       - ".github/workflows/construir-apk-android.yml"
