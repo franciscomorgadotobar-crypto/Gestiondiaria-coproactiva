@@ -199,3 +199,8 @@
  .doc-editor-texto .doc-bloques-tabla{min-width:0!important;width:100%!important}
  .doc-editor-texto .doc-bloques-tabla tr{break-inside:avoid}
 }
+
+/* Estado de avance en vistas previas y PDFs del documento. */
+.doc-bloques-estado{font-size:11px;font-weight:700;white-space:normal;color:#9e622f}
+.doc-editor-texto .doc-bloques-tabla th:last-child,.doc-editor-texto .doc-bloques-tabla td:last-child{min-width:69px}
+@media print{.doc-bloques-estado{color:#444!important}}
