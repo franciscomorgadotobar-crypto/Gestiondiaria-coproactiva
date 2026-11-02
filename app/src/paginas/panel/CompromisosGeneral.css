@@ -164,17 +164,17 @@
 .compromisos-general-resumen{
  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-content:start
 }
-.compromisos-general-resumen>div{
+.compromisos-general-kpis>div{
  display:grid;gap:5px;min-width:0;padding:14px 17px;background:var(--tarjeta);
  border:1px solid var(--borde);border-radius:12px
 }
-.compromisos-general-resumen strong{font-size:28px;line-height:1.2;color:var(--texto-titulo)}
-.compromisos-general-resumen span{font-size:14px;font-weight:650;color:var(--texto-apagado)}
+.compromisos-general-kpis strong{font-size:28px;line-height:1.2;color:var(--texto-titulo)}
+.compromisos-general-kpis span{font-size:14px;font-weight:650;color:var(--texto-apagado)}
 .compromisos-general-enlace-titulo strong{font-size:15px}
 .compromisos-general-estado,.compromisos-general-fecha,.compromisos-general-avance small{font-size:13px}
 @media(max-width:640px){
- .compromisos-general-resumen{gap:7px}
- .compromisos-general-resumen>div{padding:12px 9px}
- .compromisos-general-resumen strong{font-size:23px}
- .compromisos-general-resumen span{font-size:12px}
+ .compromisos-general-kpis{gap:7px}
+ .compromisos-general-kpis>div{padding:12px 9px}
+ .compromisos-general-kpis strong{font-size:23px}
+ .compromisos-general-kpis span{font-size:12px}
 }
