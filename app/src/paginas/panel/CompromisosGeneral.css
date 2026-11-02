@@ -161,7 +161,7 @@
  .compromisos-general-fecha{font-size:11px}
 }
 
-.compromisos-general-resumen{
+.compromisos-general-kpis{
  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-content:start
 }
 .compromisos-general-kpis>div{
