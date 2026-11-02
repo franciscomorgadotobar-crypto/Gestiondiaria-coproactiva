@@ -72,3 +72,27 @@
  .documentos-tabla .documentos-fila-enlace{display:block;padding:10px}
  .documentos-tabla .documentos-fila-enlace td{display:block!important;width:100%!important;padding:0!important;box-sizing:border-box}
 }
+
+
+/* La posición del filtro debe seguir al chip seleccionado cuando se vuelve del editor.
+   Solo esta franja tiene desplazamiento horizontal; no el contenido del módulo. */
+@media(max-width:899px){
+ .comercial-documentos .documentos-filtros{
+  display:flex;
+  flex-wrap:nowrap;
+  scroll-behavior:auto;
+  scroll-padding-inline:4px;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+ }
+ .comercial-documentos .documentos-filtros>button{
+  flex:0 0 auto;
+  white-space:nowrap;
+  max-width:100%;
+  overflow:visible;
+ }
+ .comercial-documentos .documentos-filtros>button:focus-visible{
+  outline:2px solid #ed7130;
+  outline-offset:-2px;
+ }
+}
