@@ -35,9 +35,9 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [guardando, setGuardando] = useState(false);
  const [driveConectada, setDriveConectada] = useState(false);
  const [versionDocs, setVersionDocs] = useState(0);
- async function cargar() {
+ async function cargar({silencioso=false}={}) {
   if (!comunidadId) return;
-  setCargando(true); setError('');
+  if(!silencioso)setCargando(true);setError('');
   const { data, error: err } = await supabase.from('compromisos_administracion').select('*').eq('comunidad_id', comunidadId).order('orden', {ascending:true, nullsFirst:false}).order('creado_en', {ascending:true});
   if (err) { setError('No fue posible cargar compromisos: ' + err.message); setCargando(false); return; }
   const visibles=soloVistaCliente ? (data||[]).filter(c=>c.publicado===true) : (data||[]);
@@ -82,7 +82,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    fecha_proxima_accion: nuevo.fecha_proxima_accion || null,
    responsable: nuevo.responsable, publicado: false
   });
-  if (err) setError(err.message); else { setNuevo(inicial); await cargar(); }
+  if (err) setError(err.message); else { setNuevo(inicial); await cargar({silencioso:true}); }
   setGuardando(false);
  }
  async function abrirAdjunto(doc) {
@@ -95,7 +95,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   setGuardando(true); setError('');
   try {
    const subt = subtareas.filter(s=>s.compromiso_id===detalle);
-   const porcentajeReal=subt.length?Math.round(subt.filter(s=>s.completada).length/subt.length*100):Number(porcentaje);
+   const porcentajeReal=subt.length?porcentajeSubtareas(subt):Number(porcentaje);
    const { data: avance, error: err } = await supabase.from('compromisos_avances').insert({
     compromiso_id: detalle, descripcion: texto.trim(), porcentaje: porcentajeReal,
     estado, evidencia_url: evidencia.trim() || null, publicado: publicar
@@ -134,7 +134,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    });
    if(estadoError) throw estadoError;
    setTexto('');setEvidencia('');setPublicar(false);setArchivos([]);setVersionDocs(v=>v+1);
-   await cargar();
+   await cargar({silencioso:true});
    if(fallidos.length) setError('Avance guardado, pero algunos archivos no se adjuntaron: ' + fallidos.join('; '));
   } catch(err) { setError(err.message || 'No fue posible registrar el avance.'); }
   finally { setGuardando(false); }
@@ -149,7 +149,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null
   }).eq('id',editando).select('id').single();
   setGuardando(false);
-  if(err)setError(err.message);else {setEditando(null);await cargar();}
+  if(err)setError(err.message);else {setEditando(null);await cargar({silencioso:true});}
  }
  async function eliminarCompromiso(item) {
   if(!window.confirm(`¿Eliminar definitivamente "${item.titulo}" y sus avances y subtareas? Esta acción no se puede deshacer.`))return;
@@ -163,7 +163,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    if(rutas.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(rutas);if(se)throw se;}
    const {error:de}=await supabase.from('compromisos_administracion').delete().eq('id',item.id);
    if(de)throw de;
-   await cargar();
+   await cargar({silencioso:true});
   }catch(e){setError(e.message||'No fue posible eliminar.');}
   finally{setGuardando(false);}
  }
@@ -175,7 +175,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    if(de)throw de;
    const {error:me}=await supabase.from('compromisos_avances_adjuntos').delete().eq('id',doc.id);
    if(me)throw me;
-   await cargar();
+   await cargar({silencioso:true});
   }catch(e){setError(e.message||'No fue posible eliminar el adjunto.');}
   finally{setGuardando(false);}
  }
@@ -186,7 +186,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    const orden=subtareas.filter(x=>x.compromiso_id===item.id).length+1;
    const {error:e}=await supabase.from('compromisos_subtareas').insert({compromiso_id:item.id,titulo,orden});
    if(e)throw e;
-   setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar();
+   setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar({silencioso:true});
   }catch(e){setError(e.message||'No fue posible agregar la subtarea.');}
   finally{setGuardando(false);}
  }
@@ -194,11 +194,22 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   if(guardando)return;
   setGuardando(true);setError('');
   try{
-   const {error:e}=await supabase.from('compromisos_subtareas').update({completada}).eq('id',sub.id);
+   const {error:e}=await supabase.from('compromisos_subtareas').update({completada,avance:completada?100:0}).eq('id',sub.id);
    if(e)throw e;
    // El trigger actualiza porcentaje, etapa e historial en una transacción.
-   await cargar();
-  }catch(e){setError(e.message||'No se pudo actualizar la subtarea.');await cargar();}
+   await cargar({silencioso:true});
+  }catch(e){setError(e.message||'No se pudo actualizar la subtarea.');await cargar({silencioso:true});}
+  finally{setGuardando(false);}
+ }
+ async function cambiarProgresoSubtarea(sub,valor) {
+  if(guardando)return;
+  setGuardando(true);setError('');
+  try{
+   const {error:e}=await supabase.from('compromisos_subtareas')
+    .update({avance:Math.min(90,Math.max(0,Number(valor)||0)),completada:false}).eq('id',sub.id);
+   if(e)throw e;
+   await cargar({silencioso:true});
+  }catch(e){setError(e.message||'No se pudo actualizar el avance.');}
   finally{setGuardando(false);}
  }
  async function eliminarSubtarea(item,sub) {
@@ -212,7 +223,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    }
    const {error:e}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
    if(e)throw e;
-   await cargar();
+   await cargar({silencioso:true});
   }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
  }
@@ -234,7 +245,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    });
    if(meta){await supabase.storage.from('compromisos-adjuntos').remove([ruta]);fallos.push(file.name+': '+meta.message);}
   }
-  setArchivoEnProceso(null);await cargar();
+  setArchivoEnProceso(null);await cargar({silencioso:true});
   if(fallos.length)setError('Adjuntos no guardados: '+fallos.join('; '));
  }
  async function eliminarAdjuntoSubtarea(doc) {
@@ -245,7 +256,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    if(e)throw e;
    const {error:meta}=await supabase.from('compromisos_subtareas_adjuntos').delete().eq('id',doc.id);
    if(meta)throw meta;
-   await cargar();
+   await cargar({silencioso:true});
   }catch(e){setError(e.message||'No se pudo quitar el adjunto.');}
   finally{setArchivoEnProceso(null);}
  }
@@ -267,12 +278,12 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     p_observacion:observacionesRapidas[item.id]?.trim()||'Cambio de etapa desde compromisos'
   });
   if(err)setError('No se pudo cambiar la etapa: '+err.message);
-  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await cargar();}
+  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await cargar({silencioso:true});}
   setGuardando(false);
  }
  async function visibilidad(item) {
   const {error: err} = await supabase.from('compromisos_administracion').update({publicado: !item.publicado}).eq('id', item.id);
-  if(err) setError(err.message);else await cargar();
+  if(err) setError(err.message);else await cargar({silencioso:true});
  }
  return <section className="compromisos-wrap" aria-label="Compromisos y avances">
    <header className="compromisos-cabecera"><h2 className="h4">Compromisos y avances</h2>
@@ -348,8 +359,16 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                           onChange={e=>marcarSubtarea(item,x,e.target.checked)}/>
                         <span>{x.titulo}</span>
                       </label>
-                      <strong className="compromisos-subtarea-porcentaje">{x.completada?'100%':'0%'}</strong>
+                      <strong className="compromisos-subtarea-porcentaje">{x.completada?100:(x.avance||0)}%</strong>
                     </div>
+                    {administrador&&!x.completada&&<label className="compromisos-subtarea-progreso">
+                      <span>Avance parcial</span>
+                      <select value={x.avance||0} disabled={guardando}
+                        aria-label={'Avance de '+x.titulo}
+                        onChange={e=>cambiarProgresoSubtarea(x,e.target.value)}>
+                        {[0,10,20,30,40,50,60,70,80,90].map(n=><option key={n} value={n}>{n}%</option>)}
+                      </select>
+                    </label>}
                     <div className="compromisos-subtarea-evidencias">
                       {docs.map(doc=><div key={doc.id} className="compromisos-subtarea-documento">
                         <button type="button" onClick={()=>abrirAdjunto(doc)}>Adjunto: {doc.nombre}</button>
