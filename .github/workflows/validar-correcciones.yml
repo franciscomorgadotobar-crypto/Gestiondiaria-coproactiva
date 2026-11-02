@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - develop
+      - claude/figma-coproactiva-interface-9y82xq
   workflow_dispatch:
 
 permissions:
