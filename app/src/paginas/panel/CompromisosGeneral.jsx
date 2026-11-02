@@ -4,6 +4,7 @@ import {supabase} from '../../lib/supabase';
 import {useSesion} from '../../lib/sesion';
 import {useVolverGlobal} from '../../lib/navegacion';
 import './CompromisosGeneral.css';
+import {resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
 
 const ETAPAS=[['todos','Todos'],['pendiente','Pendientes'],['en_curso','En ejecución'],['en_espera','En espera'],['completado','Completados']];
 const FECHA=x=>x?new Date(x+'T12:00:00').toLocaleDateString('es-CL'):'Sin fecha';
@@ -32,6 +33,7 @@ export default function CompromisosGeneral(){
   });
   return()=>{vivo=false};
  },[]);
+ const global=useMemo(()=>resumenGlobalCompromisos(items||[]),[items]);
  const porComunidad=useMemo(()=>{
   const nombres=new Map(comunidades.map(c=>[c.id,c]));
   const salida=new Map();
@@ -59,6 +61,11 @@ export default function CompromisosGeneral(){
        <label>Buscar comunidad o compromiso<input type="search" value={busqueda}
          onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar…"/></label>
      </div>
+     {items!==null&&<section className="compromisos-general-kpis" aria-label="Avance global de compromisos">
+       <div><strong>{global.abiertos}</strong><span>Compromisos pendientes</span></div>
+       <div><strong>{global.completados}</strong><span>Completados</span></div>
+       <div><strong>{global.porcentaje}%</strong><span>Avance global</span></div>
+     </section>}
      {items===null?<p className="cargando">Cargando…</p>:<div className="compromisos-general-lista">
        {porComunidad.map(({comunidad,items:lista})=>{
          const id=comunidad?.id||lista[0].comunidad_id;

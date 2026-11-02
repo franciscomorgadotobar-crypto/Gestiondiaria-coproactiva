@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import './Compromisos.css';
 import DriveArchivos from '../../componentes/DriveArchivos';
 import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '../../lib/drive';
+import {porcentajeSubtareas,resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
 
 const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
@@ -17,6 +18,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [adjuntos, setAdjuntos] = useState([]);
  const [archivos, setArchivos] = useState([]);
  const [subtareas,setSubtareas]=useState([]);
+ const [adjuntosSubtareas,setAdjuntosSubtareas]=useState([]);
+ const [archivoEnProceso,setArchivoEnProceso]=useState(null);
  const [nuevaSubtarea,setNuevaSubtarea]=useState({});
  const [editando,setEditando]=useState(null);
  const [editForm,setEditForm]=useState(inicial);
@@ -32,9 +35,9 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [guardando, setGuardando] = useState(false);
  const [driveConectada, setDriveConectada] = useState(false);
  const [versionDocs, setVersionDocs] = useState(0);
- async function cargar() {
+ async function cargar({silencioso=false}={}) {
   if (!comunidadId) return;
-  setCargando(true); setError('');
+  if(!silencioso)setCargando(true);setError('');
   const { data, error: err } = await supabase.from('compromisos_administracion').select('*').eq('comunidad_id', comunidadId).order('orden', {ascending:true, nullsFirst:false}).order('creado_en', {ascending:true});
   if (err) { setError('No fue posible cargar compromisos: ' + err.message); setCargando(false); return; }
   const visibles=soloVistaCliente ? (data||[]).filter(c=>c.publicado===true) : (data||[]);
@@ -42,6 +45,13 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   const {data: subt,error: errSubt}=await supabase.from('compromisos_subtareas').select('*').in('compromiso_id',visibles.map(x=>x.id).length ? visibles.map(x=>x.id):['00000000-0000-0000-0000-000000000000']).order('orden',{ascending:true});
   if(errSubt) setError(errSubt.message);
   setSubtareas(subt||[]);
+   const subIds=(subt||[]).map(x=>x.id);
+   if(subIds.length){
+    const {data:archivos,error:errArchivos}=await supabase.from('compromisos_subtareas_adjuntos')
+     .select('*').in('subtarea_id',subIds).order('creado_en',{ascending:false});
+    if(errArchivos)setError(errArchivos.message);
+    setAdjuntosSubtareas(archivos||[]);
+   }else setAdjuntosSubtareas([]);
   const ids = visibles.map(x => x.id);
   if (ids.length) {
    const { data: historial, error: err2 } = await supabase.from('compromisos_avances').select('*').in('compromiso_id', ids).order('registrado_en', {ascending:false});
@@ -72,7 +82,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    fecha_proxima_accion: nuevo.fecha_proxima_accion || null,
    responsable: nuevo.responsable, publicado: false
   });
-  if (err) setError(err.message); else { setNuevo(inicial); await cargar(); }
+  if (err) setError(err.message); else { setNuevo(inicial); await cargar({silencioso:true}); }
   setGuardando(false);
  }
  async function abrirAdjunto(doc) {
@@ -85,7 +95,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   setGuardando(true); setError('');
   try {
    const subt = subtareas.filter(s=>s.compromiso_id===detalle);
-   const porcentajeReal=subt.length?Math.round(subt.filter(s=>s.completada).length/subt.length*100):Number(porcentaje);
+   const porcentajeReal=subt.length?porcentajeSubtareas(subt):Number(porcentaje);
    const { data: avance, error: err } = await supabase.from('compromisos_avances').insert({
     compromiso_id: detalle, descripcion: texto.trim(), porcentaje: porcentajeReal,
     estado, evidencia_url: evidencia.trim() || null, publicado: publicar
@@ -111,18 +121,20 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     });
     if (errMeta) fallidos.push(file.name + ': ' + errMeta.message);
    }
-   const {error: err2} = await supabase.from('compromisos_administracion').update({
-     avance:porcentajeReal, actualizado_en:new Date().toISOString()
-   }).eq('id',detalle).select('id').single();
-   if(err2) throw err2;
+   if(!subt.length){
+    const {error:e}=await supabase.from('compromisos_administracion').update({
+     avance:porcentajeReal,actualizado_en:new Date().toISOString()
+    }).eq('id',detalle).select('id').single();
+    if(e)throw e;
+   }
    const {error: estadoError}=await supabase.rpc('compromisos_cambiar_etapa',{
-     p_compromiso_id:detalle,p_estado:estado,
+     p_compromiso_id:detalle,p_estado:subt.length?(compromisos.find(c=>c.id===detalle)?.estado||estado):estado,
      p_proxima_accion:fechasRapidas[detalle]||null,
      p_observacion:'Cambio al registrar avance: '+texto.trim().slice(0,500)
    });
    if(estadoError) throw estadoError;
    setTexto('');setEvidencia('');setPublicar(false);setArchivos([]);setVersionDocs(v=>v+1);
-   await cargar();
+   await cargar({silencioso:true});
    if(fallidos.length) setError('Avance guardado, pero algunos archivos no se adjuntaron: ' + fallidos.join('; '));
   } catch(err) { setError(err.message || 'No fue posible registrar el avance.'); }
   finally { setGuardando(false); }
@@ -137,7 +149,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null
   }).eq('id',editando).select('id').single();
   setGuardando(false);
-  if(err)setError(err.message);else {setEditando(null);await cargar();}
+  if(err)setError(err.message);else {setEditando(null);await cargar({silencioso:true});}
  }
  async function eliminarCompromiso(item) {
   if(!window.confirm(`¿Eliminar definitivamente "${item.titulo}" y sus avances y subtareas? Esta acción no se puede deshacer.`))return;
@@ -145,10 +157,13 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   try{
    const ids=avances.filter(a=>a.compromiso_id===item.id).map(a=>a.id);
    const docs=adjuntos.filter(d=>ids.includes(d.avance_id));
-   if(docs.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(docs.map(d=>d.ruta));if(se)throw se;}
+   const idsSub=subtareas.filter(x=>x.compromiso_id===item.id).map(x=>x.id);
+   const docsSub=adjuntosSubtareas.filter(x=>idsSub.includes(x.subtarea_id));
+   const rutas=[...docs.map(x=>x.ruta),...docsSub.map(x=>x.ruta)];
+   if(rutas.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(rutas);if(se)throw se;}
    const {error:de}=await supabase.from('compromisos_administracion').delete().eq('id',item.id);
    if(de)throw de;
-   await cargar();
+   await cargar({silencioso:true});
   }catch(e){setError(e.message||'No fue posible eliminar.');}
   finally{setGuardando(false);}
  }
@@ -160,56 +175,99 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    if(de)throw de;
    const {error:me}=await supabase.from('compromisos_avances_adjuntos').delete().eq('id',doc.id);
    if(me)throw me;
-   await cargar();
+   await cargar({silencioso:true});
   }catch(e){setError(e.message||'No fue posible eliminar el adjunto.');}
   finally{setGuardando(false);}
  }
  async function agregarSubtarea(item) {
-  const titulo=(nuevaSubtarea[item.id]||'').trim();if(!titulo)return;
-  setGuardando(true);setError('');
-  const orden=subtareas.filter(s=>s.compromiso_id===item.id).length+1;
-  const {error:err}=await supabase.from('compromisos_subtareas').insert({compromiso_id:item.id,titulo,orden});
-  if(err)setError(err.message);else{
-   const items=subtareas.filter(s=>s.compromiso_id===item.id);
-   const avance=Math.round(items.filter(s=>s.completada).length/(items.length+1)*100);
-   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();
-   if(err2)setError(err2.message);
-   setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar();}
-  setGuardando(false);
- }
- async function marcarSubtarea(item,sub,completada) {
+  const titulo=(nuevaSubtarea[item.id]||'').trim();if(!titulo||guardando)return;
   setGuardando(true);setError('');
   try{
-   const {error:err}=await supabase.from('compromisos_subtareas').update({completada}).eq('id',sub.id);
-   if(err)throw err;
-   const items=subtareas.filter(s=>s.compromiso_id===item.id).map(s=>s.id===sub.id?{...s,completada}:s);
-   const avance=Math.round(items.filter(s=>s.completada).length/items.length*100);
-   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();
-   if(err2)throw err2;
-   await cargar();
-  }catch(e){setError(e.message||'No fue posible actualizar.');await cargar();}
+   const orden=subtareas.filter(x=>x.compromiso_id===item.id).length+1;
+   const {error:e}=await supabase.from('compromisos_subtareas').insert({compromiso_id:item.id,titulo,orden});
+   if(e)throw e;
+   setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar({silencioso:true});
+  }catch(e){setError(e.message||'No fue posible agregar la subtarea.');}
+  finally{setGuardando(false);}
+ }
+ async function marcarSubtarea(item,sub,completada) {
+  if(guardando)return;
+  setGuardando(true);setError('');
+  try{
+   const {error:e}=await supabase.from('compromisos_subtareas').update({completada,avance:completada?100:0}).eq('id',sub.id);
+   if(e)throw e;
+   // El trigger actualiza porcentaje, etapa e historial en una transacción.
+   await cargar({silencioso:true});
+  }catch(e){setError(e.message||'No se pudo actualizar la subtarea.');await cargar({silencioso:true});}
+  finally{setGuardando(false);}
+ }
+ async function cambiarProgresoSubtarea(sub,valor) {
+  if(guardando)return;
+  setGuardando(true);setError('');
+  try{
+   const {error:e}=await supabase.from('compromisos_subtareas')
+    .update({avance:Math.min(90,Math.max(0,Number(valor)||0)),completada:false}).eq('id',sub.id);
+   if(e)throw e;
+   await cargar({silencioso:true});
+  }catch(e){setError(e.message||'No se pudo actualizar el avance.');}
   finally{setGuardando(false);}
  }
  async function eliminarSubtarea(item,sub) {
-  if(!window.confirm(`¿Eliminar la subtarea "${sub.titulo}"?`))return;
+  if(!window.confirm('¿Eliminar esta subtarea y sus adjuntos?'))return;
   setGuardando(true);setError('');
   try{
-   const {error:err}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
-   if(err)throw err;
-   const restantes=subtareas.filter(s=>s.compromiso_id===item.id&&s.id!==sub.id);
-   {
-    const avance=restantes.length?Math.round(restantes.filter(s=>s.completada).length/restantes.length*100):0;
-    const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();if(err2)throw err2;
+   const rutas=adjuntosSubtareas.filter(x=>x.subtarea_id===sub.id).map(x=>x.ruta);
+   if(rutas.length){
+    const {error:e}=await supabase.storage.from('compromisos-adjuntos').remove(rutas);
+    if(e)throw e;
    }
-   await cargar();
-  }catch(e){setError(e.message||'No fue posible eliminar subtarea.');}
+   const {error:e}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
+   if(e)throw e;
+   await cargar({silencioso:true});
+  }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
+ }
+ async function adjuntarASubtarea(item,sub,archivosSeleccionados) {
+  const files=Array.from(archivosSeleccionados||[]);
+  if(!files.length||archivoEnProceso||!administrador)return;
+  setArchivoEnProceso(sub.id);setError('');
+  const fallos=[];
+  for(const file of files){
+   if(file.size>15728640||file.size===0){fallos.push(file.name+': tamaño inválido (máximo 15 MB)');continue;}
+   if(!/\.(pdf|png|jpe?g|webp|docx|xlsx|txt)$/i.test(file.name)){fallos.push(file.name+': tipo no permitido');continue;}
+   const nombre=file.name.replace(/[^a-zA-Z0-9._-]/g,'_').slice(-100);
+   const ruta=`${comunidadId}/subtareas/${item.id}/${sub.id}/${crypto.randomUUID()}-${nombre}`;
+   const {error:upload}=await supabase.storage.from('compromisos-adjuntos')
+    .upload(ruta,file,{contentType:file.type||'application/octet-stream',upsert:false});
+   if(upload){fallos.push(file.name+': '+upload.message);continue;}
+   const {error:meta}=await supabase.from('compromisos_subtareas_adjuntos').insert({
+    subtarea_id:sub.id,ruta,nombre:file.name,tipo:file.type,tamano:file.size
+   });
+   if(meta){await supabase.storage.from('compromisos-adjuntos').remove([ruta]);fallos.push(file.name+': '+meta.message);}
+  }
+  setArchivoEnProceso(null);await cargar({silencioso:true});
+  if(fallos.length)setError('Adjuntos no guardados: '+fallos.join('; '));
+ }
+ async function eliminarAdjuntoSubtarea(doc) {
+  if(!administrador||!window.confirm('¿Eliminar el adjunto de la subtarea?'))return;
+  setArchivoEnProceso(doc.subtarea_id);setError('');
+  try{
+   const {error:e}=await supabase.storage.from('compromisos-adjuntos').remove([doc.ruta]);
+   if(e)throw e;
+   const {error:meta}=await supabase.from('compromisos_subtareas_adjuntos').delete().eq('id',doc.id);
+   if(meta)throw meta;
+   await cargar({silencioso:true});
+  }catch(e){setError(e.message||'No se pudo quitar el adjunto.');}
+  finally{setArchivoEnProceso(null);}
  }
  async function cambiarEstado(item, siguiente) {
   if(!administrador || guardando)return;
   const fechaNueva=fechasRapidas[item.id];
   const notaNueva=observacionesRapidas[item.id]?.trim();
   if(siguiente===item.estado && (!fechaNueva || fechaNueva===item.fecha_proxima_accion) && !notaNueva)return;
+  const subtareasItem=subtareas.filter(x=>x.compromiso_id===item.id);
+  if(siguiente==='completado'&&subtareasItem.some(x=>!x.completada))
+   return setError('Para cerrar el compromiso, marca todas las subtareas.');
   const proxima=fechasRapidas[item.id]||item.fecha_proxima_accion||null;
   if(siguiente==='en_espera'&&!proxima){
     return setError('Registra la fecha de la próxima acción antes de pasar el compromiso a En espera.');
@@ -220,18 +278,23 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     p_observacion:observacionesRapidas[item.id]?.trim()||'Cambio de etapa desde compromisos'
   });
   if(err)setError('No se pudo cambiar la etapa: '+err.message);
-  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await cargar();}
+  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await cargar({silencioso:true});}
   setGuardando(false);
  }
  async function visibilidad(item) {
   const {error: err} = await supabase.from('compromisos_administracion').update({publicado: !item.publicado}).eq('id', item.id);
-  if(err) setError(err.message);else await cargar();
+  if(err) setError(err.message);else await cargar({silencioso:true});
  }
  return <section className="compromisos-wrap" aria-label="Compromisos y avances">
    <header className="compromisos-cabecera"><h2 className="h4">Compromisos y avances</h2>
      <p className="chico apagado">Acuerdos, fechas, estado, subtareas y evidencias. Cada ficha se despliega al seleccionarla.</p>
    </header>
    {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
+   {!cargando&&compromisos.length>0&&<div className="compromisos-resumen-global" aria-label="Avance de compromisos">
+     <div><strong>{resumenGlobalCompromisos(compromisos).abiertos}</strong><span>Por resolver</span></div>
+     <div><strong>{resumenGlobalCompromisos(compromisos).completados}</strong><span>Terminados</span></div>
+     <div><strong>{resumenGlobalCompromisos(compromisos).porcentaje}%</strong><span>Avance global</span></div>
+   </div>}
    {administrador&&<details className="tarjeta compromisos-crear-desplegable">
      <summary>+ Nuevo compromiso</summary>
      <form onSubmit={crear} className="compromisos-form">
@@ -253,13 +316,14 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
         {compromisos.map((item,indice)=>{
           const sub=subtareas.filter(x=>x.compromiso_id===item.id);
           const realizados=sub.filter(x=>x.completada).length;
+          const progreso=sub.length?porcentajeSubtareas(sub):item.avance;
           const historico=avances.filter(x=>x.compromiso_id===item.id);
           const movimientos=transiciones.filter(x=>x.compromiso_id===item.id);
           return <details key={item.id} className="tarjeta compromisos-item">
             <summary className="compromisos-fila">
               <span className="compromisos-titulo">
                 <strong>{String(indice+1).padStart(2,'0')}. {item.titulo}</strong>
-                <small>{item.responsable||'Por asignar'} · Fecha límite: {fecha(item.fecha_limite)} · {item.avance}%</small>
+                <small>{item.responsable||'Por asignar'} · Fecha límite: {fecha(item.fecha_limite)} · {progreso}% de avance</small>
               </span>
               <span className="portal-estado">{NOMBRES[item.estado]||item.estado}</span>
               <span className="compromisos-flecha" aria-hidden="true">⌄</span>
@@ -274,12 +338,71 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 {item.referencia_contractual&&<span>Contrato: {item.referencia_contractual}</span>}
               </div>
               <div className="compromisos-progreso" role="progressbar" aria-label="Avance del compromiso"
-                aria-valuenow={item.avance} aria-valuemin={0} aria-valuemax={100}><div style={{width:item.avance+'%'}}/></div>
-              {administrador&&<div className="compromisos-cambiar-etapa">
+                aria-valuenow={progreso} aria-valuemin={0} aria-valuemax={100}><div style={{width:progreso+'%'}}/></div>
+              <section className="compromisos-subtareas-v2" aria-label={'Subtareas de '+item.titulo}>
+                <div className="compromisos-subtareas-cabecera">
+                  <div><h3>Subtareas</h3>
+                    <p>Cierra cada tarea con el check. El avance del compromiso se calcula automáticamente.</p>
+                  </div>
+                  <strong>{realizados}/{sub.length} · {progreso}%</strong>
+                </div>
+                {sub.length===0&&<p className="compromisos-subtareas-vacio">
+                  Sin subtareas. Agrega las actividades necesarias para medir el avance de este compromiso.
+                </p>}
+                {sub.map(x=>{
+                  const docs=adjuntosSubtareas.filter(d=>d.subtarea_id===x.id);
+                  return <div className={'compromisos-subtarea-card'+(x.completada?' esta-completa':'')} key={x.id}>
+                    <div className="compromisos-subtarea-principal">
+                      <label className="compromisos-subtarea-check">
+                        <input type="checkbox" checked={x.completada} disabled={!administrador||guardando}
+                          aria-label={'Cerrar subtarea: '+x.titulo}
+                          onChange={e=>marcarSubtarea(item,x,e.target.checked)}/>
+                        <span>{x.titulo}</span>
+                      </label>
+                      <strong className="compromisos-subtarea-porcentaje">{x.completada?100:(x.avance||0)}%</strong>
+                    </div>
+                    {administrador&&!x.completada&&<label className="compromisos-subtarea-progreso">
+                      <span>Avance parcial</span>
+                      <select value={x.avance||0} disabled={guardando}
+                        aria-label={'Avance de '+x.titulo}
+                        onChange={e=>cambiarProgresoSubtarea(x,e.target.value)}>
+                        {[0,10,20,30,40,50,60,70,80,90].map(n=><option key={n} value={n}>{n}%</option>)}
+                      </select>
+                    </label>}
+                    <div className="compromisos-subtarea-evidencias">
+                      {docs.map(doc=><div key={doc.id} className="compromisos-subtarea-documento">
+                        <button type="button" onClick={()=>abrirAdjunto(doc)}>Adjunto: {doc.nombre}</button>
+                        {administrador&&<button type="button" className="boton boton-texto"
+                          disabled={archivoEnProceso===x.id||guardando}
+                          onClick={()=>eliminarAdjuntoSubtarea(doc)}>Quitar</button>}
+                      </div>)}
+                      {administrador&&<label className="compromisos-subtarea-adjuntar">
+                        <span>{archivoEnProceso===x.id?'Subiendo archivo…':'+ Adjuntar evidencia (opcional)'}</span>
+                        <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.txt"
+                          multiple disabled={Boolean(archivoEnProceso)||guardando}
+                          aria-label={'Adjuntar evidencia a '+x.titulo}
+                          onChange={e=>{const f=e.target.files;adjuntarASubtarea(item,x,f);e.target.value='';}}/>
+                      </label>}
+                      {administrador&&<button type="button" className="compromisos-subtarea-eliminar"
+                        disabled={guardando||Boolean(archivoEnProceso)}
+                        onClick={()=>eliminarSubtarea(item,x)}>Eliminar subtarea</button>}
+                    </div>
+                  </div>;
+                })}
+                {administrador&&<div className="compromisos-subagregar">
+                  <input aria-label={'Nueva subtarea para '+item.titulo} placeholder="Escribe una nueva subtarea"
+                    value={nuevaSubtarea[item.id]||''}
+                    onChange={e=>setNuevaSubtarea(v=>({...v,[item.id]:e.target.value}))}/>
+                  <button type="button" className="boton boton-secundario"
+                    disabled={guardando||!(nuevaSubtarea[item.id]||'').trim()}
+                    onClick={()=>agregarSubtarea(item)}>+ Agregar</button>
+                </div>}
+              </section>
+              {administrador&&<details className="compromisos-opciones"><summary>Administrar fechas, etapa y seguimiento</summary><div className="compromisos-cambiar-etapa">
                 <label>Etapa del compromiso
                   <select value={item.estado} disabled={guardando} aria-label={'Cambiar etapa de '+item.titulo}
                     onChange={e=>cambiarEstado(item,e.target.value)}>
-                    {Object.entries(NOMBRES).map(([v,t])=><option key={v} value={v}>{t}</option>)}
+                    {Object.entries(NOMBRES).map(([v,t])=><option key={v} value={v} disabled={v==='completado'&&sub.some(s=>!s.completada)}>{t}</option>)}
                   </select>
                 </label>
                 <label>Próxima acción
@@ -297,24 +420,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   onClick={()=>cambiarEstado(item,item.estado==='en_espera'?'en_curso':'en_espera')}>
                   {item.estado==='en_espera'?'Reanudar':'Poner en espera'}
                 </button>
-              </div>}
-              <details className="compromisos-subtareas">
-                <summary>Subtareas ({realizados}/{sub.length})</summary>
-                {sub.map(x=><div className="compromisos-subfila" key={x.id}>
-                  <label><input type="checkbox" checked={x.completada} disabled={!administrador||guardando}
-                    onChange={e=>marcarSubtarea(item,x,e.target.checked)}/> {x.titulo}</label>
-                  {administrador&&<button type="button" className="boton boton-texto" disabled={guardando}
-                    onClick={()=>eliminarSubtarea(item,x)}>Eliminar</button>}
-                </div>)}
-                {administrador&&<div className="compromisos-subagregar">
-                  <input aria-label={'Nueva subtarea para '+item.titulo} placeholder="Nueva subtarea"
-                    value={nuevaSubtarea[item.id]||''}
-                    onChange={e=>setNuevaSubtarea(v=>({...v,[item.id]:e.target.value}))}/>
-                  <button type="button" className="boton boton-secundario"
-                    disabled={guardando||!(nuevaSubtarea[item.id]||'').trim()}
-                    onClick={()=>agregarSubtarea(item)}>Agregar subtarea</button>
-                </div>}
-              </details>
+              </div></details>}
               <details className="compromisos-adjuntos">
                 <summary>Documentos del compromiso</summary>
                 <DriveArchivos key={item.id+'-'+versionDocs} comunidadId={comunidadId}
