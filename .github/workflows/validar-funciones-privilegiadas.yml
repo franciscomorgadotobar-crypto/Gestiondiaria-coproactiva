@@ -3,7 +3,7 @@ name: Validar permisos SECURITY DEFINER sin costo
 on:
   pull_request:
     branches:
-      - claude/figma-coproactiva-interface-9y82xq
+      - develop
     paths:
       - 'supabase/pendientes/auditoria_funciones_definer_20261022*.sql'
       - 'supabase/tests/auditoria_funciones_definer_20261022*.sql'

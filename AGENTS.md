@@ -1,6 +1,7 @@
 # Instrucciones para asistentes de código en Coproactiva
 
 Antes de modificar cualquier frontend de Gestión Diaria, leer docs/CONTRATO_DISENO_COPROACTIVA.md.
+Para nombrar ramas y organizar carpetas, leer docs/ORGANIZACION_CODIGO_Y_RAMAS.md.
 
 - No rediseñar interfaces aprobadas salvo petición explícita.
 - Reutilizar tokens.css, identidad-app.css, modulos.css y comercial-homologado.css.
