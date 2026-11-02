@@ -1,4 +1,4 @@
-import {normalizarSeccionVerificable,verificacionMarcada,etiquetasVerificacion} from '../lib/verificacionesDocumentales.js';
+import {normalizarSeccionVerificable,verificacionMarcada,etiquetasVerificacion,limpiarInstruccionesDeModelo} from '../lib/verificacionesDocumentales.js';
 
 /** Vista previa compartida por todos los tipos de documentos. */
 export default function BloquesDocumento({texto='',clave='',contenido={}}){
@@ -13,7 +13,7 @@ export default function BloquesDocumento({texto='',clave='',contenido={}}){
    if(b.tipo==='tabla')return <div className="doc-bloques-tabla-wrap" key={i}><table className="doc-bloques-tabla">
     <thead><tr>{b.filas[0].map((valor,j)=><th key={j} scope="col">{valor}</th>)}{mostrar&&<th scope="col">Estado</th>}</tr></thead>
     <tbody>{b.filas.slice(1).map((fila,j)=><tr key={j}>
-     {b.filas[0].map((_,k)=><td key={k}>{fila[k]||''}</td>)}
+     {b.filas[0].map((_,k)=><td key={k}>{mostrar?limpiarInstruccionesDeModelo(fila[k]):fila[k]||''}</td>)}
      {mostrar&&<td className="doc-bloques-estado">{estado(b.items[j].id)}</td>}
     </tr>)}</tbody>
    </table></div>;
