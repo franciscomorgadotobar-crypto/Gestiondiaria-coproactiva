@@ -2,7 +2,7 @@ import {jsPDF} from 'jspdf';
 import {LOGO_PNG} from './logoCoproactiva.js';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from './plantillasDocumentales.js';
 import {analizarBloquesDocumento} from './bloquesDocumento.js';
-import {normalizarSeccionVerificable,verificacionMarcada,etiquetasVerificacion} from './verificacionesDocumentales.js';
+import {normalizarSeccionVerificable,verificacionMarcada,etiquetasVerificacion,limpiarInstruccionesDeModelo} from './verificacionesDocumentales.js';
 
 /** Exporta un PDF real con paginación A4, sin depender de capturas de pantalla. */
 export function generarPdfDocumento(documento){
@@ -95,7 +95,7 @@ export function generarPdfDocumento(documento){
    if(bloque.tipo==='tabla'){
     if(usaChecks){
      const filas=[bloque.filas[0].concat('Estado'),...bloque.filas.slice(1).map((fila,i)=>
-      fila.concat(etiqueta(bloque.items[i].id)))];
+      fila.map(limpiarInstruccionesDeModelo).concat(etiqueta(bloque.items[i].id)))];
      tabla(filas);
     }else tabla(bloque.filas);
    }else if(bloque.tipo==='lista'){
