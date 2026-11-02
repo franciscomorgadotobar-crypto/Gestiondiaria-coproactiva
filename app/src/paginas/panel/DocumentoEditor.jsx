@@ -5,6 +5,7 @@ import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO,EJEMPLOS_TITULO_DOCUMEN
 import {descargarPdfDocumento} from '../../lib/documentosPdf';
 import {crearContenidoBaseDocumental,REFERENCIAS_MODELO,tieneDatosPorConfirmar,personalizarModeloConEntidad} from '../../lib/contenidoBaseDocumental';
 import BloquesDocumento from '../../componentes/BloquesDocumento';
+import SeccionChecklist from '../../componentes/SeccionChecklist';
 import VinculacionDocumento from '../../componentes/VinculacionDocumento';
 import './DocumentoEditor.css';
 
@@ -186,11 +187,11 @@ export default function DocumentoEditor(){
     <div className="doc-editor-form-titulo">
       <span className="doc-editor-form-paso">01 / EDICIÓN</span>
       <h2>Contenido del documento</h2>
-      <p>El contenido está precargado desde el modelo corporativo; ajusta los datos propios de la comunidad.</p>
+      <p>Revisa cada requisito o gestión y marca su casilla. Puedes editar la redacción solo cuando sea necesario.</p>
     </div>
     {!vistaVersion&&<div className="doc-editor-modelo" role="note">
       <strong><span aria-hidden="true">✓</span> Plantilla redactada y precargada</strong>
-      <span>Basada en {REFERENCIAS_MODELO[tipo]}. Secciones, listas y tablas listas para editar.</span>
+      <span>Basada en {REFERENCIAS_MODELO[tipo]}. Requisitos y acciones marcables; textos editables de forma opcional.</span>
       {pendientesModelo&&<small>Los datos entre [corchetes] requieren confirmación antes de aprobar o emitir.</small>}
       <button type="button" className="boton boton-secundario" onClick={restaurarTextoBase}>Restaurar texto base</button>
     </div>}
@@ -221,12 +222,9 @@ export default function DocumentoEditor(){
      <input maxLength={150} value={contenido.responsable||''} disabled={Boolean(vistaVersion)}
       onChange={e=>setContenido(x=>({...x,responsable:e.target.value}))}/>
     </label>
-    {campos.map(([clave,nombre])=><label key={clave}>{nombre}
-      <textarea rows={clave==='resumen'?3:5} maxLength={18000}
-       disabled={Boolean(vistaVersion)} value={contenido[clave]||''}
-       onChange={e=>setContenido(x=>({...x,[clave]:e.target.value}))}
-       placeholder="Redacta o ajusta esta sección según los antecedentes reales."/>
-     </label>)}
+    {campos.map(([clave,nombre])=><SeccionChecklist key={clave} clave={clave} nombre={nombre}
+       contenido={contenido} disabled={Boolean(vistaVersion)}
+       onChange={setContenido}/>)}
     {!!versiones.length&&<div className="doc-editor-versiones">
       <h2>Historial de versiones</h2>
       <button type="button" onClick={()=>setVistaVersion(null)}>Ver versión actual</button>
@@ -255,7 +253,7 @@ export default function DocumentoEditor(){
       </div>
       {campos.map(([clave,nombre],index)=><section className="doc-editor-hoja-seccion" key={clave}>
        <div className="doc-editor-seccion-titulo"><span>{String(index+1).padStart(2,'0')}</span><h3>{etiquetaSeccion(nombre)}</h3></div>
-       <div className="doc-editor-texto"><BloquesDocumento texto={datosVista[clave]||'Pendiente de completar.'}/></div>
+       <div className="doc-editor-texto"><BloquesDocumento texto={datosVista[clave]||'Pendiente de completar.'} clave={clave} contenido={datosVista}/></div>
       </section>)}
       <section className="doc-editor-firma">
        <strong>{datosVista.responsable||'Coproactiva Administración SpA'}</strong>
