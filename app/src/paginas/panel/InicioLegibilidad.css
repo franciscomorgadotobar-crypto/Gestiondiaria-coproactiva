@@ -1,0 +1,23 @@
+/* Legibilidad de la vista de Levantamientos, sin ampliar el layout. */
+.inicio-pantalla .tablero .n{font-size:clamp(26px,2.5vw,34px);line-height:1.1}
+.inicio-pantalla .tablero .r{font-size:13px!important;font-weight:750;line-height:1.45;letter-spacing:0!important}
+.inicio-pantalla .accesos-inicio .acceso{font-size:14px;line-height:1.4;min-height:52px;font-weight:650}
+.inicio-pantalla .etiqueta-grupo{font-size:13px;line-height:1.4;font-weight:750}
+.inicio-pantalla .cabecera-trabajador{font-size:14px;line-height:1.4;letter-spacing:0.02em}
+.inicio-pantalla .cabecera-trabajador .micro{font-size:12px;letter-spacing:0}
+.inicio-pantalla .tarjeta .dato-chico{font-size:16px;font-weight:700;line-height:1.4}
+.inicio-pantalla .tarjeta .micro{font-size:13px;line-height:1.5}
+.inicio-pantalla .tarjeta .chip{font-size:12px;line-height:1.35}
+.inicio-pantalla .tarjeta .editar{font-size:13px;min-height:35px;display:inline-flex;align-items:center}
+.inicio-avance-compromisos{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px;padding:14px 18px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);text-decoration:none;color:var(--texto-titulo)}
+.inicio-avance-compromisos>span{display:grid;gap:4px;min-width:0}
+.inicio-avance-compromisos>span strong{font-size:16px}
+.inicio-avance-compromisos>span small{font-size:13px;color:var(--texto-apagado)}
+.inicio-avance-compromisos>strong{font-size:15px;white-space:nowrap;color:var(--enlace)}
+.inicio-avance-compromisos:hover{background:var(--hover);border-color:var(--naranja)}
+@media(max-width:640px){
+ .inicio-pantalla .tablero .r{font-size:11px!important}
+ .inicio-pantalla .accesos-inicio .acceso{font-size:13px;min-height:50px}
+ .inicio-avance-compromisos{padding:13px;flex-wrap:wrap}
+ .inicio-avance-compromisos>strong{white-space:normal}
+}
