@@ -59,3 +59,20 @@ export const ETIQUETAS_ESTADO={
  borrador:'Borrador',en_revision:'En revisión',aprobado:'Aprobado',
  emitido:'Emitido',archivado:'Archivado'
 };
+
+/* Contenido contextual de cada formulario: nunca reutilizar el ejemplo
+   de 'Informe de gestión' en otras familias documentales. */
+export const EJEMPLOS_TITULO_DOCUMENTO=Object.freeze({
+ seguimiento_documental:'Ej.: Seguimiento documental - Plaza Nos',
+ primera_administracion:'Ej.: Puesta en marcha - Reserva Santa Clara',
+ informe_gestion:'Ej.: Informe de gestión - Reserva Santa Clara'
+});
+
+/* Fecha LOCAL del usuario para campos tipo date.
+   toISOString() convertía a UTC y adelantaba un día en Chile por la noche. */
+export function fechaLocalInput(fecha=new Date()){
+ const ano=fecha.getFullYear();
+ const mes=String(fecha.getMonth()+1).padStart(2,'0');
+ const dia=String(fecha.getDate()).padStart(2,'0');
+ return ano+'-'+mes+'-'+dia;
+}
