@@ -1,4 +1,4 @@
-import {Fragment,useEffect,useMemo,useState} from 'react';
+import {Fragment,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import {Link,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from '../../lib/plantillasDocumentales';
@@ -27,6 +27,7 @@ export default function GestorDocumental(){
  const [bibliotecaError,setBibliotecaError]=useState('');
  const [verBiblioteca,setVerBiblioteca]=useState(params.get('vista')==='biblioteca');
  const [enlaceArchivoId,setEnlaceArchivoId]=useState(null);
+ const barraFiltros=useRef(null);
  const prospecto=params.get('prospecto')||'';
  const comunidad=params.get('comunidad')||'';
  const proveedor=params.get('proveedor')||'';
@@ -69,6 +70,18 @@ export default function GestorDocumental(){
   return()=>{vigente=false;};
  },[]);
 
+ /* Al volver desde el editor, el navegador restauraba la posición horizontal
+    antigua y cortaba incluso el chip activo. Alinear el filtro seleccionado
+    completo al comienzo sin desplazar toda la página ni cambiar el filtro. */
+ useLayoutEffect(()=>{
+  const barra=barraFiltros.current;
+  const activo=barra?.querySelector('button[aria-pressed="true"]');
+  if(!barra||!activo)return;
+  const b=barra.getBoundingClientRect(),a=activo.getBoundingClientRect();
+  const destino=barra.scrollLeft+(a.left-b.left)-4;
+  barra.scrollLeft=Math.max(0,destino);
+ },[filtro,verBiblioteca]);
+
  const filtrados=useMemo(()=>documentos.filter(d=>{
   if(filtro==='emitido'&&d.estado!=='emitido')return false;
   if(filtro==='borrador'&&d.estado!=='borrador')return false;
@@ -108,7 +121,7 @@ export default function GestorDocumental(){
    <span aria-hidden="true">⌕</span><input type="search" aria-label="Buscar documentos"
     placeholder="Buscar documentos, plantillas o contextos..." value={buscar} onChange={e=>setBuscar(e.target.value)}/>
   </div>
-  <nav className="documentos-filtros" aria-label="Filtrar documentos">
+  <nav ref={barraFiltros} className="documentos-filtros" aria-label="Filtrar documentos">
    {FILTROS.map(([clave,nombre])=><button type="button" key={clave}
     onClick={()=>{setFiltro(clave);alternarBiblioteca(false);}}
     aria-pressed={!verBiblioteca&&filtro===clave}

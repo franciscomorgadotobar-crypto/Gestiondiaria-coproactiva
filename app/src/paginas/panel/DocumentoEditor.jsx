@@ -1,12 +1,12 @@
 import {useEffect,useMemo,useState} from 'react';
 import {Link,useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
-import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from '../../lib/plantillasDocumentales';
+import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO,EJEMPLOS_TITULO_DOCUMENTO,fechaLocalInput} from '../../lib/plantillasDocumentales';
 import {descargarPdfDocumento} from '../../lib/documentosPdf';
 import './DocumentoEditor.css';
 
 const tipos=TIPOS_DOCUMENTO.filter(t=>t.id!=='propuesta_comercial');
-const vacio={fecha:new Date().toISOString().slice(0,10),destinatario:'',responsable:'',resumen:''};
+const vacio={fecha:fechaLocalInput(),destinatario:'',responsable:'',resumen:''};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const contextoValido=t=>['prospecto','comunidad','proveedor'].includes(t);
 const contextoNombre={prospecto:'Prospecto',comunidad:'Comunidad',proveedor:'Proveedor'};
@@ -101,7 +101,7 @@ export default function DocumentoEditor(){
  if(!plantilla)return <main className="doc-editor"><p role="alert">Tipo de documento no reconocido.</p><Link to="/documentos">Volver al gestor</Link></main>;
  return <main className="doc-editor">
   <header className="doc-editor-toolbar no-imprimir">
-   <div><Link to="/documentos" className="doc-editor-atras">← Gestor documental</Link>
+   <div className="doc-editor-identidad"><Link to="/documentos" className="doc-editor-atras">← Gestor documental</Link>
     <h1>{esNuevo?'Crear documento':titulo||'Editar documento'}</h1>
     <p>{plantilla.titulo} {version?' - Versión '+version:''}</p>
    </div>
@@ -140,7 +140,7 @@ export default function DocumentoEditor(){
     </label>
     <label>Título del documento
      <input required maxLength={180} value={titulo} disabled={Boolean(vistaVersion)}
-      onChange={e=>setTitulo(e.target.value)} placeholder="Ej.: Informe de gestión - Reserva Santa Clara"/>
+      onChange={e=>setTitulo(e.target.value)} placeholder={EJEMPLOS_TITULO_DOCUMENTO[tipo]||"Ej.: Documento de la comunidad"}/>
     </label>
     <label>Estado
      <select disabled={Boolean(vistaVersion)} value={estado} onChange={e=>setEstado(e.target.value)}>

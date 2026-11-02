@@ -140,6 +140,70 @@ try{
     },vista.ruta);
    }
    await verificar(page,vista,width);
+
+   // Regresión de las capturas de noviembre: filtro seleccionado visible
+   // y los tres editores con inset y ejemplos correctos.
+   if(vista.slug==='documentos' && [320,390].includes(width)){
+    const nav=page.locator('.documentos-filtros');
+    await nav.getByRole('button',{name:'Primera administración'}).click();
+    const filtroGeom=await nav.evaluate(el=>{
+     const b=el.getBoundingClientRect();
+     const selected=el.querySelector('button[aria-pressed="true"]')?.getBoundingClientRect();
+     return {left:selected?.left,right:selected?.right,navLeft:b.left,navRight:b.right};
+    });
+    assert.ok(filtroGeom.left>=filtroGeom.navLeft-2 &&
+      filtroGeom.right<=filtroGeom.navRight+2,
+      'Filtro seleccionado cortado '+width+'px '+JSON.stringify(filtroGeom));
+    await nav.getByRole('button',{name:'Todos',exact:true}).click();
+    const primero=await nav.evaluate(el=>({
+     scroll:el.scrollLeft,selected:el.querySelector('button[aria-pressed="true"]')?.textContent
+    }));
+    assert.equal(primero.selected,'Todos');
+    assert.ok(primero.scroll<=3,'Al volver a Todos, el filtro debe iniciar visible '+JSON.stringify(primero));
+
+    const editores=[
+     {nombre:'Seguimiento documental',placeholder:'Ej.: Seguimiento documental - Plaza Nos'},
+     {nombre:'Primera administración',placeholder:'Ej.: Puesta en marcha - Reserva Santa Clara'},
+     {nombre:'Informe de gestión',placeholder:'Ej.: Informe de gestión - Reserva Santa Clara'}
+    ];
+    for(const item of editores){
+     await page.locator('.documentos-plantilla').filter({hasText:item.nombre})
+       .getByRole('link',{name:/Crear/}).click();
+     await page.getByRole('heading',{name:'Crear documento'}).waitFor({timeout:12000});
+     const m=await page.evaluate(()=>{
+      const r=selector=>{const el=document.querySelector(selector);if(!el)return null;
+       const box=el.getBoundingClientRect();return {
+        left:box.left,right:box.right,width:box.width,top:box.top,bottom:box.bottom
+       }};
+      return {title:r('.doc-editor-toolbar h1'),back:r('.doc-editor-atras'),
+       save:r('.doc-editor-acciones>.boton:last-child'),layout:r('.doc-editor-layout'),
+       form:r('.doc-editor-form'),tabs:r('.doc-editor-vistas-movil'),
+       overflow:Math.max(document.body.scrollWidth,document.documentElement.scrollWidth),
+       fecha:document.querySelector('.doc-editor-form input[type="date"]')?.value,
+       expected:[new Date().getFullYear(),String(new Date().getMonth()+1).padStart(2,'0'),
+        String(new Date().getDate()).padStart(2,'0')].join('-'),
+       placeholder:document.querySelector('.doc-editor-form input[maxlength="180"]')?.placeholder,
+       font:parseFloat(getComputedStyle(document.querySelector('.doc-editor-form input[maxlength="180"]')).fontSize)
+      };
+     });
+     for(const [key,box] of Object.entries({title:m.title,back:m.back,save:m.save,form:m.form,tabs:m.tabs})){
+      assert.ok(box && box.left>=12 && box.right<=width-12,
+       item.nombre+' '+key+' fuera del margen '+width+'px: '+JSON.stringify(m));
+     }
+     assert.ok(m.overflow<=width+2,item.nombre+' overflow '+JSON.stringify(m));
+     assert.equal(m.fecha,m.expected,'Fecha local del dispositivo '+JSON.stringify(m));
+     assert.equal(m.placeholder,item.placeholder);
+     assert.ok(m.font>=16,'Entrada muy pequeña provoca zoom móvil '+JSON.stringify(m));
+     await page.getByRole('button',{name:'Vista previa',exact:true}).click();
+     await page.locator('.doc-editor-vista:visible').waitFor();
+     await page.screenshot({path:'artifacts/ui/contrato-editor-'+item.nombre.replaceAll(' ','-')+'-'+width+'.png',fullPage:false});
+     await page.getByRole('button',{name:'Editar contenido',exact:true}).click();
+     await page.locator('.doc-editor-form:visible').waitFor();
+     await page.locator('.doc-editor-atras').click();
+     await page.getByRole('heading',{name:'Gestor documental'}).waitFor();
+    }
+   }
+
   }
   assert.deepEqual(errors,[],'Excepciones JS en '+width+'px');
   await ctx.close();

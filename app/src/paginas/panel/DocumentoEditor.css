@@ -106,3 +106,65 @@
  .doc-editor-hoja{box-shadow:none!important;border:0!important;padding:0!important}
  .doc-editor-vista{padding:0!important}
 }
+
+
+/* Editor integrado al contrato: el formulario deja de ocupar el ancho total.
+   Cabecera, pestañas, acciones y campos comparten el mismo inset real. */
+.doc-editor{
+ --editor-inset:clamp(20px,2.5vw,34px);
+ width:100%;
+ max-width:1500px;
+ min-width:0;
+ margin:0 auto;
+ box-sizing:border-box;
+ padding:18px var(--editor-inset) 90px;
+}
+.doc-editor-toolbar,.doc-editor-layout,.doc-editor-vistas-movil{
+ min-width:0;
+ max-width:100%;
+ box-sizing:border-box;
+}
+.doc-editor-toolbar .doc-editor-identidad{min-width:0}
+.doc-editor-toolbar .doc-editor-atras{min-height:32px}
+.doc-editor-toolbar h1{overflow-wrap:break-word}
+.doc-editor-acciones>.boton{min-height:44px}
+.doc-editor-acciones>.boton:focus-visible,
+.doc-editor-vistas-movil button:focus-visible{outline:2px solid #ed7130;outline-offset:2px}
+@media(max-width:700px){
+ .doc-editor{
+  --editor-inset:16px;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  padding:18px var(--editor-inset) calc(106px + env(safe-area-inset-bottom,0px));
+  margin:0;
+  gap:15px;
+ }
+ .doc-editor-toolbar{width:100%;padding:0 0 15px;gap:12px}
+ .doc-editor-toolbar h1{font-size:24px;line-height:1.25;margin:6px 0 4px}
+ .doc-editor-toolbar p{font-size:13px}
+ .doc-editor-atras{font-size:13px}
+ .doc-editor-acciones{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .doc-editor-acciones>.boton{min-width:0;min-height:44px;padding:10px 7px;letter-spacing:.055em;font-size:11px}
+ .doc-editor-acciones>.boton:last-child{grid-column:1/-1;grid-row:1;min-height:48px;font-size:13px}
+ .doc-editor-vistas-movil{width:100%;position:sticky;top:0;z-index:6}
+ .doc-editor-vistas-movil button{min-height:44px}
+ .doc-editor-layout{width:100%;min-width:0}
+ .doc-editor-form,.doc-editor-vista{min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+ .doc-editor-form{padding:17px 15px;gap:15px}
+ .doc-editor-form label{min-width:0;font-size:13px}
+ .doc-editor-form input,.doc-editor-form select,.doc-editor-form textarea{
+  font-size:16px;
+  min-height:46px;
+  max-width:100%;
+  box-sizing:border-box;
+ }
+ .doc-editor-form textarea{min-height:112px}
+ .doc-editor-contexto{line-height:1.5;overflow-wrap:anywhere}
+ .doc-editor-vista{overflow-x:auto;overscroll-behavior-x:contain;padding:12px}
+ .doc-editor-hoja{min-width:0;width:100%;padding:20px 16px;max-width:100%}
+}
+@media print{
+ .doc-editor{padding:0!important;margin:0!important;max-width:none!important}
+ .doc-editor-layout .doc-editor-vista{display:block!important}
+}
