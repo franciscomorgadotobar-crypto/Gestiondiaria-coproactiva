@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {crearContenidoBaseDocumental} from '../src/lib/contenidoBaseDocumental.js';
+import {crearContenidoBaseDocumental,tieneDatosPorConfirmar} from '../src/lib/contenidoBaseDocumental.js';
 import {CAMPOS_POR_TIPO} from '../src/lib/plantillasDocumentales.js';
 import {normalizarSeccionVerificable,actualizarVerificacion,verificacionMarcada,etiquetasVerificacion,resumenVerificaciones} from '../src/lib/verificacionesDocumentales.js';
 import {generarPdfDocumento} from '../src/lib/documentosPdf.js';
@@ -75,4 +75,11 @@ test('Un documento histórico sin checklist se sigue exportando sin alterar dato
  }).arrayBuffer());
  assert.ok(bytes.length>3000);
  assert.match(editor,/setContenido\(d\.contenido\|\|\{\}\)/);
+});
+
+test('Basta marcar estados; los pendientes de tabla no obligan a reescribir textos',()=>{
+ const d=crearContenidoBaseDocumental('seguimiento_documental');
+ assert.equal(tieneDatosPorConfirmar({pendientes:d.pendientes,_verificaciones:{}}),false);
+ assert.equal(tieneDatosPorConfirmar({resumen:'Seguimiento de [nombre del condominio]',_verificaciones:{}}),true);
+ assert.equal(tieneDatosPorConfirmar({resumen:'Seguimiento de Condominio Uno',_verificaciones:{}}),false);
 });
