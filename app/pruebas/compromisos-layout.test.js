@@ -24,7 +24,8 @@ test('Los filtros ocupan 44px, mantienen legibilidad y se apilan en móvil',()=>
  assert.match(browser,/widths=\[390,768,1280,1556\]/);
  assert.match(browser,/geo\.filters\.height<\(width<=640\?180:105\)/);
  assert.match(browser,/geo\.button\.height<110/);
- assert.match(browser,/geo\.group\.y-geo\.filters\.bottom<45/);
+ assert.match(browser,/geo\.overview\.y-geo\.filters\.bottom<45/);
+ assert.match(browser,/geo\.group\.y-geo\.overview\.bottom<45/);
 });
 
 test('Comunidad única se expande automáticamente sin perder el botón de colapsar',()=>{
