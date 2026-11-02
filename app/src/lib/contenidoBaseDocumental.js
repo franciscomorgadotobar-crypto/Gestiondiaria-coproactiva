@@ -39,3 +39,15 @@ export function crearContenidoBaseDocumental(tipo,fecha=fechaLocalInput()) {
 export function tieneDatosPorConfirmar(contenido) {
  return Object.values(contenido||{}).some(v=>typeof v==='string'&&/\[[^\]\r\n]{2,160}\]/.test(v));
 }
+
+/** Si el documento nace desde CRM o una comunidad, reutiliza su nombre real
+ * sin borrar el resto del modelo ni tocar documentos ya guardados. */
+export function personalizarModeloConEntidad(contenido,nombre){
+ const entidad=String(nombre||'').trim();
+ if(!entidad)return contenido;
+ return Object.fromEntries(Object.entries(contenido||{}).map(([clave,valor])=>[
+  clave,typeof valor==='string'
+   ?valor.replace(/\[nombre del (?:condominio|proyecto)\]|\[nombre de la comunidad\]/gi,entidad)
+   :valor
+ ]));
+}
