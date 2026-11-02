@@ -12,8 +12,8 @@
 .doc-check-textos>strong{font-size:13px;font-weight:650;color:#2b3138;overflow-wrap:anywhere}
 .doc-check-textos>small{color:#696969;font-size:11px;line-height:1.45;overflow-wrap:anywhere}
 .doc-check-estado{grid-column:2;color:#986038;font-size:11px;font-weight:700}
-.doc-check-editar{justify-self:start;min-height:44px;border:0;background:transparent;text-decoration:underline;color:#935225;padding:8px 0;font:650 12px/1.4 inherit;cursor:pointer}
+.doc-check-editar{justify-self:start;min-height:44px;border:0;background:transparent;text-decoration:underline;color:#935225;padding:8px 0;font-family:inherit;font-weight:650;font-size:12px;line-height:1.4;cursor:pointer}
 .doc-check-editar:focus-visible,.doc-check-item:focus-within{outline:2px solid #ed7130;outline-offset:2px}
 .doc-check-textarea{display:grid;gap:7px;min-width:0;font-size:12px;font-weight:650}
-.doc-check-textarea textarea{box-sizing:border-box;width:100%;max-width:100%;font:400 16px/1.5 inherit;min-height:155px;border:1px solid #dcd4cd;border-radius:10px;padding:12px}
+.doc-check-textarea textarea{box-sizing:border-box;width:100%;max-width:100%;font-family:inherit;font-weight:400;font-size:16px;line-height:1.5;min-height:155px;border:1px solid #dcd4cd;border-radius:10px;padding:12px}
 @media(max-width:700px){.doc-check-seccion{padding:13px 0}.doc-check-item{padding:10px;min-height:52px}.doc-check-textos>strong{font-size:13px}.doc-check-estado{font-size:10px}}
