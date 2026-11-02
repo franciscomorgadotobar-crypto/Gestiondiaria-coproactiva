@@ -33,8 +33,11 @@ export function normalizarSeccionVerificable(texto){
   if(b.tipo==='tabla'){
    const filas=b.filas.slice(1).map(fila=>{
     const id=String(indice++);
-    const descripcion=fila.join(' · ');
-    const titulo=(/^\d+$/.test(fila[0])?fila[1]:fila[0])||descripcion;
+    const titulo=(/^\d+$/.test(fila[0])?fila[1]:fila[0])||fila.join(' · ');
+    // Los marcadores de modelo se reemplazan por el estado del checkbox;
+    // no se obliga a escribir "por verificar" ni se duplica el título.
+    const descripcion=fila.slice(/^\d+$/.test(fila[0])?2:1)
+     .filter(c=>!/^\[[^\]]+\]$/.test(c.trim())).join(' · ');
     const item={id,titulo,descripcion,tipo:'tabla',fila};
     items.push(item);
     return item;
