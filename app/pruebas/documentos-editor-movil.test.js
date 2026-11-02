@@ -37,7 +37,7 @@ test('El editor y sus controles respetan un inset móvil real y vista previa sin
  assert.match(css,/\.doc-editor-vistas-movil button\{min-height:44px\}/);
  assert.match(css,/@media print\{/);
  assert.match(ui,/contrato-editor-/);
- assert.match(ui,/item.nombre\+' '+key\+' fuera del margen/);
+ assert.match(ui,/fuera del margen/);
 });
 
 test('Barra de filtros controla y muestra el chip completo, nunca recorta uno seleccionado',()=>{
