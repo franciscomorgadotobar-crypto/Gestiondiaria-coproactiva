@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import './Compromisos.css';
 import DriveArchivos from '../../componentes/DriveArchivos';
 import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '../../lib/drive';
+import {porcentajeSubtareas,resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
 
 const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
@@ -17,6 +18,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [adjuntos, setAdjuntos] = useState([]);
  const [archivos, setArchivos] = useState([]);
  const [subtareas,setSubtareas]=useState([]);
+ const [adjuntosSubtareas,setAdjuntosSubtareas]=useState([]);
+ const [archivoEnProceso,setArchivoEnProceso]=useState(null);
  const [nuevaSubtarea,setNuevaSubtarea]=useState({});
  const [editando,setEditando]=useState(null);
  const [editForm,setEditForm]=useState(inicial);
@@ -42,6 +45,13 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   const {data: subt,error: errSubt}=await supabase.from('compromisos_subtareas').select('*').in('compromiso_id',visibles.map(x=>x.id).length ? visibles.map(x=>x.id):['00000000-0000-0000-0000-000000000000']).order('orden',{ascending:true});
   if(errSubt) setError(errSubt.message);
   setSubtareas(subt||[]);
+   const subIds=(subt||[]).map(x=>x.id);
+   if(subIds.length){
+    const {data:archivos,error:errArchivos}=await supabase.from('compromisos_subtareas_adjuntos')
+     .select('*').in('subtarea_id',subIds).order('creado_en',{ascending:false});
+    if(errArchivos)setError(errArchivos.message);
+    setAdjuntosSubtareas(archivos||[]);
+   }else setAdjuntosSubtareas([]);
   const ids = visibles.map(x => x.id);
   if (ids.length) {
    const { data: historial, error: err2 } = await supabase.from('compromisos_avances').select('*').in('compromiso_id', ids).order('registrado_en', {ascending:false});
@@ -111,12 +121,14 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     });
     if (errMeta) fallidos.push(file.name + ': ' + errMeta.message);
    }
-   const {error: err2} = await supabase.from('compromisos_administracion').update({
-     avance:porcentajeReal, actualizado_en:new Date().toISOString()
-   }).eq('id',detalle).select('id').single();
-   if(err2) throw err2;
+   if(!subt.length){
+    const {error:e}=await supabase.from('compromisos_administracion').update({
+     avance:porcentajeReal,actualizado_en:new Date().toISOString()
+    }).eq('id',detalle).select('id').single();
+    if(e)throw e;
+   }
    const {error: estadoError}=await supabase.rpc('compromisos_cambiar_etapa',{
-     p_compromiso_id:detalle,p_estado:estado,
+     p_compromiso_id:detalle,p_estado:subt.length?(compromisos.find(c=>c.id===detalle)?.estado||estado):estado,
      p_proxima_accion:fechasRapidas[detalle]||null,
      p_observacion:'Cambio al registrar avance: '+texto.trim().slice(0,500)
    });
@@ -145,7 +157,10 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   try{
    const ids=avances.filter(a=>a.compromiso_id===item.id).map(a=>a.id);
    const docs=adjuntos.filter(d=>ids.includes(d.avance_id));
-   if(docs.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(docs.map(d=>d.ruta));if(se)throw se;}
+   const idsSub=subtareas.filter(x=>x.compromiso_id===item.id).map(x=>x.id);
+   const docsSub=adjuntosSubtareas.filter(x=>idsSub.includes(x.subtarea_id));
+   const rutas=[...docs.map(x=>x.ruta),...docsSub.map(x=>x.ruta)];
+   if(rutas.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(rutas);if(se)throw se;}
    const {error:de}=await supabase.from('compromisos_administracion').delete().eq('id',item.id);
    if(de)throw de;
    await cargar();
@@ -165,51 +180,83 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   finally{setGuardando(false);}
  }
  async function agregarSubtarea(item) {
-  const titulo=(nuevaSubtarea[item.id]||'').trim();if(!titulo)return;
-  setGuardando(true);setError('');
-  const orden=subtareas.filter(s=>s.compromiso_id===item.id).length+1;
-  const {error:err}=await supabase.from('compromisos_subtareas').insert({compromiso_id:item.id,titulo,orden});
-  if(err)setError(err.message);else{
-   const items=subtareas.filter(s=>s.compromiso_id===item.id);
-   const avance=Math.round(items.filter(s=>s.completada).length/(items.length+1)*100);
-   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();
-   if(err2)setError(err2.message);
-   setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar();}
-  setGuardando(false);
- }
- async function marcarSubtarea(item,sub,completada) {
+  const titulo=(nuevaSubtarea[item.id]||'').trim();if(!titulo||guardando)return;
   setGuardando(true);setError('');
   try{
-   const {error:err}=await supabase.from('compromisos_subtareas').update({completada}).eq('id',sub.id);
-   if(err)throw err;
-   const items=subtareas.filter(s=>s.compromiso_id===item.id).map(s=>s.id===sub.id?{...s,completada}:s);
-   const avance=Math.round(items.filter(s=>s.completada).length/items.length*100);
-   const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();
-   if(err2)throw err2;
+   const orden=subtareas.filter(x=>x.compromiso_id===item.id).length+1;
+   const {error:e}=await supabase.from('compromisos_subtareas').insert({compromiso_id:item.id,titulo,orden});
+   if(e)throw e;
+   setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar();
+  }catch(e){setError(e.message||'No fue posible agregar la subtarea.');}
+  finally{setGuardando(false);}
+ }
+ async function marcarSubtarea(item,sub,completada) {
+  if(guardando)return;
+  setGuardando(true);setError('');
+  try{
+   const {error:e}=await supabase.from('compromisos_subtareas').update({completada}).eq('id',sub.id);
+   if(e)throw e;
+   // El trigger actualiza porcentaje, etapa e historial en una transacción.
    await cargar();
-  }catch(e){setError(e.message||'No fue posible actualizar.');await cargar();}
+  }catch(e){setError(e.message||'No se pudo actualizar la subtarea.');await cargar();}
   finally{setGuardando(false);}
  }
  async function eliminarSubtarea(item,sub) {
-  if(!window.confirm(`¿Eliminar la subtarea "${sub.titulo}"?`))return;
+  if(!window.confirm('¿Eliminar esta subtarea y sus adjuntos?'))return;
   setGuardando(true);setError('');
   try{
-   const {error:err}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
-   if(err)throw err;
-   const restantes=subtareas.filter(s=>s.compromiso_id===item.id&&s.id!==sub.id);
-   {
-    const avance=restantes.length?Math.round(restantes.filter(s=>s.completada).length/restantes.length*100):0;
-    const {error:err2}=await supabase.from('compromisos_administracion').update({avance,actualizado_en:new Date().toISOString()}).eq('id',item.id).select('id').single();if(err2)throw err2;
+   const rutas=adjuntosSubtareas.filter(x=>x.subtarea_id===sub.id).map(x=>x.ruta);
+   if(rutas.length){
+    const {error:e}=await supabase.storage.from('compromisos-adjuntos').remove(rutas);
+    if(e)throw e;
    }
+   const {error:e}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
+   if(e)throw e;
    await cargar();
-  }catch(e){setError(e.message||'No fue posible eliminar subtarea.');}
+  }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
+ }
+ async function adjuntarASubtarea(item,sub,archivosSeleccionados) {
+  const files=Array.from(archivosSeleccionados||[]);
+  if(!files.length||archivoEnProceso||!administrador)return;
+  setArchivoEnProceso(sub.id);setError('');
+  const fallos=[];
+  for(const file of files){
+   if(file.size>15728640||file.size===0){fallos.push(file.name+': tamaño inválido (máximo 15 MB)');continue;}
+   if(!/\.(pdf|png|jpe?g|webp|docx|xlsx|txt)$/i.test(file.name)){fallos.push(file.name+': tipo no permitido');continue;}
+   const nombre=file.name.replace(/[^a-zA-Z0-9._-]/g,'_').slice(-100);
+   const ruta=`${comunidadId}/subtareas/${item.id}/${sub.id}/${crypto.randomUUID()}-${nombre}`;
+   const {error:upload}=await supabase.storage.from('compromisos-adjuntos')
+    .upload(ruta,file,{contentType:file.type||'application/octet-stream',upsert:false});
+   if(upload){fallos.push(file.name+': '+upload.message);continue;}
+   const {error:meta}=await supabase.from('compromisos_subtareas_adjuntos').insert({
+    subtarea_id:sub.id,ruta,nombre:file.name,tipo:file.type,tamano:file.size
+   });
+   if(meta){await supabase.storage.from('compromisos-adjuntos').remove([ruta]);fallos.push(file.name+': '+meta.message);}
+  }
+  setArchivoEnProceso(null);await cargar();
+  if(fallos.length)setError('Adjuntos no guardados: '+fallos.join('; '));
+ }
+ async function eliminarAdjuntoSubtarea(doc) {
+  if(!administrador||!window.confirm('¿Eliminar el adjunto de la subtarea?'))return;
+  setArchivoEnProceso(doc.subtarea_id);setError('');
+  try{
+   const {error:e}=await supabase.storage.from('compromisos-adjuntos').remove([doc.ruta]);
+   if(e)throw e;
+   const {error:meta}=await supabase.from('compromisos_subtareas_adjuntos').delete().eq('id',doc.id);
+   if(meta)throw meta;
+   await cargar();
+  }catch(e){setError(e.message||'No se pudo quitar el adjunto.');}
+  finally{setArchivoEnProceso(null);}
  }
  async function cambiarEstado(item, siguiente) {
   if(!administrador || guardando)return;
   const fechaNueva=fechasRapidas[item.id];
   const notaNueva=observacionesRapidas[item.id]?.trim();
   if(siguiente===item.estado && (!fechaNueva || fechaNueva===item.fecha_proxima_accion) && !notaNueva)return;
+  const subtareasItem=subtareas.filter(x=>x.compromiso_id===item.id);
+  if(siguiente==='completado'&&subtareasItem.some(x=>!x.completada))
+   return setError('Para cerrar el compromiso, marca todas las subtareas.');
   const proxima=fechasRapidas[item.id]||item.fecha_proxima_accion||null;
   if(siguiente==='en_espera'&&!proxima){
     return setError('Registra la fecha de la próxima acción antes de pasar el compromiso a En espera.');
