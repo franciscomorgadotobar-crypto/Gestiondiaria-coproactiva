@@ -37,3 +37,57 @@
  .compromisos-cambiar-etapa{grid-template-columns:1fr}
  .compromisos-crear-desplegable>.compromisos-form{padding:0 13px 13px}
 }
+
+/* Compromisos V2: legibilidad y foco en cierre de subtareas */
+.compromisos-wrap{font-size:15px;line-height:1.55}
+.compromisos-wrap .compromisos-cabecera p{font-size:14px;line-height:1.5}
+.compromisos-resumen-global{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.compromisos-resumen-global>div{background:var(--tarjeta);border:1px solid var(--borde);border-radius:12px;min-width:0;padding:15px 18px;display:grid;gap:5px}
+.compromisos-resumen-global strong{font-size:27px;line-height:1.2;color:var(--texto-titulo)}
+.compromisos-resumen-global span{font-size:14px;color:var(--texto-apagado);font-weight:650}
+.compromisos-item>.compromisos-fila{min-height:75px;padding:17px 20px}
+.compromisos-titulo strong{font-size:17px;line-height:1.4}
+.compromisos-titulo small{font-size:14px;line-height:1.45}
+.compromisos-wrap .compromisos-meta{font-size:14px;line-height:1.5;gap:8px 20px}
+.compromisos-wrap .compromisos-detalle>p{font-size:15px;line-height:1.55}
+.compromisos-subtareas-v2{display:grid;gap:12px;min-width:0}
+.compromisos-subtareas-cabecera{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.compromisos-subtareas-cabecera h3{margin:0 0 4px;font-size:17px;color:var(--texto-titulo)}
+.compromisos-subtareas-cabecera p{margin:0;color:var(--texto-apagado);font-size:13px}
+.compromisos-subtareas-cabecera>strong{white-space:nowrap;color:var(--enlace);font-size:15px}
+.compromisos-subtareas-vacio{margin:0;color:var(--texto-apagado);font-size:14px}
+.compromisos-subtarea-card{border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);padding:14px 16px;display:grid;gap:11px;min-width:0}
+.compromisos-subtarea-card.esta-completa{background:var(--ok-fondo)}
+.compromisos-subtarea-principal{display:flex;justify-content:space-between;align-items:center;gap:12px;min-width:0}
+.compromisos-subtarea-check{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;font-size:15px;font-weight:650;color:var(--texto-titulo);overflow-wrap:anywhere}
+.compromisos-subtarea-check input{width:23px;height:23px;flex:none;accent-color:var(--naranja);cursor:pointer}
+.compromisos-subtarea-porcentaje{font-size:15px;color:var(--texto-titulo)}
+.compromisos-subtarea-evidencias{display:flex;gap:8px 16px;align-items:center;flex-wrap:wrap;padding-left:35px}
+.compromisos-subtarea-documento{display:inline-flex;align-items:center;gap:5px;max-width:100%;overflow-wrap:anywhere}
+.compromisos-subtarea-documento>button:first-child{background:none;border:0;padding:8px 0;color:var(--enlace);text-decoration:underline;cursor:pointer;font-size:13px;text-align:left}
+.compromisos-subtarea-adjuntar{position:relative;display:inline-flex;align-items:center;min-height:44px;padding:9px 12px;border:1px solid var(--borde);border-radius:9px;cursor:pointer;color:var(--enlace);font-size:13px;font-weight:650;max-width:100%}
+.compromisos-subtarea-adjuntar input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.compromisos-subtarea-adjuntar:focus-within{outline:2px solid var(--naranja);outline-offset:2px}
+.compromisos-subtarea-eliminar{min-height:44px;padding:8px 10px;background:transparent;border:0;color:var(--critico-texto);font-size:13px;cursor:pointer}
+.compromisos-opciones{border:1px solid var(--borde);border-radius:12px;overflow:hidden;min-width:0}
+.compromisos-opciones>summary{cursor:pointer;padding:13px 15px;font-size:14px;font-weight:700;color:var(--texto-titulo);background:var(--papel)}
+.compromisos-opciones .compromisos-cambiar-etapa{margin:0;grid-template-columns:repeat(2,minmax(0,1fr))}
+.compromisos-cambiar-etapa label{font-size:14px;line-height:1.4}
+.compromisos-cambiar-etapa :is(input,select){font-size:14px;min-height:44px}
+.compromisos-wrap .compromisos-detalle>details>summary{font-size:14px;min-height:46px;box-sizing:border-box}
+.compromisos-wrap .compromisos-acciones .boton{min-height:44px;font-size:13px}
+.compromisos-wrap .compromisos-historial .compromisos-transicion{font-size:14px}
+@media(max-width:700px){
+ .compromisos-resumen-global{gap:7px}
+ .compromisos-resumen-global>div{padding:12px 10px}
+ .compromisos-resumen-global strong{font-size:23px}
+ .compromisos-resumen-global span{font-size:12px}
+ .compromisos-item>.compromisos-fila{padding:14px 13px}
+ .compromisos-titulo strong{font-size:16px}
+ .compromisos-titulo small{font-size:13px}
+ .compromisos-subtarea-card{padding:12px}
+ .compromisos-subtarea-evidencias{padding-left:0}
+ .compromisos-subtareas-cabecera{align-items:flex-start;flex-wrap:wrap}
+ .compromisos-opciones .compromisos-cambiar-etapa{grid-template-columns:1fr}
+ .compromisos-cambiar-etapa :is(input,select){font-size:16px}
+}
