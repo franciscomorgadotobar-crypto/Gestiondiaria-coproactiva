@@ -34,7 +34,9 @@ export default function GestorDocumental(){
  const desdeCorreo=params.get('origen')==='correo';
  const contextoTipo=prospecto?'prospecto':comunidad?'comunidad':proveedor?'proveedor':null;
  const contextoId=prospecto||comunidad||proveedor||'';
- const queryContexto=contextoTipo?'&contexto='+contextoTipo+'&contexto_id='+encodeURIComponent(contextoId):'';
+ const queryContexto=(prospecto?'&prospecto='+encodeURIComponent(prospecto):'')+
+   (comunidad?'&comunidad='+encodeURIComponent(comunidad):'')+
+   (proveedor?'&contexto=proveedor&contexto_id='+encodeURIComponent(proveedor):'');
  const rutaNueva=prospecto?'/propuestas?prospecto='+encodeURIComponent(prospecto):'/propuestas';
  const rutaPlantilla=tipo=>'/documentos/nuevo?tipo='+tipo+queryContexto;
 
@@ -46,7 +48,7 @@ export default function GestorDocumental(){
     supabase.from('propuestas_comerciales')
       .select('id,nombre,actualizado_en,prospecto_id').order('actualizado_en',{ascending:false}).limit(250),
     supabase.from('documentos_gestion')
-      .select('id,tipo,titulo,estado,version,contexto_tipo,contexto_id,actualizado_en')
+      .select('id,tipo,titulo,estado,version,contexto_tipo,contexto_id,prospecto_id,comunidad_id,actualizado_en')
       .order('actualizado_en',{ascending:false}).limit(250),
     supabase.functions.invoke('correo-archivos',{body:{action:'list'}})
    ]);
@@ -86,7 +88,9 @@ export default function GestorDocumental(){
   if(filtro==='emitido'&&d.estado!=='emitido')return false;
   if(filtro==='borrador'&&d.estado!=='borrador')return false;
   if(!['todos','emitido','borrador'].includes(filtro)&&d.tipo!==filtro)return false;
-  if(contextoTipo&&!(d.contexto_tipo===contextoTipo&&d.contexto_id===contextoId))return false;
+  if(contextoTipo&&!(contextoTipo==='prospecto'?(d.prospecto_id===contextoId||(d.contexto_tipo==='prospecto'&&d.contexto_id===contextoId)):
+    contextoTipo==='comunidad'?(d.comunidad_id===contextoId||(d.contexto_tipo==='comunidad'&&d.contexto_id===contextoId)):
+    d.contexto_tipo===contextoTipo&&d.contexto_id===contextoId))return false;
   const texto=(d.titulo+' '+d.tipo+' '+d.estado).toLocaleLowerCase('es-CL');
   return texto.includes(buscar.toLocaleLowerCase('es-CL').trim());
  }),[documentos,filtro,contextoTipo,contextoId,buscar]);
@@ -94,7 +98,9 @@ export default function GestorDocumental(){
   const t=(a.nombre||'').toLocaleLowerCase('es-CL');
   return t.includes(buscar.toLocaleLowerCase('es-CL').trim());
  }),[archivos,buscar]);
- const etiquetaContexto=d=>d.contexto_tipo==='prospecto'?'CRM / Prospecto':
+ const etiquetaContexto=d=>d.prospecto_id&&d.comunidad_id?'CRM + Comunidad':
+  d.prospecto_id?'CRM / Prospecto':d.comunidad_id?'Comunidad':
+  d.contexto_tipo==='prospecto'?'CRM / Prospecto':
   d.contexto_tipo==='comunidad'?'Comunidad':d.contexto_tipo==='proveedor'?'Proveedor':'General';
  function alternarBiblioteca(estado){
   setVerBiblioteca(estado);const nuevos=new URLSearchParams(params);
