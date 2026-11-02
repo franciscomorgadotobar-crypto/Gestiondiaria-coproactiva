@@ -3,7 +3,7 @@ import {Link,useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO,EJEMPLOS_TITULO_DOCUMENTO,fechaLocalInput} from '../../lib/plantillasDocumentales';
 import {descargarPdfDocumento} from '../../lib/documentosPdf';
-import {crearContenidoBaseDocumental,REFERENCIAS_MODELO,tieneDatosPorConfirmar} from '../../lib/contenidoBaseDocumental';
+import {crearContenidoBaseDocumental,REFERENCIAS_MODELO,tieneDatosPorConfirmar,personalizarModeloConEntidad} from '../../lib/contenidoBaseDocumental';
 import BloquesDocumento from '../../componentes/BloquesDocumento';
 import './DocumentoEditor.css';
 
@@ -83,7 +83,10 @@ export default function DocumentoEditor(){
   supabase.from(tabla).select('id,'+campo).eq('id',contexto.id).maybeSingle().then(({data})=>{
    if(!activo)return;
    setEntidad(data?.[campo]||contexto.id);
-   if(esNuevo&&data?.[campo])setTitulo(v=>v||plantilla?.titulo+' - '+data[campo]);
+   if(esNuevo&&data?.[campo]){
+    setTitulo(v=>v||plantilla?.titulo+' - '+data[campo]);
+    setContenido(actual=>personalizarModeloConEntidad(actual,data[campo]));
+   }
   });
   return ()=>{activo=false;};
  },[contexto.tipo,contexto.id,esNuevo,plantilla?.titulo]);
