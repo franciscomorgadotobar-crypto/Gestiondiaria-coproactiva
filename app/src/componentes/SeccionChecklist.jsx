@@ -24,7 +24,7 @@ export default function SeccionChecklist({clave,nombre,contenido,disabled=false,
     const marcado=verificacionMarcada(contenido,clave,item.id);
     return <label className={'doc-check-item '+(marcado?'marcado':'')} key={item.id}>
      <input type="checkbox" checked={marcado} disabled={disabled}
-      onChange={e=>onChange(actualizarVerificacion(contenido,clave,item.id,e.target.checked))}/>
+      onChange={e=>{const marcada=e.target.checked;onChange(actual=>actualizarVerificacion(actual,clave,item.id,marcada));}}/>
      <span className="doc-check-textos">
       <strong>{item.titulo}</strong>
       {item.descripcion&&item.descripcion!==item.titulo&&<small>{item.descripcion}</small>}
