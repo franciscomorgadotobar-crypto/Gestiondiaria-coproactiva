@@ -91,3 +91,7 @@
  .compromisos-opciones .compromisos-cambiar-etapa{grid-template-columns:1fr}
  .compromisos-cambiar-etapa :is(input,select){font-size:16px}
 }
+
+.compromisos-subtarea-progreso{display:flex;align-items:center;gap:12px;padding-left:35px;color:var(--texto-apagado);font-size:13px;font-weight:650}
+.compromisos-subtarea-progreso select{min-width:105px;min-height:44px;padding:8px 11px;border:1px solid var(--borde);border-radius:9px;background:var(--tarjeta);color:var(--texto-titulo);font:inherit}
+@media(max-width:700px){.compromisos-subtarea-progreso{padding-left:0;justify-content:space-between}.compromisos-subtarea-progreso select{font-size:16px}}
