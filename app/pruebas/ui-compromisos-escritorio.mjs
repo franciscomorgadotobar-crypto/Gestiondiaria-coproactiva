@@ -75,7 +75,7 @@ try{
     filters:rect('.compromisos-general-filtros'),
     select:rect('.compromisos-general-filtros select'),
     input:rect('.compromisos-general-filtros input'),
-    overview:rect('.compromisos-general-resumen'),
+    overview:rect('.compromisos-general-kpis'),
     group:rect('.compromisos-general-grupo'),
     button:rect('.compromisos-general-desplegar'),
     first:rect('.compromisos-general-enlace'),
