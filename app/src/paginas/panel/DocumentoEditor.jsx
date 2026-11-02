@@ -3,6 +3,8 @@ import {Link,useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO,EJEMPLOS_TITULO_DOCUMENTO,fechaLocalInput} from '../../lib/plantillasDocumentales';
 import {descargarPdfDocumento} from '../../lib/documentosPdf';
+import {crearContenidoBaseDocumental,REFERENCIAS_MODELO,tieneDatosPorConfirmar} from '../../lib/contenidoBaseDocumental';
+import BloquesDocumento from '../../componentes/BloquesDocumento';
 import './DocumentoEditor.css';
 
 const tipos=TIPOS_DOCUMENTO.filter(t=>t.id!=='propuesta_comercial');
@@ -18,7 +20,7 @@ export default function DocumentoEditor(){
  const [tipo,setTipo]=useState(esNuevo?params.get('tipo')||'seguimiento_documental':'');
  const [titulo,setTitulo]=useState('');
  const [estado,setEstado]=useState('borrador');
- const [contenido,setContenido]=useState({...vacio});
+ const [contenido,setContenido]=useState(()=>esNuevo?crearContenidoBaseDocumental(params.get('tipo')||'seguimiento_documental'):{...vacio});
  const [contexto,setContexto]=useState(()=>{
   const t=params.get('contexto')||(params.get('prospecto')?'prospecto':params.get('comunidad')?'comunidad':params.get('proveedor')?'proveedor':'');
   const clave=t==='prospecto'?'prospecto':t==='comunidad'?'comunidad':'proveedor';
@@ -35,6 +37,23 @@ export default function DocumentoEditor(){
  const [error,setError]=useState('');const [aviso,setAviso]=useState('');
  const plantilla=tipos.find(t=>t.id===tipo);
  const campos=CAMPOS_POR_TIPO[tipo]||[];
+
+ useEffect(()=>{
+  if(!esNuevo)return;
+  const solicitado=params.get('tipo')||'seguimiento_documental';
+  if(solicitado!==tipo&&CAMPOS_POR_TIPO[solicitado]){
+   setTipo(solicitado);
+   setTitulo('');
+   setContenido(crearContenidoBaseDocumental(solicitado));
+  }
+ },[esNuevo,params,tipo]);
+ const pendientesModelo=tieneDatosPorConfirmar(contenido);
+ function restaurarTextoBase(){
+  if(!window.confirm('Se reemplazará el contenido de todas las secciones por el modelo base. ¿Continuar?'))return;
+  setContenido(actual=>({...crearContenidoBaseDocumental(tipo),fecha:actual.fecha||fechaLocalInput(),responsable:actual.responsable||'Coproactiva Administración SpA'}));
+  setAviso('Modelo redactado restaurado. Revisa los datos entre corchetes antes de emitir.');
+  setError('');
+ }
 
  useEffect(()=>{
   if(esNuevo)return;
@@ -77,6 +96,7 @@ export default function DocumentoEditor(){
   if(!plantilla)return setError('Elige un tipo de documento válido');
   if(!titulo.trim()||titulo.trim().length<2)return setError('Escribe un título de al menos dos caracteres');
   if(totalLetras>100000)return setError('El documento supera el límite de texto permitido');
+  if(['aprobado','emitido'].includes(estado)&&pendientesModelo)return setError('Para aprobar o emitir, reemplaza o elimina los datos [por confirmar] del modelo. Puedes guardar el borrador mientras tanto.');
   setGuardando(true);setError('');setAviso('');
   const {data,error:e}=await supabase.rpc('guardar_documento_gestion',{
    p_id:esNuevo?null:id,p_tipo:tipo,p_titulo:titulo.trim(),
@@ -133,8 +153,14 @@ export default function DocumentoEditor(){
     <div className="doc-editor-form-titulo">
       <span className="doc-editor-form-paso">01 / EDICIÓN</span>
       <h2>Contenido del documento</h2>
-      <p>Completa las secciones y revisa la vista previa antes de emitir.</p>
+      <p>El contenido está precargado desde el modelo corporativo; ajusta los datos propios de la comunidad.</p>
     </div>
+    {!vistaVersion&&<div className="doc-editor-modelo" role="note">
+      <strong><span aria-hidden="true">✓</span> Plantilla redactada y precargada</strong>
+      <span>Basada en {REFERENCIAS_MODELO[tipo]}. Secciones, listas y tablas listas para editar.</span>
+      {pendientesModelo&&<small>Los datos entre [corchetes] requieren confirmación antes de aprobar o emitir.</small>}
+      <button type="button" className="boton boton-secundario" onClick={restaurarTextoBase}>Restaurar texto base</button>
+    </div>}
     <label>Tipo de documento
      <input disabled readOnly value={plantilla.titulo}/>
     </label>
@@ -162,7 +188,7 @@ export default function DocumentoEditor(){
       <textarea rows={clave==='resumen'?3:5} maxLength={18000}
        disabled={Boolean(vistaVersion)} value={contenido[clave]||''}
        onChange={e=>setContenido(x=>({...x,[clave]:e.target.value}))}
-       placeholder="Escribe la información de esta sección. Puedes usar saltos de línea para cada elemento."/>
+       placeholder="Redacta o ajusta esta sección según los antecedentes reales."/>
      </label>)}
     {!!versiones.length&&<div className="doc-editor-versiones">
       <h2>Historial de versiones</h2>
@@ -192,7 +218,7 @@ export default function DocumentoEditor(){
       </div>
       {campos.map(([clave,nombre],index)=><section className="doc-editor-hoja-seccion" key={clave}>
        <div className="doc-editor-seccion-titulo"><span>{String(index+1).padStart(2,'0')}</span><h3>{etiquetaSeccion(nombre)}</h3></div>
-       <div className="doc-editor-texto">{datosVista[clave]||'Pendiente de completar.'}</div>
+       <div className="doc-editor-texto"><BloquesDocumento texto={datosVista[clave]||'Pendiente de completar.'}/></div>
       </section>)}
       <section className="doc-editor-firma">
        <strong>{datosVista.responsable||'Coproactiva Administración SpA'}</strong>
