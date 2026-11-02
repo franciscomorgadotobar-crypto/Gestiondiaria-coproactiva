@@ -25,6 +25,10 @@ export default function CompromisosGeneral(){
    if(!vivo)return;
    if(c.error||b.error)setError(c.error?.message||b.error?.message);
    setItems(c.data||[]);setComunidades(b.data||[]);
+   // Si solo hay una comunidad, mostrar sus compromisos al abrir:
+   // evita la tarjeta vacía que se veía en escritorio.
+   const idsComunidad=new Set((c.data||[]).map(item=>item.comunidad_id));
+   if(idsComunidad.size===1)setAbiertos(new Set(idsComunidad));
   });
   return()=>{vivo=false};
  },[]);
@@ -48,7 +52,7 @@ export default function CompromisosGeneral(){
    </div></header>
    <div className="cuerpo modulo-contenido compromisos-general-cuerpo">
      {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
-     <div className="compromisos-general-filtros">
+     <div className="compromisos-general-filtros" role="search" aria-label="Filtrar compromisos">
        <label>Etapa<select value={filtro} onChange={e=>setFiltro(e.target.value)}>
          {ETAPAS.map(([id,t])=><option key={id} value={id}>{t}</option>)}
        </select></label>
@@ -63,13 +67,31 @@ export default function CompromisosGeneral(){
            <button type="button" aria-expanded={abierto} className="compromisos-general-desplegar"
              onClick={()=>setAbiertos(x=>{const y=new Set(x);y.has(id)?y.delete(id):y.add(id);return y})}>
              <span><strong>{comunidad?.nombre||'Comunidad'}</strong><small>{comunidad?.comuna||''}</small></span>
-             <span>{lista.length} compromisos</span><span aria-hidden="true">{abierto?'⌃':'⌄'}</span>
+             <span className="compromisos-general-resumen">
+               <strong>{lista.length} compromisos</strong>
+               <small>{lista.filter(c=>c.estado==='completado').length} completados</small>
+             </span>
+             <span className="compromisos-general-flecha" aria-hidden="true">{abierto?'⌃':'⌄'}</span>
            </button>
            {abierto&&<div className="compromisos-general-enlaces">{lista.map((c,i)=>
              <Link key={c.id} to={'/comunidades/'+encodeURIComponent(id)+'?seccion=compromisos'}
                className="compromisos-general-enlace">
-               <strong>{String(i+1).padStart(2,'0')}. {c.titulo}</strong>
-               <span>{ETAPAS.find(x=>x[0]===c.estado)?.[1]||c.estado} · {c.avance}% · Fecha: {FECHA(c.fecha_limite)}</span>
+               <span className="compromisos-general-enlace-titulo">
+                 <strong>{String(i+1).padStart(2,'0')}. {c.titulo}</strong>
+                 {c.responsable&&<small>Responsable: {c.responsable}</small>}
+               </span>
+               <span className={'compromisos-general-estado compromisos-general-estado--'+c.estado}>
+                 {ETAPAS.find(x=>x[0]===c.estado)?.[1]||c.estado}
+               </span>
+               <span className="compromisos-general-avance">
+                 <span className="compromisos-general-barra">
+                   <span style={{width:Math.max(0,Math.min(100,Number(c.avance)||0))+'%'}}/>
+                 </span>
+                 <small>{c.avance??0}% de avance</small>
+               </span>
+               <span className="compromisos-general-fecha">
+                 {c.fecha_limite?'Vence: '+FECHA(c.fecha_limite):'Sin fecha límite'}
+               </span>
              </Link>)}</div>}
          </section>
        })}
