@@ -7,6 +7,7 @@ import { leerOrganizacion, guardarOrganizacion, modulosDisponibles } from '../..
 import Campana from '../../componentes/Campana';
 import IconoNavegacion, { iconoRutaCoproactiva } from '../../componentes/IconoNavegacion';
 import './HomeGeneral.css';
+import {resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
 
 const CLAVE_VISTA = 'coproactiva_selector_vista:';
 function leerVista(usuarioId) {
@@ -25,7 +26,7 @@ function leerVista(usuarioId) {
  * La preferencia no modifica permisos ni rutas. */
 export default function HomeGeneral() {
   const { perfil, salir } = useSesion();
-  const [resumen, setResumen] = useState({ prospectos:null, compromisos:null, pendientes:null });
+  const [resumen, setResumen] = useState({ prospectos:null, compromisos:null, avanceCompromisos:null, pendientes:null });
   const [aviso, setAviso] = useState('');
   const [filtro, setFiltro] = useState('');
   const [abiertos, setAbiertos] = useState(() => new Set(['operaciones']));
@@ -63,12 +64,14 @@ export default function HomeGeneral() {
     let activo = true;
     const consultas = [
       comercial ? supabase.from('prospectos').select('id',{head:true,count:'exact'}) : Promise.resolve({count:null}),
-      comercial ? supabase.from('compromisos_administracion').select('id',{head:true,count:'exact'}).neq('estado','completado') : Promise.resolve({count:null}),
+      comercial ? supabase.from('compromisos_administracion').select('id,estado,avance') : Promise.resolve({data:null}),
       supabase.from('controles_con_avance').select('id',{head:true,count:'exact'}).in('estado',['pendiente','en_curso','pausado'])
     ];
     Promise.all(consultas).then(([p,c,l]) => {
       if (!activo) return;
-      setResumen({prospectos:p.count,compromisos:c.count,pendientes:l.count});
+      const compromisoResumen=c.data?resumenGlobalCompromisos(c.data):null;
+      setResumen({prospectos:p.count,compromisos:compromisoResumen?.abiertos??null,
+       avanceCompromisos:compromisoResumen?.porcentaje??null,pendientes:l.count});
       setAviso([p,c,l].some(x=>x.error)
         ? 'Algunos contadores no se pudieron consultar; los módulos siguen disponibles.' : '');
     }).catch(() => {
@@ -169,6 +172,7 @@ export default function HomeGeneral() {
         </Link>}
         {comercial && <Link to="/compromisos" onClick={() => guardarArea('operacion')}>
           <strong>{resumen.compromisos ?? '-'}</strong><span>Compromisos abiertos</span>
+          <small>{resumen.avanceCompromisos==null?'Avance no disponible':resumen.avanceCompromisos+'% de avance global'}</small>
           <small>Ver seguimiento ›</small>
         </Link>}
         <Link to="/inicio" onClick={() => guardarArea('operacion')}>
