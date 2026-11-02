@@ -63,3 +63,13 @@ test('Tableros muestran avance global sin confundir levantamientos con compromis
  assert.match(general,/global\.porcentaje/);
  assert.match(ui,/resumenGlobalCompromisos\(compromisos\)/);
 });
+
+test('Checks enviados por versiones antiguas de la PWA siguen funcionando',()=>{
+ const sqlLegacy=leer('../supabase/migrations/202611020003_compromisos_subtareas_compatibilidad_check.sql');
+ assert.match(sqlLegacy,/before insert or update of completada,avance/);
+ assert.match(sqlLegacy,/new\.completada then/);
+ assert.match(sqlLegacy,/new\.avance=100/);
+ assert.match(sqlLegacy,/old\.completada and not new\.completada/);
+ assert.match(sqlLegacy,/new\.avance=0/);
+ assert.match(sqlLegacy,/security invoker/);
+});
