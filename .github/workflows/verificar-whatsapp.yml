@@ -1,7 +1,7 @@
 name: Verificar recepción WhatsApp
 on:
   push:
-    branches: [claude/figma-coproactiva-interface-9y82xq]
+    branches: [develop]
   pull_request:
 jobs:
   flujos:
