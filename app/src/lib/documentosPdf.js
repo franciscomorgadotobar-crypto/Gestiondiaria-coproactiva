@@ -2,6 +2,7 @@ import {jsPDF} from 'jspdf';
 import {LOGO_PNG} from './logoCoproactiva.js';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from './plantillasDocumentales.js';
 import {analizarBloquesDocumento} from './bloquesDocumento.js';
+import {normalizarSeccionVerificable,verificacionMarcada,etiquetasVerificacion,limpiarInstruccionesDeModelo} from './verificacionesDocumentales.js';
 
 /** Exporta un PDF real con paginación A4, sin depender de capturas de pantalla. */
 export function generarPdfDocumento(documento){
@@ -50,8 +51,8 @@ export function generarPdfDocumento(documento){
  y+=7;
  // Tablas de las plantillas conservan encabezados y columnas en el PDF real.
  const tabla=(filas)=>{
-  const n=Math.max(2,Math.min(4,filas[0].length));
-  const proporciones=n===2?[.43,.57]:n===3?[.16,.34,.50]:[.12,.25,.31,.32];
+  const n=Math.max(2,Math.min(5,filas[0].length));
+  const proporciones=n===2?[.43,.57]:n===3?[.33,.47,.20]:n===4?[.14,.32,.38,.16]:[.12,.24,.27,.22,.15];
   const anchos=proporciones.map(v=>max*v);
   const limite=filas.slice(0,80);
   for(const [index,fila] of limite.entries()){
@@ -82,10 +83,27 @@ export function generarPdfDocumento(documento){
   doc.text(nombre.toUpperCase(),margen+13,y);
   y+=9;
   const texto=String(contenido[clave]||'Pendiente de completar.');
-  for(const bloque of analizarBloquesDocumento(texto)){
-   if(bloque.tipo==='tabla')tabla(bloque.filas);
-   else if(bloque.tipo==='lista'){
-    for(const item of bloque.items){escribir('- '+item,{size:9.5});y+=1;}
+  const usaChecks=Object.prototype.hasOwnProperty.call(contenido,'_verificaciones');
+  const analisis=usaChecks?normalizarSeccionVerificable(texto):
+   {bloques:analizarBloquesDocumento(texto),items:[]};
+  const [positivo,negativo]=etiquetasVerificacion(clave);
+  const etiqueta=id=>verificacionMarcada(contenido,clave,id)?positivo:negativo;
+  if(usaChecks&&analisis.items.length===1&&analisis.items[0].tipo==='seccion'){
+   escribir('Estado de revisión: '+etiqueta('seccion'),{size:9,bold:true});y+=2;
+  }
+  for(const bloque of analisis.bloques){
+   if(bloque.tipo==='tabla'){
+    if(usaChecks){
+     const filas=[bloque.filas[0].concat('Estado'),...bloque.filas.slice(1).map((fila,i)=>
+      fila.map(limpiarInstruccionesDeModelo).concat(etiqueta(bloque.items[i].id)))];
+     tabla(filas);
+    }else tabla(bloque.filas);
+   }else if(bloque.tipo==='lista'){
+    for(const [j,item] of bloque.items.entries()){
+     const titulo=typeof item==='string'?item:item.titulo;
+     const id=typeof item==='string'?String(j):item.id;
+     escribir('- '+titulo+(usaChecks?' ('+etiqueta(id)+')':''),{size:9.5});y+=1;
+    }
     y+=3;
    }else{escribir(bloque.texto,{size:10});y+=4;}
   }

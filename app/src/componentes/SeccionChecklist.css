@@ -1,0 +1,19 @@
+/* Contrato visual Coproactiva: mismos márgenes y toque de 44px que CRM. */
+.doc-check-seccion{display:grid;gap:11px;min-width:0;padding:15px 0;border-top:1px solid #e8e2dc}
+.doc-check-encabezado{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.doc-check-encabezado>strong{font-size:15px;color:#2b3138}
+.doc-check-contador{font-size:12px;color:#9a5729;font-weight:700}
+.doc-check-ayuda{margin:0;color:#696969;font-size:12px;line-height:1.5}
+.doc-check-lista{display:grid;gap:8px;min-width:0}
+.doc-check-item{display:grid!important;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:8px 11px;min-height:52px;min-width:0;box-sizing:border-box;border:1px solid #e4ddd7;border-radius:11px;padding:10px 12px;background:#fff;cursor:pointer;font-size:13px}
+.doc-check-item.marcado{background:#fff8f0;border-color:#efba91}
+.doc-check-item input[type="checkbox"]{appearance:auto!important;accent-color:#ed7130;width:21px;height:21px;min-height:21px!important;margin:0;cursor:pointer}
+.doc-check-textos{min-width:0;display:grid;gap:3px;line-height:1.4}
+.doc-check-textos>strong{font-size:13px;font-weight:650;color:#2b3138;overflow-wrap:anywhere}
+.doc-check-textos>small{color:#696969;font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+.doc-check-estado{grid-column:2;color:#986038;font-size:11px;font-weight:700}
+.doc-check-editar{justify-self:start;min-height:44px;border:0;background:transparent;text-decoration:underline;color:#935225;padding:8px 0;font-family:inherit;font-weight:650;font-size:12px;line-height:1.4;cursor:pointer}
+.doc-check-editar:focus-visible,.doc-check-item:focus-within{outline:2px solid #ed7130;outline-offset:2px}
+.doc-check-textarea{display:grid;gap:7px;min-width:0;font-size:12px;font-weight:650}
+.doc-check-textarea textarea{box-sizing:border-box;width:100%;max-width:100%;font-family:inherit;font-weight:400;font-size:16px;line-height:1.5;min-height:155px;border:1px solid #dcd4cd;border-radius:10px;padding:12px}
+@media(max-width:700px){.doc-check-seccion{padding:13px 0}.doc-check-item{padding:10px;min-height:52px}.doc-check-textos>strong{font-size:13px}.doc-check-estado{font-size:10px}}
