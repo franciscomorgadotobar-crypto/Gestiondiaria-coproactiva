@@ -1,6 +1,6 @@
 /** Cálculos de presentación. La fuente autoritativa es el trigger de PostgreSQL. */
 export const porcentajeSubtareas=items=>items.length?
- Math.round(items.filter(x=>x.completada).length*100/items.length):0;
+ Math.round(items.reduce((s,x)=>s+(x.completada?100:Math.min(99,Math.max(0,Number(x.avance)||0))),0)/items.length):0;
 export function resumenGlobalCompromisos(items=[]){
  const total=items.length;
  const completados=items.filter(x=>x.estado==='completado').length;
