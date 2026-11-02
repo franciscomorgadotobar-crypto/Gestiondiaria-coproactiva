@@ -34,7 +34,7 @@ export const CONTENIDO_BASE_DOCUMENTAL=Object.freeze({
   }
 });
 export function crearContenidoBaseDocumental(tipo,fecha=fechaLocalInput()) {
- return {fecha,responsable:'Coproactiva Administración SpA',...(CONTENIDO_BASE_DOCUMENTAL[tipo]||{})};
+ return {fecha,responsable:'Coproactiva Administración SpA',...(CONTENIDO_BASE_DOCUMENTAL[tipo]||{}),_verificaciones:{}};
 }
 export function tieneDatosPorConfirmar(contenido) {
  return Object.values(contenido||{}).some(v=>typeof v==='string'&&/\[[^\]\r\n]{2,160}\]/.test(v));
