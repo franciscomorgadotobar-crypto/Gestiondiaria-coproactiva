@@ -1,6 +1,7 @@
 import {jsPDF} from 'jspdf';
 import {LOGO_PNG} from './logoCoproactiva.js';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from './plantillasDocumentales.js';
+import {analizarBloquesDocumento} from './bloquesDocumento.js';
 
 /** Exporta un PDF real con paginación A4, sin depender de capturas de pantalla. */
 export function generarPdfDocumento(documento){
@@ -47,6 +48,32 @@ export function generarPdfDocumento(documento){
  ];
  for(const [clave,valor] of meta){escribir(clave+': '+valor,{size:9});y+=1;}
  y+=7;
+ // Tablas de las plantillas conservan encabezados y columnas en el PDF real.
+ const tabla=(filas)=>{
+  const n=Math.max(2,Math.min(4,filas[0].length));
+  const proporciones=n===2?[.43,.57]:n===3?[.16,.34,.50]:[.12,.25,.31,.32];
+  const anchos=proporciones.map(v=>max*v);
+  const limite=filas.slice(0,80);
+  for(const [index,fila] of limite.entries()){
+   const fuente=index===0?8:8.4;
+   doc.setFont('helvetica',index===0?'bold':'normal');doc.setFontSize(fuente);
+   const lineas=anchos.map((w,j)=>doc.splitTextToSize(String(fila[j]||''),Math.max(w-4,9)));
+   const altoFila=Math.max(9,...lineas.map(x=>x.length*4.2+3));
+   asegurar(altoFila+2);
+   let x=margen;
+   for(let j=0;j<n;j++){
+    doc.setFillColor(index===0?245:255,index===0?241:255,index===0?236:255);
+    doc.setDrawColor(221,215,209);doc.setLineWidth(.16);
+    doc.rect(x,y-3,anchos[j],altoFila,'FD');
+    doc.setTextColor(43,49,56);
+    doc.setFont('helvetica',index===0?'bold':'normal');doc.setFontSize(fuente);
+    doc.text(lineas[j],x+2,y+1);
+    x+=anchos[j];
+   }
+   y+=altoFila;
+  }
+  y+=5;
+ };
  for(const [i,[clave,nombre]] of CAMPOS_POR_TIPO[documento.tipo].entries()){
   asegurar(21);
   doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(237,113,48);
@@ -55,9 +82,14 @@ export function generarPdfDocumento(documento){
   doc.text(nombre.toUpperCase(),margen+13,y);
   y+=9;
   const texto=String(contenido[clave]||'Pendiente de completar.');
-  const bloques=texto.split(/\r?\n/);
-  for(const bloque of bloques){if(!bloque.trim()){asegurar(4);y+=4;}else{escribir(bloque,{size:10});y+=1;}}
-  y+=9;
+  for(const bloque of analizarBloquesDocumento(texto)){
+   if(bloque.tipo==='tabla')tabla(bloque.filas);
+   else if(bloque.tipo==='lista'){
+    for(const item of bloque.items){escribir('- '+item,{size:9.5});y+=1;}
+    y+=3;
+   }else{escribir(bloque.texto,{size:10});y+=4;}
+  }
+  y+=7;
  }
  asegurar(25);doc.setDrawColor(160,160,160);doc.line(margen,y,75,y);y+=6;
  escribir(contenido.responsable||'Coproactiva Administración SpA',{bold:true,size:10});
