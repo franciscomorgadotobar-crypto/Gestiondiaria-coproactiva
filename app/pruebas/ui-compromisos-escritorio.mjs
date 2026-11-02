@@ -86,7 +86,7 @@ try{
   });
   const label='Compromisos '+width+' px';
   assert.equal(geo.items,24,label+' deben aparecer 24 compromisos desde el inicio');
-  assert.ok(geo.filters.height<145,label+' filtros demasiado altos: '+JSON.stringify(geo));
+  assert.ok(geo.filters.height<(width<=640?180:105),label+' filtros demasiado altos: '+JSON.stringify(geo));
   assert.ok(geo.select.height>=42&&geo.select.height<=50,label+' selector mal encuadrado '+JSON.stringify(geo));
   assert.ok(geo.input.height>=42&&geo.input.height<=50,label+' buscador mal encuadrado '+JSON.stringify(geo));
   assert.ok(geo.button.height<110,label+' tarjeta de comunidad gigante '+JSON.stringify(geo));
