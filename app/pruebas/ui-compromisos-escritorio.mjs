@@ -75,6 +75,7 @@ try{
     filters:rect('.compromisos-general-filtros'),
     select:rect('.compromisos-general-filtros select'),
     input:rect('.compromisos-general-filtros input'),
+    overview:rect('.compromisos-general-resumen'),
     group:rect('.compromisos-general-grupo'),
     button:rect('.compromisos-general-desplegar'),
     first:rect('.compromisos-general-enlace'),
@@ -91,7 +92,9 @@ try{
   assert.ok(geo.input.height>=42&&geo.input.height<=50,label+' buscador mal encuadrado '+JSON.stringify(geo));
   assert.ok(geo.button.height<110,label+' tarjeta de comunidad gigante '+JSON.stringify(geo));
   assert.ok(geo.first.height<160,label+' fila desproporcionada '+JSON.stringify(geo));
-  assert.ok(geo.group.y-geo.filters.bottom<45,label+' espacio vacío debajo de filtros '+JSON.stringify(geo));
+  assert.ok(geo.overview&&geo.overview.height<125,label+' resumen global sobredimensionado '+JSON.stringify(geo));
+  assert.ok(geo.overview.y-geo.filters.bottom<45,label+' espacio vacío antes del resumen '+JSON.stringify(geo));
+  assert.ok(geo.group.y-geo.overview.bottom<45,label+' espacio vacío antes de grupos '+JSON.stringify(geo));
   assert.ok(geo.scroll<=width+2,label+' desborda el viewport '+JSON.stringify(geo));
   assert.equal(geo.contentAlign,'start',label+' el grid debe alinearse arriba');
   if(width>=900){
