@@ -279,6 +279,11 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
      <p className="chico apagado">Acuerdos, fechas, estado, subtareas y evidencias. Cada ficha se despliega al seleccionarla.</p>
    </header>
    {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
+   {!cargando&&compromisos.length>0&&<div className="compromisos-resumen-global" aria-label="Avance de compromisos">
+     <div><strong>{resumenGlobalCompromisos(compromisos).abiertos}</strong><span>Por resolver</span></div>
+     <div><strong>{resumenGlobalCompromisos(compromisos).completados}</strong><span>Terminados</span></div>
+     <div><strong>{resumenGlobalCompromisos(compromisos).porcentaje}%</strong><span>Avance global</span></div>
+   </div>}
    {administrador&&<details className="tarjeta compromisos-crear-desplegable">
      <summary>+ Nuevo compromiso</summary>
      <form onSubmit={crear} className="compromisos-form">
@@ -300,13 +305,14 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
         {compromisos.map((item,indice)=>{
           const sub=subtareas.filter(x=>x.compromiso_id===item.id);
           const realizados=sub.filter(x=>x.completada).length;
+          const progreso=sub.length?porcentajeSubtareas(sub):item.avance;
           const historico=avances.filter(x=>x.compromiso_id===item.id);
           const movimientos=transiciones.filter(x=>x.compromiso_id===item.id);
           return <details key={item.id} className="tarjeta compromisos-item">
             <summary className="compromisos-fila">
               <span className="compromisos-titulo">
                 <strong>{String(indice+1).padStart(2,'0')}. {item.titulo}</strong>
-                <small>{item.responsable||'Por asignar'} · Fecha límite: {fecha(item.fecha_limite)} · {item.avance}%</small>
+                <small>{item.responsable||'Por asignar'} · Fecha límite: {fecha(item.fecha_limite)} · {progreso}% de avance</small>
               </span>
               <span className="portal-estado">{NOMBRES[item.estado]||item.estado}</span>
               <span className="compromisos-flecha" aria-hidden="true">⌄</span>
@@ -321,12 +327,63 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 {item.referencia_contractual&&<span>Contrato: {item.referencia_contractual}</span>}
               </div>
               <div className="compromisos-progreso" role="progressbar" aria-label="Avance del compromiso"
-                aria-valuenow={item.avance} aria-valuemin={0} aria-valuemax={100}><div style={{width:item.avance+'%'}}/></div>
-              {administrador&&<div className="compromisos-cambiar-etapa">
+                aria-valuenow={progreso} aria-valuemin={0} aria-valuemax={100}><div style={{width:progreso+'%'}}/></div>
+              <section className="compromisos-subtareas-v2" aria-label={'Subtareas de '+item.titulo}>
+                <div className="compromisos-subtareas-cabecera">
+                  <div><h3>Subtareas</h3>
+                    <p>Cierra cada tarea con el check. El avance del compromiso se calcula automáticamente.</p>
+                  </div>
+                  <strong>{realizados}/{sub.length} · {progreso}%</strong>
+                </div>
+                {sub.length===0&&<p className="compromisos-subtareas-vacio">
+                  Sin subtareas. Agrega las actividades necesarias para medir el avance de este compromiso.
+                </p>}
+                {sub.map(x=>{
+                  const docs=adjuntosSubtareas.filter(d=>d.subtarea_id===x.id);
+                  return <div className={'compromisos-subtarea-card'+(x.completada?' esta-completa':'')} key={x.id}>
+                    <div className="compromisos-subtarea-principal">
+                      <label className="compromisos-subtarea-check">
+                        <input type="checkbox" checked={x.completada} disabled={!administrador||guardando}
+                          aria-label={'Cerrar subtarea: '+x.titulo}
+                          onChange={e=>marcarSubtarea(item,x,e.target.checked)}/>
+                        <span>{x.titulo}</span>
+                      </label>
+                      <strong className="compromisos-subtarea-porcentaje">{x.completada?'100%':'0%'}</strong>
+                    </div>
+                    <div className="compromisos-subtarea-evidencias">
+                      {docs.map(doc=><div key={doc.id} className="compromisos-subtarea-documento">
+                        <button type="button" onClick={()=>abrirAdjunto(doc)}>Adjunto: {doc.nombre}</button>
+                        {administrador&&<button type="button" className="boton boton-texto"
+                          disabled={archivoEnProceso===x.id||guardando}
+                          onClick={()=>eliminarAdjuntoSubtarea(doc)}>Quitar</button>}
+                      </div>)}
+                      {administrador&&<label className="compromisos-subtarea-adjuntar">
+                        <span>{archivoEnProceso===x.id?'Subiendo archivo…':'+ Adjuntar evidencia (opcional)'}</span>
+                        <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.txt"
+                          multiple disabled={Boolean(archivoEnProceso)||guardando}
+                          aria-label={'Adjuntar evidencia a '+x.titulo}
+                          onChange={e=>{const f=e.target.files;adjuntarASubtarea(item,x,f);e.target.value='';}}/>
+                      </label>}
+                      {administrador&&<button type="button" className="compromisos-subtarea-eliminar"
+                        disabled={guardando||Boolean(archivoEnProceso)}
+                        onClick={()=>eliminarSubtarea(item,x)}>Eliminar subtarea</button>}
+                    </div>
+                  </div>;
+                })}
+                {administrador&&<div className="compromisos-subagregar">
+                  <input aria-label={'Nueva subtarea para '+item.titulo} placeholder="Escribe una nueva subtarea"
+                    value={nuevaSubtarea[item.id]||''}
+                    onChange={e=>setNuevaSubtarea(v=>({...v,[item.id]:e.target.value}))}/>
+                  <button type="button" className="boton boton-secundario"
+                    disabled={guardando||!(nuevaSubtarea[item.id]||'').trim()}
+                    onClick={()=>agregarSubtarea(item)}>+ Agregar</button>
+                </div>}
+              </section>
+              {administrador&&<details className="compromisos-opciones"><summary>Administrar fechas, etapa y seguimiento</summary><div className="compromisos-cambiar-etapa">
                 <label>Etapa del compromiso
                   <select value={item.estado} disabled={guardando} aria-label={'Cambiar etapa de '+item.titulo}
                     onChange={e=>cambiarEstado(item,e.target.value)}>
-                    {Object.entries(NOMBRES).map(([v,t])=><option key={v} value={v}>{t}</option>)}
+                    {Object.entries(NOMBRES).map(([v,t])=><option key={v} value={v} disabled={v==='completado'&&sub.some(s=>!s.completada)}>{t}</option>)}
                   </select>
                 </label>
                 <label>Próxima acción
@@ -344,24 +401,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   onClick={()=>cambiarEstado(item,item.estado==='en_espera'?'en_curso':'en_espera')}>
                   {item.estado==='en_espera'?'Reanudar':'Poner en espera'}
                 </button>
-              </div>}
-              <details className="compromisos-subtareas">
-                <summary>Subtareas ({realizados}/{sub.length})</summary>
-                {sub.map(x=><div className="compromisos-subfila" key={x.id}>
-                  <label><input type="checkbox" checked={x.completada} disabled={!administrador||guardando}
-                    onChange={e=>marcarSubtarea(item,x,e.target.checked)}/> {x.titulo}</label>
-                  {administrador&&<button type="button" className="boton boton-texto" disabled={guardando}
-                    onClick={()=>eliminarSubtarea(item,x)}>Eliminar</button>}
-                </div>)}
-                {administrador&&<div className="compromisos-subagregar">
-                  <input aria-label={'Nueva subtarea para '+item.titulo} placeholder="Nueva subtarea"
-                    value={nuevaSubtarea[item.id]||''}
-                    onChange={e=>setNuevaSubtarea(v=>({...v,[item.id]:e.target.value}))}/>
-                  <button type="button" className="boton boton-secundario"
-                    disabled={guardando||!(nuevaSubtarea[item.id]||'').trim()}
-                    onClick={()=>agregarSubtarea(item)}>Agregar subtarea</button>
-                </div>}
-              </details>
+              </div></details>}
               <details className="compromisos-adjuntos">
                 <summary>Documentos del compromiso</summary>
                 <DriveArchivos key={item.id+'-'+versionDocs} comunidadId={comunidadId}
