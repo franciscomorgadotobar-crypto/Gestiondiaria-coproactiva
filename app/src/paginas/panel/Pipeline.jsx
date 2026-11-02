@@ -12,6 +12,7 @@ import { prepararCarpetasDrive } from '../../lib/drive';
 import {completarCorreo,validarBorradorCorreo} from '../../lib/plantillasCorreo';
 import AdjuntosCorreo from '../../componentes/AdjuntosCorreo';
 import CopiasCorreo from '../../componentes/CopiasCorreo';
+import DocumentosVinculados from '../../componentes/DocumentosVinculados';
 import {prepararCopias} from '../../lib/copiasCorreo';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
@@ -727,6 +728,7 @@ export default function Pipeline() {
                         <Link className="boton boton-secundario" to={'/nuevo?prospecto='+prospectoSeleccionado.id}>Iniciar diagnóstico</Link>}
                   </div>
                 </div>
+                <DocumentosVinculados tipo="prospecto" id={prospectoSeleccionado.id}/>
                 <details className="pipeline-historial-correos" defaultOpen={Boolean(correoDestacado)}>
                   <summary>
                     <strong>Historial de correos</strong>

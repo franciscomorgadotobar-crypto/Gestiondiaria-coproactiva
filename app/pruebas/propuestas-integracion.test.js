@@ -86,7 +86,7 @@ test('El editor permite tres tipos, vista previa, PDF e historial con versión o
  assert.match(app,/Route path="\/documentos\/nuevo"/);
  assert.match(app,/Route path="\/documentos\/:id"/);
  assert.match(editor,/CAMPOS_POR_TIPO/);
- assert.match(editor,/supabase\.rpc\('guardar_documento_gestion'/);
+ assert.match(editor,/supabase\.rpc\('guardar_documento_con_relaciones'/);
  assert.match(editor,/p_version_esperada:version/);
  assert.match(editor,/supabase\.from\('documentos_versiones'\)/);
  assert.match(editor,/window\.print\(\)/);
