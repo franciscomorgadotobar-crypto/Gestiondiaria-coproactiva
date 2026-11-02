@@ -49,6 +49,9 @@ jobs:
       - name: Validar generador de propuestas integrado en Comercial
         working-directory: app
         run: node --test pruebas/propuestas-integracion.test.js
+      - name: Verificar modelos documentales precargados y PDF tabular
+        working-directory: app
+        run: node --test pruebas/documentos-plantillas-precargadas.test.js
       - name: Validar fecha local y formularios del Gestor Documental
         working-directory: app
         run: node --test pruebas/documentos-editor-movil.test.js
