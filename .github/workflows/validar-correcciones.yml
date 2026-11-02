@@ -31,6 +31,9 @@ jobs:
       - name: Comprobar diseño compacto de Compromisos en escritorio
         working-directory: app
         run: node --test pruebas/compromisos-layout.test.js
+      - name: Validar jerarquía de subtareas, checks, progreso y evidencias
+        working-directory: app
+        run: node --test pruebas/compromisos-subtareas-progreso.test.js
       - name: Validar Home y flujo de compromisos y correo
         working-directory: app
         run: node --test pruebas/flujo-home-compromisos-correo.test.js
