@@ -3,7 +3,7 @@ name: Publicar app CoproActiva
 on:
   push:
     branches:
-      - claude/figma-coproactiva-interface-9y82xq
+      - develop
   workflow_dispatch:
 
 permissions:
