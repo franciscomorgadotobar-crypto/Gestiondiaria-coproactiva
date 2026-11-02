@@ -1,0 +1,22 @@
+.documento-vinculacion{display:grid;gap:13px;padding:15px;background:#fff8f1;border:1px solid #ebd7c6;border-radius:12px;min-width:0}
+.documento-vinculacion h3{margin:0 0 5px;font-size:16px;color:#2b3138}
+.documento-vinculacion p{margin:0;font-size:12px;line-height:1.55;color:#64666a}
+.documento-vinculacion-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0}
+.documento-vinculacion-campo{display:grid;gap:7px;min-width:0;align-content:start}
+.documento-vinculacion-campo label{font-size:12px;font-weight:700;color:#4f5358}
+.documento-vinculacion-campo input,.documento-vinculacion-campo select{box-sizing:border-box;min-width:0;width:100%;max-width:100%;min-height:44px;padding:9px 12px;border:1px solid #dbd7d2;border-radius:10px;background:#fff;color:#2b3138;font:inherit;font-size:14px}
+.documento-vinculacion-campo :is(input,select):focus-visible{outline:2px solid #ed7130;outline-offset:2px}
+.documento-vinculacion-campo a{font-size:12px;color:#b15b25;text-decoration:underline;font-weight:650;overflow-wrap:anywhere}
+.documento-vinculacion>small{font-size:11px;color:#71685f;line-height:1.5}
+.documentos-relacionados{min-width:0;border:1px solid #e5dfda;border-radius:12px;background:#fff;padding:16px;display:grid;gap:10px}
+.documentos-relacionados h3{margin:0;font-size:16px;color:#2b3138}
+.documentos-relacionados .documentos-relacionados-cabecera{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.documentos-relacionados .documentos-relacionados-cabecera .boton{min-height:42px;white-space:normal}
+.documentos-relacionados-lista{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.documentos-relacionados-lista li{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:9px;border-top:1px solid #ede8e3;padding:10px 0;flex-wrap:wrap}
+.documentos-relacionados-lista li>div{min-width:0;display:grid;gap:3px}
+.documentos-relacionados-lista li strong{font-size:13px;color:#2b3138;overflow-wrap:anywhere}
+.documentos-relacionados-lista li small{font-size:11px;color:#696969}
+.documentos-relacionados-lista li>a{font-size:12px;color:#9f521d;text-decoration:underline;font-weight:700}
+.documentos-relacionados-vacio{font-size:12px;color:#696969;margin:0}
+@media(max-width:700px){.documento-vinculacion-grid{grid-template-columns:minmax(0,1fr)}.documento-vinculacion{padding:13px}.documentos-relacionados{padding:13px}}
