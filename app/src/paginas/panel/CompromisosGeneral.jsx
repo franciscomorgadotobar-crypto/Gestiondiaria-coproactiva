@@ -61,7 +61,7 @@ export default function CompromisosGeneral(){
        <label>Buscar comunidad o compromiso<input type="search" value={busqueda}
          onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar…"/></label>
      </div>
-     {items!==null&&<section className="compromisos-general-resumen" aria-label="Avance global de compromisos">
+     {items!==null&&<section className="compromisos-general-kpis" aria-label="Avance global de compromisos">
        <div><strong>{global.abiertos}</strong><span>Compromisos pendientes</span></div>
        <div><strong>{global.completados}</strong><span>Completados</span></div>
        <div><strong>{global.porcentaje}%</strong><span>Avance global</span></div>
