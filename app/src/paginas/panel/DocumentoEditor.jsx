@@ -206,7 +206,7 @@ export default function DocumentoEditor(){
       disabled={subiendoDrive||guardando} onClick={reintentarDrive}>
       {subiendoDrive?'Archivando…':'Reintentar archivo en Drive'}
     </button>}
-  </div>
+  </div>}
   {aviso&&<p className="aviso aviso-ok no-imprimir" role="status">{aviso}</p>}
   <nav className="doc-editor-vistas-movil no-imprimir" aria-label="Vista del documento">
     <button type="button" className={vistaMovil==='editar'?'activo':''}
