@@ -121,15 +121,18 @@ export default function CompromisosGeneral(){
                      </span>
                    </form>:
                    <>
-                     <Link className="compromisos-general-titulo-link"
-                       to={'/comunidades/'+encodeURIComponent(id)+'?seccion=compromisos'}>
-                       {String(i+1).padStart(2,'0')}. {c.titulo}
-                     </Link>
+                     <span className="compromisos-general-titulo-cabecera">
+                       <Link className="compromisos-general-titulo-link"
+                         to={'/comunidades/'+encodeURIComponent(id)+'?seccion=compromisos'}>
+                         {String(i+1).padStart(2,'0')}. {c.titulo}
+                       </Link>
+                       {puedeGestionar&&<button type="button" className="compromisos-general-editar-titulo"
+                         aria-label={'Editar título de '+c.titulo}
+                         onClick={()=>{setError('');setEditandoTitulo({id:c.id,valor:c.titulo})}}>
+                         Editar
+                       </button>}
+                     </span>
                      {c.responsable&&<small>Responsable: {c.responsable}</small>}
-                     {puedeGestionar&&<button type="button" className="compromisos-general-editar-titulo"
-                       onClick={()=>{setError('');setEditandoTitulo({id:c.id,valor:c.titulo})}}>
-                       Editar título
-                     </button>}
                    </>}
                </span>
                <span className={'compromisos-general-estado compromisos-general-estado--'+c.estado}>
