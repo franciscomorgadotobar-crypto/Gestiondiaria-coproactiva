@@ -46,7 +46,14 @@ try{
     headers:{'content-range':'0-23/24'},body:JSON.stringify(body)});
    if(path.includes('/auth/v1/user'))return json(user);
    if(path.includes('/rest/v1/perfiles'))return json(url.searchParams.has('id')?perfil:[perfil]);
-   if(path.includes('/rest/v1/compromisos_administracion'))return json(compromisos);
+   if(path.includes('/rest/v1/compromisos_administracion')){
+    if(route.request().method()==='PATCH'){
+     const datos=JSON.parse(route.request().postData()||'{}');
+     assert.deepEqual(Object.keys(datos),['titulo'],'solo se debe modificar el título');
+     return json({...compromisos[0],titulo:datos.titulo});
+    }
+    return json(compromisos);
+   }
    if(path.includes('/rest/v1/comunidades'))return json([comunidad]);
    if(path.includes('/functions/v1/'))return json({});
    return json([]);
@@ -102,6 +109,15 @@ try{
    assert.ok(geo.first.width>700,label+' filas en escritorio demasiado estrechas');
   }
   await page.screenshot({path:'artifacts/ui/compromisos-compacto-'+width+'.png',fullPage:false});
+  // Edición directa sin abandonar la lista de Compromisos y avances.
+  const fila=page.locator('.compromisos-general-enlace').first();
+  await fila.getByRole('button',{name:'Editar título'}).click();
+  const tituloEditado='Compromiso renombrado en '+width+'px';
+  await fila.getByLabel('Título del compromiso').fill(tituloEditado);
+  await fila.getByRole('button',{name:'Guardar',exact:true}).click();
+  await fila.getByRole('link',{name:new RegExp(tituloEditado)}).waitFor();
+  assert.ok(page.url().endsWith('/compromisos'),label+' no debe navegar al editar');
+
   await page.locator('.compromisos-general-desplegar').click();
   assert.equal(await page.locator('.compromisos-general-enlace').count(),0,label+' debe poder contraerse');
   await page.locator('.compromisos-general-desplegar').click();
