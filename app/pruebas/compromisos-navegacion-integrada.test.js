@@ -38,5 +38,6 @@ test('Se conserva gestión de subtareas, títulos y Drive, con retorno al resume
 });
 test('En escritorio no se duplican accesos ya disponibles en el menú lateral',()=>{
  assert.match(inicio,/@media\(min-width:1024px\)/);
- assert.match(inicio,/\.inicio-pantalla \.accesos-inicio\{display:none!important\}/);
+ assert.match(inicio,/\.layout-escritorio:has\(\.barra-lateral \.enlace-lateral\[href="\/nuevo"\]\)/);
+ assert.match(inicio,/\.inicio-pantalla \.accesos-inicio\{/);
 });
