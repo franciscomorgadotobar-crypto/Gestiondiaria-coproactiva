@@ -58,6 +58,9 @@ jobs:
       - name: Validar checklist universal y PDF de todos los documentos
         working-directory: app
         run: node --test pruebas/documentos-checklists.test.js
+      - name: Verificar Google Drive, propuestas vinculadas y selector de documentos
+        working-directory: app
+        run: node --test pruebas/documentos-drive-vinculos.test.js
       - name: Verificar relación bidireccional de documentos con CRM y comunidades
         working-directory: app
         run: node --test pruebas/documentos-relaciones.test.js
