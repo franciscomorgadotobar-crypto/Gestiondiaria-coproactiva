@@ -95,3 +95,44 @@
 .compromisos-subtarea-progreso{display:flex;align-items:center;gap:12px;padding-left:35px;color:var(--texto-apagado);font-size:13px;font-weight:650}
 .compromisos-subtarea-progreso select{min-width:105px;min-height:44px;padding:8px 11px;border:1px solid var(--borde);border-radius:9px;background:var(--tarjeta);color:var(--texto-titulo);font:inherit}
 @media(max-width:700px){.compromisos-subtarea-progreso{padding-left:0;justify-content:space-between}.compromisos-subtarea-progreso select{font-size:16px}}
+
+
+/* Edición rápida y contextual: no reordenar ni cerrar el compromiso */
+.compromisos-edicion-rapida{display:flex;align-items:center;min-width:0}
+.compromisos-editar-titulo{
+ flex:none;display:inline-flex;align-items:center;justify-content:center;
+ min-height:40px;max-width:100%;padding:8px 10px;
+ border:1px solid var(--borde);border-radius:9px;
+ background:var(--tarjeta);color:var(--enlace);
+ font-family:inherit;font-size:13px;font-weight:700;line-height:1.4;cursor:pointer;text-align:center
+}
+.compromisos-editar-titulo:hover{border-color:var(--naranja);background:var(--papel)}
+.compromisos-editar-titulo:focus-visible,
+.compromisos-edicion-titulo-form input:focus-visible{
+ outline:2px solid var(--naranja);outline-offset:2px
+}
+.compromisos-edicion-titulo-form{
+ flex:1;display:grid;gap:8px;min-width:0;
+ padding:11px;border:1px solid var(--borde);border-radius:10px;
+ background:var(--tarjeta)
+}
+.compromisos-edicion-titulo-form label{
+ display:block;color:var(--texto-titulo);font-size:13px;font-weight:700
+}
+.compromisos-edicion-titulo-form input{
+ box-sizing:border-box;display:block;min-width:0;width:100%;max-width:100%;
+ min-height:44px;border:1px solid var(--borde);border-radius:9px;
+ padding:10px 12px;background:var(--tarjeta);color:var(--texto-titulo);
+ font:inherit;font-size:15px
+}
+.compromisos-edicion-titulo-acciones{display:flex;gap:8px;flex-wrap:wrap}
+.compromisos-edicion-titulo-acciones .boton{min-height:42px;font-size:13px}
+.compromisos-subtarea-principal .compromisos-edicion-titulo-form{min-width:0}
+.compromisos-subtarea-principal .compromisos-editar-titulo{padding:7px 9px}
+@media(max-width:640px){
+ .compromisos-subtarea-principal{flex-wrap:wrap}
+ .compromisos-subtarea-principal .compromisos-subtarea-check{flex-basis:100%}
+ .compromisos-subtarea-principal .compromisos-edicion-titulo-form{flex-basis:100%;order:0}
+ .compromisos-subtarea-principal .compromisos-subtarea-porcentaje{margin-left:auto}
+ .compromisos-edicion-titulo-form input{font-size:16px}
+}
