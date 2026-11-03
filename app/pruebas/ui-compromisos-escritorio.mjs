@@ -52,7 +52,10 @@ try{
      assert.deepEqual(Object.keys(datos),['titulo'],'solo se debe modificar el título');
      return json({...compromisos[0],titulo:datos.titulo});
     }
-    return json(compromisos);
+    const elegido=url.searchParams.get('id');
+    return json(elegido?.startsWith('eq.')
+     ? compromisos.filter(c=>c.id===elegido.slice(3))
+     : compromisos);
    }
    if(path.includes('/rest/v1/comunidades'))return json([comunidad]);
    if(path.includes('/functions/v1/'))return json({});
@@ -115,8 +118,19 @@ try{
   const tituloEditado='Compromiso renombrado en '+width+'px';
   await fila.getByLabel('Título del compromiso').fill(tituloEditado);
   await fila.getByRole('button',{name:'Guardar',exact:true}).click();
-  await fila.getByRole('link',{name:new RegExp(tituloEditado)}).waitFor();
+  await fila.getByRole('button',{name:'Gestionar compromiso: '+tituloEditado}).waitFor();
   assert.ok(page.url().endsWith('/compromisos'),label+' no debe navegar al editar');
+  // Al abrir el compromiso mantiene su URL y el mismo diseño sin títulos duplicados.
+  await fila.getByRole('button',{name:'Gestionar compromiso: '+tituloEditado}).click();
+  await page.locator('.compromisos-general-detalle-integrado .compromisos-subtareas-v2').first().waitFor({timeout:12000});
+  assert.equal(await page.locator('.compromisos-general-detalle-integrado .compromisos-item').count(),1,label+' solo una ficha integrada');
+  assert.equal(await page.locator('.compromisos-general-detalle-integrado .compromisos-cabecera').count(),0,label+' no repite cabecera');
+  assert.equal(await page.locator('.compromisos-general-detalle-integrado .compromisos-resumen-global').count(),0,label+' no repite indicadores globales');
+  assert.equal(await page.locator('.compromisos-general-detalle-integrado .compromisos-crear-desplegable').count(),0,label+' no repite navegación ni creación');
+  assert.ok(page.url().endsWith('/compromisos'),label+' abrir compromiso no debe salir del tablero');
+  await fila.getByRole('button',{name:'Gestionar compromiso: '+tituloEditado}).click();
+  assert.equal(await page.locator('.compromisos-general-detalle-integrado').count(),0,label+' puede cerrar el detalle');
+
 
   await page.locator('.compromisos-general-desplegar').click();
   assert.equal(await page.locator('.compromisos-general-enlace').count(),0,label+' debe poder contraerse');
