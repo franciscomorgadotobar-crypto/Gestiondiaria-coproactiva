@@ -63,8 +63,11 @@ async function validarOrigen(db: SupabaseClient, cid: string, tipo: string, orig
   }
   if (detalleId) {
     if (tipo !== 'compromiso' || !UUID.test(detalleId)) throw new DriveError(400, 'Detalle inválido.');
-    const { data } = await db.from('compromisos_avances').select('id').eq('id', detalleId).eq('compromiso_id', origenId).maybeSingle();
-    if (!data) throw new DriveError(403, 'El avance no pertenece al compromiso.');
+    const [{data:avance},{data:subtarea}]=await Promise.all([
+      db.from('compromisos_avances').select('id').eq('id',detalleId).eq('compromiso_id',origenId).maybeSingle(),
+      db.from('compromisos_subtareas').select('id').eq('id',detalleId).eq('compromiso_id',origenId).maybeSingle()
+    ]);
+    if(!avance&&!subtarea)throw new DriveError(403,'La subtarea o el avance no pertenecen al compromiso.');
   }
 }
 
