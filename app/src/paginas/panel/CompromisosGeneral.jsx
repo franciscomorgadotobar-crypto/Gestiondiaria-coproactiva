@@ -105,7 +105,7 @@ export default function CompromisosGeneral(){
            </button>
            {abierto&&<div className="compromisos-general-enlaces">{lista.map((c,i)=>
              <div key={c.id} className="compromisos-general-enlace">
-               <span className="compromisos-general-enlace-titulo">
+               <div className="compromisos-general-enlace-titulo">
                  {editandoTitulo?.id===c.id?
                    <form className="compromisos-general-edicion-titulo" onSubmit={guardarTitulo}>
                      <label htmlFor={'titulo-compromiso-'+c.id}>Título del compromiso</label>
@@ -134,7 +134,7 @@ export default function CompromisosGeneral(){
                      </span>
                      {c.responsable&&<small>Responsable: {c.responsable}</small>}
                    </>}
-               </span>
+               </div>
                <span className={'compromisos-general-estado compromisos-general-estado--'+c.estado}>
                  {ETAPAS.find(x=>x[0]===c.estado)?.[1]||c.estado}
                </span>
