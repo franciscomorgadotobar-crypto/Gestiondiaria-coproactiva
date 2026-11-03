@@ -204,3 +204,25 @@
 .doc-bloques-estado{font-size:11px;font-weight:700;white-space:normal;color:#9e622f}
 .doc-editor-texto .doc-bloques-tabla th:last-child,.doc-editor-texto .doc-bloques-tabla td:last-child{min-width:69px}
 @media print{.doc-bloques-estado{color:#444!important}}
+
+
+/* Selección de carpeta de Drive compacta y adaptable a pantalla móvil. */
+.doc-editor-drive-carpeta,.doc-editor-drive-comunidad{
+ display:grid;gap:10px;min-width:0;padding:15px;border:1px solid #e8d6c3;
+ border-radius:12px;background:#fffaf4;color:#2b3138
+}
+.doc-editor-drive-carpeta>strong,.doc-editor-drive-comunidad>strong{font-size:15px}
+.doc-editor-drive-carpeta>p,.doc-editor-drive-comunidad>p{font-size:13px;line-height:1.5;color:#626971;margin:0}
+.doc-editor-drive-actual{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:13px}
+.doc-editor-drive-actual button{min-height:44px;border:0;background:transparent;color:#a45428;text-decoration:underline;font-weight:650;font-size:12px;cursor:pointer}
+.doc-editor-drive-acciones{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:10px;min-width:0}
+.doc-editor-drive-acciones label{display:grid;gap:6px;min-width:0;font-size:12px;font-weight:650}
+.doc-editor-drive-acciones :is(input,select){box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;border:1px solid #d8d3ce;border-radius:9px;padding:9px 11px;background:#fff;font:inherit;font-size:14px}
+.doc-editor-drive-acciones>.boton{grid-column:1/-1;min-height:44px}
+@media(max-width:700px){
+ .doc-editor-drive-carpeta,.doc-editor-drive-comunidad{padding:12px}
+ .doc-editor-drive-acciones{grid-template-columns:minmax(0,1fr)}
+ .doc-editor-drive-acciones>.boton{grid-column:auto}
+ .doc-editor-drive-acciones :is(input,select){font-size:16px}
+}
+@media print{.doc-editor-drive-carpeta,.doc-editor-drive-comunidad{display:none!important}}
