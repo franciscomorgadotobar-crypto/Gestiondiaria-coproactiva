@@ -178,3 +178,42 @@
  .compromisos-general-kpis strong{font-size:23px}
  .compromisos-general-kpis span{font-size:12px}
 }
+
+
+/* Edición de títulos en el mismo listado, sin navegación a Comunidades */
+.compromisos-general-titulo-link{
+ color:var(--texto-titulo);font-size:15px;font-weight:700;
+ line-height:1.45;overflow-wrap:anywhere;text-decoration:none;
+}
+.compromisos-general-titulo-link:hover{text-decoration:underline;color:var(--enlace)}
+.compromisos-general-titulo-link:focus-visible,
+.compromisos-general-editar-titulo:focus-visible,
+.compromisos-general-edicion-acciones button:focus-visible{
+ outline:2px solid var(--naranja);outline-offset:2px;border-radius:5px
+}
+.compromisos-general-editar-titulo{
+ justify-self:start;min-height:36px;border:0;background:transparent;
+ color:var(--enlace);font-size:13px;font-family:inherit;font-weight:700;
+ cursor:pointer;padding:6px 0;text-decoration:underline;text-underline-offset:2px
+}
+.compromisos-general-edicion-titulo{display:grid;gap:8px;min-width:0}
+.compromisos-general-edicion-titulo label{font-size:13px;font-weight:700;color:var(--texto-titulo)}
+.compromisos-general-edicion-titulo input{
+ box-sizing:border-box;min-height:44px;min-width:0;width:100%;max-width:100%;
+ padding:10px 12px;border:1px solid var(--borde);border-radius:9px;
+ font-family:inherit;font-size:15px;color:var(--texto-titulo);background:var(--tarjeta)
+}
+.compromisos-general-edicion-acciones{display:flex;gap:8px;flex-wrap:wrap}
+.compromisos-general-edicion-acciones button{
+ min-height:40px;padding:8px 14px;border:1px solid var(--borde);
+ border-radius:9px;cursor:pointer;color:var(--texto-titulo);
+ background:var(--tarjeta);font-family:inherit;font-size:13px;font-weight:700
+}
+.compromisos-general-edicion-acciones button[type="submit"]{
+ background:var(--texto-titulo);color:#fff;border-color:var(--texto-titulo)
+}
+.compromisos-general-edicion-acciones button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:640px){
+ .compromisos-general-titulo-link{font-size:14px}
+ .compromisos-general-edicion-titulo input{font-size:16px}
+}
