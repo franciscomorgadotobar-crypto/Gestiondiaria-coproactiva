@@ -18,8 +18,6 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [adjuntos, setAdjuntos] = useState([]);
  const [archivos, setArchivos] = useState([]);
  const [subtareas,setSubtareas]=useState([]);
- const [adjuntosSubtareas,setAdjuntosSubtareas]=useState([]);
- const [archivoEnProceso,setArchivoEnProceso]=useState(null);
  const [nuevaSubtarea,setNuevaSubtarea]=useState({});
  const [editando,setEditando]=useState(null);
  const [editForm,setEditForm]=useState(inicial);
@@ -45,13 +43,6 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   const {data: subt,error: errSubt}=await supabase.from('compromisos_subtareas').select('*').in('compromiso_id',visibles.map(x=>x.id).length ? visibles.map(x=>x.id):['00000000-0000-0000-0000-000000000000']).order('orden',{ascending:true});
   if(errSubt) setError(errSubt.message);
   setSubtareas(subt||[]);
-   const subIds=(subt||[]).map(x=>x.id);
-   if(subIds.length){
-    const {data:archivos,error:errArchivos}=await supabase.from('compromisos_subtareas_adjuntos')
-     .select('*').in('subtarea_id',subIds).order('creado_en',{ascending:false});
-    if(errArchivos)setError(errArchivos.message);
-    setAdjuntosSubtareas(archivos||[]);
-   }else setAdjuntosSubtareas([]);
   const ids = visibles.map(x => x.id);
   if (ids.length) {
    const { data: historial, error: err2 } = await supabase.from('compromisos_avances').select('*').in('compromiso_id', ids).order('registrado_en', {ascending:false});
@@ -102,24 +93,14 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    }).select('id').single();
    if (err) throw err;
    const fallidos = [];
+   if(archivos.length&&!driveConectada)
+    throw new Error('Conecta Google Drive en Comunidades → Configuración antes de adjuntar archivos.');
    for (const file of archivos) {
-    if (driveConectada) {
-     // Nuevos adjuntos: Google Drive · 04 Seguimiento e informes / Compromisos y avances / [ID]
-     const invalido = validarArchivoDrive(file);
-     if (invalido) { fallidos.push(invalido); continue; }
-     try { await subirADrive({ comunidadId, origenTipo: 'compromiso', origenId: detalle, detalleId: avance.id, archivo: file }); }
-     catch (eDrive) { fallidos.push(file.name + ': ' + eDrive.message); }
-     continue;
-    }
-    if (file.size > 15728640) { fallidos.push(file.name + ' (supera 15 MB)'); continue; }
-    const nombreSeguro = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const ruta = `${comunidadId}/${detalle}/${avance.id}/${crypto.randomUUID()}-${nombreSeguro}`;
-    const {error: errSubir} = await supabase.storage.from('compromisos-adjuntos').upload(ruta, file, { contentType:file.type || 'application/octet-stream', upsert:false });
-    if (errSubir) { fallidos.push(file.name + ': ' + errSubir.message); continue; }
-    const {error: errMeta} = await supabase.from('compromisos_avances_adjuntos').insert({
-     avance_id: avance.id, ruta, nombre:file.name, tipo:file.type, tamano:file.size
-    });
-    if (errMeta) fallidos.push(file.name + ': ' + errMeta.message);
+    const invalido=validarArchivoDrive(file);
+    if(invalido){fallidos.push(invalido);continue;}
+    try{await subirADrive({comunidadId,origenTipo:'compromiso',origenId:detalle,detalleId:avance.id,archivo:file});}
+    catch(eDrive){fallidos.push(file.name+': '+eDrive.message);}
+
    }
    if(!subt.length){
     const {error:e}=await supabase.from('compromisos_administracion').update({
@@ -157,10 +138,12 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   try{
    const ids=avances.filter(a=>a.compromiso_id===item.id).map(a=>a.id);
    const docs=adjuntos.filter(d=>ids.includes(d.avance_id));
-   const idsSub=subtareas.filter(x=>x.compromiso_id===item.id).map(x=>x.id);
-   const docsSub=adjuntosSubtareas.filter(x=>idsSub.includes(x.subtarea_id));
-   const rutas=[...docs.map(x=>x.ruta),...docsSub.map(x=>x.ruta)];
-   if(rutas.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(rutas);if(se)throw se;}
+   const {data:driveDocs,error:driveError}=await supabase.rpc('drive_listar_documentos',{
+     p_comunidad_id:comunidadId,p_origen_tipo:'compromiso',p_origen_id:item.id,p_incluir_eliminados:false
+   });
+   if(driveError)throw driveError;
+   if(driveDocs?.length)throw new Error('El compromiso tiene documentos en Google Drive. Retíralos antes de eliminarlo.');
+   if(docs.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(docs.map(d=>d.ruta));if(se)throw se;}
    const {error:de}=await supabase.from('compromisos_administracion').delete().eq('id',item.id);
    if(de)throw de;
    await cargar({silencioso:true});
@@ -216,49 +199,17 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   if(!window.confirm('¿Eliminar esta subtarea y sus adjuntos?'))return;
   setGuardando(true);setError('');
   try{
-   const rutas=adjuntosSubtareas.filter(x=>x.subtarea_id===sub.id).map(x=>x.ruta);
-   if(rutas.length){
-    const {error:e}=await supabase.storage.from('compromisos-adjuntos').remove(rutas);
-    if(e)throw e;
-   }
+   const {data:driveDocs,error:driveError}=await supabase.rpc('drive_listar_documentos',{
+     p_comunidad_id:comunidadId,p_origen_tipo:'compromiso',p_origen_id:item.id,p_incluir_eliminados:false
+   });
+   if(driveError)throw driveError;
+   if((driveDocs||[]).some(d=>d.detalle_id===sub.id))
+    throw new Error('La subtarea tiene documentos en Google Drive. Retíralos antes de eliminarla.');
    const {error:e}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
    if(e)throw e;
    await cargar({silencioso:true});
   }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
- }
- async function adjuntarASubtarea(item,sub,archivosSeleccionados) {
-  const files=Array.from(archivosSeleccionados||[]);
-  if(!files.length||archivoEnProceso||!administrador)return;
-  setArchivoEnProceso(sub.id);setError('');
-  const fallos=[];
-  for(const file of files){
-   if(file.size>15728640||file.size===0){fallos.push(file.name+': tamaño inválido (máximo 15 MB)');continue;}
-   if(!/\.(pdf|png|jpe?g|webp|docx|xlsx|txt)$/i.test(file.name)){fallos.push(file.name+': tipo no permitido');continue;}
-   const nombre=file.name.replace(/[^a-zA-Z0-9._-]/g,'_').slice(-100);
-   const ruta=`${comunidadId}/subtareas/${item.id}/${sub.id}/${crypto.randomUUID()}-${nombre}`;
-   const {error:upload}=await supabase.storage.from('compromisos-adjuntos')
-    .upload(ruta,file,{contentType:file.type||'application/octet-stream',upsert:false});
-   if(upload){fallos.push(file.name+': '+upload.message);continue;}
-   const {error:meta}=await supabase.from('compromisos_subtareas_adjuntos').insert({
-    subtarea_id:sub.id,ruta,nombre:file.name,tipo:file.type,tamano:file.size
-   });
-   if(meta){await supabase.storage.from('compromisos-adjuntos').remove([ruta]);fallos.push(file.name+': '+meta.message);}
-  }
-  setArchivoEnProceso(null);await cargar({silencioso:true});
-  if(fallos.length)setError('Adjuntos no guardados: '+fallos.join('; '));
- }
- async function eliminarAdjuntoSubtarea(doc) {
-  if(!administrador||!window.confirm('¿Eliminar el adjunto de la subtarea?'))return;
-  setArchivoEnProceso(doc.subtarea_id);setError('');
-  try{
-   const {error:e}=await supabase.storage.from('compromisos-adjuntos').remove([doc.ruta]);
-   if(e)throw e;
-   const {error:meta}=await supabase.from('compromisos_subtareas_adjuntos').delete().eq('id',doc.id);
-   if(meta)throw meta;
-   await cargar({silencioso:true});
-  }catch(e){setError(e.message||'No se pudo quitar el adjunto.');}
-  finally{setArchivoEnProceso(null);}
  }
  async function cambiarEstado(item, siguiente) {
   if(!administrador || guardando)return;
@@ -350,7 +301,6 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   Sin subtareas. Agrega las actividades necesarias para medir el avance de este compromiso.
                 </p>}
                 {sub.map(x=>{
-                  const docs=adjuntosSubtareas.filter(d=>d.subtarea_id===x.id);
                   return <div className={'compromisos-subtarea-card'+(x.completada?' esta-completa':'')} key={x.id}>
                     <div className="compromisos-subtarea-principal">
                       <label className="compromisos-subtarea-check">
@@ -369,24 +319,16 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                         {[0,10,20,30,40,50,60,70,80,90].map(n=><option key={n} value={n}>{n}%</option>)}
                       </select>
                     </label>}
-                    <div className="compromisos-subtarea-evidencias">
-                      {docs.map(doc=><div key={doc.id} className="compromisos-subtarea-documento">
-                        <button type="button" onClick={()=>abrirAdjunto(doc)}>Adjunto: {doc.nombre}</button>
-                        {administrador&&<button type="button" className="boton boton-texto"
-                          disabled={archivoEnProceso===x.id||guardando}
-                          onClick={()=>eliminarAdjuntoSubtarea(doc)}>Quitar</button>}
-                      </div>)}
-                      {administrador&&<label className="compromisos-subtarea-adjuntar">
-                        <span>{archivoEnProceso===x.id?'Subiendo archivo…':'+ Adjuntar evidencia (opcional)'}</span>
-                        <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.txt"
-                          multiple disabled={Boolean(archivoEnProceso)||guardando}
-                          aria-label={'Adjuntar evidencia a '+x.titulo}
-                          onChange={e=>{const f=e.target.files;adjuntarASubtarea(item,x,f);e.target.value='';}}/>
-                      </label>}
-                      {administrador&&<button type="button" className="compromisos-subtarea-eliminar"
-                        disabled={guardando||Boolean(archivoEnProceso)}
-                        onClick={()=>eliminarSubtarea(item,x)}>Eliminar subtarea</button>}
-                    </div>
+                    <details className="compromisos-subtarea-drive">
+                      <summary>Adjuntos de esta subtarea · Google Drive</summary>
+                      <DriveArchivos comunidadId={comunidadId} origenTipo="compromiso"
+                        origenId={item.id} detalleId={x.id} compacto
+                        titulo={'Evidencias · '+x.titulo} permitirSubir={administrador}
+                        soloVistaCliente={soloVistaCliente}
+                        ayuda="Los archivos se guardan en la carpeta de este compromiso en Google Drive y quedan asociados a la subtarea."/>
+                    </details>
+                    {administrador&&<button type="button" className="compromisos-subtarea-eliminar"
+                      disabled={guardando} onClick={()=>eliminarSubtarea(item,x)}>Eliminar subtarea</button>}
                   </div>;
                 })}
                 {administrador&&<div className="compromisos-subagregar">
