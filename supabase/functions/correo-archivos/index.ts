@@ -4,7 +4,7 @@ import {
  admin, aPapelera, buscarCarpeta, crearCarpeta, cors, leerConfig, nombreSeguro,
  subirArchivo, validarArchivo, mensajeSeguro, estadoHttp
 } from '../_compartido/google-drive.ts';
-import { navegarCarpetas, agregarCarpeta } from '../_compartido/drive-correo.ts';
+import { navegarCarpetas, agregarCarpeta, carpetaAutorizada, raizComercial } from '../_compartido/drive-correo.ts';
 
 const MAX=8*1024*1024;
 const PERSONAL=new Set(['superadmin','admin','jefatura']);
@@ -54,19 +54,50 @@ Deno.serve(async req=>{
    const ext=(archivo.name.match(/\.([a-z0-9]+)$/i)?.[1]||'').toLowerCase();
    if(!allowed.has(ext))return json(req,{error:'Tipo de archivo no admitido en correos'},415);
    const check=validarArchivo(archivo.name,bytes);
-   const cfg=await leerConfig(db);
-   let carpeta=await buscarCarpeta(db,cfg.raiz_id,'Documentos comerciales');
-   if(!carpeta)carpeta=await crearCarpeta(db,cfg.raiz_id,'Documentos comerciales',{coproactiva_tipo:'comercial'});
-   let repo=await buscarCarpeta(db,carpeta.id,'Adjuntos CRM');
-   if(!repo)repo=await crearCarpeta(db,carpeta.id,'Adjuntos CRM',{coproactiva_tipo:'adjuntos_crm'});
+   // Las versiones del Gestor Documental son PDF en Drive, sin bytes en Supabase.
+   const documentoId=String(get('documento_id')||'').trim();
+   const version=Number(get('version_documento')||0);
+   if(documentoId){
+    if(!UUID.test(documentoId)||!Number.isInteger(version)||version<1)
+      return json(req,{error:'Documento o versión inválidos'},400);
+    const {data:documento}=await db.from('documentos_gestion')
+      .select('id,version').eq('id',documentoId).maybeSingle();
+    if(!documento||documento.version!==version)
+      return json(req,{error:'La versión ya no es la última del documento'},409);
+    const {data:existente}=await db.from(DB).select('id,nombre,mime,tamano,categoria,creado_en')
+      .eq('documento_id',documentoId).eq('version_documento',version)
+      .is('eliminado_en',null).maybeSingle();
+    if(existente)return json(req,{ok:true,archivo:existente,repetido:true});
+   }
+   const carpetaSolicitada=String(get('carpeta_id')||'').trim();
+   let repo;
+   if(carpetaSolicitada)repo=await carpetaAutorizada(db,carpetaSolicitada);
+   else {
+    const raiz=await raizComercial(db);
+    repo=await buscarCarpeta(db,raiz.id,'Adjuntos CRM') ??
+      await crearCarpeta(db,raiz.id,'Adjuntos CRM',{coproactiva_tipo:'adjuntos_crm'});
+   }
    const nombre=nombreSeguro(check.nombre);
-   const subido=await subirArchivo(db,{bytes,nombre,mime:check.mime,padre:repo.id,props:{coproactiva:'1',modulo:'correo_crm'}});
+   const subido=await subirArchivo(db,{bytes,nombre,mime:check.mime,padre:repo.id,
+    props:{coproactiva:'1',modulo:documentoId?'gestor_documental':'correo_crm'}});
    const categoria=String(get('categoria')||'General').slice(0,70);
    const {data,error}=await db.from(DB).insert({
     drive_file_id:subido.id,nombre,mime:check.mime,tamano:bytes.length,
-    categoria,subido_por:user.id
+    categoria,subido_por:user.id,
+    documento_id:documentoId||null,
+    version_documento:documentoId?version:null,
+    carpeta_drive_id:repo.id
    }).select('id,nombre,mime,tamano,categoria,creado_en').single();
-   if(error){await aPapelera(db,subido.id).catch(()=>{});throw error;}
+   if(error){
+    await aPapelera(db,subido.id).catch(()=>{});
+    if(documentoId&&error.code==='23505'){
+     const {data:existente}=await db.from(DB).select('id,nombre,mime,tamano,categoria,creado_en')
+      .eq('documento_id',documentoId).eq('version_documento',version)
+      .is('eliminado_en',null).maybeSingle();
+     if(existente)return json(req,{ok:true,archivo:existente,repetido:true});
+    }
+    throw error;
+   }
    return json(req,{ok:true,archivo:data});
   }
   if(accion==='delete'){
