@@ -21,3 +21,12 @@
  .inicio-avance-compromisos{padding:13px;flex-wrap:wrap}
  .inicio-avance-compromisos>strong{white-space:normal}
 }
+
+/* Evitar duplicados únicamente cuando el menú lateral realmente muestra
+ * la ruta de Nuevo levantamiento. Si el grupo está plegado o se usa la
+ * navegación por módulos, conservar los accesos para no dejar rutas inaccesibles. */
+@media(min-width:1024px){
+ .layout-escritorio:has(.barra-lateral .enlace-lateral[href="/nuevo"]) .inicio-pantalla .accesos-inicio{
+  display:none!important
+ }
+}

@@ -1,10 +1,11 @@
-import {useEffect,useMemo,useState} from 'react';
-import {Link,useNavigate} from 'react-router-dom';
+import {Fragment,useEffect,useMemo,useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {useSesion} from '../../lib/sesion';
 import {useVolverGlobal} from '../../lib/navegacion';
 import './CompromisosGeneral.css';
 import {resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
+import Compromisos from '../cliente/Compromisos';
 
 const ETAPAS=[['todos','Todos'],['pendiente','Pendientes'],['en_curso','En ejecución'],['en_espera','En espera'],['completado','Completados']];
 const FECHA=x=>x?new Date(x+'T12:00:00').toLocaleDateString('es-CL'):'Sin fecha';
@@ -16,6 +17,18 @@ export default function CompromisosGeneral(){
  const [filtro,setFiltro]=useState('todos');
  const [busqueda,setBusqueda]=useState('');
  const [abiertos,setAbiertos]=useState(new Set());
+ const [seleccionadoId,setSeleccionadoId]=useState(null);
+ function abrirCompromiso(id){
+  setSeleccionadoId(actual=>actual===id?null:id);
+ }
+ async function actualizarListado(){
+  const {data,error:err}=await supabase.from('compromisos_administracion')
+   .select('id,comunidad_id,titulo,estado,avance,responsable,fecha_limite,fecha_proxima_accion,orden,creado_en')
+   .order('orden',{ascending:true,nullsFirst:false});
+  if(err){setError('No fue posible actualizar los compromisos: '+err.message);return;}
+  setItems(data||[]);
+  setSeleccionadoId(actual=>(data||[]).some(x=>x.id===actual)?actual:null);
+ }
  const [editandoTitulo,setEditandoTitulo]=useState(null);
  const [guardandoTitulo,setGuardandoTitulo]=useState(false);
  async function guardarTitulo(e){
@@ -104,7 +117,8 @@ export default function CompromisosGeneral(){
              <span className="compromisos-general-flecha" aria-hidden="true">{abierto?'⌃':'⌄'}</span>
            </button>
            {abierto&&<div className="compromisos-general-enlaces">{lista.map((c,i)=>
-             <div key={c.id} className="compromisos-general-enlace">
+             <Fragment key={c.id}>
+             <div className={'compromisos-general-enlace'+(seleccionadoId===c.id?' compromisos-general-enlace--abierto':'')}>
                <div className="compromisos-general-enlace-titulo">
                  {editandoTitulo?.id===c.id?
                    <form className="compromisos-general-edicion-titulo" onSubmit={guardarTitulo}>
@@ -122,10 +136,14 @@ export default function CompromisosGeneral(){
                    </form>:
                    <>
                      <span className="compromisos-general-titulo-cabecera">
-                       <Link className="compromisos-general-titulo-link"
-                         to={'/comunidades/'+encodeURIComponent(id)+'?seccion=compromisos'}>
+                       <button type="button" className="compromisos-general-titulo-link"
+                         aria-expanded={seleccionadoId===c.id}
+                         aria-controls={'detalle-compromiso-'+c.id}
+                         aria-label={'Gestionar compromiso: '+c.titulo}
+                         onClick={()=>abrirCompromiso(c.id)}>
                          {String(i+1).padStart(2,'0')}. {c.titulo}
-                       </Link>
+                         <span aria-hidden="true">{seleccionadoId===c.id?'⌃':'⌄'}</span>
+                       </button>
                        {puedeGestionar&&<button type="button" className="compromisos-general-editar-titulo"
                          aria-label={'Editar título de '+c.titulo}
                          onClick={()=>{setError('');setEditandoTitulo({id:c.id,valor:c.titulo})}}>
@@ -147,7 +165,13 @@ export default function CompromisosGeneral(){
                <span className="compromisos-general-fecha">
                  {c.fecha_limite?'Vence: '+FECHA(c.fecha_limite):'Sin fecha límite'}
                </span>
-             </div>)}</div>}
+             </div>
+             {seleccionadoId===c.id&&<div className="compromisos-general-detalle-integrado"
+                id={'detalle-compromiso-'+c.id} aria-label={'Gestión de '+c.titulo}>
+                <Compromisos comunidadId={id} administrador={puedeGestionar}
+                  seleccionadoId={c.id} integrado onActualizado={actualizarListado}/>
+             </div>}
+             </Fragment>)}</div>}
          </section>
        })}
        {!porComunidad.length&&<p className="vacio">No hay compromisos que coincidan con los filtros.</p>}

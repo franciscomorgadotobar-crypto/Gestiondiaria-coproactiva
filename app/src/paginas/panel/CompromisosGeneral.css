@@ -221,3 +221,39 @@
  .compromisos-general-titulo-link{font-size:14px}
  .compromisos-general-edicion-titulo input{font-size:16px}
 }
+
+
+/* Gestión integrada: el detalle se expande debajo de la misma fila.
+ * No duplicar encabezados, indicadores globales ni el menú lateral. */
+.compromisos-general-titulo-link{
+ display:inline-flex;gap:9px;align-items:flex-start;justify-content:space-between;
+ width:100%;min-height:30px;box-sizing:border-box;
+ border:0;padding:0;background:transparent;text-align:left;
+ font-family:inherit;font-size:15px;font-weight:700;line-height:1.45;
+ color:var(--texto-titulo);cursor:pointer;overflow-wrap:anywhere
+}
+.compromisos-general-titulo-link>span{flex:none;color:var(--enlace);font-size:18px}
+.compromisos-general-enlace--abierto{background:var(--papel)}
+.compromisos-general-detalle-integrado{
+ min-width:0;padding:0 16px 16px;background:var(--papel);
+ border-bottom:1px solid var(--borde);scroll-margin-top:16px
+}
+.compromisos-general-detalle-integrado .compromisos-wrap{
+ padding:0;min-width:0;gap:0
+}
+.compromisos-general-detalle-integrado .compromisos-lista{gap:0}
+.compromisos-general-detalle-integrado .compromisos-item{
+ border:1px solid var(--borde);border-radius:12px;
+ box-shadow:none;background:var(--tarjeta);overflow:hidden
+}
+.compromisos-general-detalle-integrado .compromisos-item>.compromisos-detalle{
+ border-top:0;padding:17px;gap:14px
+}
+.compromisos-general-detalle-integrado .compromisos-edicion-rapida{
+ padding:0
+}
+@media(max-width:640px){
+ .compromisos-general-titulo-link{font-size:14px}
+ .compromisos-general-detalle-integrado{padding:0 10px 12px}
+ .compromisos-general-detalle-integrado .compromisos-item>.compromisos-detalle{padding:12px}
+}
