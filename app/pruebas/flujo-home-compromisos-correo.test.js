@@ -33,7 +33,9 @@ test('Los compromisos registran etapas y fechas sin sobreescribirlas con checkbo
  assert.match(c,/fecha_inicio/);
  assert.match(c,/fecha_proxima_accion/);
  assert.match(c,/fecha_cierre/);
- assert.match(c,/<details key=\{item\.id\} className="tarjeta compromisos-item"/);
+ assert.match(c,/const Etiqueta=integrado\?'div':'details'/);
+ assert.match(c,/<Etiqueta key=\{item\.id\} className=/);
+ assert.match(c,/compromisos-item-integrado/);
  assert.match(c,/<details className="compromisos-historial"/);
  assert.match(migration,/compromisos_transiciones/);
  assert.match(migration,/enable row level security/);
