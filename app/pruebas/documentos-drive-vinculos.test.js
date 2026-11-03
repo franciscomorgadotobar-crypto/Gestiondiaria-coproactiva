@@ -17,7 +17,7 @@ test('CRM incluye propuestas comerciales realmente asociadas al lead',()=>{
  assert.match(links,/\.eq\('prospecto_id',id\)/);
  assert.match(links,/\.from\('documentos_gestion'\)/);
  assert.match(links,/\/propuestas\?documento=/);
- assert.match(links,/\/documentos\/\+d\.id/);
+ assert.match(links,/d\.origen==='propuestas'/);
 });
 test('Crear documento abre Home de plantillas y mantiene el contexto',()=>{
  assert.match(links,/const url='\/documentos\?'/);
