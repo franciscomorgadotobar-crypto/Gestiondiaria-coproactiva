@@ -162,3 +162,34 @@ export function tamanoLegible(b) {
 export const fechaHoraCL = v => v ? new Date(v).toLocaleString('es-CL', {
   day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
 }) : '';
+
+
+/**
+ * El Gestor Documental archiva el PDF final en Drive, no en Supabase Storage.
+ * Para comunidades reutiliza la estructura 04 Seguimiento e informes / Informes.
+ * Para CRM/independientes usa Documentos comerciales con carpeta elegida.
+ * Solo quedan metadatos y vínculos de versión en la base de datos.
+ */
+export async function guardarPdfDocumentoDrive({
+ documentoId,version,comunidadId,carpetaId,archivo
+}){
+ if(!documentoId||!Number.isInteger(Number(version)))throw new Error('Documento sin identificador o versión.');
+ if(!archivo?.size)throw new Error('El PDF está vacío.');
+ if(comunidadId)return subirADrive({
+  comunidadId,origenTipo:'informe',origenId:documentoId,
+  categoria:'seguimiento',archivo,
+  clave:'documento-'+documentoId+'-v'+version
+ });
+ if(!carpetaId)throw new Error('Selecciona una carpeta de Google Drive para el documento.');
+ const fd=new FormData();
+ fd.append('action','upload');
+ fd.append('archivo',archivo);
+ fd.append('categoria','Gestor documental');
+ fd.append('documento_id',documentoId);
+ fd.append('version_documento',String(version));
+ fd.append('carpeta_id',carpetaId);
+ const response=await fetch(BASE+'correo-archivos',{
+  method:'POST',headers:await cabeceras(false),body:fd
+ });
+ return leerRespuesta(response);
+}

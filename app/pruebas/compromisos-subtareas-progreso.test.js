@@ -44,17 +44,14 @@ test('La subtarea se cierra solo mediante check, progreso parcial sin teclear',(
  assert.match(ui,/administrador&&!x\.completada/);
  assert.match(css,/compromisos-subtarea-progreso/);
 });
-test('Adjuntos por subtarea tienen metadatos, RLS, bucket privado, enlace firmado y eliminación',()=>{
- assert.match(sql,/create table if not exists public\.compromisos_subtareas_adjuntos/);
- assert.match(sql,/enable row level security/);
- assert.match(sql,/compromisos_subtareas_adjuntos_leer/);
- assert.match(sql,/archivo_subtareas_compromisos_select/);
- assert.match(sql,/grant select,insert,delete/);
- assert.match(ui,/\.from\('compromisos_subtareas_adjuntos'\)/);
- assert.match(ui,/subtarea_id:sub\.id/);
- assert.match(ui,/storage\.from\('compromisos-adjuntos'\)/);
- assert.match(ui,/abrirAdjunto\(doc\)/);
- assert.match(ui,/eliminarAdjuntoSubtarea/);
+test('Adjuntos de subtarea se guardan en Google Drive con origen y detalle',()=>{
+ assert.match(ui,/origenTipo="compromiso"/);
+ assert.match(ui,/detalleId=\{x\.id\}/);
+ assert.match(ui,/Adjuntos de esta subtarea/);
+ assert.match(ui,/El compromiso tiene documentos en Google Drive/);
+ assert.doesNotMatch(ui,/async function adjuntarASubtarea/);
+ assert.doesNotMatch(ui,/\.from\('compromisos_subtareas_adjuntos'\)/);
+ assert.match(ui,/Conecta Google Drive/);
 });
 test('Tableros muestran avance global sin confundir levantamientos con compromisos',()=>{
  assert.match(inicio,/Levantamientos pendientes/);
