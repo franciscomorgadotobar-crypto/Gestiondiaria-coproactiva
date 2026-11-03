@@ -21,3 +21,9 @@
  .inicio-avance-compromisos{padding:13px;flex-wrap:wrap}
  .inicio-avance-compromisos>strong{white-space:normal}
 }
+
+/* En escritorio las rutas ya están en el menú lateral de Operaciones.
+ * Los accesos rápidos se conservan solo en móvil/tablet con menú plegable. */
+@media(min-width:1024px){
+ .inicio-pantalla .accesos-inicio{display:none!important}
+}
