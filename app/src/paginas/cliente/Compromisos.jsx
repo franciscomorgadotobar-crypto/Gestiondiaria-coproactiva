@@ -9,7 +9,7 @@ const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
 const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '' };
 
-export default function Compromisos({ comunidadId, administrador = false, soloVistaCliente = false }) {
+export default function Compromisos({ comunidadId, administrador = false, soloVistaCliente = false, seleccionadoId = null, integrado = false, onActualizado }) {
  const [compromisos, setCompromisos] = useState([]);
  const [avances, setAvances] = useState([]);
  const [transiciones,setTransiciones] = useState([]);
@@ -37,7 +37,9 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  async function cargar({silencioso=false}={}) {
   if (!comunidadId) return;
   if(!silencioso)setCargando(true);setError('');
-  const { data, error: err } = await supabase.from('compromisos_administracion').select('*').eq('comunidad_id', comunidadId).order('orden', {ascending:true, nullsFirst:false}).order('creado_en', {ascending:true});
+  let consulta=supabase.from('compromisos_administracion').select('*').eq('comunidad_id',comunidadId);
+  if(seleccionadoId)consulta=consulta.eq('id',seleccionadoId);
+  const {data,error:err}=await consulta.order('orden',{ascending:true,nullsFirst:false}).order('creado_en',{ascending:true});
   if (err) { setError('No fue posible cargar compromisos: ' + err.message); setCargando(false); return; }
   const visibles=soloVistaCliente ? (data||[]).filter(c=>c.publicado===true) : (data||[]);
   setCompromisos(visibles);
@@ -63,7 +65,11 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   } else { setAvances([]); setAdjuntos([]); setTransiciones([]); }
   setCargando(false);
  }
- useEffect(() => { cargar(); }, [comunidadId, soloVistaCliente]);
+ useEffect(() => { cargar(); }, [comunidadId, soloVistaCliente, seleccionadoId]);
+ async function recargarYNotificar(){
+  await cargar({silencioso:true});
+  if(onActualizado)await onActualizado();
+ }
  useEffect(() => { if (administrador) conexionDrive().then(c => setDriveConectada(Boolean(c?.conectada))); }, [administrador]);
  async function crear(e) {
   e.preventDefault(); setGuardando(true); setError('');
@@ -74,7 +80,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    fecha_proxima_accion: nuevo.fecha_proxima_accion || null,
    responsable: nuevo.responsable, publicado: false
   });
-  if (err) setError(err.message); else { setNuevo(inicial); await cargar({silencioso:true}); }
+  if (err) setError(err.message); else { setNuevo(inicial); await recargarYNotificar(); }
   setGuardando(false);
  }
  async function abrirAdjunto(doc) {
@@ -116,7 +122,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    });
    if(estadoError) throw estadoError;
    setTexto('');setEvidencia('');setPublicar(false);setArchivos([]);setVersionDocs(v=>v+1);
-   await cargar({silencioso:true});
+   await recargarYNotificar();
    if(fallidos.length) setError('Avance guardado, pero algunos archivos no se adjuntaron: ' + fallidos.join('; '));
   } catch(err) { setError(err.message || 'No fue posible registrar el avance.'); }
   finally { setGuardando(false); }
@@ -131,7 +137,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null
   }).eq('id',editando).select('id').single();
   setGuardando(false);
-  if(err)setError(err.message);else {setEditando(null);await cargar({silencioso:true});}
+  if(err)setError(err.message);else {setEditando(null);await recargarYNotificar();}
  }
  async function eliminarCompromiso(item) {
   if(!window.confirm(`¿Eliminar definitivamente "${item.titulo}" y sus avances y subtareas? Esta acción no se puede deshacer.`))return;
@@ -147,7 +153,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    if(docs.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(docs.map(d=>d.ruta));if(se)throw se;}
    const {error:de}=await supabase.from('compromisos_administracion').delete().eq('id',item.id);
    if(de)throw de;
-   await cargar({silencioso:true});
+   await recargarYNotificar();
   }catch(e){setError(e.message||'No fue posible eliminar.');}
   finally{setGuardando(false);}
  }
@@ -159,7 +165,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    if(de)throw de;
    const {error:me}=await supabase.from('compromisos_avances_adjuntos').delete().eq('id',doc.id);
    if(me)throw me;
-   await cargar({silencioso:true});
+   await recargarYNotificar();
   }catch(e){setError(e.message||'No fue posible eliminar el adjunto.');}
   finally{setGuardando(false);}
  }
@@ -170,7 +176,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    const orden=subtareas.filter(x=>x.compromiso_id===item.id).length+1;
    const {error:e}=await supabase.from('compromisos_subtareas').insert({compromiso_id:item.id,titulo,orden});
    if(e)throw e;
-   setNuevaSubtarea(v=>({...v,[item.id]:''}));await cargar({silencioso:true});
+   setNuevaSubtarea(v=>({...v,[item.id]:''}));await recargarYNotificar();
   }catch(e){setError(e.message||'No fue posible agregar la subtarea.');}
   finally{setGuardando(false);}
  }
@@ -181,8 +187,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    const {error:e}=await supabase.from('compromisos_subtareas').update({completada,avance:completada?100:0}).eq('id',sub.id);
    if(e)throw e;
    // El trigger actualiza porcentaje, etapa e historial en una transacción.
-   await cargar({silencioso:true});
-  }catch(e){setError(e.message||'No se pudo actualizar la subtarea.');await cargar({silencioso:true});}
+   await recargarYNotificar();
+  }catch(e){setError(e.message||'No se pudo actualizar la subtarea.');await recargarYNotificar();}
   finally{setGuardando(false);}
  }
  async function cambiarProgresoSubtarea(sub,valor) {
@@ -192,7 +198,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    const {error:e}=await supabase.from('compromisos_subtareas')
     .update({avance:Math.min(90,Math.max(0,Number(valor)||0)),completada:false}).eq('id',sub.id);
    if(e)throw e;
-   await cargar({silencioso:true});
+   await recargarYNotificar();
   }catch(e){setError(e.message||'No se pudo actualizar el avance.');}
   finally{setGuardando(false);}
  }
@@ -234,7 +240,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     throw new Error('La subtarea tiene documentos en Google Drive. Retíralos antes de eliminarla.');
    const {error:e}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
    if(e)throw e;
-   await cargar({silencioso:true});
+   await recargarYNotificar();
   }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
  }
@@ -256,24 +262,24 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     p_observacion:observacionesRapidas[item.id]?.trim()||'Cambio de etapa desde compromisos'
   });
   if(err)setError('No se pudo cambiar la etapa: '+err.message);
-  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await cargar({silencioso:true});}
+  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await recargarYNotificar();}
   setGuardando(false);
  }
  async function visibilidad(item) {
   const {error: err} = await supabase.from('compromisos_administracion').update({publicado: !item.publicado}).eq('id', item.id);
-  if(err) setError(err.message);else await cargar({silencioso:true});
+  if(err) setError(err.message);else await recargarYNotificar();
  }
  return <section className="compromisos-wrap" aria-label="Compromisos y avances">
-   <header className="compromisos-cabecera"><h2 className="h4">Compromisos y avances</h2>
+   {!integrado&&<header className="compromisos-cabecera"><h2 className="h4">Compromisos y avances</h2>
      <p className="chico apagado">Acuerdos, fechas, estado, subtareas y evidencias. Cada ficha se despliega al seleccionarla.</p>
-   </header>
+   </header>}
    {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
-   {!cargando&&compromisos.length>0&&<div className="compromisos-resumen-global" aria-label="Avance de compromisos">
+   {!integrado&&!cargando&&compromisos.length>0&&<div className="compromisos-resumen-global" aria-label="Avance de compromisos">
      <div><strong>{resumenGlobalCompromisos(compromisos).abiertos}</strong><span>Por resolver</span></div>
      <div><strong>{resumenGlobalCompromisos(compromisos).completados}</strong><span>Terminados</span></div>
      <div><strong>{resumenGlobalCompromisos(compromisos).porcentaje}%</strong><span>Avance global</span></div>
    </div>}
-   {administrador&&<details className="tarjeta compromisos-crear-desplegable">
+   {administrador&&!integrado&&<details className="tarjeta compromisos-crear-desplegable">
      <summary>+ Nuevo compromiso</summary>
      <form onSubmit={crear} className="compromisos-form">
        <label>Título<input required maxLength={180} value={nuevo.titulo} onChange={e=>setNuevo({...nuevo,titulo:e.target.value})}/></label>
@@ -297,15 +303,16 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
           const progreso=sub.length?porcentajeSubtareas(sub):item.avance;
           const historico=avances.filter(x=>x.compromiso_id===item.id);
           const movimientos=transiciones.filter(x=>x.compromiso_id===item.id);
-          return <details key={item.id} className="tarjeta compromisos-item">
-            <summary className="compromisos-fila">
+          const Etiqueta=integrado?'div':'details';
+          return <Etiqueta key={item.id} className={'tarjeta compromisos-item'+(integrado?' compromisos-item-integrado':'')}>
+            {!integrado&&<summary className="compromisos-fila">
               <span className="compromisos-titulo">
                 <strong>{String(indice+1).padStart(2,'0')}. {item.titulo}</strong>
                 <small>{item.responsable||'Por asignar'} · Fecha límite: {fecha(item.fecha_limite)} · {progreso}% de avance</small>
               </span>
               <span className="portal-estado">{NOMBRES[item.estado]||item.estado}</span>
               <span className="compromisos-flecha" aria-hidden="true">⌄</span>
-            </summary>
+            </summary>}
             <div className="compromisos-detalle">
               {administrador&&<div className="compromisos-edicion-rapida">
                 {tituloEnEdicion?.tipo==='compromiso'&&tituloEnEdicion.id===item.id?
@@ -500,7 +507,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 <button className="boton boton-primario" disabled={guardando}>Guardar avance</button>
               </form>}
             </div>
-          </details>
+          </Etiqueta>
         })}
       </div>}
  </section>;
