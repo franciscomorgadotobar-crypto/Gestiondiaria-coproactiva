@@ -1,8 +1,10 @@
 import {useEffect,useMemo,useState} from 'react';
-import {Link,useNavigate,useParams,useSearchParams} from 'react-router-dom';
+import {Link,useLocation,useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO,EJEMPLOS_TITULO_DOCUMENTO,fechaLocalInput} from '../../lib/plantillasDocumentales';
-import {descargarPdfDocumento} from '../../lib/documentosPdf';
+import {descargarPdfDocumento,generarPdfDocumento,nombrePdfDocumento} from '../../lib/documentosPdf';
+import {guardarPdfDocumentoDrive} from '../../lib/drive';
+import CarpetaDriveComercial from '../../componentes/CarpetaDriveComercial';
 import {crearContenidoBaseDocumental,REFERENCIAS_MODELO,tieneDatosPorConfirmar,personalizarModeloConEntidad} from '../../lib/contenidoBaseDocumental';
 import BloquesDocumento from '../../componentes/BloquesDocumento';
 import SeccionChecklist from '../../componentes/SeccionChecklist';
@@ -17,7 +19,7 @@ const contextoNombre={prospecto:'Prospecto',comunidad:'Comunidad',proveedor:'Pro
 function etiquetaSeccion(texto){return String(texto||'').replace(/[^a-zA-Z0-9-_ áéíóúñÁÉÍÓÚÑ]/g,'');}
 
 export default function DocumentoEditor(){
- const {id}=useParams();const [params]=useSearchParams();const navegar=useNavigate();
+ const {id}=useParams();const [params]=useSearchParams();const navegar=useNavigate();const localizacion=useLocation();
  const esNuevo=!id;
  const [tipo,setTipo]=useState(esNuevo?params.get('tipo')||'seguimiento_documental':'');
  const [titulo,setTitulo]=useState('');
@@ -63,7 +65,26 @@ export default function DocumentoEditor(){
  const [guardando,setGuardando]=useState(false);
  const [vistaMovil,setVistaMovil]=useState('editar');
  const [cargando,setCargando]=useState(!esNuevo);
- const [error,setError]=useState('');const [aviso,setAviso]=useState('');
+ const [error,setError]=useState('');
+ const [aviso,setAviso]=useState(localizacion.state?.driveOk?'Documento archivado en Google Drive.':'');
+ const [driveCarpeta,setDriveCarpeta]=useState(localizacion.state?.carpetaId||'');
+ const [driveError,setDriveError]=useState(localizacion.state?.driveError||'');
+ const [subiendoDrive,setSubiendoDrive]=useState(false);
+ async function archivarEnDrive(docId,docVersion){
+  const blob=generarPdfDocumento({tipo,titulo:titulo.trim(),contenido,estado});
+  const archivo=new File([blob],nombrePdfDocumento(titulo.trim()),{type:'application/pdf'});
+  return guardarPdfDocumentoDrive({documentoId:docId,version:docVersion,
+   comunidadId:comunidadId||null,carpetaId:driveCarpeta||null,archivo});
+ }
+ async function reintentarDrive(){
+  if(!id||!version||subiendoDrive)return;
+  setSubiendoDrive(true);setDriveError('');setError('');
+  try{
+   await archivarEnDrive(id,version);
+   setAviso('PDF de la versión '+version+' archivado en Google Drive.');
+  }catch(e){setDriveError('La versión está guardada, pero el PDF no se archivó en Google Drive: '+e.message);}
+  finally{setSubiendoDrive(false);}
+ }
  const plantilla=tipos.find(t=>t.id===tipo);
  const campos=CAMPOS_POR_TIPO[tipo]||[];
 
@@ -131,7 +152,7 @@ export default function DocumentoEditor(){
   if(!titulo.trim()||titulo.trim().length<2)return setError('Escribe un título de al menos dos caracteres');
   if(totalLetras>100000)return setError('El documento supera el límite de texto permitido');
   if(['aprobado','emitido'].includes(estado)&&pendientesModelo)return setError('Para aprobar o emitir, reemplaza o elimina los datos [por confirmar] del modelo. Puedes guardar el borrador mientras tanto.');
-  setGuardando(true);setError('');setAviso('');
+  setGuardando(true);setError('');setAviso('');setDriveError('');
   const {data,error:e}=await supabase.rpc('guardar_documento_con_relaciones',{
    p_id:esNuevo?null:id,p_tipo:tipo,p_titulo:titulo.trim(),
    p_estado:estado,p_prospecto_id:prospectoId||null,p_comunidad_id:comunidadId||null,
@@ -139,10 +160,18 @@ export default function DocumentoEditor(){
   });
   if(e)setError('No se pudo guardar: '+e.message);
   else{
-   setAviso('Versión '+data.version+' guardada correctamente.');
    setVersion(data.version);setVistaVersion(null);
-   if(esNuevo)navegar('/documentos/'+data.id,{replace:true});
+   setSubiendoDrive(true);
+   let falloDrive='';
+   try{await archivarEnDrive(data.id,data.version);}
+   catch(errorDrive){falloDrive=errorDrive.message||'No se pudo contactar Google Drive.';}
+   setSubiendoDrive(false);
+   if(esNuevo)navegar('/documentos/'+data.id,{
+    replace:true,state:{driveError:falloDrive?'Documento guardado, pero el PDF no se archivó en Google Drive: '+falloDrive:'',driveOk:!falloDrive,carpetaId:driveCarpeta}
+   });
    else{
+    if(falloDrive)setDriveError('Documento guardado en Gestión Diaria, pero falta su PDF en Drive: '+falloDrive);
+    else setAviso('Versión '+data.version+' guardada y archivada en Google Drive.');
     const {data:historia}=await supabase.from('documentos_versiones')
      .select('id,version,titulo,estado,contenido,creado_en')
      .eq('documento_id',data.id).order('version',{ascending:false});
@@ -171,6 +200,13 @@ export default function DocumentoEditor(){
    </div>
   </header>
   {error&&<p className="aviso aviso-critico no-imprimir" role="alert">{error}</p>}
+  {driveError&&<div className="aviso aviso-critico no-imprimir" role="alert">
+    <p>{driveError}</p>
+    {!esNuevo&&<button type="button" className="boton boton-secundario"
+      disabled={subiendoDrive||guardando} onClick={reintentarDrive}>
+      {subiendoDrive?'Archivando…':'Reintentar archivo en Drive'}
+    </button>}
+  </div>
   {aviso&&<p className="aviso aviso-ok no-imprimir" role="status">{aviso}</p>}
   <nav className="doc-editor-vistas-movil no-imprimir" aria-label="Vista del documento">
     <button type="button" className={vistaMovil==='editar'?'activo':''}
@@ -210,6 +246,13 @@ export default function DocumentoEditor(){
     <VinculacionDocumento prospectoId={prospectoId} comunidadId={comunidadId}
       onProspecto={elegirProspecto} onComunidad={elegirComunidad}
       disabled={Boolean(vistaVersion)||guardando}/>
+    {comunidadId?
+      <div className="doc-editor-drive-comunidad">
+       <strong>Destino: Google Drive de la comunidad</strong>
+       <p>04 Seguimiento e informes / Informes. Se utilizará la carpeta configurada para esta comunidad.</p>
+      </div>:
+      <CarpetaDriveComercial valor={driveCarpeta} onChange={setDriveCarpeta}
+        disabled={guardando||Boolean(vistaVersion)}/>}
     <div className="doc-editor-contexto">
       Relaciones: <strong>{prospectoId&&comunidadId?'Lead del CRM y comunidad':
         comunidadId?'Comunidad':prospectoId?'Lead / prospecto':entidad||'Documento independiente'}</strong>
