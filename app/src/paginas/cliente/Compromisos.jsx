@@ -19,6 +19,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [archivos, setArchivos] = useState([]);
  const [subtareas,setSubtareas]=useState([]);
  const [nuevaSubtarea,setNuevaSubtarea]=useState({});
+ const [tituloEnEdicion,setTituloEnEdicion]=useState(null);
  const [editando,setEditando]=useState(null);
  const [editForm,setEditForm]=useState(inicial);
  const [error, setError] = useState('');
@@ -195,6 +196,32 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   }catch(e){setError(e.message||'No se pudo actualizar el avance.');}
   finally{setGuardando(false);}
  }
+ async function guardarTituloDirecto(e){
+  e.preventDefault();
+  if(!administrador||guardando||!tituloEnEdicion)return;
+  const titulo=tituloEnEdicion.valor.trim();
+  if(!titulo||titulo.length>180){
+   setError('El título debe contener entre 1 y 180 caracteres.');
+   return;
+  }
+  const esSubtarea=tituloEnEdicion.tipo==='subtarea';
+  const origen=(esSubtarea?subtareas:compromisos).find(x=>x.id===tituloEnEdicion.id);
+  if(!origen)return;
+  if(titulo===origen.titulo){setTituloEnEdicion(null);return;}
+  setGuardando(true);setError('');
+  try{
+   const tabla=esSubtarea?'compromisos_subtareas':'compromisos_administracion';
+   let consulta=supabase.from(tabla).update({titulo}).eq('id',tituloEnEdicion.id);
+   if(esSubtarea)consulta=consulta.eq('compromiso_id',tituloEnEdicion.compromisoId);
+   else consulta=consulta.eq('comunidad_id',comunidadId);
+   const {data,error:err}=await consulta.select('id,titulo').single();
+   if(err)throw err;
+   if(esSubtarea)setSubtareas(actual=>actual.map(x=>x.id===data.id?{...x,titulo:data.titulo}:x));
+   else setCompromisos(actual=>actual.map(x=>x.id===data.id?{...x,titulo:data.titulo}:x));
+   setTituloEnEdicion(null);
+  }catch(err){setError('No fue posible guardar el título: '+(err.message||'Error desconocido'));}
+  finally{setGuardando(false);}
+ }
  async function eliminarSubtarea(item,sub) {
   if(!window.confirm('¿Eliminar esta subtarea y sus adjuntos?'))return;
   setGuardando(true);setError('');
@@ -280,6 +307,25 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
               <span className="compromisos-flecha" aria-hidden="true">⌄</span>
             </summary>
             <div className="compromisos-detalle">
+              {administrador&&<div className="compromisos-edicion-rapida">
+                {tituloEnEdicion?.tipo==='compromiso'&&tituloEnEdicion.id===item.id?
+                  <form className="compromisos-edicion-titulo-form" onSubmit={guardarTituloDirecto}>
+                    <label htmlFor={'titulo-directo-'+item.id}>Título del compromiso</label>
+                    <input id={'titulo-directo-'+item.id} autoFocus required maxLength={180}
+                      value={tituloEnEdicion.valor} disabled={guardando}
+                      onChange={e=>setTituloEnEdicion(x=>({...x,valor:e.target.value}))}/>
+                    <div className="compromisos-edicion-titulo-acciones">
+                      <button type="submit" className="boton boton-primario"
+                        disabled={guardando||!tituloEnEdicion.valor.trim()}>Guardar título</button>
+                      <button type="button" className="boton boton-secundario"
+                        disabled={guardando} onClick={()=>setTituloEnEdicion(null)}>Cancelar</button>
+                    </div>
+                  </form>:
+                  <button type="button" className="compromisos-editar-titulo"
+                    onClick={()=>{setError('');setTituloEnEdicion({tipo:'compromiso',id:item.id,valor:item.titulo})}}>
+                    Editar título del compromiso
+                  </button>}
+              </div>}
               {item.descripcion&&<p>{item.descripcion}</p>}
               <div className="compromisos-meta">
                 <span>Inicio: {fecha(item.fecha_inicio)}</span>
@@ -303,12 +349,31 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 {sub.map(x=>{
                   return <div className={'compromisos-subtarea-card'+(x.completada?' esta-completa':'')} key={x.id}>
                     <div className="compromisos-subtarea-principal">
-                      <label className="compromisos-subtarea-check">
-                        <input type="checkbox" checked={x.completada} disabled={!administrador||guardando}
-                          aria-label={'Cerrar subtarea: '+x.titulo}
-                          onChange={e=>marcarSubtarea(item,x,e.target.checked)}/>
-                        <span>{x.titulo}</span>
-                      </label>
+                      {tituloEnEdicion?.tipo==='subtarea'&&tituloEnEdicion.id===x.id?
+                        <form className="compromisos-edicion-titulo-form" onSubmit={guardarTituloDirecto}>
+                          <label htmlFor={'titulo-subtarea-'+x.id}>Título de la subtarea</label>
+                          <input id={'titulo-subtarea-'+x.id} autoFocus required maxLength={180}
+                            value={tituloEnEdicion.valor} disabled={guardando}
+                            onChange={e=>setTituloEnEdicion(v=>({...v,valor:e.target.value}))}/>
+                          <div className="compromisos-edicion-titulo-acciones">
+                            <button type="submit" className="boton boton-primario"
+                              disabled={guardando||!tituloEnEdicion.valor.trim()}>Guardar</button>
+                            <button type="button" className="boton boton-secundario"
+                              disabled={guardando} onClick={()=>setTituloEnEdicion(null)}>Cancelar</button>
+                          </div>
+                        </form>:
+                        <>
+                          <label className="compromisos-subtarea-check">
+                            <input type="checkbox" checked={x.completada} disabled={!administrador||guardando}
+                              aria-label={'Cerrar subtarea: '+x.titulo}
+                              onChange={e=>marcarSubtarea(item,x,e.target.checked)}/>
+                            <span>{x.titulo}</span>
+                          </label>
+                          {administrador&&<button type="button" className="compromisos-editar-titulo"
+                            onClick={()=>{setError('');setTituloEnEdicion({tipo:'subtarea',id:x.id,compromisoId:item.id,valor:x.titulo})}}>
+                            Editar título
+                          </button>}
+                        </>}
                       <strong className="compromisos-subtarea-porcentaje">{x.completada?100:(x.avance||0)}%</strong>
                     </div>
                     {administrador&&!x.completada&&<label className="compromisos-subtarea-progreso">
