@@ -22,8 +22,11 @@
  .inicio-avance-compromisos>strong{white-space:normal}
 }
 
-/* En escritorio las rutas ya están en el menú lateral de Operaciones.
- * Los accesos rápidos se conservan solo en móvil/tablet con menú plegable. */
+/* Evitar duplicados únicamente cuando el menú lateral realmente muestra
+ * la ruta de Nuevo levantamiento. Si el grupo está plegado o se usa la
+ * navegación por módulos, conservar los accesos para no dejar rutas inaccesibles. */
 @media(min-width:1024px){
- .inicio-pantalla .accesos-inicio{display:none!important}
+ .layout-escritorio:has(.barra-lateral .enlace-lateral[href="/nuevo"]) .inicio-pantalla .accesos-inicio{
+  display:none!important
+ }
 }
