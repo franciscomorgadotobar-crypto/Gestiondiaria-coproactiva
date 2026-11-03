@@ -16,6 +16,29 @@ export default function CompromisosGeneral(){
  const [filtro,setFiltro]=useState('todos');
  const [busqueda,setBusqueda]=useState('');
  const [abiertos,setAbiertos]=useState(new Set());
+ const [editandoTitulo,setEditandoTitulo]=useState(null);
+ const [guardandoTitulo,setGuardandoTitulo]=useState(false);
+ async function guardarTitulo(e){
+  e.preventDefault();
+  if(!puedeGestionar||guardandoTitulo||!editandoTitulo)return;
+  const titulo=editandoTitulo.valor.trim();
+  if(!titulo||titulo.length>180){
+   setError('El título debe contener entre 1 y 180 caracteres.');
+   return;
+  }
+  const anterior=items?.find(x=>x.id===editandoTitulo.id);
+  if(!anterior)return;
+  if(titulo===anterior.titulo){setEditandoTitulo(null);return;}
+  setGuardandoTitulo(true);setError('');
+  try{
+   const {data,error:err}=await supabase.from('compromisos_administracion')
+    .update({titulo}).eq('id',editandoTitulo.id).select('id,titulo').single();
+   if(err)throw err;
+   setItems(actual=>(actual||[]).map(x=>x.id===data.id?{...x,titulo:data.titulo}:x));
+   setEditandoTitulo(null);
+  }catch(err){setError('No fue posible guardar el título: '+(err.message||'Error desconocido'));}
+  finally{setGuardandoTitulo(false);}
+ }
  const puedeGestionar=['superadmin','admin','jefatura'].includes(perfil?.rol);
  useEffect(()=>{
   let vivo=true;
@@ -81,12 +104,37 @@ export default function CompromisosGeneral(){
              <span className="compromisos-general-flecha" aria-hidden="true">{abierto?'⌃':'⌄'}</span>
            </button>
            {abierto&&<div className="compromisos-general-enlaces">{lista.map((c,i)=>
-             <Link key={c.id} to={'/comunidades/'+encodeURIComponent(id)+'?seccion=compromisos'}
-               className="compromisos-general-enlace">
-               <span className="compromisos-general-enlace-titulo">
-                 <strong>{String(i+1).padStart(2,'0')}. {c.titulo}</strong>
-                 {c.responsable&&<small>Responsable: {c.responsable}</small>}
-               </span>
+             <div key={c.id} className="compromisos-general-enlace">
+               <div className="compromisos-general-enlace-titulo">
+                 {editandoTitulo?.id===c.id?
+                   <form className="compromisos-general-edicion-titulo" onSubmit={guardarTitulo}>
+                     <label htmlFor={'titulo-compromiso-'+c.id}>Título del compromiso</label>
+                     <input id={'titulo-compromiso-'+c.id} type="text" autoFocus required
+                       maxLength={180} disabled={guardandoTitulo} value={editandoTitulo.valor}
+                       onChange={e=>setEditandoTitulo(x=>({...x,valor:e.target.value}))}/>
+                     <span className="compromisos-general-edicion-acciones">
+                       <button type="submit" disabled={guardandoTitulo||!editandoTitulo.valor.trim()}>
+                         {guardandoTitulo?'Guardando…':'Guardar'}
+                       </button>
+                       <button type="button" disabled={guardandoTitulo}
+                         onClick={()=>setEditandoTitulo(null)}>Cancelar</button>
+                     </span>
+                   </form>:
+                   <>
+                     <span className="compromisos-general-titulo-cabecera">
+                       <Link className="compromisos-general-titulo-link"
+                         to={'/comunidades/'+encodeURIComponent(id)+'?seccion=compromisos'}>
+                         {String(i+1).padStart(2,'0')}. {c.titulo}
+                       </Link>
+                       {puedeGestionar&&<button type="button" className="compromisos-general-editar-titulo"
+                         aria-label={'Editar título de '+c.titulo}
+                         onClick={()=>{setError('');setEditandoTitulo({id:c.id,valor:c.titulo})}}>
+                         Editar
+                       </button>}
+                     </span>
+                     {c.responsable&&<small>Responsable: {c.responsable}</small>}
+                   </>}
+               </div>
                <span className={'compromisos-general-estado compromisos-general-estado--'+c.estado}>
                  {ETAPAS.find(x=>x[0]===c.estado)?.[1]||c.estado}
                </span>
@@ -99,7 +147,7 @@ export default function CompromisosGeneral(){
                <span className="compromisos-general-fecha">
                  {c.fecha_limite?'Vence: '+FECHA(c.fecha_limite):'Sin fecha límite'}
                </span>
-             </Link>)}</div>}
+             </div>)}</div>}
          </section>
        })}
        {!porComunidad.length&&<p className="vacio">No hay compromisos que coincidan con los filtros.</p>}
