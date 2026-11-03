@@ -113,7 +113,7 @@ export default function GestorDocumental(){
     <h1><span className="documentos-cabecera-icono" aria-hidden="true">▱</span> Gestor documental</h1>
     <p>Plantillas, documentos, versiones y biblioteca central.</p>
    </div>
-   <Link className="boton documentos-nuevo" to={rutaPlantilla('informe_gestion')}>+ Crear documento</Link>
+   <a className="boton documentos-nuevo" href="#documentos-plantillas">+ Crear documento</a>
   </header>
   {desdeCorreo&&<div className="documentos-origen-correo">
    <strong>Estás consultando documentos desde Correos.</strong>
@@ -137,7 +137,9 @@ export default function GestorDocumental(){
   </nav>
   <div className="documentos-layout">
    <div className="documentos-principal">
-    <section className="documentos-seccion" aria-label="Crear desde plantilla">
+    <section id="documentos-plantillas" className="documentos-seccion" aria-label="Seleccionar tipo de documento">
+     <h2 className="documentos-plantillas-encabezado">¿Qué documento quieres crear?</h2>
+     <p className="documentos-plantillas-ayuda">Selecciona una plantilla; mantendremos el lead o comunidad de origen.</p>
      <div className="documentos-plantillas">
       {TIPOS_DOCUMENTO.map((t,i)=><article key={t.id} className="documentos-plantilla">
        <div className="documentos-plantilla-icono" aria-hidden="true">{iconos[t.id]}</div>
