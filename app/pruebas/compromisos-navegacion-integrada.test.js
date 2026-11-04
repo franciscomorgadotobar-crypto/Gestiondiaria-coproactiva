@@ -6,7 +6,7 @@ const listado=leer('src/paginas/panel/CompromisosGeneral.jsx');
 const ficha=leer('src/paginas/cliente/Compromisos.jsx');
 const visual=leer('pruebas/ui-compromisos-escritorio.mjs');
 const estilo=leer('src/paginas/panel/CompromisosGeneral.css');
-const inicio=leer('src/paginas/panel/InicioLegibilidad.css');
+const inicio=leer('src/paginas/panel/Inicio.jsx');
 
 test('Abrir un compromiso no navega a Comunidades ni abandona el tablero',()=>{
  assert.match(listado,/const \[seleccionadoId,setSeleccionadoId\]=useState\(null\)/);
@@ -14,7 +14,7 @@ test('Abrir un compromiso no navega a Comunidades ni abandona el tablero',()=>{
  assert.match(listado,/aria-expanded=\{seleccionadoId===c\.id\}/);
  assert.match(listado,/compromisos-general-detalle-integrado/);
  assert.doesNotMatch(listado,/to=\{'\/comunidades\/'\+encodeURIComponent\(id\)\+'\?seccion=compromisos'\}/);
- assert.match(listado,/<Compromisos comunidadId=\{id\} administrador=\{puedeGestionar\}/);
+ assert.match(listado,/<Compromisos comunidadId=\{c\.comunidad_id\} administrador=\{puedeGestionar\}/);
  assert.match(visual,/abrir compromiso no debe salir del tablero/);
 });
 test('El detalle usa una sola ficha, sin repetir menús, indicadores ni crear compromiso',()=>{
@@ -36,8 +36,10 @@ test('Se conserva gestión de subtareas, títulos y Drive, con retorno al resume
  assert.match(ficha,/marcarSubtarea/);
  assert.match(ficha,/cambiarProgresoSubtarea/);
 });
-test('En escritorio no se duplican accesos ya disponibles en el menú lateral',()=>{
- assert.match(inicio,/@media\(min-width:1024px\)/);
- assert.match(inicio,/\.layout-escritorio:has\(\.barra-lateral \.enlace-lateral\[href="\/nuevo"\]\)/);
- assert.match(inicio,/\.inicio-pantalla \.accesos-inicio\{/);
+test('Inicio integra el tablero sin repetir la navegación lateral',()=>{
+ assert.match(inicio,/<CompromisosGeneral integrado \/>/);
+ assert.doesNotMatch(inicio,/<nav className="accesos-inicio"/);
+ assert.match(listado,/role="tablist"/);
+ assert.match(listado,/vista==='responsable'/);
+ assert.match(listado,/compromisos-general-nuevo-form/);
 });
