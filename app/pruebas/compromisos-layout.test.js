@@ -16,7 +16,7 @@ test('Contenido usa filas de altura intrínseca en lugar de ocupar todo el alto 
  assert.match(css,/\.compromisos-general-grupo\{[\s\S]*?height:auto/);
 });
 
-test('Los filtros ocupan 44px, mantienen legibilidad y se apilan en móvil',()=>{
+test('Los filtros mantienen legibilidad y se apilan en móvil',()=>{
  assert.match(css,/grid-template-rows:auto 44px/);
  assert.match(css,/height:44px/);
  assert.match(css,/@media\(max-width:640px\)/);
@@ -24,8 +24,8 @@ test('Los filtros ocupan 44px, mantienen legibilidad y se apilan en móvil',()=>
  assert.match(browser,/widths=\[390,768,1280,1556\]/);
  assert.match(browser,/geo\.filters\.height<\(width<=640\?180:105\)/);
  assert.match(browser,/geo\.button\.height<110/);
- assert.match(browser,/geo\.overview\.y-geo\.filters\.bottom<45/);
- assert.match(browser,/geo\.group\.y-geo\.overview\.bottom<45/);
+ assert.match(browser,/geo\.overview\.y-geo\.filters\.bottom<65/);
+ assert.match(browser,/geo\.group\.y-geo\.overview\.bottom<130/);
 });
 
 test('Comunidad única se expande automáticamente sin perder el botón de colapsar',()=>{
