@@ -66,6 +66,11 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).first().waitFor({timeout:18000});
+  // Entrar al Inicio de Operaciones desde el Home selector.
+  await page.evaluate(()=>{
+   window.history.pushState({qa:true},'','/inicio');
+   window.dispatchEvent(new PopStateEvent('popstate',{state:window.history.state}));
+  });
   // Inicio no debe duplicar el menú ni cambiar de ruta al abrir una tarea.
   await page.locator('.inicio-pantalla .compromisos-general-enlace').first().waitFor({timeout:15000});
   assert.equal(await page.locator('.inicio-pantalla .accesos-inicio').count(),0,'Inicio sin accesos duplicados');
