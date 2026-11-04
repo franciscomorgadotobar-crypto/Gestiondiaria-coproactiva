@@ -7,7 +7,7 @@ import MapaPrevio from '../../componentes/MapaPrevio';
 import { hayConexion } from '../../lib/sincronizacion';
 import { leerControles, guardarControl, borrarControlLocal } from '../../lib/local';
 import Confirmar from '../../componentes/Confirmar';
-import {resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
+import CompromisosGeneral from './CompromisosGeneral';
 import './InicioLegibilidad.css';
 
 const CHIP = {
@@ -22,14 +22,6 @@ export default function Inicio() {
   const { perfil, salir } = useSesion();
   const [controles, setControles] = useState(null);
   const [error, setError] = useState(null);
-  const [avanceCompromisos,setAvanceCompromisos]=useState(null);
-  useEffect(()=>{
-    let activo=true;
-    supabase.from('compromisos_administracion').select('id,estado,avance').then(({data,error})=>{
-      if(activo)setAvanceCompromisos(error?null:resumenGlobalCompromisos(data||[]));
-    });
-    return()=>{activo=false};
-  },[]);
   // Qué grupos están abiertos, por sección. Se abre el propio en lo pendiente:
   // lo primero que uno mira al entrar es su propio día. Lo realizado arranca
   // cerrado, porque es consulta y no trabajo.
@@ -207,52 +199,9 @@ export default function Inicio() {
           </div>
         )}
 
-        {avanceCompromisos&&avanceCompromisos.total>0&&
-          <Link className="inicio-avance-compromisos" to="/compromisos">
-            <span><strong>Compromisos y avances</strong>
-              <small>{avanceCompromisos.abiertos} por resolver · {avanceCompromisos.completados} terminados</small>
-            </span>
-            <strong>{avanceCompromisos.porcentaje}% de avance global</strong>
-          </Link>}
-        <nav className="accesos-inicio" aria-label="Accesos del módulo Levantamientos">
-          <Link to="/comunidades" className="acceso acceso-principal">
-            <span>Comunidades</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-          {puedeConfigurar && (
-            <>
-              <Link to="/nuevo" className="acceso">
-                <span>Nuevo levantamiento</span>
-                <span aria-hidden="true">+</span>
-              </Link>
-            </>
-          )}
-          <Link to="/compromisos" className="acceso">
-            <span>Compromisos y avances</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-          <Link to="/bitacora" className="acceso">
-            <span>Bitácora</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-          <Link to="/mantenciones" className="acceso">
-            <span>Mantenciones</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-          {puedeConfigurar && <Link to="/documentos" className="acceso"><span>Gestor documental</span><span aria-hidden="true">›</span></Link>}
-          {puedeConfigurar && <Link to="/plantillas" className="acceso">
-            <span>Plantillas</span>
-            <span aria-hidden="true">›</span>
-          </Link>}
-          {puedeConfigurar && <Link to="/vista-cliente" className="acceso">
-            <span>Vista de cliente</span>
-            <span aria-hidden="true">›</span>
-          </Link>}
-          <Link to="/mapa" className="acceso">
-            <span>Mapa</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-        </nav>
+        {/* Tablero de compromisos integrado: no replicar accesos del menú lateral
+            ni navegar fuera del Inicio al desplegar compromisos y subtareas. */}
+        <CompromisosGeneral integrado />
 
         <div className="inicio-trabajo">
         <div className="grupo-titulo" id="por-hacer" data-tutorial="inicio-por-hacer">
