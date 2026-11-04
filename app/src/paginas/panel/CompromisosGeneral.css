@@ -602,3 +602,27 @@
   padding:10px;gap:8px;
  }
 }
+
+/* Encabezado compacto: en 390 px la comunidad debe ocupar una sola fila. */
+.compromisos-general .compromisos-general-conteo-movil{display:none}
+@media(max-width:640px){
+ .compromisos-general .compromisos-general-desplegar{
+  grid-template-columns:minmax(0,1fr) 52px 18px;
+  grid-template-rows:auto;
+  min-height:76px;gap:8px;padding:11px 12px;
+ }
+ .compromisos-general .compromisos-general-nombre-grupo{
+  grid-column:1;grid-row:1;min-width:0;gap:2px;
+ }
+ .compromisos-general .compromisos-general-nombre-grupo strong{font-size:15px!important}
+ .compromisos-general .compromisos-general-nombre-grupo small{font-size:11px!important}
+ .compromisos-general .compromisos-general-conteo-movil{display:block}
+ .compromisos-general .compromisos-general-progreso-grupo{
+  grid-column:2;grid-row:1;text-align:center;gap:2px;
+ }
+ .compromisos-general .compromisos-general-progreso-grupo strong{font-size:17px}
+ .compromisos-general .compromisos-general-progreso-grupo small{font-size:10px}
+ .compromisos-general .compromisos-general-progreso-grupo .compromisos-general-barra{display:none}
+ .compromisos-general .compromisos-general-resumen{display:none}
+ .compromisos-general .compromisos-general-flecha{grid-column:3;grid-row:1}
+}
