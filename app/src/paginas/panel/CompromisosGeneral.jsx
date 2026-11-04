@@ -192,6 +192,7 @@ export default function CompromisosGeneral({integrado=false}){
              <span className="compromisos-general-nombre-grupo">
                <strong>{comunidad?.nombre||'Comunidad'}</strong>
                <small>{comunidad?.comuna||'Comunidad sin comuna informada'}</small>
+               <small className="compromisos-general-conteo-movil">{lista.length} compromisos</small>
              </span>
              <span className="compromisos-general-progreso-grupo">
                <small>Avance</small><strong>{avanceGrupo}%</strong>
