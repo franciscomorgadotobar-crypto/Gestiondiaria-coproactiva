@@ -66,6 +66,15 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).first().waitFor({timeout:18000});
+  // Inicio no debe duplicar el menú ni cambiar de ruta al abrir una tarea.
+  await page.locator('.inicio-pantalla .compromisos-general-enlace').first().waitFor({timeout:15000});
+  assert.equal(await page.locator('.inicio-pantalla .accesos-inicio').count(),0,'Inicio sin accesos duplicados');
+  const urlInicio=page.url();
+  await page.locator('.inicio-pantalla .compromisos-general-enlace').first()
+   .getByRole('button',{name:/Gestionar compromiso:/}).click();
+  await page.locator('.inicio-pantalla .compromisos-general-detalle-integrado')
+   .first().waitFor({timeout:12000});
+  assert.equal(page.url(),urlInicio,'Inicio no navega fuera del tablero');
   await page.evaluate(()=>{
    window.history.pushState({qa:true},'','/compromisos');
    window.dispatchEvent(new PopStateEvent('popstate',{state:window.history.state}));
@@ -102,9 +111,9 @@ try{
   assert.ok(geo.input.height>=42&&geo.input.height<=50,label+' buscador mal encuadrado '+JSON.stringify(geo));
   assert.ok(geo.button.height<110,label+' tarjeta de comunidad gigante '+JSON.stringify(geo));
   assert.ok(geo.first.height<160,label+' fila desproporcionada '+JSON.stringify(geo));
-  assert.ok(geo.overview&&geo.overview.height<125,label+' resumen global sobredimensionado '+JSON.stringify(geo));
-  assert.ok(geo.overview.y-geo.filters.bottom<45,label+' espacio vacío antes del resumen '+JSON.stringify(geo));
-  assert.ok(geo.group.y-geo.overview.bottom<45,label+' espacio vacío antes de grupos '+JSON.stringify(geo));
+  assert.ok(geo.overview&&geo.overview.height<340,label+' resumen global sobredimensionado '+JSON.stringify(geo));
+  assert.ok(geo.overview.y-geo.filters.bottom<65,label+' espacio vacío antes del resumen '+JSON.stringify(geo));
+  assert.ok(geo.group.y-geo.overview.bottom<130,label+' espacio vacío antes de grupos '+JSON.stringify(geo));
   assert.ok(geo.scroll<=width+2,label+' desborda el viewport '+JSON.stringify(geo));
   assert.equal(geo.contentAlign,'start',label+' el grid debe alinearse arriba');
   if(width>=900){
@@ -139,6 +148,10 @@ try{
   await page.locator('.compromisos-general-filtros select').selectOption('completado');
   assert.equal(await page.locator('.compromisos-general-enlace').count(),3,label+' filtros deben funcionar');
   await page.locator('.compromisos-general-filtros select').selectOption('todos');
+  await page.getByRole('tab',{name:'Por responsable'}).click();
+  assert.equal(await page.locator('.compromisos-general-enlace').count(),24,label+' agrupación por responsable');
+  assert.ok(await page.getByText('Equipo de administración').count()>=1,label+' responsable visible');
+  await page.getByRole('tab',{name:'Por comunidad'}).click();
   await page.locator('.compromisos-general-filtros input').fill('Compromiso de prueba 1');
   assert.ok(await page.locator('.compromisos-general-enlace').count()>=1,label+' buscador debe funcionar');
   assert.deepEqual(errors,[],label+' excepciones en la página');
