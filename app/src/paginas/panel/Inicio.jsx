@@ -206,6 +206,7 @@ export default function Inicio() {
         <div className="inicio-trabajo">
         <div className="grupo-titulo" id="por-hacer" data-tutorial="inicio-por-hacer">
           <span className="etiqueta-grupo">Por hacer</span>
+          {puedeConfigurar && <Link to="/documentos" className="inicio-vinculo-documentos">Gestor documental</Link>}
         </div>
 
         {controles === null && !error && <p className="cargando">Cargando…</p>}
