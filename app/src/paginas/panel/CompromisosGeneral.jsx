@@ -159,11 +159,13 @@ export default function CompromisosGeneral({integrado=false}){
      <div className="compromisos-general-herramientas">
        <div className="compromisos-general-vistas" role="tablist" aria-label="Agrupar compromisos">
          <button type="button" role="tab" aria-selected={vista==='comunidad'}
-           className={vista==='comunidad'?'activo':''} onClick={()=>{setVista('comunidad');setSeleccionadoId(null)}}>
+           className={vista==='comunidad'?'activo':''} onClick={()=>{setVista('comunidad');setSeleccionadoId(null);
+             setAbiertos(new Set((items||[]).map(c=>c.comunidad_id)))}}>
            Por comunidad
          </button>
          <button type="button" role="tab" aria-selected={vista==='responsable'}
-           className={vista==='responsable'?'activo':''} onClick={()=>{setVista('responsable');setSeleccionadoId(null)}}>
+           className={vista==='responsable'?'activo':''} onClick={()=>{setVista('responsable');setSeleccionadoId(null);
+             setAbiertos(new Set((items||[]).map(c=>'responsable:'+((c.responsable||'Sin responsable').trim()||'Sin responsable'))))}}>
            Por responsable
          </button>
        </div>
