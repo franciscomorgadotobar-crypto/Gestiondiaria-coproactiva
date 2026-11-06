@@ -2038,7 +2038,7 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     right: 0;
     bottom: 0;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--columnas-nav-movil, 5), minmax(0, 1fr));
     min-height: 64px;
     padding: 5px 4px calc(5px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--borde);
