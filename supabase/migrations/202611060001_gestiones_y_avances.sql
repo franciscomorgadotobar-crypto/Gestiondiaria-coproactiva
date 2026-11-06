@@ -227,7 +227,7 @@ grant execute on function public.gestiones_cambiar_estado(uuid,text,date,text,te
 -- Archivar conserva tareas, avances, resultado y referencias de Drive; se puede revertir.
 create or replace function public.gestiones_archivar(p_gestion_id uuid,p_archivar boolean)
 returns public.compromisos_administracion
-language plpgsql security definer set search_path='' as $
+language plpgsql security definer set search_path='' as $archive$
 declare anterior public.compromisos_administracion%rowtype;
         actualizado public.compromisos_administracion%rowtype;
 begin
@@ -251,7 +251,7 @@ begin
     else 'Gestión restaurada del archivo' end,
   anterior.fecha_proxima_accion,auth.uid());
  return actualizado;
-end; $;
+end; $archive$;
 revoke all on function public.gestiones_archivar(uuid,boolean) from public,anon;
 grant execute on function public.gestiones_archivar(uuid,boolean) to authenticated;
 
