@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { supabase } from '../lib/supabase';
@@ -57,6 +58,15 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // y Configuración: foco inicial, Escape y tabulación confinada al diálogo.
   useEffect(() => {
     if (!masAbierto) return undefined;
+    // El menú se monta fuera de la aplicación y bloquea la interacción
+    // con el mapa Leaflet, los chips y la navegación inferior.
+    const raizAplicacion = document.getElementById('raiz');
+    const estabaInerte = Boolean(raizAplicacion?.inert);
+    const scrollBodyAnterior = document.body.style.overflow;
+    const scrollHtmlAnterior = document.documentElement.style.overflow;
+    if (raizAplicacion) raizAplicacion.inert = true;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     cerrarMasRef.current?.focus({ preventScroll: true });
     const alPulsarTecla = evento => {
       if (evento.key === 'Escape') {
@@ -81,6 +91,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     window.addEventListener('keydown', alPulsarTecla);
     return () => {
       window.removeEventListener('keydown', alPulsarTecla);
+      if (raizAplicacion) raizAplicacion.inert = estabaInerte;
+      document.body.style.overflow = scrollBodyAnterior;
+      document.documentElement.style.overflow = scrollHtmlAnterior;
       botonMasRef.current?.focus({ preventScroll: true });
     };
   }, [masAbierto, navegar]);
@@ -355,7 +368,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const barraMovil = barraIds.slice(0, 4)
     .map(id => opcionesBarra.find(x => x.id === id))
     .filter(Boolean);
-  const menuMasOperacion = opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
+  // En Operaciones, las rutas ya aparecen en la barra inferior y en las
+  // tarjetas/chips del Home: «Más» no debe convertirse en un tercer menú.
+  const menuMasOperacion = enOperacion ? [] : opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
   const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enAprendizaje;
 
@@ -644,7 +659,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             </button>
           </nav>
 
-          {masAbierto && (
+          {masAbierto && createPortal(
             <div className="menu-mas-fondo" role="presentation" onClick={() => setMasAbierto(false)}>
               <div className="menu-mas" role="dialog" aria-modal="true" aria-label="Más opciones"
                    onClick={e => e.stopPropagation()}>
@@ -653,7 +668,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   <button ref={cerrarMasRef} type="button" onClick={() => setMasAbierto(false)} aria-label="Cerrar menú">×</button>
                 </div>
                 <div className="menu-mas-secciones">
-                  {organizacion === 'modulos' && !esCliente ? (
+                  {!enOperacion && (organizacion === 'modulos' && !esCliente ? (
                     <div className="menu-mas-grupo" role="group" aria-label="Todos los módulos">
                       <p className="menu-mas-grupo-titulo">Todos los módulos</p>
                       <div className="menu-mas-enlaces">
@@ -681,8 +696,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                         ))}
                       </div>
                     </div>
-                  )}
-                  {organizacion !== 'modulos' && !esCliente && (
+                  ))}
+                  {!enOperacion && organizacion !== 'modulos' && !esCliente && (
                     <div className="menu-mas-grupo" role="group" aria-label="Aprendizaje">
                       <p className="menu-mas-grupo-titulo">Aprendizaje</p>
                       <div className="menu-mas-enlaces">
@@ -709,12 +724,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                     </div>
                   )}
                   <div className="menu-mas-grupo menu-mas-grupo-cuenta" role="group" aria-label="Cuenta y navegación">
-                    <p className="menu-mas-grupo-titulo">Cuenta y navegación</p>
+                    <p className="menu-mas-grupo-titulo">{enOperacion ? 'Cuenta' : 'Cuenta y navegación'}</p>
                     <div className="menu-mas-enlaces">
                       <Link to="/mi-cuenta" onClick={() => setMasAbierto(false, { alNavegar: true })}>
                         Mi cuenta <span aria-hidden="true">›</span>
                       </Link>
-                      {puedeCambiarArea && (
+                      {puedeCambiarArea && !enOperacion && (
                         <button type="button" onClick={() => { setMasAbierto(false, { alNavegar: true }); cambiarArea(); }}>
                           Ir al inicio
                           <span aria-hidden="true">›</span>
@@ -724,7 +739,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   </div>
                 </div>
               </div>
-            </div>
+            </div>, document.body
           )}
 
         </>

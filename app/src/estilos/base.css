@@ -11,6 +11,12 @@
 
 html, body, #raiz { height: 100%; }
 
+/* En teléfonos, el Home con mapa y KPI horizontales no debe ampliar el
+ * viewport: las zonas desplazables conservan su propio scroll. */
+@media (max-width: 899px) {
+  html, body, #raiz { overflow-x: clip; }
+}
+
 body {
   margin: 0;
   background: var(--fondo-app);
@@ -2026,7 +2032,8 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
   .barra-inferior-movil {
     position: fixed;
-    z-index: 35;
+    /* Por encima de Leaflet/Google Maps, pero debajo del diálogo Más. */
+    z-index: 2147482000;
     left: 0;
     right: 0;
     bottom: 0;
@@ -2090,13 +2097,18 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
   .menu-mas-fondo {
     position: fixed;
-    z-index: 36;
+    /* El modal vive en document.body, fuera del stacking context del mapa. */
+    z-index: 2147483000;
     inset: 0;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
-    background: rgba(20,22,26,.28);
+    padding-bottom: 0;
+    background: rgba(20,22,26,.62);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    touch-action: none;
+    overscroll-behavior: contain;
   }
 
   .menu-mas {
@@ -2105,7 +2117,9 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     max-height: calc(100dvh - 88px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    padding: 16px 16px 18px;
+    padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
     border-top: 1px solid var(--borde);
     border-radius: 18px 18px 0 0;
     background: var(--tarjeta);
