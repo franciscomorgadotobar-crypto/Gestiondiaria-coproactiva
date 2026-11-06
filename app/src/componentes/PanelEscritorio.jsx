@@ -225,7 +225,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
         { ruta: '/bitacora', etiqueta: 'Bitácora', mostrar: true },
         { ruta: '/comunidades', etiqueta: 'Comunidades', mostrar: true },
-        { ruta: '/compromisos', etiqueta: 'Compromisos y avances', mostrar: true },
         { ruta: '/vista-cliente', etiqueta: 'Vista de cliente', mostrar: esAdministracion },
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true },
@@ -292,7 +291,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const opcionesOperacion = [
     { id: 'inicio', etiqueta: 'Inicio', ruta: '/inicio' },
     { id: 'comunidades', etiqueta: 'Comunidades', ruta: '/comunidades' },
-    { id: 'compromisos', etiqueta: 'Compromisos', ruta: '/compromisos' },
     { id: 'levantamientos', etiqueta: 'Levantamientos', accion: irLevantamientos },
     { id: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', badge: alertasTotales },
     { id: 'plantillas', etiqueta: 'Plantillas', ruta: '/plantillas', mostrar: puedeConfigurar },
