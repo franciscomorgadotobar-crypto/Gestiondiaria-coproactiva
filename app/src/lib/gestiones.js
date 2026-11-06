@@ -12,14 +12,19 @@ export const TIPOS_REGISTRO={
 };
 export const PRIORIDADES={baja:'Baja',normal:'Normal',alta:'Alta',urgente:'Urgente'};
 export const esCompletada=g=>g?.estado==='completado';
-export const vistaGestiones=(gestiones=[],vista='activas')=>gestiones.filter(g=>
-  vista==='todas'||(vista==='completadas'?esCompletada(g):!esCompletada(g)));
+export const vistaGestiones=(gestiones=[],vista='activas')=>gestiones.filter(g=>{
+ if(vista==='todas')return true;
+ if(vista==='archivadas')return Boolean(g.archivado_en);
+ if(g.archivado_en)return false;
+ return vista==='completadas'?esCompletada(g):!esCompletada(g);
+});
 export function resumenGestiones(items=[]){
  return {
-  pendientes:items.filter(g=>g.estado==='pendiente').length,
-  enProceso:items.filter(g=>['en_curso','en_espera','en_pausa','bloqueado'].includes(g.estado)).length,
-  completadas:items.filter(esCompletada).length,
-  bloqueadas:items.filter(g=>['en_espera','en_pausa','bloqueado'].includes(g.estado)).length
+  pendientes:items.filter(g=>!g.archivado_en&&g.estado==='pendiente').length,
+  enProceso:items.filter(g=>!g.archivado_en&&['en_curso','en_espera','en_pausa','bloqueado'].includes(g.estado)).length,
+  completadas:items.filter(g=>!g.archivado_en&&esCompletada(g)).length,
+  bloqueadas:items.filter(g=>!g.archivado_en&&['en_espera','en_pausa','bloqueado'].includes(g.estado)).length,
+  archivadas:items.filter(g=>Boolean(g.archivado_en)).length
  };
 }
 export function normalizarTareasModelo(valor){
