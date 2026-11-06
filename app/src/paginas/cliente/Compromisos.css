@@ -136,3 +136,39 @@
  .compromisos-subtarea-principal .compromisos-subtarea-porcentaje{margin-left:auto}
  .compromisos-edicion-titulo-form input{font-size:16px}
 }
+
+
+/* Detalle compacto: controles de subtarea en dos filas, sin acciones solitarias. */
+.compromisos-wrap .compromisos-detalle{gap:10px;padding:12px 14px}
+.compromisos-wrap .compromisos-detalle>p{margin:0;font-size:14px;line-height:1.4}
+.compromisos-wrap .compromisos-meta{gap:4px 12px;font-size:12px;line-height:1.4}
+.compromisos-wrap .compromisos-subtareas-v2{gap:6px}
+.compromisos-wrap .compromisos-subtareas-cabecera{gap:8px}
+.compromisos-wrap .compromisos-subtareas-cabecera h3{font-size:15px;margin:0}
+.compromisos-wrap .compromisos-subtareas-cabecera p{font-size:12px;line-height:1.35}
+.compromisos-wrap .compromisos-subtareas-cabecera>strong{font-size:13px}
+.compromisos-wrap .compromisos-item>.compromisos-fila{min-height:56px;padding:10px 14px}
+.compromisos-wrap .compromisos-subtarea-card{padding:8px 12px;gap:5px;border-radius:9px}
+.compromisos-wrap .compromisos-subtarea-principal{gap:8px;flex-wrap:wrap}
+.compromisos-wrap .compromisos-subtarea-check{font-size:14px;line-height:1.35;gap:8px;flex:1 1 220px}
+.compromisos-wrap .compromisos-subtarea-check input{height:20px;width:20px}
+.compromisos-wrap .compromisos-subtarea-porcentaje{font-size:13px}
+.compromisos-wrap .compromisos-subtarea-principal .compromisos-editar-titulo{min-height:34px;padding:5px 9px;font-size:12px}
+.compromisos-subtarea-herramientas{display:flex;align-items:center;gap:5px 12px;min-width:0;flex-wrap:wrap}
+.compromisos-subtarea-herramientas .compromisos-subtarea-progreso{padding:0;display:flex;gap:7px;align-items:center;min-height:36px;font-size:12px}
+.compromisos-subtarea-herramientas .compromisos-subtarea-progreso select{min-width:85px;min-height:36px;padding:5px 8px;font-size:13px}
+.compromisos-subtarea-herramientas .compromisos-subtarea-drive{flex:1 1 140px;min-width:0}
+.compromisos-subtarea-herramientas .compromisos-subtarea-drive>summary{min-height:36px;display:flex;align-items:center;font-size:12px;font-weight:700;color:var(--enlace);cursor:pointer;overflow-wrap:anywhere}
+.compromisos-subtarea-herramientas .compromisos-subtarea-drive[open]{flex-basis:100%;order:3}
+.compromisos-subtarea-herramientas .compromisos-subtarea-eliminar{margin-left:auto;min-height:36px;padding:5px 7px;font-size:12px}
+@media(max-width:640px){
+ .compromisos-wrap .compromisos-detalle{padding:11px 12px}
+ .compromisos-wrap .compromisos-subtarea-card{padding:9px 10px}
+ .compromisos-wrap .compromisos-subtarea-check{flex:1 1 175px;font-size:14px}
+ .compromisos-wrap .compromisos-subtarea-principal .compromisos-editar-titulo{min-height:44px}
+ .compromisos-subtarea-herramientas{gap:4px 9px}
+ .compromisos-subtarea-herramientas .compromisos-subtarea-progreso{min-height:44px}
+ .compromisos-subtarea-herramientas .compromisos-subtarea-progreso select{min-height:44px;font-size:16px}
+ .compromisos-subtarea-herramientas .compromisos-subtarea-drive>summary{min-height:44px}
+ .compromisos-subtarea-herramientas .compromisos-subtarea-eliminar{min-height:44px}
+}
