@@ -36,7 +36,11 @@ alter table public.compromisos_administracion
   add column if not exists tipo_gestion_id uuid references public.gestiones_tipos(id) on delete set null,
   add column if not exists prioridad text not null default 'normal',
   add column if not exists resultado text,
-  add column if not exists proxima_accion_texto text;
+  add column if not exists proxima_accion_texto text,
+  add column if not exists documentos_esperados jsonb not null default '[]'::jsonb;
+alter table public.compromisos_administracion drop constraint if exists gestiones_documentos_esperados_check;
+alter table public.compromisos_administracion add constraint gestiones_documentos_esperados_check
+  check(jsonb_typeof(documentos_esperados)='array');
 alter table public.compromisos_administracion drop constraint if exists compromisos_administracion_prioridad_check;
 alter table public.compromisos_administracion add constraint compromisos_administracion_prioridad_check
   check(prioridad in ('baja','normal','alta','urgente'));
@@ -58,6 +62,7 @@ alter table public.compromisos_avances drop constraint if exists compromisos_ava
 alter table public.compromisos_avances add constraint compromisos_avances_estado_check
  check(estado in ('pendiente','en_curso','en_espera','en_pausa','bloqueado','completado'));
 alter table public.compromisos_avances alter column publicado set default true;
+alter table public.compromisos_avances alter column registrado_por set default auth.uid();
 -- Los avances administrativos anteriores quedan en el portal autenticado del mismo
 -- cliente de la comunidad; las políticas originales siguen delimitando acceso.
 update public.compromisos_avances set publicado=true where publicado=false;
@@ -136,7 +141,7 @@ begin
  end if;
  insert into public.compromisos_administracion(
   comunidad_id,tipo_gestion_id,titulo,descripcion,responsable,
-  fecha_inicio,fecha_limite,estado,avance,publicado,creado_por
+  fecha_inicio,fecha_limite,estado,avance,publicado,creado_por,documentos_esperados
  ) values (
   p_comunidad_id,modelo.id,modelo.nombre,modelo.descripcion,
   coalesce(nullif(trim(p_responsable),''),modelo.responsable_sugerido),
@@ -144,7 +149,7 @@ begin
   coalesce(p_fecha_limite,
     case when modelo.plazo_dias is not null then
       (now() at time zone 'America/Santiago')::date+modelo.plazo_dias else null end),
-  'pendiente',0,true,auth.uid()
+  'pendiente',0,true,auth.uid(),modelo.documentos_esperados
  ) returning * into creado;
  for paso in select value from jsonb_array_elements(modelo.tareas)
  loop
