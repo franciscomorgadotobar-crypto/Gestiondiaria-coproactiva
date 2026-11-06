@@ -58,6 +58,18 @@ async function clickDestino(page,ruta,etiqueta) {
     await link.click();
     return;
   }
+  // Operaciones móviles: las rutas secundarias están en Herramientas,
+  // plegadas de forma deliberada para no competir con la barra inferior.
+  const herramientas=page.locator('details.inicio-herramientas');
+  if(await herramientas.count()){
+    if(!(await herramientas.evaluate(el=>el.open)))
+      await herramientas.locator('summary').click();
+    const secundario=page.locator('details.inicio-herramientas a[href="'+ruta+'"]:visible').first();
+    if(await secundario.count()){
+      await secundario.click();
+      return;
+    }
+  }
   // Móvil: barra inferior del grupo (Comercial: «Arriendos», «SEO»).
   const barra=page.locator('.barra-inferior-movil:visible').getByRole('button',{name:new RegExp('^'+etiqueta.split(' ')[0],'i')});
   if(await barra.count()) {
