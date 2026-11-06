@@ -1,0 +1,129 @@
+{
+  "codigo": "santa-clara-2026-10-23",
+  "nombre": "Compromisos de referencia · Reserva Santa Clara",
+  "fechaReferencia": "2026-10-23",
+  "version": 1,
+  "origen": "Contrato y catálogo de compromisos de Santa Clara, versión del 23 de octubre de 2026",
+  "items": [
+    {
+      "codigo": "SC-01",
+      "titulo": "Recepción de antecedentes del proyecto",
+      "orden": 1
+    },
+    {
+      "codigo": "SC-02",
+      "titulo": "Informe de estado documental",
+      "orden": 2
+    },
+    {
+      "codigo": "SC-03",
+      "titulo": "Habilitación tributaria y bancaria",
+      "orden": 3
+    },
+    {
+      "codigo": "SC-04",
+      "titulo": "Recorrido e inventario de bienes comunes Etapa I",
+      "orden": 4
+    },
+    {
+      "codigo": "SC-05",
+      "titulo": "Cronograma de puesta en marcha",
+      "orden": 5
+    },
+    {
+      "codigo": "SC-06",
+      "titulo": "Preparación operativa de la comunidad",
+      "orden": 6
+    },
+    {
+      "codigo": "SC-07",
+      "titulo": "Registro de aportes de financiamiento inicial",
+      "orden": 7
+    },
+    {
+      "codigo": "SC-08",
+      "titulo": "Informe de puesta en marcha",
+      "orden": 8
+    },
+    {
+      "codigo": "SC-09",
+      "titulo": "Administración y conservación de bienes comunes",
+      "orden": 9
+    },
+    {
+      "codigo": "SC-10",
+      "titulo": "Atención presencial semanal",
+      "orden": 10
+    },
+    {
+      "codigo": "SC-11",
+      "titulo": "Reunión mensual de coordinación",
+      "orden": 11
+    },
+    {
+      "codigo": "SC-12",
+      "titulo": "Gestión de incidencias por nivel de respuesta",
+      "orden": 12
+    },
+    {
+      "codigo": "SC-13",
+      "titulo": "Escalamiento de incidencias de nivel Alto",
+      "orden": 13
+    },
+    {
+      "codigo": "SC-14",
+      "titulo": "Notificación de gastos de emergencia",
+      "orden": 14
+    },
+    {
+      "codigo": "SC-15",
+      "titulo": "Seguimiento de observaciones de postventa",
+      "orden": 15
+    },
+    {
+      "codigo": "SC-16",
+      "titulo": "Control y respaldo de pagos comunitarios",
+      "orden": 16
+    },
+    {
+      "codigo": "SC-17",
+      "titulo": "Gestión de cobranza extrajudicial",
+      "orden": 17
+    },
+    {
+      "codigo": "SC-18",
+      "titulo": "Rendición mensual documentada",
+      "orden": 18
+    },
+    {
+      "codigo": "SC-19",
+      "titulo": "Presupuesto estimativo anual",
+      "orden": 19
+    },
+    {
+      "codigo": "SC-20",
+      "titulo": "Convocatoria de primera asamblea",
+      "orden": 20
+    },
+    {
+      "codigo": "SC-21",
+      "titulo": "Balance anual para asamblea",
+      "orden": 21
+    },
+    {
+      "codigo": "SC-22",
+      "titulo": "Coordinación de incorporación de Etapa II",
+      "orden": 22
+    },
+    {
+      "codigo": "SC-23",
+      "titulo": "Acta de Condiciones Etapa II",
+      "orden": 23
+    },
+    {
+      "codigo": "SC-24",
+      "titulo": "Informe de gestión al término",
+      "orden": 24
+    }
+  ]
+}
