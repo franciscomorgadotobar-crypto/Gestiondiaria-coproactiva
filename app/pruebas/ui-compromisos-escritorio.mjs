@@ -80,6 +80,13 @@ try{
   await page.locator('.compromisos-item').first().waitFor({timeout:15000});
   assert.equal(await page.locator('.compromisos-item').count(),24,'24 compromisos de la comunidad');
   await page.locator('.compromisos-item').first().locator('summary.compromisos-fila').click();
+  await page.locator('.compromisos-indice-item').first().waitFor({timeout:12000});
+  assert.equal(await page.locator('.compromisos-indice-item').count(),9,'9 actividades en índice numerado');
+  assert.equal(await page.locator('.compromisos-subtarea-card').count(),0,'El detalle queda plegado');
+  await page.screenshot({path:'artifacts/ui/compromisos-lista-'+width+'.png',fullPage:false});
+  const alturaIndice=await page.locator('.compromisos-indice-item').first().evaluate(el=>el.getBoundingClientRect().height);
+  assert.ok(alturaIndice<80,'Fila de lista demasiado alta '+width+': '+alturaIndice);
+  await page.locator('.compromisos-indice-item').first().getByRole('button',{name:/Abrir actividad 1/}).click();
   await page.locator('.compromisos-subtarea-card').first().waitFor({timeout:12000});
   const geo=await page.evaluate(()=>{
    const card=document.querySelector('.compromisos-subtarea-card').getBoundingClientRect();
@@ -87,11 +94,11 @@ try{
    return {cardHeight:card.height,summaryHeight:summary.height,
     scrollWidth:Math.max(document.body.scrollWidth,document.documentElement.scrollWidth)};
   });
-  assert.equal(await page.locator('.compromisos-subtarea-card').count(),9);
-  assert.ok(geo.cardHeight<(width<=390?200:145),'Detalle demasiado alto '+width+': '+JSON.stringify(geo));
+  assert.equal(await page.locator('.compromisos-subtarea-card').count(),1,'Solo una actividad en detalle');
+  assert.ok(geo.cardHeight<(width<=390?270:220),'Detalle individual demasiado alto '+width+': '+JSON.stringify(geo));
   assert.ok(geo.summaryHeight<110,'Cabecera sobredimensionada');
   assert.ok(geo.scrollWidth<=width+2,'Desbordamiento horizontal '+width+': '+JSON.stringify(geo));
-  await page.screenshot({path:'artifacts/ui/compromisos-compacto-'+width+'.png',fullPage:false});
+  await page.screenshot({path:'artifacts/ui/compromisos-detalle-'+width+'.png',fullPage:false});
   const fila=page.locator('.compromisos-subtarea-card').first();
   await fila.getByRole('button',{name:'Editar título'}).click();
   await fila.getByLabel('Título de la subtarea').fill('Subtarea corregida '+width);
