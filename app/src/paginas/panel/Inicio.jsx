@@ -21,10 +21,9 @@ export default function Inicio() {
   const { perfil, salir } = useSesion();
   const [controles, setControles] = useState(null);
   const [error, setError] = useState(null);
-  // Qué grupos están abiertos, por sección. Se abre el propio en lo pendiente:
-  // lo primero que uno mira al entrar es su propio día. Lo realizado arranca
-  // cerrado, porque es consulta y no trabajo.
-  const [abiertos, setAbiertos] = useState(null);
+  // Los grupos por persona inician siempre contraídos, incluso el propio.
+  // Solo se abren cuando el usuario pulsa la cabecera.
+  const [abiertos, setAbiertos] = useState(() => new Set());
   const [abiertosHechos, setAbiertosHechos] = useState(() => new Set());
 
   const puedeConfigurar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
@@ -100,18 +99,10 @@ export default function Inicio() {
   const porTrabajador = useMemo(() => agrupar(pendientes), [controles]);
   const realizadosPorTrabajador = useMemo(() => agrupar(cerrados), [controles]);
 
-  useEffect(() => {
-    if (abiertos !== null || !porTrabajador.length) return;
-    // El grupo propio si existe; si no, el primero. Dejarlos todos cerrados
-    // haría que al entrar no se vea trabajo alguno.
-    const mio = porTrabajador.find(g => g.id === perfil?.id);
-    setAbiertos(new Set([(mio ?? porTrabajador[0]).id]));
-  }, [porTrabajador, perfil]);
-
   function alternar(id, hechos = false) {
     const set = hechos ? setAbiertosHechos : setAbiertos;
     set(prev => {
-      const s = new Set(prev ?? []);
+      const s = new Set(prev);
       s.has(id) ? s.delete(id) : s.add(id);
       return s;
     });
@@ -254,7 +245,7 @@ export default function Inicio() {
           <GrupoTrabajador
             key={grupo.id}
             grupo={grupo}
-            abierto={abiertos?.has(grupo.id) ?? false}
+            abierto={abiertos.has(grupo.id)}
             onAlternar={() => alternar(grupo.id)}
             puedeEditar={puedeConfigurar}
             puedeBorrar={puedeBorrar}
