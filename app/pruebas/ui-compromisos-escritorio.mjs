@@ -67,6 +67,9 @@ try{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).first().waitFor({timeout:18000});
+  // La ruta / es el selector modular; el acceso que se prueba está en Operaciones.
+  await page.goto(base+'/inicio',{waitUntil:'domcontentloaded'});
+  await page.locator('.inicio-pantalla').waitFor({state:'visible',timeout:15000});
   // Regresión del botón vacío: el CTA de comunidad debe tener texto visible y
   // contraste suficiente tanto en escritorio como en la presentación móvil.
   const acceso=page.getByRole('link',{name:'Seleccionar comunidad'}).first();
