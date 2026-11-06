@@ -96,7 +96,7 @@ try{
   await fila.getByRole('button',{name:'Editar título'}).click();
   await fila.getByLabel('Título de la subtarea').fill('Subtarea corregida '+width);
   await fila.getByRole('button',{name:'Guardar',exact:true}).click();
-  await fila.getByText('Subtarea corregida '+width).waitFor();
+  await fila.getByText('Subtarea corregida '+width,{exact:true}).waitFor();
   assert.ok(page.url().includes('/comunidades/'+comunidadId+'?seccion=compromisos'),
     'no debe navegar al editar');
   await fila.locator('summary[aria-label^="Adjuntos de esta subtarea"]').click();
