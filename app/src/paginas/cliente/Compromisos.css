@@ -307,3 +307,12 @@
  .gestiones-registro-form{padding:10px}
  .gestiones-linea-tiempo .gestiones-evento{margin:8px;padding:9px}
 }
+
+
+.gestiones-documentos-esperados{display:grid;gap:7px;border:1px solid var(--borde);border-radius:10px;padding:10px;background:var(--tarjeta)}
+.gestiones-documentos-esperados h3{margin:0;font-size:13px;color:var(--texto-titulo)}
+.gestiones-documentos-esperados ul{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.gestiones-documentos-esperados li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--borde-suave);font-size:12px}
+.gestiones-documentos-esperados li:last-child{border-bottom:0}
+.gestiones-documentos-esperados small{flex:none;font-size:10px;color:var(--texto-apagado)}
+@media(max-width:500px){.gestiones-documentos-esperados li{flex-wrap:wrap;gap:2px}}
