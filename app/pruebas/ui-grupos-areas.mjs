@@ -115,6 +115,46 @@ try {
     await ctx.close();
   }
 
+  // Operaciones: «Más» no duplica módulos ni botones del Home.
+  // El mapa, las tarjetas y la barra deben quedar totalmente bloqueados.
+  {
+    const {ctx,page}=await crear({ancho:390,alto:844});
+    await page.getByRole('button',{name:/Operaciones/}).click();
+    await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
+    await page.evaluate(()=>{
+      const capa=document.createElement('div');
+      capa.id='mapa-capa-qa';
+      capa.className='leaflet-pane';
+      capa.style.cssText='position:fixed;inset:0;z-index:999999;pointer-events:none';
+      document.getElementById('root').append(capa);
+    });
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
+    const modal=page.getByRole('dialog',{name:'Más opciones'});
+    await modal.waitFor();
+    assert.deepEqual(await modal.locator('.menu-mas-enlaces>a,.menu-mas-enlaces>button').allTextContents(),
+      ['Mi cuenta ›'],'Operaciones debe mostrar solo acceso a cuenta');
+    assert.equal(await page.locator('body > .menu-mas-fondo').count(),1,
+      'El diálogo debe salir del contenedor de la aplicación y del mapa');
+    const fondo=await page.evaluate(()=>{
+      const raiz=document.getElementById('root');
+      const capa=document.querySelector('.menu-mas-fondo');
+      const estilo=getComputedStyle(capa);
+      return {inerte:raiz.inert,overflowBody:document.body.style.overflow,
+        overflowHtml:document.documentElement.style.overflow,
+        zIndex:Number(estilo.zIndex),
+        cubreMapa:Boolean(document.elementFromPoint(10,150)?.closest('.menu-mas-fondo'))};
+    });
+    assert.deepEqual(fondo,{inerte:true,overflowBody:'hidden',overflowHtml:'hidden',
+      zIndex:2147483000,cubreMapa:true},'El fondo debe quedar bloqueado encima de Leaflet');
+    await modal.getByRole('button',{name:'Cerrar menú'}).click();
+    await modal.waitFor({state:'detached'});
+    assert.equal(await page.evaluate(()=>document.getElementById('root').inert),false);
+    assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
+    assert.equal(await page.evaluate(()=>document.documentElement.style.overflow),'');
+    console.log('Operaciones · menú Más sin duplicados y mapa bloqueado: OK');
+    await ctx.close();
+  }
+
   // Respeto estricto de permisos, incluso en la vista de módulos.
   {
     const {ctx,page}=await crear({rol:'jefatura'});
