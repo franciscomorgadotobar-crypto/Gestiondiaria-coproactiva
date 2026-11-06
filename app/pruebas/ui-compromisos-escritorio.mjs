@@ -67,6 +67,31 @@ try{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).first().waitFor({timeout:18000});
+  // Navegar por el selector real, preservando el contexto de módulo.
+  await page.getByRole('button',{name:/Operaciones/i}).first().click();
+  await page.waitForURL(u=>u.pathname==='/inicio',{timeout:15000});
+  await page.locator('.inicio-pantalla').waitFor({state:'visible',timeout:15000});
+  // Regresión del botón vacío: el CTA de comunidad debe tener texto visible y
+  // contraste suficiente tanto en escritorio como en la presentación móvil.
+  const acceso=page.getByRole('link',{name:'Seleccionar comunidad'}).first();
+  await acceso.waitFor({state:'visible',timeout:12000});
+  assert.equal(new URL(await acceso.getAttribute('href'),base).pathname,'/comunidades');
+  const contraste=await acceso.evaluate(el=>{
+    const estilos=getComputedStyle(el);
+    const rgb=valor=>(valor.match(/[0-9.]+/g)||[]).slice(0,3).map(Number);
+    const brillo=valor=>{
+      const canales=rgb(valor).map(n=>{
+        const v=n/255;
+        return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;
+      });
+      return canales[0]*0.2126+canales[1]*0.7152+canales[2]*0.0722;
+    };
+    const a=brillo(estilos.color),b=brillo(estilos.backgroundColor);
+    return {proporcion:(Math.max(a,b)+0.05)/(Math.min(a,b)+0.05),
+      color:estilos.color,fondo:estilos.backgroundColor,texto:el.textContent};
+  });
+  assert.ok(contraste.proporcion>=4.5,
+    'Selector de comunidad ilegible '+width+'px: '+JSON.stringify(contraste));
   await page.evaluate(()=>{
    window.history.pushState({qa:true},'','/compromisos');
    window.dispatchEvent(new PopStateEvent('popstate',{state:window.history.state}));
