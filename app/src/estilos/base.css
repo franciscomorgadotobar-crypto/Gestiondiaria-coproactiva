@@ -2026,7 +2026,8 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 
   .barra-inferior-movil {
     position: fixed;
-    z-index: 35;
+    /* Por encima de Leaflet/Google Maps, pero debajo del diálogo Más. */
+    z-index: 2147482000;
     left: 0;
     right: 0;
     bottom: 0;
