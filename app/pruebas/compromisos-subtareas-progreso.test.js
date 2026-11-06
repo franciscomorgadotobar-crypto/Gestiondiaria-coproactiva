@@ -49,7 +49,8 @@ test('Adjuntos de subtarea se guardan en Google Drive con origen y detalle',()=>
  assert.match(ui,/origenTipo="compromiso"/);
  assert.match(ui,/detalleId=\{x\.id\}/);
  assert.match(ui,/Adjuntos de esta subtarea/);
- assert.match(ui,/El compromiso tiene documentos en Google Drive/);
+ assert.match(ui,/gestiones_archivar/);
+ assert.match(ui,/DriveArchivos/);
  assert.doesNotMatch(ui,/async function adjuntarASubtarea/);
  assert.doesNotMatch(ui,/\.from\('compromisos_subtareas_adjuntos'\)/);
  assert.match(ui,/Conecta Google Drive/);
