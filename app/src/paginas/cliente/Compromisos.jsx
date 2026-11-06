@@ -527,6 +527,76 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 <span>{historico.length} avances / observaciones · {documentos.length} documentos</span>
                 {item.referencia_contractual&&<span>Contrato: {item.referencia_contractual}</span>}
               </div>
+              {administrador&&detalle===item.id&&<form className="compromisos-form gestiones-registro-form" onSubmit={registrar}>
+                <div className="gestiones-registro-titulo">
+                 <h3>Registrar {TIPOS_REGISTRO[tipoRegistro]||'avance'}</h3>
+                 <button className="boton boton-texto" type="button" onClick={()=>setDetalle(null)}>Cerrar ×</button>
+                </div>
+                <div className="gestiones-registro-tipos" role="group" aria-label="Tipo de registro">
+                  {Object.entries(TIPOS_REGISTRO).map(([codigo,nombre])=>
+                    <button key={codigo} type="button" aria-pressed={tipoRegistro===codigo}
+                      className={'boton '+(tipoRegistro===codigo?'boton-primario':'boton-secundario')}
+                      onClick={()=>setTipoRegistro(codigo)}>{nombre}</button>)}
+                </div>
+                <label>Descripción de la gestión realizada
+                  <textarea required rows={3} value={texto} onChange={e=>setTexto(e.target.value)}
+                    placeholder="Qué se hizo, cuándo, con quién y cuál fue el resultado"/>
+                </label>
+                <div className="compromisos-grid">
+                 {tipoRegistro==='avance'&&<label>Avance de tareas
+                   <input type="number" min="0" max="100" value={sub.length?porcentajeSubtareas(sub):porcentaje}
+                     disabled={Boolean(sub.length)}
+                     onChange={e=>setPorcentaje(e.target.value)}/>
+                 </label>}
+                 <label>Próxima acción (opcional)
+                   <input maxLength={1000} value={proximaAccionTexto}
+                     onChange={e=>setProximaAccionTexto(e.target.value)}
+                     placeholder="Qué corresponde hacer después"/>
+                 </label>
+                </div>
+                <label>Enlace de evidencia (opcional)
+                  <input type="url" value={evidencia} onChange={e=>setEvidencia(e.target.value)}/>
+                </label>
+                <label>Adjuntar documentos en Google Drive
+                  <input type="file" multiple accept={DRIVE_ACCEPT}
+                    onChange={e=>setArchivos(Array.from(e.target.files||[]))}/>
+                </label>
+                {archivos.length>0&&<p className="micro apagado">{archivos.map(x=>x.name).join(', ')}</p>}
+                <label className="compromisos-check"><input type="checkbox" checked={publicar}
+                  onChange={e=>setPublicar(e.target.checked)}/>
+                  Visible en el portal privado del cliente</label>
+                <button className="boton boton-primario" disabled={guardando}>Guardar registro</button>
+              </form>}
+              {administrador&&editando===item.id&&<form className="compromisos-form" onSubmit={editarCompromiso}>
+                <label>Título<input required value={editForm.titulo} onChange={e=>setEditForm(v=>({...v,titulo:e.target.value}))}/></label>
+                <label>Descripción<textarea value={editForm.descripcion} onChange={e=>setEditForm(v=>({...v,descripcion:e.target.value}))}/></label>
+                <div className="compromisos-grid">
+                  <label>Referencia contractual<input value={editForm.referencia_contractual} onChange={e=>setEditForm(v=>({...v,referencia_contractual:e.target.value}))}/></label>
+                  <label>Responsable<input value={editForm.responsable} onChange={e=>setEditForm(v=>({...v,responsable:e.target.value}))}/></label>
+                  <label>Inicio<input type="date" value={editForm.fecha_inicio} onChange={e=>setEditForm(v=>({...v,fecha_inicio:e.target.value}))}/></label>
+                  <label>Límite<input type="date" value={editForm.fecha_limite} onChange={e=>setEditForm(v=>({...v,fecha_limite:e.target.value}))}/></label>
+                  <label>Próxima acción<input type="date" value={editForm.fecha_proxima_accion} onChange={e=>setEditForm(v=>({...v,fecha_proxima_accion:e.target.value}))}/></label>
+                </div>
+                <div className="compromisos-grid">
+                  <label>Prioridad
+                    <select value={editForm.prioridad} onChange={e=>setEditForm(v=>({...v,prioridad:e.target.value}))}>
+                      {Object.entries(PRIORIDADES).map(([v,t])=><option key={v} value={v}>{t}</option>)}
+                    </select>
+                  </label>
+                  <label>Próxima acción
+                    <input value={editForm.proxima_accion_texto}
+                      onChange={e=>setEditForm(v=>({...v,proxima_accion_texto:e.target.value}))}/>
+                  </label>
+                </div>
+                <label>Resultado documentado
+                  <textarea rows={2} value={editForm.resultado}
+                    onChange={e=>setEditForm(v=>({...v,resultado:e.target.value}))}/>
+                </label>
+                <div className="gestiones-cierre-acciones">
+                 <button className="boton boton-primario" disabled={guardando}>Guardar cambios</button>
+                 <button type="button" className="boton boton-secundario" onClick={()=>setEditando(null)}>Cancelar</button>
+                </div>
+              </form>}
               <MotorAvances valor={progreso} completados={realizados} total={sub.length}
                 etiqueta="Avance de tareas" compacto />
               <section className="compromisos-subtareas-v2" aria-label={'Subtareas de '+item.titulo}>
@@ -642,57 +712,21 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                     onClick={()=>agregarSubtarea(item)}>+ Agregar</button>
                 </div>}
               </section>
-              {administrador&&<details className="compromisos-opciones"><summary>Administrar fechas, etapa y seguimiento</summary><div className="compromisos-cambiar-etapa">
-                <label>Etapa del compromiso
-                  <select value={item.estado} disabled={guardando} aria-label={'Cambiar etapa de '+item.titulo}
-                    onChange={e=>cambiarEstado(item,e.target.value)}>
-                    {Object.entries(NOMBRES).map(([v,t])=><option key={v} value={v} disabled={v==='completado'&&sub.some(s=>!s.completada)}>{t}</option>)}
-                  </select>
-                </label>
-                <label>Próxima acción
-                  <input type="date" value={fechasRapidas[item.id]??item.fecha_proxima_accion??''}
-                    onChange={e=>setFechasRapidas(x=>({...x,[item.id]:e.target.value}))}/>
-                </label>
-                <label>Nota de seguimiento
-                  <input maxLength={2000} placeholder="Motivo o próximo paso"
-                    value={observacionesRapidas[item.id]||''}
-                    onChange={e=>setObservacionesRapidas(x=>({...x,[item.id]:e.target.value}))}/>
-                </label>
-                <button type="button" disabled={guardando} className="boton boton-secundario"
-                  onClick={()=>cambiarEstado(item,item.estado)}>Guardar fecha / seguimiento</button>
-                <button type="button" disabled={guardando} className="boton boton-secundario"
-                  onClick={()=>cambiarEstado(item,item.estado==='en_espera'?'en_curso':'en_espera')}>
-                  {item.estado==='en_espera'?'Reanudar':'Poner en espera'}
-                </button>
-              </div></details>}
               <details id={'documentos-gestion-'+item.id} className="compromisos-adjuntos">
                 <summary>Documentos de la gestión ({documentos.length})</summary>
                 <DriveArchivos key={item.id+'-'+versionDocs} comunidadId={comunidadId}
                   origenTipo="compromiso" origenId={item.id} compacto
                   titulo="Documentos · Google Drive" permitirSubir={administrador} soloVistaCliente={soloVistaCliente} ocultarVacio={!administrador}/>
               </details>
-              {administrador&&<div className="compromisos-acciones">
-                <button type="button" className="boton boton-secundario" disabled={guardando}
-                  onClick={()=>abrirAccion(item,'editar')}>Editar datos y fechas</button>
-                <button type="button" className="boton boton-secundario"
-                  onClick={()=>{setDetalle(detalle===item.id?null:item.id);setPorcentaje(item.avance);setEstado(item.estado);}}>Registrar avance</button>
-                <button type="button" className="boton boton-texto" disabled={guardando}
-                  onClick={()=>visibilidad(item)}>{item.publicado?'Retirar del portal':'Publicar compromiso'}</button>
-                <button type="button" className="boton boton-texto" disabled={guardando}
-                  onClick={()=>eliminarCompromiso(item)}>Eliminar</button>
-              </div>}
-              {administrador&&editando===item.id&&<form className="compromisos-form" onSubmit={editarCompromiso}>
-                <label>Título<input required value={editForm.titulo} onChange={e=>setEditForm(v=>({...v,titulo:e.target.value}))}/></label>
-                <label>Descripción<textarea value={editForm.descripcion} onChange={e=>setEditForm(v=>({...v,descripcion:e.target.value}))}/></label>
-                <div className="compromisos-grid">
-                  <label>Referencia contractual<input value={editForm.referencia_contractual} onChange={e=>setEditForm(v=>({...v,referencia_contractual:e.target.value}))}/></label>
-                  <label>Responsable<input value={editForm.responsable} onChange={e=>setEditForm(v=>({...v,responsable:e.target.value}))}/></label>
-                  <label>Inicio<input type="date" value={editForm.fecha_inicio} onChange={e=>setEditForm(v=>({...v,fecha_inicio:e.target.value}))}/></label>
-                  <label>Límite<input type="date" value={editForm.fecha_limite} onChange={e=>setEditForm(v=>({...v,fecha_limite:e.target.value}))}/></label>
-                  <label>Próxima acción<input type="date" value={editForm.fecha_proxima_accion} onChange={e=>setEditForm(v=>({...v,fecha_proxima_accion:e.target.value}))}/></label>
+              {administrador&&<details className="gestiones-mas-opciones">
+                <summary>••• Más opciones</summary>
+                <div className="gestiones-acciones-rapidas">
+                  <button type="button" className="boton boton-texto" disabled={guardando}
+                    onClick={()=>visibilidad(item)}>{item.publicado?'Ocultar al cliente':'Publicar en portal cliente'}</button>
+                  <button type="button" className="boton boton-texto" disabled={guardando}
+                    onClick={()=>eliminarCompromiso(item)}>Eliminar gestión</button>
                 </div>
-                <button className="boton boton-primario" disabled={guardando}>Guardar cambios</button>
-              </form>}
+              </details>}
               <details className="compromisos-historial">
                 <summary>Avances e historial ({historico.length+movimientos.length})</summary>
                 {historico.map(a=><details key={a.id} className="compromisos-avance-item">
@@ -712,24 +746,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 </div>)}
                 {!historico.length&&!movimientos.length&&<p className="micro apagado">Sin movimientos.</p>}
               </details>
-              {administrador&&detalle===item.id&&<form className="compromisos-form" onSubmit={registrar}>
-                <label>Avance realizado<textarea required rows={3} value={texto} onChange={e=>setTexto(e.target.value)}/></label>
-                <div className="compromisos-grid">
-                  <label>Etapa<select value={estado} onChange={e=>setEstado(e.target.value)}>
-                    {Object.entries(NOMBRES).map(([v,t])=><option key={v} value={v}>{t}</option>)}
-                  </select></label>
-                  <label>Porcentaje<input type="number" min="0" max="100" value={sub.length?Math.round(realizados/sub.length*100):porcentaje}
-                    disabled={Boolean(sub.length)} onChange={e=>setPorcentaje(e.target.value)}/></label>
-                </div>
-                <label>Enlace de evidencia (opcional)<input type="url" value={evidencia} onChange={e=>setEvidencia(e.target.value)}/></label>
-                <label>Adjuntar archivos ({driveConectada?'Google Drive: 25 MB':'15 MB'} máximo por archivo)
-                  <input type="file" multiple accept={driveConectada?DRIVE_ACCEPT:'.pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.txt'}
-                    onChange={e=>setArchivos(Array.from(e.target.files||[]))}/></label>
-                {archivos.length>0&&<p className="micro apagado">{archivos.map(x=>x.name).join(', ')}</p>}
-                <label className="compromisos-check"><input type="checkbox" checked={publicar}
-                  onChange={e=>setPublicar(e.target.checked)}/>Publicar este avance al cliente</label>
-                <button className="boton boton-primario" disabled={guardando}>Guardar avance</button>
-              </form>}
+
             </div>
           </Etiqueta>
         })}
