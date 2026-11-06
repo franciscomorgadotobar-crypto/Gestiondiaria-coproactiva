@@ -26,3 +26,19 @@
   .drive-doc-acciones .boton-texto { padding-left: 4px; padding-right: 4px; }
   .drive-acciones .boton { flex: 1 1 100%; }
 }
+
+
+/* Sólo en el detalle de compromisos: filas documentales compactas. */
+.compromisos-wrap .drive-archivos.drive-compacto{padding:8px 10px;margin-top:5px}
+.compromisos-wrap .drive-compacto .drive-archivos-cabecera h3{font-size:14px}
+.compromisos-wrap .drive-compacto .drive-lista{gap:5px;margin-top:6px}
+.compromisos-wrap .drive-compacto .drive-doc{padding:6px 9px;border-radius:8px}
+.compromisos-wrap .drive-compacto .drive-doc-nombre{font-size:13px;line-height:1.35}
+.compromisos-wrap .drive-compacto .drive-doc-meta{margin-top:2px;gap:2px 8px;font-size:11px;line-height:1.35}
+.compromisos-wrap .drive-compacto .drive-doc-acciones{margin-top:3px;gap:2px 5px}
+.compromisos-wrap .drive-compacto .drive-doc-acciones .boton-texto{min-height:32px;padding:3px 5px;font-size:11px}
+.compromisos-wrap .drive-compacto .drive-carga{margin-top:6px}
+@media(max-width:640px){
+ .compromisos-wrap .drive-compacto .drive-doc-acciones .boton-texto{min-height:44px;font-size:12px}
+ .compromisos-wrap .drive-compacto .drive-doc{padding:8px}
+}

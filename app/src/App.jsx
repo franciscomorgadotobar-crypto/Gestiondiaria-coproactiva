@@ -20,7 +20,6 @@ import Ayuda from './paginas/panel/Ayuda';
 import PracticaLevantamiento from './paginas/panel/PracticaLevantamiento';
 import Proveedores from './paginas/panel/Proveedores';
 import SeleccionArea from './paginas/SeleccionArea';
-import CompromisosGeneral from './paginas/panel/CompromisosGeneral';
 import PlantillasCorreo from './paginas/panel/PlantillasCorreo';
 import PanelEscritorio from './componentes/PanelEscritorio';
 import AtrasNativoAndroid from './componentes/AtrasNativoAndroid';
@@ -230,7 +229,7 @@ export default function App() {
           <VistaCliente/>
         </Suspense></Interna>
       } />
-      <Route path="/compromisos" element={<Interna><CompromisosGeneral /></Interna>} />
+      <Route path="/compromisos" element={<Navigate to="/comunidades" replace />} />
       <Route path="/plantillas-correo" element={<Interna><PlantillasCorreo /></Interna>} />
       <Route path="/conocimientos" element={<Interna><Suspense fallback={<p className="cargando">Cargando biblioteca…</p>}><Conocimientos /></Suspense></Interna>} />
       <Route path="/ayuda" element={<Interna><Ayuda /></Interna>} />

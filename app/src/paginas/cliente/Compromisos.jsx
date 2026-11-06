@@ -4,6 +4,8 @@ import './Compromisos.css';
 import DriveArchivos from '../../componentes/DriveArchivos';
 import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '../../lib/drive';
 import {porcentajeSubtareas,resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
+import {ordenarAvances,primerPendienteAvances,estadoVisualAvance} from '../../lib/motorAvances';
+import MotorAvances from '../../componentes/MotorAvances';
 
 const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
@@ -298,7 +300,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     : !compromisos.length ? <div className="portal-vacio">No hay compromisos registrados para esta comunidad.</div>
     : <div className="compromisos-lista">
         {compromisos.map((item,indice)=>{
-          const sub=subtareas.filter(x=>x.compromiso_id===item.id);
+          const sub=ordenarAvances(subtareas.filter(x=>x.compromiso_id===item.id));
+          const primeraPendiente=primerPendienteAvances(sub, x=>Boolean(x.completada));
           const realizados=sub.filter(x=>x.completada).length;
           const progreso=sub.length?porcentajeSubtareas(sub):item.avance;
           const historico=avances.filter(x=>x.compromiso_id===item.id);
@@ -341,21 +344,25 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 <span>Cierre: {fecha(item.fecha_cierre)}</span>
                 {item.referencia_contractual&&<span>Contrato: {item.referencia_contractual}</span>}
               </div>
-              <div className="compromisos-progreso" role="progressbar" aria-label="Avance del compromiso"
-                aria-valuenow={progreso} aria-valuemin={0} aria-valuemax={100}><div style={{width:progreso+'%'}}/></div>
+              <MotorAvances valor={progreso} completados={realizados} total={sub.length}
+                etiqueta="Avance del compromiso" compacto />
               <section className="compromisos-subtareas-v2" aria-label={'Subtareas de '+item.titulo}>
                 <div className="compromisos-subtareas-cabecera">
                   <div><h3>Subtareas</h3>
-                    <p>Cierra cada tarea con el check. El avance del compromiso se calcula automáticamente.</p>
+                    <p>Checklist en orden de ejecución. Marca para cerrar; los avances parciales se calculan automáticamente.</p>
                   </div>
-                  <strong>{realizados}/{sub.length} · {progreso}%</strong>
                 </div>
                 {sub.length===0&&<p className="compromisos-subtareas-vacio">
                   Sin subtareas. Agrega las actividades necesarias para medir el avance de este compromiso.
                 </p>}
-                {sub.map(x=>{
-                  return <div className={'compromisos-subtarea-card'+(x.completada?' esta-completa':'')} key={x.id}>
+                {sub.map((x,indiceSub)=>{
+                  const estadoVisual=estadoVisualAvance({completada:x.completada,avance:x.avance});
+                  const esSiguiente=indiceSub===primeraPendiente;
+                  return <div className={'compromisos-subtarea-card motor-avances-fila motor-avances-fila--'+estadoVisual
+                    +(esSiguiente?' motor-avances-fila--siguiente':'')
+                    +(x.completada?' esta-completa':'')} key={x.id}>
                     <div className="compromisos-subtarea-principal">
+                      <span className="motor-avances-numero" aria-label={'Paso '+(indiceSub+1)}>{indiceSub+1}</span>
                       {tituloEnEdicion?.tipo==='subtarea'&&tituloEnEdicion.id===x.id?
                         <form className="compromisos-edicion-titulo-form" onSubmit={guardarTituloDirecto}>
                           <label htmlFor={'titulo-subtarea-'+x.id}>Título de la subtarea</label>
@@ -381,8 +388,10 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                             Editar título
                           </button>}
                         </>}
+                      {esSiguiente&&<span className="motor-avances-siguiente">Siguiente</span>}
                       <strong className="compromisos-subtarea-porcentaje">{x.completada?100:(x.avance||0)}%</strong>
                     </div>
+                    <div className="compromisos-subtarea-herramientas">
                     {administrador&&!x.completada&&<label className="compromisos-subtarea-progreso">
                       <span>Avance parcial</span>
                       <select value={x.avance||0} disabled={guardando}
@@ -392,7 +401,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                       </select>
                     </label>}
                     <details className="compromisos-subtarea-drive">
-                      <summary>Adjuntos de esta subtarea · Google Drive</summary>
+                      <summary aria-label={'Adjuntos de esta subtarea: '+x.titulo}>Adjuntos · Google Drive</summary>
                       <DriveArchivos comunidadId={comunidadId} origenTipo="compromiso"
                         origenId={item.id} detalleId={x.id} compacto
                         titulo={'Evidencias · '+x.titulo} permitirSubir={administrador}
@@ -400,7 +409,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                         ayuda="Los archivos se guardan en la carpeta de este compromiso en Google Drive y quedan asociados a la subtarea."/>
                     </details>
                     {administrador&&<button type="button" className="compromisos-subtarea-eliminar"
-                      disabled={guardando} onClick={()=>eliminarSubtarea(item,x)}>Eliminar subtarea</button>}
+                      disabled={guardando} onClick={()=>eliminarSubtarea(item,x)}>Eliminar</button>}
+                    </div>
                   </div>;
                 })}
                 {administrador&&<div className="compromisos-subagregar">

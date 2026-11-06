@@ -208,13 +208,13 @@ export default function Inicio() {
         )}
 
         {avanceCompromisos&&avanceCompromisos.total>0&&
-          <Link className="inicio-avance-compromisos" to="/compromisos">
+          <Link className="inicio-avance-compromisos" to="/comunidades">
             <span><strong>Compromisos y avances</strong>
               <small>{avanceCompromisos.abiertos} por resolver · {avanceCompromisos.completados} terminados</small>
             </span>
             <strong>{avanceCompromisos.porcentaje}% de avance global</strong>
           </Link>}
-        <nav className="accesos-inicio" aria-label="Accesos del módulo Levantamientos">
+        <nav className="accesos-inicio" aria-label="Accesos del módulo Operaciones">
           <Link to="/comunidades" className="acceso acceso-principal">
             <span>Comunidades</span>
             <span aria-hidden="true">›</span>
@@ -227,10 +227,6 @@ export default function Inicio() {
               </Link>
             </>
           )}
-          <Link to="/compromisos" className="acceso">
-            <span>Compromisos y avances</span>
-            <span aria-hidden="true">›</span>
-          </Link>
           <Link to="/bitacora" className="acceso">
             <span>Bitácora</span>
             <span aria-hidden="true">›</span>

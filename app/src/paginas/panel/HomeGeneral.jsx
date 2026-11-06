@@ -92,7 +92,6 @@ export default function HomeGeneral() {
       area:'operacion', mostrar:true, enlaces:[
         ['Levantamientos','/inicio','Pendientes y realizados por persona'],
         ['Comunidades','/comunidades','Fichas, compromisos y documentos'],
-        ['Compromisos y avances','/compromisos','Etapas, fechas y responsables por comunidad'],
         ['Mantenciones','/mantenciones','Planificación y seguimiento'],
         ['Bitácora','/bitacora','Incidencias y observaciones'],
         ['Mapa','/mapa','Ubicaciones y visitas'],
@@ -170,10 +169,10 @@ export default function HomeGeneral() {
           <strong>{resumen.prospectos ?? '-'}</strong><span>Prospectos</span>
           <small>Ir al Pipeline ›</small>
         </Link>}
-        {comercial && <Link to="/compromisos" onClick={() => guardarArea('operacion')}>
+        {comercial && <Link to="/comunidades" onClick={() => guardarArea('operacion')}>
           <strong>{resumen.compromisos ?? '-'}</strong><span>Compromisos abiertos</span>
           <small>{resumen.avanceCompromisos==null?'Avance no disponible':resumen.avanceCompromisos+'% de avance global'}</small>
-          <small>Ver seguimiento ›</small>
+          <small>Ver comunidades ›</small>
         </Link>}
         <Link to="/inicio" onClick={() => guardarArea('operacion')}>
           <strong>{resumen.pendientes ?? '-'}</strong><span>Levantamientos pendientes</span>

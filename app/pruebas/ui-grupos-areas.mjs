@@ -119,7 +119,7 @@ try {
   {
     const {ctx,page}=await crear({rol:'jefatura'});
     const titulos=await page.locator('.seleccion-home__titulo').allInnerTexts();
-    assert.deepEqual(titulos,['Gestión comercial','Gestor documental','Levantamientos','Arriendos y ventas','Base de conocimientos']);
+    assert.deepEqual(titulos,['Gestión comercial','Gestor documental','Operaciones','Arriendos y ventas','Base de conocimientos']);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Configuración/}).count(),0);
     await page.getByRole('button',{name:/Gestión comercial/}).click();
@@ -132,9 +132,9 @@ try {
     const {ctx,page}=await crear({ancho:1280,alto:850});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),11);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
-    await page.getByRole('button',{name:/Levantamientos/}).click();
+    await page.getByRole('button',{name:/Operaciones/}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
-    console.log('Escritorio · acceso al módulo Levantamientos: OK');
+    console.log('Escritorio · acceso al módulo Operaciones: OK');
     await ctx.close();
   }
 } finally {

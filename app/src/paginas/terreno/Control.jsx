@@ -17,6 +17,8 @@ import { useVolverGlobal } from '../../lib/navegacion';
 import DialogoCampos from '../../componentes/DialogoCampos';
 import DriveArchivos from '../../componentes/DriveArchivos';
 import Campana from '../../componentes/Campana';
+import MotorAvances from '../../componentes/MotorAvances';
+import {agruparAvances,ordenarAvances,resumenAvances,primerPendienteAvances,bloqueadoPorSecuencia} from '../../lib/motorAvances';
 
 const ESTADOS = [
   ['cumple', 'Conforme'],
@@ -112,7 +114,7 @@ export default function Levantamiento() {
         setControl(c);
         if (c.checkin_excepcion) setExcepcionCheckIn(c.checkin_excepcion);
       }
-      if (i.length) setItems(i.sort(orden));
+      if (i.length) setItems(ordenarAvances(i));
       setFotos(f);
 
       if (!hayConexion()) {
@@ -162,7 +164,7 @@ export default function Levantamiento() {
       if (ri.data) {
         await fusionarItems(id, ri.data);
         const frescos = await leerItems(id);
-        if (vigente) setItems(frescos.sort(orden));
+        if (vigente) setItems(ordenarAvances(frescos));
       }
 
       /* Las fotos que este teléfono no tomó no están en su IndexedDB: viven
@@ -207,8 +209,6 @@ export default function Levantamiento() {
     return () => { vigente = false; };
   }, [id]);
 
-  const orden = (a, b) => (a.orden ?? 0) - (b.orden ?? 0);
-
   const fotosDe = itemId => fotos
     .filter(f => f.control_item_id === itemId && f.clase !== 'firma')
     .sort((a, b) => a.orden - b.orden);
@@ -226,29 +226,23 @@ export default function Levantamiento() {
    * Depende también de `fotos`: un punto tipo foto cambia de evaluado a no
    * evaluado según haya o no una fotografía, y sin esa dependencia el avance
    * no se movía al sacar la foto hasta que algo más disparara el recálculo. */
-  const categorias = useMemo(() => {
-    const m = new Map();
-    for (const it of items) {
-      if (!m.has(it.grupo)) m.set(it.grupo, []);
-      m.get(it.grupo).push(it);
-    }
-    return [...m.entries()].map(([nombre, lista]) => ({
-      nombre,
-      items: lista,
-      evaluados: lista.filter(i => respondido(i, tieneFoto)).length,
-      criticos: lista.filter(i => i.estado === 'critico').length
-    }));
-  }, [items, fotos]);
+  const categorias = useMemo(() => agruparAvances(items, {
+    grupo: i => i.grupo,
+    completado: i => respondido(i, tieneFoto),
+    critico: i => i.estado === 'critico'
+  }), [items, fotos]);
 
-  const evaluados = items.filter(i => respondido(i, tieneFoto)).length;
-  const pct = items.length ? Math.round((evaluados / items.length) * 100) : 0;
+  const {completados: evaluados, porcentaje: pct} = resumenAvances(items, {
+    completado: i => respondido(i, tieneFoto),
+    avance: () => 0
+  });
 
   /* Con la plantilla en modo secuencial no basta con impedir saltar puntos
    * dentro de una categoría: hay que impedir abrir una categoría posterior
    * mientras quede algo pendiente en una anterior. Esta es esa primera
    * categoría con algo por responder -o -1 si ya está todo evaluado-. */
   const primeraCategoriaPendiente = useMemo(
-    () => categorias.findIndex(cat => cat.evaluados < cat.items.length),
+    () => primerPendienteAvances(categorias, cat => cat.evaluados === cat.items.length),
     [categorias]
   );
 
@@ -791,13 +785,8 @@ export default function Levantamiento() {
 
         {items.length > 0 && (
           <>
-            <div className="fila" style={{ marginBottom: 5 }}>
-              <span className="etiqueta-campo crece" style={{ margin: 0 }}>Avance</span>
-              <span className="etiqueta-campo" style={{ margin: 0, color: 'var(--texto-titulo)' }}>
-                {evaluados} de {items.length}
-              </span>
-            </div>
-            <div className="barra"><div style={{ width: pct + '%' }} /></div>
+            <MotorAvances valor={pct} completados={evaluados}
+              total={items.length} etiqueta="Avance del levantamiento" />
           </>
         )}
       </header>
@@ -815,9 +804,10 @@ export default function Levantamiento() {
           const desplegada = abierta === cat.nombre;
           // Bloqueada: hay una categoría anterior sin terminar y la plantilla
           // exige orden. Volver a una ya vista para corregirla sigue libre.
-          const bloqueada = control.secuencial
-            && primeraCategoriaPendiente !== -1
-            && indiceCategoria > primeraCategoriaPendiente;
+          const bloqueada = bloqueadoPorSecuencia({
+            secuencial: control.secuencial, indice: indiceCategoria,
+            primerPendiente: primeraCategoriaPendiente
+          });
           const enPregunta = desplegada && paso !== null;
           const completa = cat.evaluados === cat.items.length;
           return (
@@ -862,11 +852,12 @@ export default function Levantamiento() {
               {desplegada && paso === null && (
                 <ol className="indice-preguntas" aria-label={`Preguntas de ${cat.nombre}`}>
                   {(() => {
-                    const primerPendiente = cat.items.findIndex(it => !respondido(it, tieneFoto));
+                    const primerPendiente = primerPendienteAvances(cat.items, it => respondido(it, tieneFoto));
                     return cat.items.map((it, i) => {
                       const hecho = respondido(it, tieneFoto);
-                      const bloqueado = control.secuencial
-                        && primerPendiente !== -1 && i > primerPendiente;
+                      const bloqueado = bloqueadoPorSecuencia({
+                        secuencial: control.secuencial, indice: i, primerPendiente
+                      });
                       return (
                         <li key={it.id}>
                           <button
@@ -939,10 +930,11 @@ export default function Levantamiento() {
                       </span>
                       <div className="marcadores">
                         {(() => {
-                          const primerPendiente = cat.items.findIndex(it => !respondido(it, tieneFoto));
+                          const primerPendiente = primerPendienteAvances(cat.items, it => respondido(it, tieneFoto));
                           return cat.items.map((it, i) => {
-                            const bloqueado = control.secuencial
-                              && primerPendiente !== -1 && i > primerPendiente;
+                            const bloqueado = bloqueadoPorSecuencia({
+                              secuencial: control.secuencial, indice: i, primerPendiente
+                            });
                             return (
                               <button key={it.id} type="button"
                                       className={
