@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {porcentajeSubtareas,resumenGlobalCompromisos} from '../src/lib/progresoCompromisos.js';
 const leer=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const sql=leer('../supabase/migrations/202611020002_compromisos_subtareas_progreso_adjuntos.sql');
+const v1=leer('../supabase/migrations/202611060001_gestiones_y_avances.sql');
 const ui=leer('src/paginas/cliente/Compromisos.jsx');
 const css=leer('src/paginas/cliente/Compromisos.css');
 const inicio=leer('src/paginas/panel/Inicio.jsx');
@@ -24,16 +25,16 @@ test('Global: compromisos sin subtareas mantienen progreso histórico',()=>{
  assert.deepEqual(r,{total:3,completados:1,abiertos:2,porcentaje:50});
  assert.equal(resumenGlobalCompromisos([]).porcentaje,0);
 });
-test('Estado se calcula en Postgres desde subtareas en vez de escribir porcentaje desde React',()=>{
+test('Motor mantiene porcentaje de subtareas y no cierra gestiones automáticamente',()=>{
  assert.match(sql,/after insert or update of avance,completada,compromiso_id or delete/);
  assert.match(sql,/coalesce\(round\(avg\(avance\)\),0\)/);
- assert.match(sql,/v_total>0 and v_cerradas=v_total then v_estado='completado'/);
- assert.match(sql,/elsif v_actual.estado='completado' then v_estado='en_curso'/);
- assert.match(sql,/v_porcentaje>0 and v_actual.estado='pendiente'/);
- assert.match(sql,/compromisos_transiciones/);
+ assert.match(v1,/create or replace function public.compromisos_recalcular_desde_subtareas/);
+ assert.match(v1,/if v_total=0 then return/);
+ assert.match(v1,/avance=v_porcentaje, actualizado_en=now/);
+ assert.doesNotMatch(v1,/v_cerradas=v_total then v_estado='completado'/);
  assert.match(ui,/\.update\(\{completada,avance:completada\?100:0\}\)/);
  assert.match(ui,/\.update\(\{avance:Math\.min\(90/);
- assert.match(ui,/if\(!subt\.length\)/);
+ assert.match(ui,/tipoRegistro==='avance'&&!subt.length/);
  assert.doesNotMatch(ui,/Math\.round\(items\.filter\(s=>s\.completada\)\.length/);
 });
 test('La subtarea se cierra solo mediante check, progreso parcial sin teclear',()=>{
@@ -56,9 +57,9 @@ test('Adjuntos de subtarea se guardan en Google Drive con origen y detalle',()=>
 test('Tableros muestran avance global sin confundir levantamientos con compromisos',()=>{
  assert.doesNotMatch(inicio,/inicio-avance-compromisos|avanceCompromisos|compromisos_administracion/);
  assert.match(inicio,/Levantamientos pendientes/);
- assert.match(general,/Avance global de compromisos/);
+ assert.match(general,/Avance global de gestiones/);
  assert.match(general,/global\.porcentaje/);
- assert.match(ui,/resumenGlobalCompromisos\(compromisos\)/);
+ assert.match(ui,/resumenGestiones\(compromisos\)/);
 });
 
 test('Checks enviados por versiones antiguas de la PWA siguen funcionando',()=>{
