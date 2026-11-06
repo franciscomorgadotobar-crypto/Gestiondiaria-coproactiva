@@ -104,17 +104,17 @@ export default function HomeGeneral() {
     {id:'finanzas', nombre:'Finanzas', descripcion:'Gestión contable y financiera.',
       area:'finanzas', mostrar:administracion,
       enlaces:[['Gestión contable','/contabilidad','Asientos, libro mayor y estados financieros']]},
-    {id:'general', nombre:'Mi espacio', descripcion:'Avisos, información y cuenta personal.',
+    {id:'general', nombre:'Mi espacio', descripcion:'Avisos y aprendizaje.',
       area:null, mostrar:true, enlaces:[
         ['Notificaciones','/notificaciones','Avisos pendientes'],
-        ['Mi cuenta','/mi-cuenta','Perfil y preferencias'],
         ['Aprendizaje','/conocimientos','Guías y normativas']
       ]},
     // Configuración debe quedar siempre al final, también en vista cuadrícula.
-    {id:'administracion', nombre:'Administración y ajustes',
-      descripcion:'Equipo, usuarios, permisos, accesos de clientes y configuración general.',
-      area:null, mostrar:administracion, enlaces:[
-        ['Equipo y permisos','/equipo','Usuarios y accesos internos'],
+    {id:'administracion', nombre:'Configuración',
+      descripcion:administracion ? 'Mi cuenta, equipo y permisos.' : 'Mi cuenta y preferencias.',
+      area:null, mostrar:true, enlaces:[
+        ['Mi cuenta','/mi-cuenta','Perfil y preferencias'],
+        ...(administracion ? [['Equipo y permisos','/equipo','Usuarios y accesos internos']] : []),
         ...(superadmin ? [['Clientes y accesos','/clientes','Permisos del portal cliente']] : []),
         ['Configuración general','/configuracion','Ajustes de la aplicación']
       ]}

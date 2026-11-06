@@ -64,7 +64,8 @@ export function modulosDisponibles(perfil) {
       ruta:'/vista-cliente', area:'operacion', visible:administracion },
     // Ajustes y configuración siempre al final del catálogo y navegación plana.
     { id:'configuracion', titulo:'Configuración', etiqueta:'AJUSTES',
-      descripcion:'Equipo y clientes.', ruta:'/configuracion', area:null, visible:administracion }
+      descripcion:administracion ? 'Mi cuenta, equipo y permisos.' : 'Mi cuenta y preferencias personales.',
+      ruta:'/configuracion', area:null, visible:true }
 
   ];
   return destinos.filter(d => d.visible).map(({visible, ...d}) => d);

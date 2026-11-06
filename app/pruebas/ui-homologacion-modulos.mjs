@@ -32,7 +32,7 @@ const areas=[
  {grupo:'Operaciones',ruta:'/whatsapp',heading:/WhatsApp/,slug:'whatsapp'},
  {grupo:'Finanzas',ruta:'/contabilidad',heading:/Contabilidad/,slug:'contabilidad'},
  {grupo:'Comercial',ruta:'/seo',heading:/SEO y Analítica/,slug:'seo'},
- {grupo:'Administración y ajustes',ruta:'/configuracion',heading:/Administración y ajustes/,slug:'configuracion'}
+ {grupo:'Configuración',ruta:'/configuracion',heading:/Configuración/,slug:'configuracion'}
 ];
 
 async function abrirSeccion(page,ruta,etiqueta) {

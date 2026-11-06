@@ -1,4 +1,4 @@
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSesion } from '../../lib/sesion';
 import { inicioSegunArea } from '../../lib/area';
 import { useVolverGlobal, volverPorJerarquia } from '../../lib/navegacion';
@@ -14,9 +14,6 @@ export default function Configuracion() {
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
 
-  // Sin nada que configurar (jefatura, terreno), la página quedaba vacía.
-  if (perfil && !esAdministracion) return <Navigate to={inicioSegunArea()} replace />;
-
   return (
     <div className="pantalla modulo-unificado">
       <header className="encabezado modulo-cabecera">
@@ -26,9 +23,9 @@ export default function Configuracion() {
             ‹ Inicio
           </button>
         </div>
-        <h1 className="h3">Administración y ajustes</h1>
+        <h1 className="h3">Configuración</h1>
         <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-          Equipo, usuarios, permisos, accesos de clientes y configuración general.
+          Datos personales y preferencias de cuenta{esAdministracion ? ', equipo y permisos de acceso.' : '.'}
         </p>
       </header>
 

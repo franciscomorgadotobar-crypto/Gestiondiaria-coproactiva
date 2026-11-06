@@ -115,56 +115,39 @@ try {
     await ctx.close();
   }
 
-  // Operaciones: «Más» no duplica módulos ni botones del Home.
-  // El mapa, las tarjetas y la barra deben quedar totalmente bloqueados.
+  // Operaciones: la barra de cuatro accesos termina en Notificaciones,
+  // sin un quinto botón «Más» ni un diálogo sobre el mapa.
   {
     const {ctx,page}=await crear({ancho:390,alto:844});
     await page.getByRole('button',{name:/Operaciones/}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
-    const diagnostico=await page.evaluate(()=>{
-      const boton=document.querySelector('.barra-inferior-movil button:last-child');
-      const barra=document.querySelector('.barra-inferior-movil');
-      const box=boton.getBoundingClientRect();
-      const x=box.left+box.width/2,y=box.top+box.height/2;
-      const css=getComputedStyle(barra);
-      return {x,y,rect:{top:box.top,bottom:box.bottom,left:box.left,right:box.right},
-        viewport:{w:innerWidth,h:innerHeight},inert:document.getElementById('raiz').inert,
-        overflow:document.body.style.overflow,barraZ:css.zIndex,
-        elements:document.elementsFromPoint(x,y).slice(0,7).map(e=>e.tagName+'#'+e.id+'.'+String(e.className).slice(0,40))};
-    });
-    console.log('DIAGNÓSTICO MÁS OPERACIONES',JSON.stringify(diagnostico));
-    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click({timeout:5500});
-    const modal=page.getByRole('dialog',{name:'Más opciones'});
-    await modal.waitFor();
-    // Simula una capa de Leaflet alta después de abrir: no debe tapar el modal.
-    await page.evaluate(()=>{
-      const capa=document.createElement('div');
-      capa.id='mapa-capa-qa';
-      capa.className='leaflet-pane';
-      capa.style.cssText='position:fixed;inset:0;z-index:999999;pointer-events:none';
-      document.getElementById('raiz').append(capa);
-    });
-    assert.deepEqual(await modal.locator('.menu-mas-enlaces>a,.menu-mas-enlaces>button').allTextContents(),
-      ['Mi cuenta ›'],'Operaciones debe mostrar solo acceso a cuenta');
-    assert.equal(await page.locator('body > .menu-mas-fondo').count(),1,
-      'El diálogo debe salir del contenedor de la aplicación y del mapa');
-    const fondo=await page.evaluate(()=>{
-      const raiz=document.getElementById('raiz');
-      const capa=document.querySelector('.menu-mas-fondo');
-      const estilo=getComputedStyle(capa);
-      return {inerte:raiz.inert,overflowBody:document.body.style.overflow,
-        overflowHtml:document.documentElement.style.overflow,
-        zIndex:Number(estilo.zIndex),
-        cubreMapa:Boolean(document.elementFromPoint(10,150)?.closest('.menu-mas-fondo'))};
-    });
-    assert.deepEqual(fondo,{inerte:true,overflowBody:'hidden',overflowHtml:'hidden',
-      zIndex:2147483000,cubreMapa:true},'El fondo debe quedar bloqueado encima de Leaflet');
-    await modal.getByRole('button',{name:'Cerrar menú'}).click();
-    await modal.waitFor({state:'detached'});
-    assert.equal(await page.evaluate(()=>document.getElementById('raiz').inert),false);
-    assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
-    assert.equal(await page.evaluate(()=>document.documentElement.style.overflow),'');
-    console.log('Operaciones · menú Más sin duplicados y mapa bloqueado: OK');
+    const barra=page.locator('.barra-inferior-movil');
+    assert.deepEqual(await barra.locator('button').allTextContents(),
+      ['Inicio','Comunidades','Levantamientos','Notificaciones']);
+    assert.equal(await barra.getByRole('button',{name:'Más'}).count(),0);
+    assert.equal(await page.getByRole('dialog',{name:'Más opciones'}).count(),0);
+    assert.equal(await barra.evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length),4);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+    await barra.getByRole('button',{name:'Comunidades'}).click();
+    await page.waitForURL(u=>u.pathname==='/comunidades',{timeout:15000});
+    await barra.getByRole('button',{name:'Inicio'}).click();
+    await page.waitForURL(u=>u.pathname==='/inicio',{timeout:15000});
+    console.log('Operaciones · cuatro accesos sin Más, sin mapa bloqueado: OK');
+    await ctx.close();
+  }
+
+  // Mi cuenta vive en Configuración, sin un menú Más duplicado.
+  {
+    const {ctx,page}=await crear({ancho:390,alto:844});
+    await page.getByRole('button',{name:/Configuración/}).click();
+    await page.waitForURL(u=>u.pathname==='/configuracion',{timeout:20000});
+    await page.getByRole('heading',{name:'Configuración'}).waitFor();
+    const barra=page.locator('.barra-inferior-movil');
+    assert.equal(await barra.getByRole('button',{name:'Más'}).count(),0);
+    await barra.getByRole('button',{name:'Mi cuenta'}).click();
+    await page.waitForURL(u=>u.pathname==='/mi-cuenta',{timeout:15000});
+    assert.equal(await barra.getByRole('button',{name:'Más'}).count(),0);
+    console.log('Configuración · Mi cuenta accesible sin Más: OK');
     await ctx.close();
   }
 
@@ -172,9 +155,15 @@ try {
   {
     const {ctx,page}=await crear({rol:'jefatura'});
     const titulos=await page.locator('.seleccion-home__titulo').allInnerTexts();
-    assert.deepEqual(titulos,['Gestión comercial','Gestor documental','Operaciones','Arriendos y ventas','Base de conocimientos']);
+    assert.deepEqual(titulos,['Gestión comercial','Gestor documental','Operaciones','Arriendos y ventas','Base de conocimientos','Configuración']);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
-    assert.equal(await page.getByRole('button',{name:/Configuración/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Configuración/}).count(),1);
+    await page.getByRole('button',{name:/Configuración/}).click();
+    await page.waitForURL(u=>u.pathname==='/configuracion',{timeout:15000});
+    assert.equal(await page.getByRole('link',{name:/Mi cuenta/}).count()>0,true);
+    assert.equal(await page.getByRole('link',{name:/Equipo y permisos/}).count(),0);
+    await page.evaluate(()=>history.back());
+    await page.waitForURL(u=>u.pathname==='/',{timeout:15000});
     await page.getByRole('button',{name:/Gestión comercial/}).click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
     console.log('Jefatura · catálogo filtrado y navegación al Pipeline: OK');

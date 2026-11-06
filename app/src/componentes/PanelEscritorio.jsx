@@ -57,7 +57,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // El diálogo «Más» se comporta igual en Comercial, Operaciones, Finanzas
   // y Configuración: foco inicial, Escape y tabulación confinada al diálogo.
   useEffect(() => {
-    if (!masAbierto) return undefined;
+    // Operaciones y Configuración no tienen menú «Más», incluso si
+    // alguna pestaña histórica conserva un estado anterior.
+    const grupoActual = grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion';
+    if (!masAbierto || grupoActual === 'operacion' || grupoActual === 'configuracion') return undefined;
     // El menú se monta fuera de la aplicación y bloquea la interacción
     // con el mapa Leaflet, los chips y la navegación inferior.
     const raizAplicacion = document.getElementById('raiz');
@@ -96,7 +99,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       document.documentElement.style.overflow = scrollHtmlAnterior;
       botonMasRef.current?.focus({ preventScroll: true });
     };
-  }, [masAbierto, navegar]);
+  }, [masAbierto, navegar, pathname]);
   function setMasAbierto(proximo, { alNavegar = false } = {}) {
     const abrir = typeof proximo === 'function' ? proximo(masAbierto) : proximo;
     if (abrir === masAbierto) return;
@@ -167,7 +170,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // reconoce solo por la ruta.
   let grupo = esCliente ? null : (pathname.startsWith('/conocimientos') ? 'aprendizaje' : (grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion'));
   if (grupo === 'comercial' && !puedeConfigurar) grupo = 'operacion';
-  if ((grupo === 'finanzas' || grupo === 'configuracion') && !esAdministracion) grupo = 'operacion';
+  if (grupo === 'finanzas' && !esAdministracion) grupo = 'operacion';
   const enConfiguracion = grupo === 'configuracion';
   const enComercial = grupo === 'comercial';
   const enFinanzas = grupo === 'finanzas';
@@ -182,7 +185,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     || (pathname === '/inicio' && hash === '#por-hacer');
 
   const nombreArea = esCliente ? null
-    : enConfiguracion ? 'Administración y ajustes'
+    : enConfiguracion ? 'Configuración'
     : enComercial ? 'Comercial'
     : enFinanzas ? 'Finanzas'
     : enAprendizaje ? 'Aprendizaje'
@@ -209,7 +212,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       ] : [{ ruta: '/portal', etiqueta: 'Mis comunidades', mostrar: true }])
     : enConfiguracion
     ? [
-        { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: true },
+        { ruta: '/mi-cuenta', etiqueta: 'Mi cuenta', mostrar: true },
+        { ruta: '/equipo', etiqueta: 'Equipo y permisos', mostrar: esAdministracion },
         { ruta: '/clientes', etiqueta: 'Clientes y accesos', mostrar: esSuperadmin }
       ]
     : enFinanzas
@@ -284,6 +288,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (tipo === 'conta-reportes') return <svg {...comun}><path d="M4 19V5M4 19h17M7 15l4-4 3 2 6-7"/></svg>;
     if (tipo === 'conta-plan') return <svg {...comun}><path d="M6 4v16M6 8h6M6 14h6"/><rect x="12" y="5.5" width="8" height="5" rx="1"/><rect x="12" y="11.5" width="8" height="5" rx="1"/></svg>;
     if (tipo === 'conta-entidades') return <svg {...comun}><path d="M4 20h16"/><path d="M6 20V7h12v13"/><path d="M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>;
+    if (tipo === 'mi-cuenta') return <svg {...comun}><circle cx="12" cy="8" r="4"/><path d="M4.5 21c0-4.5 3-7 7.5-7s7.5 2.5 7.5 7"/></svg>;
     if (tipo === 'conta-configuracion' || tipo === 'ajustes') return <svg {...comun}><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>;
     if (tipo === 'equipo') return <svg {...comun}><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1"/></svg>;
     if (tipo === 'clientes') return <svg {...comun}><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg>;
@@ -346,8 +351,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'conta-configuracion', etiqueta: 'Configuración', ruta: '/contabilidad/configuracion' }
   ];
   const opcionesConfiguracion = [
-    { id: 'ajustes', etiqueta: 'Ajustes', ruta: '/configuracion' },
-    { id: 'equipo', etiqueta: 'Equipo', ruta: '/equipo' },
+    { id: 'ajustes', etiqueta: 'Configuración', ruta: '/configuracion' },
+    { id: 'mi-cuenta', etiqueta: 'Mi cuenta', ruta: '/mi-cuenta' },
+    { id: 'equipo', etiqueta: 'Equipo', ruta: '/equipo', mostrar: esAdministracion },
     { id: 'clientes', etiqueta: 'Clientes', ruta: '/clientes', mostrar: esSuperadmin }
   ].filter(x => x.mostrar !== false);
 
@@ -373,6 +379,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const menuMasOperacion = enOperacion ? [] : opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
   const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enAprendizaje;
+  // Operaciones se navega por cuatro accesos; Configuración contiene Mi cuenta.
+  // «Más» permanece solo en áreas con navegación secundaria real.
+  const mostrarMasMovil = mostrarBarraMovil && !enOperacion && !enConfiguracion;
 
   function itemMovilActivo(item) {
     if (item.id === 'buscar-conocimientos') return buscarAprendizaje;
@@ -625,7 +634,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
       {mostrarBarraMovil && (
         <>
-          <nav className={'barra-inferior-movil' + (enAprendizaje ? ' barra-inferior-aprendizaje' : '')} aria-label="Navegación principal">
+          <nav className={'barra-inferior-movil' + (enAprendizaje ? ' barra-inferior-aprendizaje' : '')}
+               style={{ '--columnas-nav-movil': mostrarMasMovil ? 5 : barraMovil.length }}
+               aria-label="Navegación principal">
             {barraMovil.map(item => (
               <button
                 key={item.id}
@@ -644,7 +655,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               </button>
             ))}
 
-            <button type="button" ref={botonMasRef}
+            {mostrarMasMovil && <button type="button" ref={botonMasRef}
                     className={'nav-movil-item' + (masAbierto ? ' activo' : '')}
                     onClick={() => setMasAbierto(v => !v)}
                     aria-haspopup="dialog"
@@ -656,10 +667,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 )}
               </span>
               <span>Más</span>
-            </button>
+            </button>}
           </nav>
 
-          {masAbierto && createPortal(
+          {mostrarMasMovil && masAbierto && createPortal(
             <div className="menu-mas-fondo" role="presentation" onClick={() => setMasAbierto(false)}>
               <div className="menu-mas" role="dialog" aria-modal="true" aria-label="Más opciones"
                    onClick={e => e.stopPropagation()}>
