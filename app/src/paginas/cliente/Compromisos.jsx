@@ -167,7 +167,9 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    titulo:editForm.titulo.trim(),descripcion:editForm.descripcion,
    referencia_contractual:editForm.referencia_contractual,
    responsable:editForm.responsable,fecha_limite:editForm.fecha_limite||null,
-   fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null
+   fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null,
+   prioridad:editForm.prioridad||'normal',
+   resultado:editForm.resultado||null,proxima_accion_texto:editForm.proxima_accion_texto||null
   }).eq('id',editando).select('id').single();
   setGuardando(false);
   if(err)setError(err.message);else {setEditando(null);await recargarYNotificar();}
@@ -336,18 +338,28 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   const {error: err} = await supabase.from('compromisos_administracion').update({publicado: !item.publicado}).eq('id', item.id);
   if(err) setError(err.message);else await recargarYNotificar();
  }
- return <section className="compromisos-wrap" aria-label="Compromisos y avances">
-   {!integrado&&<header className="compromisos-cabecera"><h2 className="h4">Compromisos y avances</h2>
-     <p className="chico apagado">Acuerdos, fechas, estado, subtareas y evidencias. Cada ficha se despliega al seleccionarla.</p>
+ const conteos=resumenGestiones(compromisos);
+ const listado=seleccionadoId?compromisos:vistaGestiones(compromisos,vista);
+ return <section className="compromisos-wrap gestiones-wrap" aria-label="Gestiones y avances">
+   {!integrado&&<header className="compromisos-cabecera"><h2 className="h4">Gestiones y avances</h2>
+     <p className="chico apagado">Acciones, resultados y evidencias de administración verificables por comunidad.</p>
    </header>}
    {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
-   {!integrado&&!cargando&&compromisos.length>0&&<div className="compromisos-resumen-global" aria-label="Avance de compromisos">
-     <div><strong>{resumenGlobalCompromisos(compromisos).abiertos}</strong><span>Por resolver</span></div>
-     <div><strong>{resumenGlobalCompromisos(compromisos).completados}</strong><span>Terminados</span></div>
-     <div><strong>{resumenGlobalCompromisos(compromisos).porcentaje}%</strong><span>Avance global</span></div>
+   {!integrado&&<div className="gestiones-pestañas" role="group" aria-label="Filtrar gestiones">
+      <button type="button" className={vista==='activas'?'activo':''} aria-pressed={vista==='activas'}
+        onClick={()=>setVista('activas')}>En seguimiento <strong>{conteos.pendientes+conteos.enProceso}</strong></button>
+      <button type="button" className={vista==='completadas'?'activo':''} aria-pressed={vista==='completadas'}
+        onClick={()=>setVista('completadas')}>Completadas / Historial <strong>{conteos.completadas}</strong></button>
+      <button type="button" className={vista==='todas'?'activo':''} aria-pressed={vista==='todas'}
+        onClick={()=>setVista('todas')}>Todas <strong>{compromisos.length}</strong></button>
+   </div>}
+   {!integrado&&!cargando&&<div className="gestiones-indicadores" aria-label="Estados de gestiones">
+      <span><strong>{conteos.enProceso}</strong> En proceso</span>
+      <span><strong>{conteos.pendientes}</strong> Pendientes</span>
+      <span><strong>{conteos.completadas}</strong> Completadas</span>
    </div>}
    {administrador&&!integrado&&<details className="tarjeta compromisos-crear-desplegable">
-     <summary>+ Nuevo compromiso</summary>
+     <summary>+ Nueva gestión libre</summary>
      <form onSubmit={crear} className="compromisos-form">
        <label>Título<input required maxLength={180} value={nuevo.titulo} onChange={e=>setNuevo({...nuevo,titulo:e.target.value})}/></label>
        <label>Descripción<textarea rows={2} value={nuevo.descripcion} onChange={e=>setNuevo({...nuevo,descripcion:e.target.value})}/></label>
@@ -358,29 +370,28 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
          <label>Fecha comprometida<input type="date" value={nuevo.fecha_limite} onChange={e=>setNuevo({...nuevo,fecha_limite:e.target.value})}/></label>
          <label>Próxima acción<input type="date" value={nuevo.fecha_proxima_accion} onChange={e=>setNuevo({...nuevo,fecha_proxima_accion:e.target.value})}/></label>
        </div>
-       <button className="boton boton-primario" disabled={guardando}>Crear compromiso interno</button>
+       <div className="compromisos-grid">
+         <label>Prioridad
+           <select value={nuevo.prioridad} onChange={e=>setNuevo(v=>({...v,prioridad:e.target.value}))}>
+             {Object.entries(PRIORIDADES).map(([v,t])=><option key={v} value={v}>{t}</option>)}
+           </select>
+         </label>
+         <label>Próxima acción (descripción)<input value={nuevo.proxima_accion_texto}
+           onChange={e=>setNuevo(v=>({...v,proxima_accion_texto:e.target.value}))}/>
+         </label>
+       </div>
+       <button className="boton boton-primario" disabled={guardando}>Crear gestión</button>
      </form>
    </details>}
-   {administrador&&!integrado&&<details className="tarjeta compromisos-crear-desplegable compromisos-repositorio">
-     <summary>Repositorio de compromisos · {repositorioSantaClara.items.length} modelos</summary>
-     <form className="compromisos-form" onSubmit={agregarDesdeRepositorio}>
-       <p className="micro apagado">Catálogo de referencia de Reserva Santa Clara (23-10-2026). Agrega un modelo sin modificar el original ni los compromisos existentes.</p>
-       <label>Modelo del repositorio
-         <select aria-label="Seleccionar compromiso del repositorio" value={modeloSeleccionado}
-           onChange={e=>setModeloSeleccionado(e.target.value)}>
-           <option value="">Seleccionar compromiso…</option>
-           {repositorioSantaClara.items.map(x=><option key={x.codigo} value={x.codigo}>{String(x.orden).padStart(2,'0')}. {x.titulo}</option>)}
-         </select>
-       </label>
-       <button className="boton boton-secundario" type="submit" disabled={guardando||!modeloSeleccionado}>
-         Agregar a esta comunidad
-       </button>
-     </form>
-   </details>}
-   {cargando ? <p className="cargando">Cargando compromisos…</p>
-    : !compromisos.length ? <div className="portal-vacio">No hay compromisos registrados para esta comunidad.</div>
+   {administrador&&!integrado&&<GestionesRepositorio
+     comunidadId={comunidadId} gestiones={compromisos} subtareas={subtareas}
+     onActualizado={recargarYNotificar}/>}
+   {cargando ? <p className="cargando">Cargando gestiones…</p>
+    : !listado.length ? <div className="portal-vacio">
+       {vista==='completadas'?'No hay gestiones completadas.':'No hay gestiones en esta vista.'}
+      </div>
     : <div className="compromisos-lista">
-        {compromisos.map((item,indice)=>{
+        {listado.map((item,indice)=>{
           const sub=ordenarAvances(subtareas.filter(x=>x.compromiso_id===item.id));
           const primeraPendiente=primerPendienteAvances(sub, x=>Boolean(x.completada));
           const realizados=sub.filter(x=>x.completada).length;
