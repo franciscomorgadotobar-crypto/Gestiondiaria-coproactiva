@@ -37,7 +37,7 @@ const escapar=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;')
  .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 export function informeGestionHtml({gestion,subtareas=[],avances=[],transiciones=[],documentos=[]}){
  const estado=ESTADOS_GESTION[gestion.estado]||gestion.estado;
- const fecha=x=>x?new Date(x.length===10?x+'T12:00:00':x).toLocaleDateString('es-CL'):'—';
+ const fecha=x=>x?new Date(x.length===10?x+'T12:00:00':x).toLocaleDateString('es-CL'):'-';
  const tareasHechas=subtareas.filter(t=>t.completada).length;
  const filas=ordenCronologico(avances,transiciones).map(a=>'<li><strong>'+escapar(fecha(a.momento))+'</strong> · '+
   (a.tipoLinea==='registro'?escapar(TIPOS_REGISTRO[a.tipo_registro]||'Avance')+': '+escapar(a.descripcion):
