@@ -20,7 +20,7 @@ test('Clasificar trabajo activo e histórico sin confundir porcentaje y estado',
   {id:5,estado:'en_espera',avance:99},
   {id:6,estado:'completado',avance:20}
  ];
- assert.deepEqual(resumenGestiones(items),{pendientes:1,enProceso:4,completadas:1,bloqueadas:3});
+ assert.deepEqual(resumenGestiones(items),{pendientes:1,enProceso:4,completadas:1,bloqueadas:3,archivadas:0});
  assert.deepEqual(vistaGestiones(items).map(x=>x.id),[1,2,3,4,5]);
  assert.deepEqual(vistaGestiones(items,'completadas').map(x=>x.id),[6]);
  assert.equal(vistaGestiones(items,'todas').length,6);
