@@ -6,11 +6,13 @@ import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '.
 import {porcentajeSubtareas,resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
 import {ordenarAvances,primerPendienteAvances,estadoVisualAvance} from '../../lib/motorAvances';
 import MotorAvances from '../../componentes/MotorAvances';
-import repositorioSantaClara from '../../datos/repositorioCompromisosSantaClara.json';
+import GestionesRepositorio from './GestionesRepositorio';
+import {ESTADOS_GESTION,TIPOS_REGISTRO,PRIORIDADES,resumenGestiones,
+ vistaGestiones,ordenCronologico,informeGestionHtml} from '../../lib/gestiones';
 
-const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
+const NOMBRES = ESTADOS_GESTION;
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
-const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '' };
+const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '',prioridad:'normal',resultado:'',proxima_accion_texto:'' };
 
 export default function Compromisos({ comunidadId, administrador = false, soloVistaCliente = false, seleccionadoId = null, integrado = false, onActualizado }) {
  const [compromisos, setCompromisos] = useState([]);
@@ -30,13 +32,18 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [error, setError] = useState('');
  const [cargando, setCargando] = useState(true);
  const [nuevo, setNuevo] = useState(inicial);
- const [modeloSeleccionado,setModeloSeleccionado]=useState('');
+ const [vista,setVista]=useState('activas');
+ const [tipoRegistro,setTipoRegistro]=useState('avance');
+ const [proximaAccionTexto,setProximaAccionTexto]=useState('');
+ const [resultadosRapidos,setResultadosRapidos]=useState({});
+ const [documentosGestion,setDocumentosGestion]=useState([]);
+ const [accionesAbiertas,setAccionesAbiertas]=useState({});
  const [detalle, setDetalle] = useState(null);
  const [texto, setTexto] = useState('');
  const [evidencia, setEvidencia] = useState('');
  const [porcentaje, setPorcentaje] = useState(0);
  const [estado, setEstado] = useState('en_curso');
- const [publicar, setPublicar] = useState(false);
+ const [publicar, setPublicar] = useState(true);
  const [guardando, setGuardando] = useState(false);
  const [driveConectada, setDriveConectada] = useState(false);
  const [versionDocs, setVersionDocs] = useState(0);
@@ -49,6 +56,14 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   if (err) { setError('No fue posible cargar compromisos: ' + err.message); setCargando(false); return; }
   const visibles=soloVistaCliente ? (data||[]).filter(c=>c.publicado===true) : (data||[]);
   setCompromisos(visibles);
+  const idsDocs=visibles.map(x=>x.id);
+  if(idsDocs.length){
+   const {data:docsDrive}=await supabase.from('drive_archivos_comunidad')
+     .select('origen_id,detalle_id,nombre,visible_cliente').eq('comunidad_id',comunidadId)
+     .eq('origen_tipo','compromiso').is('eliminado_en',null)
+     .in('origen_id',idsDocs);
+   setDocumentosGestion(docsDrive||[]);
+  }else setDocumentosGestion([]);
   const {data: subt,error: errSubt}=await supabase.from('compromisos_subtareas').select('*').in('compromiso_id',visibles.map(x=>x.id).length ? visibles.map(x=>x.id):['00000000-0000-0000-0000-000000000000']).order('orden',{ascending:true});
   if(errSubt) setError(errSubt.message);
   setSubtareas(subt||[]);
@@ -84,31 +99,13 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    referencia_contractual: nuevo.referencia_contractual, fecha_limite: nuevo.fecha_limite || null,
    fecha_inicio: nuevo.fecha_inicio || null,
    fecha_proxima_accion: nuevo.fecha_proxima_accion || null,
-   responsable: nuevo.responsable, publicado: false
+   responsable: nuevo.responsable, prioridad:nuevo.prioridad,
+   resultado:nuevo.resultado||null,
+   proxima_accion_texto:nuevo.proxima_accion_texto||null,
+   publicado: true
   });
   if (err) setError(err.message); else { setNuevo(inicial); await recargarYNotificar(); }
   setGuardando(false);
- }
- async function agregarDesdeRepositorio(e) {
-  e.preventDefault();
-  if(!administrador||guardando||!modeloSeleccionado)return;
-  const modelo=repositorioSantaClara.items.find(x=>x.codigo===modeloSeleccionado);
-  if(!modelo)return;
-  if(compromisos.some(x=>x.titulo.trim().toLocaleLowerCase('es-CL')===modelo.titulo.toLocaleLowerCase('es-CL'))){
-   setError('Este compromiso ya existe en la comunidad. No se creó un duplicado.');
-   return;
-  }
-  setGuardando(true);setError('');
-  try {
-   const {error:err}=await supabase.from('compromisos_administracion').insert({
-    comunidad_id:comunidadId,titulo:modelo.titulo,descripcion:'',
-    orden:modelo.orden,estado:'pendiente',avance:0,publicado:false
-   });
-   if(err)throw err;
-   setModeloSeleccionado('');
-   await recargarYNotificar();
-  }catch(err){setError('No se pudo agregar el compromiso: '+(err.message||'Error desconocido'));}
-  finally{setGuardando(false);}
  }
  async function abrirAdjunto(doc) {
   const {data, error: err} = await supabase.storage.from('compromisos-adjuntos').createSignedUrl(doc.ruta, 90);
