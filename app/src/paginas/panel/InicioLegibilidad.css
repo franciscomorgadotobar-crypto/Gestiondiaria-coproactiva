@@ -14,11 +14,11 @@
  .inicio-pantalla .accesos-inicio .acceso{font-size:13px;min-height:50px}
 }
 
-/* Evitar duplicados únicamente cuando el menú lateral realmente muestra
- * la ruta de Nuevo levantamiento. Si el grupo está plegado o se usa la
- * navegación por módulos, conservar los accesos para no dejar rutas inaccesibles. */
+/* Si el menú lateral ya tiene Nuevo levantamiento, ocultar accesos
+ * duplicados, pero NUNCA ocultar Seleccionar comunidad: esa ruta puede no
+ * estar en el menú y es la puerta de entrada a Gestiones y avances. */
 @media(min-width:1024px){
- .layout-escritorio:has(.barra-lateral .enlace-lateral[href="/nuevo"]) .inicio-pantalla .accesos-inicio{
+ .layout-escritorio:has(.barra-lateral .enlace-lateral[href="/nuevo"]) .inicio-pantalla .accesos-inicio .acceso:not(.acceso-principal){
   display:none!important
  }
 }
