@@ -451,15 +451,84 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   </button>}
               </div>}
               {item.descripcion&&<p>{item.descripcion}</p>}
+              {administrador&&<div className="gestiones-acciones-rapidas" role="group" aria-label={'Acciones de '+item.titulo}>
+                <button type="button" className="boton boton-primario" disabled={guardando}
+                  onClick={()=>abrirAccion(item,'avance')}>+ Avance</button>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>abrirAccion(item,'observacion')}>+ Observación</button>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>document.getElementById('nueva-tarea-'+item.id)?.focus()}>+ Tarea</button>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>{
+                   const panel=document.getElementById('documentos-gestion-'+item.id);
+                   if(panel){panel.open=true;panel.scrollIntoView({block:'nearest',behavior:'smooth'})}
+                  }}>+ Documento</button>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>abrirAccion(item,'editar')}>Editar</button>
+                {item.estado!=='completado'&&<button type="button" className="boton boton-secundario"
+                  onClick={()=>setAccionesAbiertas(v=>({...v,[item.id]:true}))}>Completar</button>}
+                <button type="button" className="boton boton-texto"
+                  onClick={()=>imprimirGestion(item,sub,historico,movimientos)}>Informe</button>
+              </div>}
+              {administrador&&<div className="gestiones-control" aria-label="Estado y fechas de gestión">
+                <label>Estado
+                  <select aria-label={'Cambiar estado de '+item.titulo} value={item.estado} disabled={guardando}
+                    onChange={e=>cambiarEstado(item,e.target.value)}>
+                    {Object.entries(NOMBRES).map(([clave,nombre])=>
+                      <option key={clave} value={clave}>{nombre}</option>)}
+                  </select>
+                </label>
+                <label>Fecha límite
+                  <input aria-label={'Fecha límite de '+item.titulo} type="date"
+                    value={limitesRapidos[item.id]??item.fecha_limite??''}
+                    onChange={e=>setLimitesRapidos(v=>({...v,[item.id]:e.target.value}))}/>
+                </label>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>guardarFechaLimite(item)}>Guardar fecha</button>
+              </div>}
+              {administrador&&accionesAbiertas[item.id]&&
+                <div className="gestiones-cierre">
+                 <label>Resultado verificable para cerrar esta gestión
+                  <textarea rows={2} placeholder="Qué se resolvió, entregó o acordó"
+                    value={resultadosRapidos[item.id]??item.resultado??''}
+                    onChange={e=>setResultadosRapidos(v=>({...v,[item.id]:e.target.value}))}/>
+                 </label>
+                 <label>Próxima fecha de revisión
+                  <input type="date" value={fechasRapidas[item.id]??item.fecha_proxima_accion??''}
+                    onChange={e=>setFechasRapidas(v=>({...v,[item.id]:e.target.value}))}/>
+                 </label>
+                 <label>Observación al cambiar estado
+                  <input maxLength={2000} placeholder="Motivo de cierre o seguimiento"
+                    value={observacionesRapidas[item.id]||''}
+                    onChange={e=>setObservacionesRapidas(v=>({...v,[item.id]:e.target.value}))}/>
+                 </label>
+                 <div className="gestiones-cierre-acciones">
+                  <button className="boton boton-primario" type="button" disabled={guardando}
+                    onClick={()=>cambiarEstado(item,'completado')}>Confirmar cierre</button>
+                  <button className="boton boton-secundario" type="button" disabled={guardando}
+                    onClick={()=>cambiarEstado(item,item.estado)}>Guardar resultado / seguimiento</button>
+                  <button className="boton boton-texto" type="button"
+                    onClick={()=>setAccionesAbiertas(v=>({...v,[item.id]:false}))}>Cancelar</button>
+                 </div>
+                </div>}
+              {item.resultado&&<div className="gestiones-resultado"><strong>Resultado</strong>
+                 <p>{item.resultado}</p></div>}
+              {ultimo&&<div className="gestiones-ultimo"><strong>Último {TIPOS_REGISTRO[ultimo.tipo_registro]||'avance'}</strong>
+                <span>{fecha(ultimo.registrado_en)} · {ultimo.descripcion}</span>
+                {ultimo.proxima_accion&&<small>Próxima acción: {ultimo.proxima_accion}</small>}
+              </div>}
               <div className="compromisos-meta">
                 <span>Inicio: {fecha(item.fecha_inicio)}</span>
                 <span>Comprometida: {fecha(item.fecha_limite)}</span>
                 <span>Próxima acción: {fecha(item.fecha_proxima_accion)}</span>
                 <span>Cierre: {fecha(item.fecha_cierre)}</span>
+                <span>Prioridad: {PRIORIDADES[item.prioridad]||'Normal'}</span>
+                <span>Próximo paso: {item.proxima_accion_texto||'No definido'}</span>
+                <span>{historico.length} avances / observaciones · {documentos.length} documentos</span>
                 {item.referencia_contractual&&<span>Contrato: {item.referencia_contractual}</span>}
               </div>
               <MotorAvances valor={progreso} completados={realizados} total={sub.length}
-                etiqueta="Avance del compromiso" compacto />
+                etiqueta="Avance de tareas" compacto />
               <section className="compromisos-subtareas-v2" aria-label={'Subtareas de '+item.titulo}>
                 <div className="compromisos-subtareas-cabecera">
                   <div><h3>Subtareas</h3>
@@ -565,7 +634,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                     </button>
                   </nav>}
                 {administrador&&<div className="compromisos-subagregar">
-                  <input aria-label={'Nueva subtarea para '+item.titulo} placeholder="Escribe una nueva subtarea"
+                  <input id={'nueva-tarea-'+item.id} aria-label={'Nueva subtarea para '+item.titulo} placeholder="Escribe una nueva subtarea"
                     value={nuevaSubtarea[item.id]||''}
                     onChange={e=>setNuevaSubtarea(v=>({...v,[item.id]:e.target.value}))}/>
                   <button type="button" className="boton boton-secundario"
@@ -596,8 +665,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   {item.estado==='en_espera'?'Reanudar':'Poner en espera'}
                 </button>
               </div></details>}
-              <details className="compromisos-adjuntos">
-                <summary>Documentos del compromiso</summary>
+              <details id={'documentos-gestion-'+item.id} className="compromisos-adjuntos">
+                <summary>Documentos de la gestión ({documentos.length})</summary>
                 <DriveArchivos key={item.id+'-'+versionDocs} comunidadId={comunidadId}
                   origenTipo="compromiso" origenId={item.id} compacto
                   titulo="Documentos · Google Drive" permitirSubir={administrador} soloVistaCliente={soloVistaCliente} ocultarVacio={!administrador}/>
