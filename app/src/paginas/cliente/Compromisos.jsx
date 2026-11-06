@@ -6,6 +6,7 @@ import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '.
 import {porcentajeSubtareas,resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
 import {ordenarAvances,primerPendienteAvances,estadoVisualAvance} from '../../lib/motorAvances';
 import MotorAvances from '../../componentes/MotorAvances';
+import repositorioSantaClara from '../../datos/repositorioCompromisosSantaClara.json';
 
 const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
@@ -29,6 +30,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [error, setError] = useState('');
  const [cargando, setCargando] = useState(true);
  const [nuevo, setNuevo] = useState(inicial);
+ const [modeloSeleccionado,setModeloSeleccionado]=useState('');
  const [detalle, setDetalle] = useState(null);
  const [texto, setTexto] = useState('');
  const [evidencia, setEvidencia] = useState('');
@@ -86,6 +88,27 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   });
   if (err) setError(err.message); else { setNuevo(inicial); await recargarYNotificar(); }
   setGuardando(false);
+ }
+ async function agregarDesdeRepositorio(e) {
+  e.preventDefault();
+  if(!administrador||guardando||!modeloSeleccionado)return;
+  const modelo=repositorioSantaClara.items.find(x=>x.codigo===modeloSeleccionado);
+  if(!modelo)return;
+  if(compromisos.some(x=>x.titulo.trim().toLocaleLowerCase('es-CL')===modelo.titulo.toLocaleLowerCase('es-CL'))){
+   setError('Este compromiso ya existe en la comunidad. No se creó un duplicado.');
+   return;
+  }
+  setGuardando(true);setError('');
+  try {
+   const {error:err}=await supabase.from('compromisos_administracion').insert({
+    comunidad_id:comunidadId,titulo:modelo.titulo,descripcion:'',
+    orden:modelo.orden,estado:'pendiente',avance:0,publicado:false
+   });
+   if(err)throw err;
+   setModeloSeleccionado('');
+   await recargarYNotificar();
+  }catch(err){setError('No se pudo agregar el compromiso: '+(err.message||'Error desconocido'));}
+  finally{setGuardando(false);}
  }
  async function abrirAdjunto(doc) {
   const {data, error: err} = await supabase.storage.from('compromisos-adjuntos').createSignedUrl(doc.ruta, 90);
@@ -297,6 +320,22 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
          <label>Próxima acción<input type="date" value={nuevo.fecha_proxima_accion} onChange={e=>setNuevo({...nuevo,fecha_proxima_accion:e.target.value})}/></label>
        </div>
        <button className="boton boton-primario" disabled={guardando}>Crear compromiso interno</button>
+     </form>
+   </details>}
+   {administrador&&!integrado&&<details className="tarjeta compromisos-crear-desplegable compromisos-repositorio">
+     <summary>Repositorio de compromisos · {repositorioSantaClara.items.length} modelos</summary>
+     <form className="compromisos-form" onSubmit={agregarDesdeRepositorio}>
+       <p className="micro apagado">Catálogo de referencia de Reserva Santa Clara (23-10-2026). Agrega un modelo sin modificar el original ni los compromisos existentes.</p>
+       <label>Modelo del repositorio
+         <select aria-label="Seleccionar compromiso del repositorio" value={modeloSeleccionado}
+           onChange={e=>setModeloSeleccionado(e.target.value)}>
+           <option value="">Seleccionar compromiso…</option>
+           {repositorioSantaClara.items.map(x=><option key={x.codigo} value={x.codigo}>{String(x.orden).padStart(2,'0')}. {x.titulo}</option>)}
+         </select>
+       </label>
+       <button className="boton boton-secundario" type="submit" disabled={guardando||!modeloSeleccionado}>
+         Agregar a esta comunidad
+       </button>
      </form>
    </details>}
    {cargando ? <p className="cargando">Cargando compromisos…</p>
