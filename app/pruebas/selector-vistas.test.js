@@ -29,9 +29,9 @@ test('Roles preservan autorizaciones del menú',()=>{
   const jefatura=modulos('jefatura');
   assert.ok(jefatura.includes('crm') && jefatura.includes('propiedades'));
   assert.ok(jefatura.includes('levantamientos'));
-  assert.equal(jefatura.length,5);
+  assert.equal(jefatura.length,6);
   assert.ok(jefatura.includes('conocimientos'));
-  for(const id of ['seo','contabilidad','configuracion','whatsapp','proveedores'])
+  for(const id of ['seo','contabilidad','whatsapp','proveedores'])
     assert.ok(!jefatura.includes(id),'No visible para jefatura: '+id);
   assert.ok(modulos('admin').includes('contabilidad'));
   assert.ok(!modulos('admin').includes('clientes'));
@@ -39,8 +39,9 @@ test('Roles preservan autorizaciones del menú',()=>{
   assert.equal(modulos('admin').length,11);
   assert.equal(modulos('admin').at(-1),'configuracion');
   assert.equal(modulos('superadmin').at(-1),'configuracion');
-  assert.equal(modulos('jefatura').at(-1),'conocimientos',
-    'Si Configuración no está autorizada no debe aparecer');
+  assert.equal(modulos('jefatura').at(-1),'configuracion',
+    'Mi cuenta y preferencias siempre están en Configuración');
+  assert.deepEqual(modulos('terreno'), ['levantamientos','conocimientos','configuracion']);
   assert.deepEqual(modulos('cliente'),[]);
   assert.deepEqual(modulosDisponibles({id:'s',rol:'superadmin',activo:false}),[]);
 });
