@@ -498,7 +498,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 </label>
                 <button type="button" className="boton boton-secundario" disabled={guardando}
                   onClick={()=>cambiarEstado(item,item.estado)}>Guardar seguimiento</button>
-              </div>
+              </div>}
               {administrador&&accionesAbiertas[item.id]&&
                 <div className="gestiones-cierre">
                  <label>Resultado verificable para cerrar esta gestión
