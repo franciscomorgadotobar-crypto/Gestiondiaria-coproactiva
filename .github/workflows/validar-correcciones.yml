@@ -37,6 +37,9 @@ jobs:
       - name: Validar edición directa de títulos de compromisos y subtareas
         working-directory: app
         run: node --test pruebas/compromisos-edicion-titulos.test.js
+      - name: Verificar recorrido de Compromisos igual a Levantamientos y repositorio Santa Clara
+        working-directory: app
+        run: node --test pruebas/compromisos-recorrido-levantamientos.test.js
       - name: Verificar Motor de Avances compartido entre Levantamientos y Compromisos
         working-directory: app
         run: node --test pruebas/motor-avances.test.js
