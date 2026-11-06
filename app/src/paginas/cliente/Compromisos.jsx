@@ -19,6 +19,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [avances, setAvances] = useState([]);
  const [transiciones,setTransiciones] = useState([]);
  const [fechasRapidas,setFechasRapidas] = useState({});
+ const [limitesRapidos,setLimitesRapidos] = useState({});
  const [observacionesRapidas,setObservacionesRapidas] = useState({});
  const [adjuntos, setAdjuntos] = useState([]);
  const [archivos, setArchivos] = useState([]);
@@ -280,6 +281,20 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
  }
+ async function guardarFechaLimite(item){
+  if(!administrador||guardando)return;
+  const limite=limitesRapidos[item.id];
+  if(limite===undefined||limite===(item.fecha_limite||''))return;
+  setGuardando(true);setError('');
+  try{
+   const {error:e}=await supabase.from('compromisos_administracion')
+    .update({fecha_limite:limite||null,actualizado_en:new Date().toISOString()})
+    .eq('id',item.id).eq('comunidad_id',comunidadId);
+   if(e)throw e;
+   await recargarYNotificar();
+  }catch(e){setError('No se pudo guardar la fecha: '+e.message)}
+  finally{setGuardando(false)}
+ }
  async function cambiarEstado(item,siguiente) {
   if(!administrador||guardando)return;
   const proxima=fechasRapidas[item.id]||item.fecha_proxima_accion||null;
@@ -398,15 +413,17 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
           const progreso=sub.length?porcentajeSubtareas(sub):item.avance;
           const historico=avances.filter(x=>x.compromiso_id===item.id);
           const movimientos=transiciones.filter(x=>x.compromiso_id===item.id);
+          const ultimo=historico.find(x=>x.tipo_registro!=='observacion')||historico[0];
+          const documentos=documentosGestion.filter(x=>x.origen_id===item.id);
           const Etiqueta=integrado?'div':'details';
           return <Etiqueta key={item.id} className={'tarjeta compromisos-item'+(integrado?' compromisos-item-integrado':'')}>
             {!integrado&&<summary className="categoria-titulo compromisos-fila compromisos-categoria-titulo">
               <span className="compromisos-titulo crece">
                 <strong>{String(indice+1).padStart(2,'0')}. {item.titulo}</strong>
-                <small>{realizados}/{sub.length} completadas · {progreso}% de avance</small>
+                <small>{NOMBRES[item.estado]||item.estado} · {progreso}% · Vence {fecha(item.fecha_limite)}</small>
               </span>
               {sub.length>0&&realizados===sub.length&&<span className="categoria-ok" aria-label="Compromiso completado">✓</span>}
-              <span className="portal-estado">{NOMBRES[item.estado]||item.estado}</span>
+              <span className="portal-estado">{item.prioridad==='urgente'?'Urgente':(item.prioridad==='alta'?'Prioridad alta':NOMBRES[item.estado]||item.estado)}</span>
               {administrador&&<button type="button" className="compromisos-icono-eliminar"
                 aria-label={'Eliminar compromiso: '+item.titulo} title="Eliminar compromiso"
                 disabled={guardando}
@@ -587,13 +604,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
               </details>
               {administrador&&<div className="compromisos-acciones">
                 <button type="button" className="boton boton-secundario" disabled={guardando}
-                  onClick={()=>{
-                    setEditando(editando===item.id?null:item.id);
-                    setEditForm({titulo:item.titulo,descripcion:item.descripcion||'',
-                      referencia_contractual:item.referencia_contractual||'',fecha_inicio:item.fecha_inicio||'',
-                      fecha_limite:item.fecha_limite||'',fecha_proxima_accion:item.fecha_proxima_accion||'',
-                      responsable:item.responsable||''});
-                  }}>Editar datos y fechas</button>
+                  onClick={()=>abrirAccion(item,'editar')}>Editar datos y fechas</button>
                 <button type="button" className="boton boton-secundario"
                   onClick={()=>{setDetalle(detalle===item.id?null:item.id);setPorcentaje(item.avance);setEstado(item.estado);}}>Registrar avance</button>
                 <button type="button" className="boton boton-texto" disabled={guardando}
