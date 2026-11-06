@@ -361,3 +361,102 @@
     align-items: stretch;
   }
 }
+
+
+/* Comunidades: lista-detalle, una fila por comunidad. Evita repetir
+   nombre, comuna, dirección y botón en tres tarjetas verticales. */
+.comunidades-pantalla .comunidades-lista{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:7px;
+  align-content:start;
+}
+.comunidades-pantalla .comunidad-fila{
+  min-width:0;
+  border:1px solid var(--borde);
+  border-radius:12px;
+  background:var(--tarjeta);
+  overflow:hidden;
+}
+.comunidades-pantalla .comunidad-fila-enlace{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:12px 14px;
+  color:inherit;
+  text-decoration:none;
+  min-height:76px;
+}
+.comunidades-pantalla .comunidad-fila-enlace:hover{
+  background:var(--papel);
+  border-color:var(--naranja);
+}
+.comunidades-pantalla .comunidad-fila-enlace:focus-visible{
+  outline:2px solid var(--borde-foco);
+  outline-offset:-2px;
+}
+.comunidades-pantalla .comunidad-fila-principal{
+  min-width:0;flex:1 1 auto;display:grid;gap:5px;
+}
+.comunidades-pantalla .comunidad-fila-principal strong{
+  font:650 14px/1.3 var(--fuente-display);
+  color:var(--texto-titulo);
+  overflow-wrap:anywhere;
+}
+.comunidades-pantalla .comunidad-fila-direccion{
+  color:var(--texto-apagado);
+  font-size:12px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+.comunidades-pantalla .comunidad-fila-fin{
+  display:flex;flex:none;align-items:center;gap:9px;
+}
+.comunidades-pantalla .comunidad-fila-estado{
+  padding:5px 7px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:700;
+  white-space:nowrap;
+  color:var(--texto-apagado);
+  background:var(--niebla);
+}
+.comunidades-pantalla .comunidad-fila-estado.tiene-ubicacion{
+  background:var(--ok-fondo);
+  color:var(--ok-texto);
+}
+.comunidades-pantalla .comunidad-fila-flecha{
+  font-size:22px;line-height:1;color:var(--enlace);
+}
+@media(max-width:760px){
+  .comunidades-pantalla .comunidades-cuerpo{gap:10px}
+  /* El resumen numérico está repetido en el buscador y consume casi toda
+     una pantalla móvil: mantener las KPI completas solo en escritorio. */
+  .comunidades-pantalla .comunidades-kpis{display:none}
+  .comunidades-pantalla .comunidades-herramientas{
+    padding:10px 12px;
+    gap:6px;
+    border-radius:12px;
+  }
+  .comunidades-pantalla .comunidades-herramientas .campo input{
+    min-height:44px;
+    font-size:16px;
+  }
+  .comunidades-pantalla .comunidades-resultados{
+    font-size:11px;
+    margin:0;
+  }
+  .comunidades-pantalla .comunidad-fila-enlace{
+    padding:11px 12px;
+    min-height:78px;
+  }
+  .comunidades-pantalla .comunidad-fila-principal strong{font-size:14px}
+  .comunidades-pantalla .comunidad-fila-direccion{font-size:11px}
+  .comunidades-pantalla .comunidad-fila-fin{gap:5px}
+  .comunidades-pantalla .comunidad-fila-estado{font-size:10px;padding:4px 6px}
+}
+@media(max-width:370px){
+  .comunidades-pantalla .comunidad-fila-fin{align-self:center}
+  .comunidades-pantalla .comunidad-fila-estado{max-width:92px;white-space:normal;text-align:center}
+}
