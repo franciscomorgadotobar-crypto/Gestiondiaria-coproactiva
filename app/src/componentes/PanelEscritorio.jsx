@@ -310,7 +310,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'inicio', etiqueta: 'Inicio', ruta: '/inicio' },
     { id: 'comunidades', etiqueta: 'Comunidades', ruta: '/comunidades' },
     { id: 'levantamientos', etiqueta: 'Levantamientos', accion: irLevantamientos },
-    { id: 'notificaciones', etiqueta: 'Notificaciones', ruta: '/notificaciones', badge: alertasTotales },
     { id: 'plantillas', etiqueta: 'Plantillas', ruta: '/plantillas', mostrar: puedeConfigurar },
     { id: 'bitacora', etiqueta: 'Bitácora', ruta: '/bitacora' },
     { id: 'mantenciones', etiqueta: 'Mantenciones', ruta: '/mantenciones' },
@@ -333,11 +332,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'nueva-propiedad', etiqueta: 'Nueva propiedad', ruta: '/propiedades/nueva',
       mostrar: !activa(pathname, '/seo') }
   ].filter(x => x.mostrar !== false);
-
-  const idsPermitidos = new Set(opcionesOperacion.map(x => x.id));
-  const preferidos = Array.isArray(perfil?.bottom_nav) && perfil.bottom_nav.length
-    ? perfil.bottom_nav.filter(id => idsPermitidos.has(id))
-    : ['inicio', 'comunidades', 'levantamientos', 'notificaciones'];
 
   // Finanzas y Configuración: también barra inferior en el teléfono (en
   // escritorio, la barra lateral). Contabilidad oculta sus pestañas
@@ -366,8 +360,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     : enFinanzas ? opcionesFinanzas
     : enConfiguracion ? opcionesConfiguracion
     : opcionesOperacion;
-  const barraIds = enOperacion ? [...preferidos] : [];
-  for (const item of opcionesBarra) {
+  // Tres rutas fijas para Operaciones: los chips y Preferencias guardadas no
+  // pueden reintroducir Notificaciones ni duplicar enlaces secundarios.
+  const barraIds = enOperacion ? ['inicio', 'comunidades', 'levantamientos'] : [];
+  if (!enOperacion) for (const item of opcionesBarra) {
     if (barraIds.length >= 4) break;
     if (!barraIds.includes(item.id)) barraIds.push(item.id);
   }
