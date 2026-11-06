@@ -11,7 +11,7 @@ const modulos=leer('src/lib/selectorModulos.js');
 test('Compromisos se gestionan dentro de Comunidades, no como submenú',()=>{
  assert.match(app,/<Route path="\/compromisos" element=\{<Navigate to="\/comunidades" replace \/>\}/);
  assert.doesNotMatch(panel,/ruta: '\/compromisos'/);
- assert.match(comunidades,/\['compromisos', 'Compromisos y avances'\]/);
+ assert.match(comunidades,/\['compromisos', 'Gestiones y avances'\]/);
  assert.match(comunidades,/seccion === 'compromisos' && <Compromisos comunidadId=\{id\}/);
 });
 test('El módulo visible se llama Operaciones y conserva rutas y permisos',()=>{
