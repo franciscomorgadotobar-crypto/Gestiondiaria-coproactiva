@@ -232,6 +232,10 @@ export default function Inicio() {
             <span>Mapa</span>
             <span aria-hidden="true">›</span>
           </Link>
+          {!puedeConfigurar && <Link to="/configuracion" className="acceso">
+            <span>Configuración</span>
+            <span aria-hidden="true">›</span>
+          </Link>}
         </nav>
 
         <div className="inicio-trabajo">
