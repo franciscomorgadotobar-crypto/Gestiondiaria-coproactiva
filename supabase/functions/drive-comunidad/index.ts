@@ -321,6 +321,14 @@ Deno.serve(async (req) => {
         }
       } else if (!esPersonal(perfil)) return json({ ok: false, error: 'Acción no autorizada' }, 403);
       await validarOrigen(db, cid, tipo, origenId, detalleId);
+      // Los respaldos de compromisos se consultan en el portal privado de la comunidad.
+      // La visibilidad no otorga acceso anónimo: veComunidad y el JWT siguen obligatorios.
+      if (tipo === 'compromiso') {
+        const { error: publicarError } = await db.from('compromisos_administracion')
+          .update({ publicado: true })
+          .eq('id', origenId).eq('comunidad_id', cid);
+        if (publicarError) throw publicarError;
+      }
 
       const clave = String(get('clave_idempotencia') || '').slice(0, 80);
       if (clave) {
@@ -344,7 +352,10 @@ Deno.serve(async (req) => {
         detalle_id: detalleId || null, drive_file_id: subido.id, drive_folder_id: destino,
         nombre: valido.nombre, mime: valido.mime, tamano: bytes.length, sha256: sha,
         md5_drive: subido.md5Checksum ?? null, descripcion, clave_idempotencia: clave || null,
-        registrado_por: user.id, visible_cliente: false,
+        registrado_por: user.id,
+        visible_cliente: tipo === 'compromiso',
+        visibilidad_por: tipo === 'compromiso' ? user.id : null,
+        visibilidad_en: tipo === 'compromiso' ? new Date().toISOString() : null,
       }).select('id,nombre,categoria,origen_tipo,creado_en').single();
       if (error) {
         await aPapelera(db, subido.id).catch(() => {});
@@ -356,6 +367,12 @@ Deno.serve(async (req) => {
       }
       if (subido.size && Number(subido.size) !== bytes.length) console.error('drive-comunidad: tamaño distinto tras subir', doc.id);
       await evento(db, { documento_id: doc.id, comunidad_id: cid, accion: 'subido', perfil_id: user.id, detalle: { tamano: bytes.length, categoria, origen_tipo: tipo } });
+      if (tipo === 'compromiso') {
+        await evento(db, {
+          documento_id: doc.id, comunidad_id: cid, accion: 'publicado_cliente',
+          perfil_id: user.id, detalle: { automatico: true, acceso: 'portal_cliente_comunidad' },
+        });
+      }
       return json({ ok: true, documento: doc });
     }
 
