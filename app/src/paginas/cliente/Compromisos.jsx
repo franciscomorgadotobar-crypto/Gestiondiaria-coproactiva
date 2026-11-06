@@ -113,43 +113,52 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
  }
  async function registrar(e) {
-  e.preventDefault(); if (!detalle || !texto.trim() || guardando) return;
-  setGuardando(true); setError('');
-  try {
-   const subt = subtareas.filter(s=>s.compromiso_id===detalle);
-   const porcentajeReal=subt.length?porcentajeSubtareas(subt):Number(porcentaje);
-   const { data: avance, error: err } = await supabase.from('compromisos_avances').insert({
-    compromiso_id: detalle, descripcion: texto.trim(), porcentaje: porcentajeReal,
-    estado, evidencia_url: evidencia.trim() || null, publicado: publicar
+  e.preventDefault();
+  if(!detalle||!texto.trim()||guardando)return;
+  const gestion=compromisos.find(c=>c.id===detalle);
+  if(!gestion)return;
+  if(archivos.length&&!driveConectada){
+   setError('Conecta Google Drive para adjuntar evidencias a esta gestión.');
+   return;
+  }
+  setGuardando(true);setError('');
+  try{
+   const subt=subtareas.filter(x=>x.compromiso_id===detalle);
+   const porcentajeReal=tipoRegistro==='avance'
+    ?(subt.length?porcentajeSubtareas(subt):Math.max(0,Math.min(100,Number(porcentaje)||0)))
+    :null;
+   const {data:registro,error:e}=await supabase.from('compromisos_avances').insert({
+    compromiso_id:detalle,descripcion:texto.trim(),tipo_registro:tipoRegistro,
+    proxima_accion:proximaAccionTexto.trim()||null,
+    porcentaje:porcentajeReal,estado:gestion.estado,
+    evidencia_url:evidencia.trim()||null,publicado:publicar
    }).select('id').single();
-   if (err) throw err;
-   const fallidos = [];
-   if(archivos.length&&!driveConectada)
-    throw new Error('Conecta Google Drive en Comunidades → Configuración antes de adjuntar archivos.');
-   for (const file of archivos) {
+   if(e)throw e;
+   const actualizacion={};
+   if(tipoRegistro==='avance'&&!subt.length)actualizacion.avance=porcentajeReal;
+   if(tipoRegistro==='resultado')actualizacion.resultado=texto.trim();
+   if(proximaAccionTexto.trim())actualizacion.proxima_accion_texto=proximaAccionTexto.trim();
+   if(Object.keys(actualizacion).length){
+    actualizacion.actualizado_en=new Date().toISOString();
+    const {error:actualizarError}=await supabase.from('compromisos_administracion')
+      .update(actualizacion).eq('id',detalle).eq('comunidad_id',comunidadId);
+    if(actualizarError)throw actualizarError;
+   }
+   const fallidos=[];
+   for(const file of archivos){
     const invalido=validarArchivoDrive(file);
     if(invalido){fallidos.push(invalido);continue;}
-    try{await subirADrive({comunidadId,origenTipo:'compromiso',origenId:detalle,detalleId:avance.id,archivo:file});}
+    try{await subirADrive({comunidadId,origenTipo:'compromiso',
+      origenId:detalle,detalleId:registro.id,archivo:file});}
     catch(eDrive){fallidos.push(file.name+': '+eDrive.message);}
-
    }
-   if(!subt.length){
-    const {error:e}=await supabase.from('compromisos_administracion').update({
-     avance:porcentajeReal,actualizado_en:new Date().toISOString()
-    }).eq('id',detalle).select('id').single();
-    if(e)throw e;
-   }
-   const {error: estadoError}=await supabase.rpc('compromisos_cambiar_etapa',{
-     p_compromiso_id:detalle,p_estado:subt.length?(compromisos.find(c=>c.id===detalle)?.estado||estado):estado,
-     p_proxima_accion:fechasRapidas[detalle]||null,
-     p_observacion:'Cambio al registrar avance: '+texto.trim().slice(0,500)
-   });
-   if(estadoError) throw estadoError;
-   setTexto('');setEvidencia('');setPublicar(false);setArchivos([]);setVersionDocs(v=>v+1);
+   setTexto('');setEvidencia('');setPorcentaje(0);setTipoRegistro('avance');
+   setProximaAccionTexto('');setPublicar(true);setArchivos([]);
+   setDetalle(null);setVersionDocs(v=>v+1);
    await recargarYNotificar();
-   if(fallidos.length) setError('Avance guardado, pero algunos archivos no se adjuntaron: ' + fallidos.join('; '));
-  } catch(err) { setError(err.message || 'No fue posible registrar el avance.'); }
-  finally { setGuardando(false); }
+   if(fallidos.length)setError('Registro guardado; fallaron estos archivos: '+fallidos.join('; '));
+  }catch(e){setError(e.message||'No fue posible registrar la gestión.');}
+  finally{setGuardando(false)}
  }
  async function editarCompromiso(e) {
   e.preventDefault();if(!editando||guardando)return;
@@ -269,26 +278,59 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
  }
- async function cambiarEstado(item, siguiente) {
-  if(!administrador || guardando)return;
-  const fechaNueva=fechasRapidas[item.id];
-  const notaNueva=observacionesRapidas[item.id]?.trim();
-  if(siguiente===item.estado && (!fechaNueva || fechaNueva===item.fecha_proxima_accion) && !notaNueva)return;
-  const subtareasItem=subtareas.filter(x=>x.compromiso_id===item.id);
-  if(siguiente==='completado'&&subtareasItem.some(x=>!x.completada))
-   return setError('Para cerrar el compromiso, marca todas las subtareas.');
+ async function cambiarEstado(item,siguiente) {
+  if(!administrador||guardando)return;
   const proxima=fechasRapidas[item.id]||item.fecha_proxima_accion||null;
+  const nota=observacionesRapidas[item.id]?.trim()||'Actualización de seguimiento';
+  const resultado=resultadosRapidos[item.id]?.trim()||item.resultado||null;
+  if(siguiente==='completado'&&!String(resultado||'').trim()){
+   setError('Escribe el resultado antes de completar la gestión.');
+   setAccionesAbiertas(x=>({...x,[item.id]:true}));
+   return;
+  }
   if(siguiente==='en_espera'&&!proxima){
-    return setError('Registra la fecha de la próxima acción antes de pasar el compromiso a En espera.');
+   setError('Registra la fecha de la próxima acción antes de pasar a En espera.');
+   return;
   }
   setGuardando(true);setError('');
-  const {error:err}=await supabase.rpc('compromisos_cambiar_etapa',{
-    p_compromiso_id:item.id,p_estado:siguiente,p_proxima_accion:proxima,
-    p_observacion:observacionesRapidas[item.id]?.trim()||'Cambio de etapa desde compromisos'
-  });
-  if(err)setError('No se pudo cambiar la etapa: '+err.message);
-  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await recargarYNotificar();}
-  setGuardando(false);
+  try{
+   const {error:e}=await supabase.rpc('gestiones_cambiar_estado',{
+    p_gestion_id:item.id,p_estado:siguiente,p_proxima_accion:proxima,
+    p_observacion:nota,p_resultado:resultado
+   });
+   if(e)throw e;
+   setObservacionesRapidas(x=>({...x,[item.id]:''}));
+   setResultadosRapidos(x=>({...x,[item.id]:''}));
+   await recargarYNotificar();
+  }catch(e){setError('No se pudo cambiar el estado: '+e.message)}
+  finally{setGuardando(false)}
+ }
+ function abrirAccion(item,tipo) {
+  if(tipo==='avance'||tipo==='observacion'||tipo==='resultado'){
+   setDetalle(item.id);setTipoRegistro(tipo);
+   setPorcentaje(item.avance||0);setTexto('');setProximaAccionTexto('');
+  }else if(tipo==='editar'){
+   setEditando(item.id);setEditForm({...inicial,
+    titulo:item.titulo,descripcion:item.descripcion||'',
+    referencia_contractual:item.referencia_contractual||'',
+    responsable:item.responsable||'',fecha_inicio:item.fecha_inicio||'',
+    fecha_limite:item.fecha_limite||'',fecha_proxima_accion:item.fecha_proxima_accion||'',
+    prioridad:item.prioridad||'normal',resultado:item.resultado||'',
+    proxima_accion_texto:item.proxima_accion_texto||''});
+  }
+  setAccionesAbiertas(v=>({...v,[item.id]:true}));
+ }
+ function imprimirGestion(item,sub,historico,movimientos) {
+  const docs=documentosGestion.filter(x=>x.origen_id===item.id);
+  const html=informeGestionHtml({gestion:item,subtareas:sub,avances:historico,
+    transiciones:movimientos,documentos:docs});
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const enlace=document.createElement('a');
+  enlace.href=url;
+  enlace.download='Coproactiva-informe-gestion-'+item.id.slice(0,8)+'.html';
+  document.body.appendChild(enlace);enlace.click();enlace.remove();
+  window.setTimeout(()=>URL.revokeObjectURL(url),5000);
  }
  async function visibilidad(item) {
   const {error: err} = await supabase.from('compromisos_administracion').update({publicado: !item.publicado}).eq('id', item.id);
