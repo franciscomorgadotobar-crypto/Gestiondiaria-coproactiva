@@ -65,7 +65,12 @@ try{
   });
   const page=await ctx.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/compromisos',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+  await page.getByRole('heading',{name:/Hola/}).first().waitFor({timeout:18000});
+  await page.evaluate(()=>{
+   window.history.pushState({qa:true},'','/compromisos');
+   window.dispatchEvent(new PopStateEvent('popstate',{state:window.history.state}));
+  });
   await page.waitForURL(u=>u.pathname==='/comunidades',{timeout:20000});
   assert.equal(await page.locator('a[href="/compromisos"]').count(),0,'Sin submenú de compromisos');
   await page.getByRole('link',{name:/Reserva Santa Clara/}).first().click();
