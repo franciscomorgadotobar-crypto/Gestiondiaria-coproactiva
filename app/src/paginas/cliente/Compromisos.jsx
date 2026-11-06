@@ -8,11 +8,11 @@ import {ordenarAvances,primerPendienteAvances,estadoVisualAvance} from '../../li
 import MotorAvances from '../../componentes/MotorAvances';
 import GestionesRepositorio from './GestionesRepositorio';
 import {ESTADOS_GESTION,TIPOS_REGISTRO,PRIORIDADES,resumenGestiones,
- vistaGestiones,ordenCronologico,informeGestionHtml} from '../../lib/gestiones';
+ vistaGestiones,ordenCronologico,informeGestionHtml,normalizarDocumentosModelo} from '../../lib/gestiones';
 
 const NOMBRES = ESTADOS_GESTION;
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
-const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '',prioridad:'normal',resultado:'',proxima_accion_texto:'' };
+const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '',prioridad:'normal',resultado:'',proxima_accion_texto:'',documentos_esperados:'' };
 
 export default function Compromisos({ comunidadId, administrador = false, soloVistaCliente = false, seleccionadoId = null, integrado = false, onActualizado }) {
  const [compromisos, setCompromisos] = useState([]);
@@ -103,6 +103,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    responsable: nuevo.responsable, prioridad:nuevo.prioridad,
    resultado:nuevo.resultado||null,
    proxima_accion_texto:nuevo.proxima_accion_texto||null,
+   documentos_esperados:normalizarDocumentosModelo(nuevo.documentos_esperados),
    publicado: true
   });
   if (err) setError(err.message); else { setNuevo(inicial); await recargarYNotificar(); }
@@ -170,7 +171,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    responsable:editForm.responsable,fecha_limite:editForm.fecha_limite||null,
    fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null,
    prioridad:editForm.prioridad||'normal',
-   resultado:editForm.resultado||null,proxima_accion_texto:editForm.proxima_accion_texto||null
+   resultado:editForm.resultado||null,proxima_accion_texto:editForm.proxima_accion_texto||null,
+   documentos_esperados:normalizarDocumentosModelo(editForm.documentos_esperados)
   }).eq('id',editando).select('id').single();
   setGuardando(false);
   if(err)setError(err.message);else {setEditando(null);await recargarYNotificar();}
@@ -333,7 +335,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     responsable:item.responsable||'',fecha_inicio:item.fecha_inicio||'',
     fecha_limite:item.fecha_limite||'',fecha_proxima_accion:item.fecha_proxima_accion||'',
     prioridad:item.prioridad||'normal',resultado:item.resultado||'',
-    proxima_accion_texto:item.proxima_accion_texto||''});
+    proxima_accion_texto:item.proxima_accion_texto||'',
+    documentos_esperados:(item.documentos_esperados||[]).join('\n')});
   }
   setAccionesAbiertas(v=>({...v,[item.id]:true}));
  }
@@ -395,6 +398,10 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
            onChange={e=>setNuevo(v=>({...v,proxima_accion_texto:e.target.value}))}/>
          </label>
        </div>
+       <label>Documentos esperados (uno por línea)
+         <textarea rows={2} value={nuevo.documentos_esperados}
+           onChange={e=>setNuevo(v=>({...v,documentos_esperados:e.target.value}))}/>
+       </label>
        <button className="boton boton-primario" disabled={guardando}>Crear gestión</button>
      </form>
    </details>}
@@ -600,6 +607,10 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   <textarea rows={2} value={editForm.resultado}
                     onChange={e=>setEditForm(v=>({...v,resultado:e.target.value}))}/>
                 </label>
+                <label>Documentos esperados (uno por línea)
+                  <textarea rows={2} value={editForm.documentos_esperados}
+                    onChange={e=>setEditForm(v=>({...v,documentos_esperados:e.target.value}))}/>
+                </label>
                 <div className="gestiones-cierre-acciones">
                  <button className="boton boton-primario" disabled={guardando}>Guardar cambios</button>
                  <button type="button" className="boton boton-secundario" onClick={()=>setEditando(null)}>Cancelar</button>
@@ -720,6 +731,16 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                     onClick={()=>agregarSubtarea(item)}>+ Agregar</button>
                 </div>}
               </section>
+              {(item.documentos_esperados||[]).length>0&&
+                <section className="gestiones-documentos-esperados" aria-label="Documentos esperados de la gestión">
+                  <h3>Documentos esperados</h3>
+                  <ul>{item.documentos_esperados.map((nombre,i)=>{
+                    const existe=documentos.some(d=>d.nombre?.toLocaleLowerCase('es-CL').includes(String(nombre).toLocaleLowerCase('es-CL')));
+                    return <li key={i}><span>{nombre}</span>
+                      <small>{existe?'Documento registrado':'Por verificar'}</small>
+                    </li>;
+                  })}</ul>
+                </section>}
               <details id={'documentos-gestion-'+item.id} className="compromisos-adjuntos">
                 <summary>Documentos de la gestión ({documentos.length})</summary>
                 <DriveArchivos key={item.id+'-'+versionDocs} comunidadId={comunidadId}
