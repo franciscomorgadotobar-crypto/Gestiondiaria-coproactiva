@@ -1,5 +1,5 @@
 /** Adaptador de Compromisos al motor común; PostgreSQL sigue siendo autoritativo. */
-import {limitarAvance,resumenAvances} from './motorAvances';
+import {limitarAvance,resumenAvances} from './motorAvances.js';
 
 export const porcentajeSubtareas=items=>resumenAvances(items,{
  completado:x=>Boolean(x.completada),
