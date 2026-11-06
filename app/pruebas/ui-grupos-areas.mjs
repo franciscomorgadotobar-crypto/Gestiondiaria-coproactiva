@@ -121,6 +121,10 @@ try {
     const {ctx,page}=await crear({ancho:390,alto:844});
     await page.getByRole('button',{name:/Operaciones/}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
+    const modal=page.getByRole('dialog',{name:'Más opciones'});
+    await modal.waitFor();
+    // Simula una capa de Leaflet alta después de abrir: no debe tapar el modal.
     await page.evaluate(()=>{
       const capa=document.createElement('div');
       capa.id='mapa-capa-qa';
@@ -128,9 +132,6 @@ try {
       capa.style.cssText='position:fixed;inset:0;z-index:999999;pointer-events:none';
       document.getElementById('raiz').append(capa);
     });
-    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
-    const modal=page.getByRole('dialog',{name:'Más opciones'});
-    await modal.waitFor();
     assert.deepEqual(await modal.locator('.menu-mas-enlaces>a,.menu-mas-enlaces>button').allTextContents(),
       ['Mi cuenta ›'],'Operaciones debe mostrar solo acceso a cuenta');
     assert.equal(await page.locator('body > .menu-mas-fondo').count(),1,
