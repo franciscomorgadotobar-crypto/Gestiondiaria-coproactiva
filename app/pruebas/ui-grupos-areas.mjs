@@ -121,7 +121,19 @@ try {
     const {ctx,page}=await crear({ancho:390,alto:844});
     await page.getByRole('button',{name:/Operaciones/}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
-    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
+    const diagnostico=await page.evaluate(()=>{
+      const boton=document.querySelector('.barra-inferior-movil button:last-child');
+      const barra=document.querySelector('.barra-inferior-movil');
+      const box=boton.getBoundingClientRect();
+      const x=box.left+box.width/2,y=box.top+box.height/2;
+      const css=getComputedStyle(barra);
+      return {x,y,rect:{top:box.top,bottom:box.bottom,left:box.left,right:box.right},
+        viewport:{w:innerWidth,h:innerHeight},inert:document.getElementById('raiz').inert,
+        overflow:document.body.style.overflow,barraZ:css.zIndex,
+        elements:document.elementsFromPoint(x,y).slice(0,7).map(e=>e.tagName+'#'+e.id+'.'+String(e.className).slice(0,40))};
+    });
+    console.log('DIAGNÓSTICO MÁS OPERACIONES',JSON.stringify(diagnostico));
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click({timeout:5500});
     const modal=page.getByRole('dialog',{name:'Más opciones'});
     await modal.waitFor();
     // Simula una capa de Leaflet alta después de abrir: no debe tapar el modal.
