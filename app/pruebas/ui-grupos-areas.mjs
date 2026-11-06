@@ -29,7 +29,7 @@ const session = {
 
 const navegador = await chromium.launch({ headless: true });
 try {
-  async function crear({ ancho = 390, alto = 844, rol = 'superadmin', clientesQA = false, comunidadesQA = false } = {}) {
+  async function crear({ ancho = 390, alto = 844, rol = 'superadmin', clientesQA = false, comunidadesQA = false, pendientesQA = false } = {}) {
     const movil = ancho < 900;
     const ctx = await navegador.newContext({
       viewport: { width: ancho, height: alto }, isMobile: movil, hasTouch: movil, serviceWorkers: 'block'
@@ -52,6 +52,11 @@ try {
         return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
           {id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',nombre:'Condominio Plaza Nos (GPR)',comuna:'San Bernardo',direccion:'Avenida Portales 3264',latitud:null,longitud:null},
           {id:'ffffffff-ffff-4fff-8fff-ffffffffffff',nombre:'Reserva Santa Clara',comuna:'Coquimbo',direccion:'Avda. Waldo Alcalde #1855',latitud:null,longitud:null}
+        ])});
+      if (pendientesQA && url.includes('/rest/v1/controles_con_avance?'))
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
+          {id:'aaaa0001-aaaa-4aaa-aaaa-aaaaaaaaaaaa',estado:'pendiente',periodo:'noviembre 2026',programado_para:'2026-11-06',creado_en:'2026-11-06',responsable_id:userId,responsable_nombre:'QA Coproactiva',items_evaluados:0,items_totales:7,items_criticos:0,fotos:0,destino_nombre:'Reserva Santa Clara',destino_direccion:'Calle QA 123',destino_comuna:'Coquimbo',plantilla_nombre:'Primera visita'},
+          {id:'aaaa0002-aaaa-4aaa-aaaa-aaaaaaaaaaaa',estado:'pendiente',periodo:'noviembre 2026',programado_para:'2026-11-06',creado_en:'2026-11-06',responsable_id:'bbbb0001-bbbb-4bbb-bbbb-bbbbbbbbbbbb',responsable_nombre:'Otra persona QA',items_evaluados:0,items_totales:5,items_criticos:0,fotos:0,destino_nombre:'Plaza Nos',destino_direccion:'Calle QA 456',destino_comuna:'San Bernardo',plantilla_nombre:'Segunda visita'}
         ])});
       if (clientesQA && url.includes('/rest/v1/plantillas_control?'))
         return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
@@ -137,6 +142,30 @@ try {
     await barra.getByRole('button',{name:'Inicio'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:15000});
     console.log('Operaciones · tres accesos sin Notificaciones ni Más: OK');
+    await ctx.close();
+  }
+
+  // Ninguna persona se despliega automáticamente, ni siquiera el usuario
+  // autenticado. Al pulsar un grupo, solo esa persona debe abrirse.
+  {
+    const {ctx,page}=await crear({ancho:390,alto:844,pendientesQA:true});
+    await page.getByRole('button',{name:/Operaciones/}).click();
+    await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
+    const grupos=page.locator('.inicio-trabajo .grupo-trabajador');
+    await page.waitForFunction(()=>document.querySelectorAll('.inicio-trabajo .grupo-trabajador').length===2);
+    assert.deepEqual(await grupos.locator('.cabecera-trabajador').evaluateAll(es=>es.map(e=>e.getAttribute('aria-expanded'))),
+      ['false','false'], 'Al cargar, cada persona debe estar contraída');
+    assert.equal(await page.locator('.inicio-trabajo .grupo-trabajador .tarjeta').count(),0);
+    const primero=grupos.first().locator('button.cabecera-trabajador');
+    await primero.click();
+    assert.equal(await primero.getAttribute('aria-expanded'),'true');
+    assert.equal(await grupos.last().locator('button.cabecera-trabajador').getAttribute('aria-expanded'),'false');
+    await primero.click();
+    assert.equal(await primero.getAttribute('aria-expanded'),'false');
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelectorAll('.inicio-trabajo .grupo-trabajador').length===2);
+    assert.deepEqual(await grupos.locator('.cabecera-trabajador').evaluateAll(es=>es.map(e=>e.getAttribute('aria-expanded'))),['false','false']);
+    console.log('Pendientes por persona · todos cerrados al cargar, abrir solo al pulsar: OK');
     await ctx.close();
   }
 
