@@ -11,6 +11,12 @@
 
 html, body, #raiz { height: 100%; }
 
+/* En teléfonos, el Home con mapa y KPI horizontales no debe ampliar el
+ * viewport: las zonas desplazables conservan su propio scroll. */
+@media (max-width: 899px) {
+  html, body, #raiz { overflow-x: clip; }
+}
+
 body {
   margin: 0;
   background: var(--fondo-app);
