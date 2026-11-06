@@ -20,4 +20,6 @@ test('La tarjeta naranja no puede heredar letras blancas sobre un fondo claro',(
  assert.match(css,/\.acceso\.acceso-principal > span\{color:inherit\}/);
  assert.match(css,/@media\(max-width:899px\)/);
  assert.match(css,/\.inicio-accion-principal \.inicio-seleccionar-comunidad-movil/);
+ assert.match(css,/\.accesos-inicio \.acceso:not\(\.acceso-principal\)/);
+ assert.doesNotMatch(css,/\.inicio-pantalla \.accesos-inicio\{\s*display:none!important/);
 });
