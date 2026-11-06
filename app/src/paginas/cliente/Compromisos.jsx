@@ -485,7 +485,13 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 </label>
                 <button type="button" className="boton boton-secundario" disabled={guardando}
                   onClick={()=>guardarFechaLimite(item)}>Guardar fecha</button>
-              </div>}
+                <label>Próxima revisión
+                  <input type="date" value={fechasRapidas[item.id]??item.fecha_proxima_accion??''}
+                    onChange={e=>setFechasRapidas(v=>({...v,[item.id]:e.target.value}))}/>
+                </label>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>cambiarEstado(item,item.estado)}>Guardar seguimiento</button>
+              </div>
               {administrador&&accionesAbiertas[item.id]&&
                 <div className="gestiones-cierre">
                  <label>Resultado verificable para cerrar esta gestión
@@ -511,6 +517,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                     onClick={()=>setAccionesAbiertas(v=>({...v,[item.id]:false}))}>Cancelar</button>
                  </div>
                 </div>}
+              {!administrador&&<button type="button" className="boton boton-secundario gestiones-informe-cliente"
+                onClick={()=>imprimirGestion(item,sub,historico,movimientos)}>Descargar informe de gestión</button>}
               {item.resultado&&<div className="gestiones-resultado"><strong>Resultado</strong>
                  <p>{item.resultado}</p></div>}
               {ultimo&&<div className="gestiones-ultimo"><strong>Último {TIPOS_REGISTRO[ultimo.tipo_registro]||'avance'}</strong>
@@ -727,26 +735,37 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                     onClick={()=>eliminarCompromiso(item)}>Eliminar gestión</button>
                 </div>
               </details>}
-              <details className="compromisos-historial">
-                <summary>Avances e historial ({historico.length+movimientos.length})</summary>
-                {historico.map(a=><details key={a.id} className="compromisos-avance-item">
-                  <summary>{fecha(a.registrado_en)} · {a.porcentaje??'-'}% · {NOMBRES[a.estado]||'Avance'}</summary>
-                  <p>{a.descripcion}</p>
-                  {a.evidencia_url&&/^https:\/\//i.test(a.evidencia_url)&&
-                    <a href={a.evidencia_url} target="_blank" rel="noreferrer">Ver evidencia</a>}
-                  {adjuntos.filter(x=>x.avance_id===a.id).map(doc=><span key={doc.id}>
-                    <button className="boton boton-texto" type="button" onClick={()=>abrirAdjunto(doc)}>📎 {doc.nombre}</button>
-                    {administrador&&<button className="boton boton-texto" type="button" disabled={guardando}
-                      onClick={()=>eliminarAdjunto(doc)}>Eliminar adjunto</button>}
-                  </span>)}
-                </details>)}
-                {movimientos.map(t=><div key={t.id} className="compromisos-transicion">
-                  {fecha(t.cambiado_en)} · {NOMBRES[t.estado_anterior]} → {NOMBRES[t.estado_nuevo]}
-                  {t.observacion&&<p>{t.observacion}</p>}
-                </div>)}
-                {!historico.length&&!movimientos.length&&<p className="micro apagado">Sin movimientos.</p>}
+              <details className="compromisos-historial gestiones-linea-tiempo">
+                <summary>Historial de gestión y evidencias ({historico.length+movimientos.length})</summary>
+                {ordenCronologico(historico,movimientos).map(a=>
+                  a.tipoLinea==='registro'
+                   ? <article key={'a'+a.id} className="gestiones-evento">
+                      <div className="gestiones-evento-cabecera">
+                       <strong>{fecha(a.registrado_en)} · {TIPOS_REGISTRO[a.tipo_registro]||'Avance'}</strong>
+                       {a.porcentaje!=null&&<span>{a.porcentaje}% registrado</span>}
+                      </div>
+                      <p>{a.descripcion}</p>
+                      {a.proxima_accion&&<p className="micro">Próxima acción: {a.proxima_accion}</p>}
+                      {a.evidencia_url&&/^https:\/\//i.test(a.evidencia_url)&&
+                        <a href={a.evidencia_url} target="_blank" rel="noopener noreferrer">Enlace de evidencia</a>}
+                      <DriveArchivos key={a.id+'-'+versionDocs} comunidadId={comunidadId}
+                        origenTipo="compromiso" origenId={item.id} detalleId={a.id} compacto
+                        titulo="Evidencias asociadas a este avance" permitirSubir={administrador}
+                        soloVistaCliente={soloVistaCliente} ocultarVacio={!administrador}/>
+                    </article>
+                   : <article key={'t'+a.id} className="gestiones-evento gestiones-evento-estado">
+                      <div className="gestiones-evento-cabecera">
+                       <strong>{fecha(a.cambiado_en)} · Estado</strong>
+                       <span>{NOMBRES[a.estado_anterior]||a.estado_anterior}
+                         {' → '}{NOMBRES[a.estado_nuevo]||a.estado_nuevo}</span>
+                      </div>
+                      {a.observacion&&<p>{a.observacion}</p>}
+                      {a.fecha_proxima_accion&&<small>Próxima revisión: {fecha(a.fecha_proxima_accion)}</small>}
+                    </article>
+                )}
+                {!historico.length&&!movimientos.length&&
+                  <p className="micro apagado">Todavía no se registran avances. Cada acción quedará documentada aquí.</p>}
               </details>
-
             </div>
           </Etiqueta>
         })}
