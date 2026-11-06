@@ -54,8 +54,8 @@ test('Adjuntos de subtarea se guardan en Google Drive con origen y detalle',()=>
  assert.match(ui,/Conecta Google Drive/);
 });
 test('Tableros muestran avance global sin confundir levantamientos con compromisos',()=>{
+ assert.doesNotMatch(inicio,/inicio-avance-compromisos|avanceCompromisos|compromisos_administracion/);
  assert.match(inicio,/Levantamientos pendientes/);
- assert.match(inicio,/avanceCompromisos\.abiertos/);
  assert.match(general,/Avance global de compromisos/);
  assert.match(general,/global\.porcentaje/);
  assert.match(ui,/resumenGlobalCompromisos\(compromisos\)/);
