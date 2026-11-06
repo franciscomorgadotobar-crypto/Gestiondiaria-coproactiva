@@ -121,6 +121,20 @@ export default function Inicio() {
     weekday: 'long', day: 'numeric', month: 'long'
   });
 
+  // Herramientas secundarias: no compiten con los accesos fijos del pie.
+  // Solo el acceso móvil se pliega; en escritorio sigue disponible la rejilla.
+  const herramientas = [
+    { ruta: '/bitacora', titulo: 'Bitácora' },
+    { ruta: '/mantenciones', titulo: 'Mantenciones' },
+    ...(puedeConfigurar ? [
+      { ruta: '/documentos', titulo: 'Gestor documental' },
+      { ruta: '/plantillas', titulo: 'Plantillas' },
+      { ruta: '/vista-cliente', titulo: 'Vista de cliente' }
+    ] : []),
+    { ruta: '/mapa', titulo: 'Mapa de visitas' },
+    { ruta: '/configuracion', titulo: 'Configuración' }
+  ];
+
   /* Las fotos y la firma viven en el bucket, no en la fila: borrar el
    * levantamiento sin esto dejaría los archivos huérfanos, ocupando espacio
    * sin que nada los referencie. El resto -ítems, pausas, adjuntos- se va
@@ -181,62 +195,50 @@ export default function Inicio() {
           <div className="tablero" data-tutorial="inicio-resumen">
             <div>
               <p className="n">{resumen.pendientes}</p>
-              <p className="r">Levantamientos pendientes</p>
+              <p className="r"><span className="kpi-etiqueta-escritorio">Levantamientos pendientes</span><span className="kpi-etiqueta-movil">Pendientes</span></p>
             </div>
             <div className={resumen.enCurso ? 'alerta' : ''}>
               <p className="n">{resumen.enCurso}</p>
-              <p className="r">En curso</p>
+              <p className="r"><span className="kpi-etiqueta-escritorio">En curso</span><span className="kpi-etiqueta-movil">En curso</span></p>
             </div>
             <div className="ok">
               <p className="n">{resumen.enviados}</p>
-              <p className="r">Finalizados 30 d</p>
+              <p className="r"><span className="kpi-etiqueta-escritorio">Finalizados 30 d</span><span className="kpi-etiqueta-movil">Finalizados</span></p>
             </div>
             <div className={resumen.criticos ? 'critico' : ''}>
               <p className="n">{resumen.criticos}</p>
-              <p className="r">Críticos</p>
+              <p className="r"><span className="kpi-etiqueta-escritorio">Críticos</span><span className="kpi-etiqueta-movil">Críticos</span></p>
             </div>
           </div>
         )}
 
-        <nav className="accesos-inicio" aria-label="Accesos del módulo Operaciones">
+        <nav className="accesos-inicio accesos-inicio-desktop" aria-label="Accesos de Operaciones en escritorio">
           <Link to="/comunidades" className="acceso acceso-principal">
-            <span>Comunidades</span>
-            <span aria-hidden="true">›</span>
+            <span>Comunidades</span><span aria-hidden="true">›</span>
           </Link>
-          {puedeConfigurar && (
-            <>
-              <Link to="/nuevo" className="acceso">
-                <span>Nuevo levantamiento</span>
-                <span aria-hidden="true">+</span>
-              </Link>
-            </>
-          )}
-          <Link to="/bitacora" className="acceso">
-            <span>Bitácora</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-          <Link to="/mantenciones" className="acceso">
-            <span>Mantenciones</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-          {puedeConfigurar && <Link to="/documentos" className="acceso"><span>Gestor documental</span><span aria-hidden="true">›</span></Link>}
-          {puedeConfigurar && <Link to="/plantillas" className="acceso">
-            <span>Plantillas</span>
-            <span aria-hidden="true">›</span>
+          {puedeConfigurar && <Link to="/nuevo" className="acceso">
+            <span>Nuevo levantamiento</span><span aria-hidden="true">+</span>
           </Link>}
-          {puedeConfigurar && <Link to="/vista-cliente" className="acceso">
-            <span>Vista de cliente</span>
-            <span aria-hidden="true">›</span>
-          </Link>}
-          <Link to="/mapa" className="acceso">
-            <span>Mapa</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-          {!puedeConfigurar && <Link to="/configuracion" className="acceso">
-            <span>Configuración</span>
-            <span aria-hidden="true">›</span>
-          </Link>}
+          {herramientas.map(h => <Link key={h.ruta} to={h.ruta} className="acceso">
+            <span>{h.titulo}</span><span aria-hidden="true">›</span>
+          </Link>)}
         </nav>
+
+        {puedeConfigurar && <section className="inicio-accion-principal" aria-label="Acción principal">
+          <div><strong>Iniciar una visita</strong><span>Registrar un nuevo levantamiento en terreno.</span></div>
+          <Link to="/nuevo" className="boton inicio-accion-boton">
+            <span aria-hidden="true">+</span> Nuevo levantamiento
+          </Link>
+        </section>}
+
+        <details className="inicio-herramientas">
+          <summary><span>Herramientas y consultas</span><span aria-hidden="true" className="inicio-herramientas-flecha">⌄</span></summary>
+          <nav className="accesos-inicio accesos-inicio-movil" aria-label="Herramientas secundarias">
+            {herramientas.map(h => <Link key={h.ruta} to={h.ruta} className="acceso">
+              <span>{h.titulo}</span><span aria-hidden="true">›</span>
+            </Link>)}
+          </nav>
+        </details>
 
         <div className="inicio-trabajo">
         <div className="grupo-titulo" id="por-hacer" data-tutorial="inicio-por-hacer">
