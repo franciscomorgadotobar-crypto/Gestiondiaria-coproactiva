@@ -28,13 +28,12 @@ export function normalizarArea(valor) {
   return EQUIVALENCIAS[valor] ?? null;
 }
 
-/* Grupo al que pertenece una ruta. Las rutas compartidas (/nuevo,
- * /notificaciones, /mi-cuenta) no tienen grupo propio: devuelven null y
- * mandan el grupo elegido. */
+/* Grupo al que pertenece una ruta. «Mi cuenta» pertenece a Configuración;
+ * /nuevo y /notificaciones conservan el grupo de contexto. */
 const RUTAS_GRUPO = [
   ['comercial', ['/pipeline', '/documentos', '/propuestas', '/propiedades', '/seo', '/plantillas-correo']],
   ['finanzas', ['/contabilidad']],
-  ['configuracion', ['/configuracion', '/equipo', '/clientes']],
+  ['configuracion', ['/configuracion', '/mi-cuenta', '/equipo', '/clientes']],
   ['operacion', ['/inicio', '/vista-cliente', '/comunidades', '/compromisos', '/mantenciones', '/bitacora', '/plantillas',
     '/mapa', '/control', '/ayuda', '/proveedores', '/whatsapp']]
 ];
