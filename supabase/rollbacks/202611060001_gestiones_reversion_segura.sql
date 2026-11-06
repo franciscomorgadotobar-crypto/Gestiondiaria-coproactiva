@@ -18,6 +18,7 @@ begin
 end $$;
 revoke all on function public.gestiones_crear_desde_tipo(uuid,uuid,text,date,date) from public,anon,authenticated;
 revoke all on function public.gestiones_cambiar_estado(uuid,text,date,text,text) from public,anon,authenticated;
+revoke all on function public.gestiones_archivar(uuid,boolean) from public,anon,authenticated;
 alter table public.compromisos_avances alter column publicado set default false;
 alter table public.compromisos_avances alter column registrado_por drop default;
 -- NO borramos modelos, bitácoras, documentos, campos añadidos ni movimientos:
