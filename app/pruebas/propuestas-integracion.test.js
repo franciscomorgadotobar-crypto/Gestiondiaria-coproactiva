@@ -106,7 +106,8 @@ test('Accesos contextuales desde CRM, Correo, Comunidades, Proveedores y Operaci
  assert.match(comunidad,/Nuevo informe de gestión/);
  assert.match(proveedores,/Ver documentos en gestor/);
  assert.match(proveedores,/abrir el gestor documental/);
- assert.match(inicio,/to="\/documentos"/);
+ assert.match(inicio,/ruta: '\/documentos', titulo: 'Gestor documental'/);
+ assert.match(inicio,/<Link key=\{h\.ruta\} to=\{h\.ruta\}/);
  assert.match(pipeline,/to=\{'\/documentos\?prospecto='\+prospectoSeleccionado\.id\}/);
  assert.match(adjuntos,/Abrir gestor documental para crear un documento/);
 });

@@ -424,33 +424,28 @@ function ListadoComunidades() {
           <p className="vacio">No hay comunidades que coincidan con la búsqueda.</p>
         )}
 
-        <div className="comunidades-lista">
+        <div className="comunidades-lista" role="list" aria-label="Comunidades registradas">
           {visibles.map(c => (
-            <Link key={c.id} to={`/comunidades/${c.id}`} className="tarjeta comunidad-card">
-              <div className="comunidad-card-cabecera">
-                <div>
-                  <span className="micro apagado">Comunidad</span>
+            <div role="listitem" key={c.id} className="comunidad-fila">
+              <Link to={`/comunidades/${c.id}`} className="comunidad-fila-enlace"
+                    aria-label={`Abrir comunidad: ${c.nombre}`}>
+                <span className="comunidad-fila-principal">
                   <strong>{c.nombre}</strong>
-                </div>
-                <span className="comunidad-card-flecha" aria-hidden="true">›</span>
-              </div>
-              <div className="comunidad-card-datos">
-                <div>
-                  <span>Comuna</span>
-                  <strong>{c.comuna || 'Sin informar'}</strong>
-                </div>
-                <div>
-                  <span>Dirección</span>
-                  <strong>{c.direccion || 'Sin informar'}</strong>
-                </div>
-              </div>
-              <div className="comunidad-card-pie">
-                <span className={'chip ' + (c.latitud != null && c.longitud != null ? 'chip-cumple' : 'chip-pendiente')}>
-                  {c.latitud != null && c.longitud != null ? 'Ubicación registrada' : 'Ubicación pendiente'}
+                  <span className="comunidad-fila-direccion">
+                    {c.comuna || 'Comuna sin informar'}
+                    <span aria-hidden="true"> · </span>
+                    {c.direccion || 'Dirección sin informar'}
+                  </span>
                 </span>
-                <span>Abrir comunidad</span>
-              </div>
-            </Link>
+                <span className="comunidad-fila-fin">
+                  <span className={'comunidad-fila-estado ' +
+                    (c.latitud != null && c.longitud != null ? 'tiene-ubicacion' : 'sin-ubicacion')}>
+                    {c.latitud != null && c.longitud != null ? 'Ubicada' : 'Sin ubicación'}
+                  </span>
+                  <span className="comunidad-fila-flecha" aria-hidden="true">›</span>
+                </span>
+              </Link>
+            </div>
           ))}
         </div>
       </div>

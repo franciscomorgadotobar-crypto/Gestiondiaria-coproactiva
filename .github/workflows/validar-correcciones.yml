@@ -49,6 +49,9 @@ jobs:
       - name: Validar jerarquía de subtareas, checks, progreso y evidencias
         working-directory: app
         run: node --test pruebas/compromisos-subtareas-progreso.test.js
+      - name: Verificar Home y Comunidades compactos con barra móvil de tres accesos
+        working-directory: app
+        run: node --test pruebas/home-comunidades-movil.test.js
       - name: Validar Home y flujo de compromisos y correo
         working-directory: app
         run: node --test pruebas/flujo-home-compromisos-correo.test.js
