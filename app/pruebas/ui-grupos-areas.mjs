@@ -126,7 +126,7 @@ try {
       capa.id='mapa-capa-qa';
       capa.className='leaflet-pane';
       capa.style.cssText='position:fixed;inset:0;z-index:999999;pointer-events:none';
-      document.getElementById('root').append(capa);
+      document.getElementById('raiz').append(capa);
     });
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
     const modal=page.getByRole('dialog',{name:'Más opciones'});
@@ -136,7 +136,7 @@ try {
     assert.equal(await page.locator('body > .menu-mas-fondo').count(),1,
       'El diálogo debe salir del contenedor de la aplicación y del mapa');
     const fondo=await page.evaluate(()=>{
-      const raiz=document.getElementById('root');
+      const raiz=document.getElementById('raiz');
       const capa=document.querySelector('.menu-mas-fondo');
       const estilo=getComputedStyle(capa);
       return {inerte:raiz.inert,overflowBody:document.body.style.overflow,
@@ -148,7 +148,7 @@ try {
       zIndex:2147483000,cubreMapa:true},'El fondo debe quedar bloqueado encima de Leaflet');
     await modal.getByRole('button',{name:'Cerrar menú'}).click();
     await modal.waitFor({state:'detached'});
-    assert.equal(await page.evaluate(()=>document.getElementById('root').inert),false);
+    assert.equal(await page.evaluate(()=>document.getElementById('raiz').inert),false);
     assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
     assert.equal(await page.evaluate(()=>document.documentElement.style.overflow),'');
     console.log('Operaciones · menú Más sin duplicados y mapa bloqueado: OK');
