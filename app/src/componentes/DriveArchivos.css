@@ -42,3 +42,34 @@
  .compromisos-wrap .drive-compacto .drive-doc-acciones .boton-texto{min-height:44px;font-size:12px}
  .compromisos-wrap .drive-compacto .drive-doc{padding:8px}
 }
+
+
+/* Lista-detalle de compromisos: un documento por fila y acciones en horizontal. */
+.compromisos-wrap .drive-compacto .drive-doc{
+ display:grid;grid-template-columns:minmax(0,1.5fr) minmax(110px,.75fr) minmax(0,1.3fr);
+ align-items:center;gap:3px 10px;padding:7px 9px;min-width:0;
+}
+.compromisos-wrap .drive-compacto .drive-doc-fila{min-width:0}
+.compromisos-wrap .drive-compacto .drive-doc-nombre{font-size:12px;font-weight:700;overflow-wrap:anywhere}
+.compromisos-wrap .drive-compacto .drive-doc-meta{display:flex;gap:2px 8px;flex-wrap:wrap;margin:0;font-size:10px}
+.compromisos-wrap .drive-compacto .drive-doc-acciones{
+ display:flex;align-items:center;justify-content:flex-end;gap:2px;
+ margin:0;flex-wrap:nowrap;min-width:0;overflow-x:auto;scrollbar-width:thin;
+}
+.compromisos-wrap .drive-compacto .drive-doc-acciones .boton-texto{
+ flex:none;min-height:32px;padding:5px 7px;font-size:11px;
+ white-space:nowrap;text-decoration:none;
+}
+.compromisos-wrap .drive-compacto .drive-doc-acciones .boton-texto:focus-visible{
+ outline:2px solid var(--naranja);outline-offset:-2px
+}
+.compromisos-wrap .drive-compacto .drive-doc .drive-historial{grid-column:1/-1}
+.compromisos-wrap .drive-compacto .drive-doc-estado-privado{
+ color:var(--alerta-texto);font-size:10px;font-weight:700
+}
+@media(max-width:850px){
+ .compromisos-wrap .drive-compacto .drive-doc{grid-template-columns:minmax(0,1fr);gap:4px;padding:7px 8px}
+ .compromisos-wrap .drive-compacto .drive-doc-meta{font-size:10px}
+ .compromisos-wrap .drive-compacto .drive-doc-acciones{justify-content:flex-start;max-width:100%}
+ .compromisos-wrap .drive-compacto .drive-doc-acciones .boton-texto{min-height:44px;font-size:11px;padding:6px 8px}
+}

@@ -172,3 +172,75 @@
  .compromisos-subtarea-herramientas .compromisos-subtarea-drive>summary{min-height:44px}
  .compromisos-subtarea-herramientas .compromisos-subtarea-eliminar{min-height:44px}
 }
+
+
+/* Mismo recorrido de Levantamientos: categoría > índice numerado > punto individual. */
+.compromisos-item{border-radius:var(--radio-control)}
+.compromisos-item>.compromisos-fila.compromisos-categoria-titulo{
+ display:flex;align-items:center;min-height:56px;gap:10px;padding:10px 13px;
+ background:var(--tarjeta);border:0;border-radius:var(--radio-control);
+ text-transform:none;letter-spacing:normal;font-family:var(--fuente-cuerpo);
+}
+.compromisos-item[open]>.compromisos-categoria-titulo{border-bottom:1px solid var(--borde)}
+.compromisos-categoria-titulo .compromisos-titulo{min-width:0;flex:1;display:grid;gap:3px}
+.compromisos-categoria-titulo .compromisos-titulo strong{font-size:14px;line-height:1.3;letter-spacing:0;text-transform:none}
+.compromisos-categoria-titulo .compromisos-titulo small{font-size:12px;line-height:1.25;font-weight:500;text-transform:none;letter-spacing:0}
+.compromisos-categoria-titulo .portal-estado{font-size:11px;white-space:nowrap}
+.compromisos-categoria-titulo .compromisos-icono-eliminar{flex:none}
+.compromisos-categoria-titulo .compromisos-flecha{flex:none}
+.compromisos-subtareas-v2{gap:7px}
+.compromisos-indice{margin:0;padding:0;border-radius:var(--radio-control);border-top:1px solid var(--borde)}
+.compromisos-indice-item{position:relative;min-width:0}
+.compromisos-indice .pregunta-indice{
+ grid-template-columns:34px minmax(0,1fr) 46px 18px;
+ gap:7px;min-height:51px;padding:7px 10px;box-sizing:border-box;
+}
+.compromisos-indice .pregunta-indice .texto-pregunta>span{font-size:13px;line-height:1.3}
+.compromisos-indice .pregunta-indice .texto-pregunta>small{margin-top:2px;font-size:10px;letter-spacing:0.025em;line-height:1.2}
+.compromisos-indice .numero-pregunta{width:28px;height:28px}
+.compromisos-indice-porcentaje{font-size:12px;font-weight:700;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.compromisos-indice .compromisos-indice-item.motor-avances-fila--en_curso>.pregunta-indice{
+ background:var(--alerta-fondo);box-shadow:inset 3px 0 0 var(--alerta-texto)
+}
+.compromisos-indice-admin .pregunta-indice{padding-right:50px}
+.compromisos-icono-eliminar{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:34px;min-width:34px;border-radius:6px;border:1px solid transparent;
+ background:transparent;color:var(--critico-texto);
+ font-size:22px;font-weight:500;line-height:1;cursor:pointer;
+}
+.compromisos-icono-eliminar:hover{background:var(--critico-fondo);border-color:var(--critico-borde)}
+.compromisos-icono-eliminar:focus-visible{outline:2px solid var(--naranja);outline-offset:2px}
+.compromisos-icono-eliminar:disabled{opacity:.5;cursor:not-allowed}
+.compromisos-indice-item>.compromisos-icono-eliminar{position:absolute;right:8px;top:50%;transform:translateY(-50%)}
+.compromisos-subtarea-detalle{gap:7px;padding:10px 12px}
+.compromisos-subtarea-detalle .compromisos-volver-indice{
+ justify-self:start;min-height:34px;padding:4px 6px;color:var(--enlace);font-size:12px
+}
+.compromisos-subtarea-detalle .compromisos-subtarea-principal{gap:8px}
+.compromisos-pasos{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 2px 0}
+.compromisos-pasos .boton{min-height:44px}
+.compromisos-pasos .conteo{font-size:12px;font-weight:700;white-space:nowrap}
+.compromisos-subtarea-herramientas .compromisos-subtarea-eliminar{
+ font-size:0;width:36px;min-width:36px;min-height:36px;display:inline-flex;
+ align-items:center;justify-content:center;
+}
+.compromisos-subtarea-herramientas .compromisos-subtarea-eliminar::after{
+ content:'×';font-size:23px;line-height:1
+}
+@media(max-width:640px){
+ .compromisos-item>.compromisos-fila.compromisos-categoria-titulo{min-height:60px;padding:9px 10px;gap:7px;flex-wrap:nowrap}
+ .compromisos-categoria-titulo .compromisos-titulo strong{font-size:13px}
+ .compromisos-categoria-titulo .compromisos-titulo small{font-size:11px}
+ .compromisos-categoria-titulo .portal-estado{max-width:65px;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+ .compromisos-icono-eliminar{min-width:44px;min-height:44px}
+ .compromisos-indice .pregunta-indice{min-height:56px;grid-template-columns:29px minmax(0,1fr) 39px 13px;gap:5px;padding:6px 8px}
+ .compromisos-indice .pregunta-indice .texto-pregunta>span{font-size:12px}
+ .compromisos-indice .pregunta-indice .texto-pregunta>small{font-size:9px}
+ .compromisos-indice-admin .pregunta-indice{padding-right:47px}
+ .compromisos-indice-porcentaje{font-size:11px}
+ .compromisos-subtarea-detalle{padding:9px}
+ .compromisos-pasos{flex-wrap:wrap}
+ .compromisos-pasos .boton{flex:1 1 120px}
+ .compromisos-pasos .conteo{order:-1;flex-basis:100%;text-align:center}
+}

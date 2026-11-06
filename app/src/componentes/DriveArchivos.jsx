@@ -177,6 +177,7 @@ export default function DriveArchivos({
               <span className="drive-doc-nombre">{d.nombre}</span>
               {d.eliminado_en && <span className="chip chip-pendiente">Eliminado</span>}
               {!d.eliminado_en && personal && d.visible_cliente && <span className="chip chip-cumple">Visible al cliente</span>}
+              {!d.eliminado_en && personal && !d.visible_cliente && <span className="drive-doc-estado-privado">Sin publicar</span>}
             </div>
             <div className="drive-doc-meta micro apagado">
               {!origenTipo && <span>{ORIGENES_DRIVE[d.origen_tipo] || d.origen_tipo}</span>}

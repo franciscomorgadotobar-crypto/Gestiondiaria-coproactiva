@@ -6,6 +6,7 @@ import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '.
 import {porcentajeSubtareas,resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
 import {ordenarAvances,primerPendienteAvances,estadoVisualAvance} from '../../lib/motorAvances';
 import MotorAvances from '../../componentes/MotorAvances';
+import repositorioSantaClara from '../../datos/repositorioCompromisosSantaClara.json';
 
 const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
@@ -21,12 +22,15 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [archivos, setArchivos] = useState([]);
  const [subtareas,setSubtareas]=useState([]);
  const [nuevaSubtarea,setNuevaSubtarea]=useState({});
+ // Índice numerado y detalle individual: el mismo recorrido de Levantamientos.
+ const [pasoSubtarea,setPasoSubtarea]=useState({});
  const [tituloEnEdicion,setTituloEnEdicion]=useState(null);
  const [editando,setEditando]=useState(null);
  const [editForm,setEditForm]=useState(inicial);
  const [error, setError] = useState('');
  const [cargando, setCargando] = useState(true);
  const [nuevo, setNuevo] = useState(inicial);
+ const [modeloSeleccionado,setModeloSeleccionado]=useState('');
  const [detalle, setDetalle] = useState(null);
  const [texto, setTexto] = useState('');
  const [evidencia, setEvidencia] = useState('');
@@ -84,6 +88,27 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   });
   if (err) setError(err.message); else { setNuevo(inicial); await recargarYNotificar(); }
   setGuardando(false);
+ }
+ async function agregarDesdeRepositorio(e) {
+  e.preventDefault();
+  if(!administrador||guardando||!modeloSeleccionado)return;
+  const modelo=repositorioSantaClara.items.find(x=>x.codigo===modeloSeleccionado);
+  if(!modelo)return;
+  if(compromisos.some(x=>x.titulo.trim().toLocaleLowerCase('es-CL')===modelo.titulo.toLocaleLowerCase('es-CL'))){
+   setError('Este compromiso ya existe en la comunidad. No se creó un duplicado.');
+   return;
+  }
+  setGuardando(true);setError('');
+  try {
+   const {error:err}=await supabase.from('compromisos_administracion').insert({
+    comunidad_id:comunidadId,titulo:modelo.titulo,descripcion:'',
+    orden:modelo.orden,estado:'pendiente',avance:0,publicado:false
+   });
+   if(err)throw err;
+   setModeloSeleccionado('');
+   await recargarYNotificar();
+  }catch(err){setError('No se pudo agregar el compromiso: '+(err.message||'Error desconocido'));}
+  finally{setGuardando(false);}
  }
  async function abrirAdjunto(doc) {
   const {data, error: err} = await supabase.storage.from('compromisos-adjuntos').createSignedUrl(doc.ruta, 90);
@@ -242,6 +267,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
     throw new Error('La subtarea tiene documentos en Google Drive. Retíralos antes de eliminarla.');
    const {error:e}=await supabase.from('compromisos_subtareas').delete().eq('id',sub.id);
    if(e)throw e;
+   setPasoSubtarea(actual=>({...actual,[item.id]:null}));
    await recargarYNotificar();
   }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
@@ -296,6 +322,22 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
        <button className="boton boton-primario" disabled={guardando}>Crear compromiso interno</button>
      </form>
    </details>}
+   {administrador&&!integrado&&<details className="tarjeta compromisos-crear-desplegable compromisos-repositorio">
+     <summary>Repositorio de compromisos · {repositorioSantaClara.items.length} modelos</summary>
+     <form className="compromisos-form" onSubmit={agregarDesdeRepositorio}>
+       <p className="micro apagado">Catálogo de referencia de Reserva Santa Clara (23-10-2026). Agrega un modelo sin modificar el original ni los compromisos existentes.</p>
+       <label>Modelo del repositorio
+         <select aria-label="Seleccionar compromiso del repositorio" value={modeloSeleccionado}
+           onChange={e=>setModeloSeleccionado(e.target.value)}>
+           <option value="">Seleccionar compromiso…</option>
+           {repositorioSantaClara.items.map(x=><option key={x.codigo} value={x.codigo}>{String(x.orden).padStart(2,'0')}. {x.titulo}</option>)}
+         </select>
+       </label>
+       <button className="boton boton-secundario" type="submit" disabled={guardando||!modeloSeleccionado}>
+         Agregar a esta comunidad
+       </button>
+     </form>
+   </details>}
    {cargando ? <p className="cargando">Cargando compromisos…</p>
     : !compromisos.length ? <div className="portal-vacio">No hay compromisos registrados para esta comunidad.</div>
     : <div className="compromisos-lista">
@@ -308,12 +350,17 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
           const movimientos=transiciones.filter(x=>x.compromiso_id===item.id);
           const Etiqueta=integrado?'div':'details';
           return <Etiqueta key={item.id} className={'tarjeta compromisos-item'+(integrado?' compromisos-item-integrado':'')}>
-            {!integrado&&<summary className="compromisos-fila">
-              <span className="compromisos-titulo">
+            {!integrado&&<summary className="categoria-titulo compromisos-fila compromisos-categoria-titulo">
+              <span className="compromisos-titulo crece">
                 <strong>{String(indice+1).padStart(2,'0')}. {item.titulo}</strong>
-                <small>{item.responsable||'Por asignar'} · Fecha límite: {fecha(item.fecha_limite)} · {progreso}% de avance</small>
+                <small>{realizados}/{sub.length} completadas · {progreso}% de avance</small>
               </span>
+              {sub.length>0&&realizados===sub.length&&<span className="categoria-ok" aria-label="Compromiso completado">✓</span>}
               <span className="portal-estado">{NOMBRES[item.estado]||item.estado}</span>
+              {administrador&&<button type="button" className="compromisos-icono-eliminar"
+                aria-label={'Eliminar compromiso: '+item.titulo} title="Eliminar compromiso"
+                disabled={guardando}
+                onClick={e=>{e.preventDefault();e.stopPropagation();eliminarCompromiso(item);}}>×</button>}
               <span className="compromisos-flecha" aria-hidden="true">⌄</span>
             </summary>}
             <div className="compromisos-detalle">
@@ -349,18 +396,43 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
               <section className="compromisos-subtareas-v2" aria-label={'Subtareas de '+item.titulo}>
                 <div className="compromisos-subtareas-cabecera">
                   <div><h3>Subtareas</h3>
-                    <p>Checklist en orden de ejecución. Marca para cerrar; los avances parciales se calculan automáticamente.</p>
+                    <p>Selecciona una actividad del índice para revisar sus detalles, avanzar o adjuntar evidencias.</p>
                   </div>
                 </div>
                 {sub.length===0&&<p className="compromisos-subtareas-vacio">
                   Sin subtareas. Agrega las actividades necesarias para medir el avance de este compromiso.
                 </p>}
-                {sub.map((x,indiceSub)=>{
+                {sub.length>0&&!pasoSubtarea[item.id]&&
+                  <ol className={'indice-preguntas compromisos-indice'+(administrador?' compromisos-indice-admin':'')} aria-label={'Actividades de '+item.titulo}>
+                    {sub.map((x,indiceSub)=>{
+                      const estadoVisual=estadoVisualAvance({completada:x.completada,avance:x.avance});
+                      return <li key={x.id} className={'compromisos-indice-item motor-avances-fila--'+estadoVisual}>
+                        <button type="button" className={'pregunta-indice'+(x.completada?' respondida':'')}
+                          onClick={()=>setPasoSubtarea(actual=>({...actual,[item.id]:x.id}))}
+                          aria-label={'Abrir actividad '+(indiceSub+1)+': '+x.titulo}>
+                          <span className="numero-pregunta">{indiceSub+1}</span>
+                          <span className="texto-pregunta">
+                            <span>{x.titulo}</span>
+                            <small>{x.completada?'Completada':(x.avance>0?'En ejecución':'Pendiente')}{indiceSub===primeraPendiente?' · Siguiente':''}</small>
+                          </span>
+                          <span className="compromisos-indice-porcentaje">{x.completada?100:(x.avance||0)}%</span>
+                          <span className="estado-pregunta" aria-hidden="true">{x.completada?'✓':'›'}</span>
+                        </button>
+                        {administrador&&<button type="button" className="compromisos-icono-eliminar"
+                          aria-label={'Eliminar subtarea: '+x.titulo} title="Eliminar subtarea"
+                          disabled={guardando} onClick={()=>eliminarSubtarea(item,x)}>×</button>}
+                      </li>;
+                    })}
+                  </ol>}
+                {sub.filter(x=>x.id===pasoSubtarea[item.id]).map(x=>{
+                  const indiceSub=sub.findIndex(v=>v.id===x.id);
                   const estadoVisual=estadoVisualAvance({completada:x.completada,avance:x.avance});
                   const esSiguiente=indiceSub===primeraPendiente;
-                  return <div className={'compromisos-subtarea-card motor-avances-fila motor-avances-fila--'+estadoVisual
+                  return <div className={'compromisos-subtarea-card compromisos-subtarea-detalle motor-avances-fila motor-avances-fila--'+estadoVisual
                     +(esSiguiente?' motor-avances-fila--siguiente':'')
                     +(x.completada?' esta-completa':'')} key={x.id}>
+                    <button type="button" className="volver-indice compromisos-volver-indice"
+                      onClick={()=>setPasoSubtarea(actual=>({...actual,[item.id]:null}))}>‹ Volver a la lista</button>
                     <div className="compromisos-subtarea-principal">
                       <span className="motor-avances-numero" aria-label={'Paso '+(indiceSub+1)}>{indiceSub+1}</span>
                       {tituloEnEdicion?.tipo==='subtarea'&&tituloEnEdicion.id===x.id?
@@ -409,10 +481,22 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                         ayuda="Los archivos se guardan en la carpeta de este compromiso en Google Drive y quedan asociados a la subtarea."/>
                     </details>
                     {administrador&&<button type="button" className="compromisos-subtarea-eliminar"
-                      disabled={guardando} onClick={()=>eliminarSubtarea(item,x)}>Eliminar</button>}
+                      disabled={guardando} aria-label={'Eliminar subtarea: '+x.titulo}
+                      title="Eliminar subtarea" onClick={()=>eliminarSubtarea(item,x)}>Eliminar</button>}
                     </div>
                   </div>;
                 })}
+                {pasoSubtarea[item.id]&&sub.length>0&&
+                  <nav className="pasos compromisos-pasos" aria-label="Navegación de actividades">
+                    <button type="button" className="boton boton-secundario"
+                      disabled={sub.findIndex(x=>x.id===pasoSubtarea[item.id])<=0}
+                      onClick={()=>{const i=sub.findIndex(x=>x.id===pasoSubtarea[item.id]);setPasoSubtarea(actual=>({...actual,[item.id]:sub[i-1]?.id||null}));}}>‹ Anterior</button>
+                    <span className="conteo">{sub.findIndex(x=>x.id===pasoSubtarea[item.id])+1} de {sub.length}</span>
+                    <button type="button" className="boton boton-primario"
+                      onClick={()=>{const i=sub.findIndex(x=>x.id===pasoSubtarea[item.id]);setPasoSubtarea(actual=>({...actual,[item.id]:sub[i+1]?.id||null}));}}>
+                      {sub.findIndex(x=>x.id===pasoSubtarea[item.id])===sub.length-1?'Volver al índice':'Siguiente ›'}
+                    </button>
+                  </nav>}
                 {administrador&&<div className="compromisos-subagregar">
                   <input aria-label={'Nueva subtarea para '+item.titulo} placeholder="Escribe una nueva subtarea"
                     value={nuevaSubtarea[item.id]||''}
