@@ -83,7 +83,8 @@ export default function GestionesRepositorio({comunidadId,gestiones=[],subtareas
    ...VACIO,
    nombre:g.titulo+' - Variante',
    descripcion:g.descripcion||'',responsable_sugerido:g.responsable||'',
-   tareas:linea(subtareas.filter(x=>x.compromiso_id===g.id).sort((a,b)=>a.orden-b.orden).map(x=>({titulo:x.titulo})))
+   tareas:linea(subtareas.filter(x=>x.compromiso_id===g.id).sort((a,b)=>a.orden-b.orden).map(x=>({titulo:x.titulo}))),
+   documentos_esperados:(g.documentos_esperados||[]).join('\n')
   });
  };
  return <details className="tarjeta gestiones-repositorio" aria-label="Repositorio de tipos de gestión">
