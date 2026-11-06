@@ -75,10 +75,11 @@ try{
   assert.equal(await page.locator('a[href="/compromisos"]').count(),0,'Sin submenú de compromisos');
   await page.getByRole('link',{name:/Reserva Santa Clara/}).first().click();
   await page.waitForURL(u=>u.pathname==='/comunidades/'+comunidadId,{timeout:18000});
-  await page.getByRole('tab',{name:'Compromisos y avances'}).click();
+  await page.getByRole('tab',{name:'Gestiones y avances'}).click();
   await page.waitForURL(u=>u.searchParams.get('seccion')==='compromisos',{timeout:15000});
+  await page.getByRole('button',{name:/Todas 24/}).click();
   await page.locator('.compromisos-item').first().waitFor({timeout:15000});
-  assert.equal(await page.locator('.compromisos-item').count(),24,'24 compromisos de la comunidad');
+  assert.equal(await page.locator('.compromisos-item').count(),24,'24 gestiones incluidas las históricas');
   await page.locator('.compromisos-item').first().locator('summary.compromisos-fila').click();
   await page.locator('.compromisos-indice-item').first().waitFor({timeout:12000});
   assert.equal(await page.locator('.compromisos-indice-item').count(),9,'9 actividades en índice numerado');

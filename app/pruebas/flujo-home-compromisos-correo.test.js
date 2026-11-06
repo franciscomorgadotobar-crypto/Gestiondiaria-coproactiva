@@ -29,14 +29,14 @@ test('Historial y rutas consecutivas',()=>{
 test('Los compromisos registran etapas y fechas sin sobreescribirlas con checkbox',()=>{
  const c=read('src/paginas/cliente/Compromisos.jsx');
  const migration=read('../supabase/migrations/0102_compromisos_etapas_y_plantillas_correo.sql');
- assert.match(c,/supabase\.rpc\('compromisos_cambiar_etapa'/);
+ assert.match(c,/supabase\.rpc\('gestiones_cambiar_estado'/);
  assert.match(c,/fecha_inicio/);
  assert.match(c,/fecha_proxima_accion/);
  assert.match(c,/fecha_cierre/);
  assert.match(c,/const Etiqueta=integrado\?'div':'details'/);
  assert.match(c,/<Etiqueta key=\{item\.id\} className=/);
  assert.match(c,/compromisos-item-integrado/);
- assert.match(c,/<details className="compromisos-historial"/);
+ assert.match(c,/compromisos-historial gestiones-linea-tiempo/);
  assert.match(migration,/compromisos_transiciones/);
  assert.match(migration,/enable row level security/);
 });

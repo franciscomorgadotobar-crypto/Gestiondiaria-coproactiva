@@ -6,17 +6,20 @@ import { DRIVE_ACCEPT, conexionDrive, subirADrive, validarArchivoDrive } from '.
 import {porcentajeSubtareas,resumenGlobalCompromisos} from '../../lib/progresoCompromisos';
 import {ordenarAvances,primerPendienteAvances,estadoVisualAvance} from '../../lib/motorAvances';
 import MotorAvances from '../../componentes/MotorAvances';
-import repositorioSantaClara from '../../datos/repositorioCompromisosSantaClara.json';
+import GestionesRepositorio from './GestionesRepositorio';
+import {ESTADOS_GESTION,TIPOS_REGISTRO,PRIORIDADES,resumenGestiones,
+ vistaGestiones,ordenCronologico,informeGestionHtml,normalizarDocumentosModelo} from '../../lib/gestiones';
 
-const NOMBRES = { pendiente: 'Pendiente', en_curso: 'En ejecución', en_espera: 'En espera de tercero', completado: 'Completado' };
+const NOMBRES = ESTADOS_GESTION;
 const fecha = x => x ? new Date(x + (x.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-CL') : 'Sin fecha';
-const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '' };
+const inicial = { titulo: '', descripcion: '', referencia_contractual: '', fecha_inicio: '', fecha_limite: '', fecha_proxima_accion: '', responsable: '',prioridad:'normal',resultado:'',proxima_accion_texto:'',documentos_esperados:'' };
 
 export default function Compromisos({ comunidadId, administrador = false, soloVistaCliente = false, seleccionadoId = null, integrado = false, onActualizado }) {
  const [compromisos, setCompromisos] = useState([]);
  const [avances, setAvances] = useState([]);
  const [transiciones,setTransiciones] = useState([]);
  const [fechasRapidas,setFechasRapidas] = useState({});
+ const [limitesRapidos,setLimitesRapidos] = useState({});
  const [observacionesRapidas,setObservacionesRapidas] = useState({});
  const [adjuntos, setAdjuntos] = useState([]);
  const [archivos, setArchivos] = useState([]);
@@ -30,13 +33,18 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
  const [error, setError] = useState('');
  const [cargando, setCargando] = useState(true);
  const [nuevo, setNuevo] = useState(inicial);
- const [modeloSeleccionado,setModeloSeleccionado]=useState('');
+ const [vista,setVista]=useState('activas');
+ const [tipoRegistro,setTipoRegistro]=useState('avance');
+ const [proximaAccionTexto,setProximaAccionTexto]=useState('');
+ const [resultadosRapidos,setResultadosRapidos]=useState({});
+ const [documentosGestion,setDocumentosGestion]=useState([]);
+ const [accionesAbiertas,setAccionesAbiertas]=useState({});
  const [detalle, setDetalle] = useState(null);
  const [texto, setTexto] = useState('');
  const [evidencia, setEvidencia] = useState('');
  const [porcentaje, setPorcentaje] = useState(0);
  const [estado, setEstado] = useState('en_curso');
- const [publicar, setPublicar] = useState(false);
+ const [publicar, setPublicar] = useState(true);
  const [guardando, setGuardando] = useState(false);
  const [driveConectada, setDriveConectada] = useState(false);
  const [versionDocs, setVersionDocs] = useState(0);
@@ -49,6 +57,14 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   if (err) { setError('No fue posible cargar compromisos: ' + err.message); setCargando(false); return; }
   const visibles=soloVistaCliente ? (data||[]).filter(c=>c.publicado===true) : (data||[]);
   setCompromisos(visibles);
+  const idsDocs=visibles.map(x=>x.id);
+  if(idsDocs.length){
+   const {data:docsDrive}=await supabase.from('drive_archivos_comunidad')
+     .select('origen_id,detalle_id,nombre,visible_cliente').eq('comunidad_id',comunidadId)
+     .eq('origen_tipo','compromiso').is('eliminado_en',null)
+     .in('origen_id',idsDocs);
+   setDocumentosGestion(docsDrive||[]);
+  }else setDocumentosGestion([]);
   const {data: subt,error: errSubt}=await supabase.from('compromisos_subtareas').select('*').in('compromiso_id',visibles.map(x=>x.id).length ? visibles.map(x=>x.id):['00000000-0000-0000-0000-000000000000']).order('orden',{ascending:true});
   if(errSubt) setError(errSubt.message);
   setSubtareas(subt||[]);
@@ -84,31 +100,14 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    referencia_contractual: nuevo.referencia_contractual, fecha_limite: nuevo.fecha_limite || null,
    fecha_inicio: nuevo.fecha_inicio || null,
    fecha_proxima_accion: nuevo.fecha_proxima_accion || null,
-   responsable: nuevo.responsable, publicado: false
+   responsable: nuevo.responsable, prioridad:nuevo.prioridad,
+   resultado:nuevo.resultado||null,
+   proxima_accion_texto:nuevo.proxima_accion_texto||null,
+   documentos_esperados:normalizarDocumentosModelo(nuevo.documentos_esperados),
+   publicado: true
   });
   if (err) setError(err.message); else { setNuevo(inicial); await recargarYNotificar(); }
   setGuardando(false);
- }
- async function agregarDesdeRepositorio(e) {
-  e.preventDefault();
-  if(!administrador||guardando||!modeloSeleccionado)return;
-  const modelo=repositorioSantaClara.items.find(x=>x.codigo===modeloSeleccionado);
-  if(!modelo)return;
-  if(compromisos.some(x=>x.titulo.trim().toLocaleLowerCase('es-CL')===modelo.titulo.toLocaleLowerCase('es-CL'))){
-   setError('Este compromiso ya existe en la comunidad. No se creó un duplicado.');
-   return;
-  }
-  setGuardando(true);setError('');
-  try {
-   const {error:err}=await supabase.from('compromisos_administracion').insert({
-    comunidad_id:comunidadId,titulo:modelo.titulo,descripcion:'',
-    orden:modelo.orden,estado:'pendiente',avance:0,publicado:false
-   });
-   if(err)throw err;
-   setModeloSeleccionado('');
-   await recargarYNotificar();
-  }catch(err){setError('No se pudo agregar el compromiso: '+(err.message||'Error desconocido'));}
-  finally{setGuardando(false);}
  }
  async function abrirAdjunto(doc) {
   const {data, error: err} = await supabase.storage.from('compromisos-adjuntos').createSignedUrl(doc.ruta, 90);
@@ -116,43 +115,52 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
  }
  async function registrar(e) {
-  e.preventDefault(); if (!detalle || !texto.trim() || guardando) return;
-  setGuardando(true); setError('');
-  try {
-   const subt = subtareas.filter(s=>s.compromiso_id===detalle);
-   const porcentajeReal=subt.length?porcentajeSubtareas(subt):Number(porcentaje);
-   const { data: avance, error: err } = await supabase.from('compromisos_avances').insert({
-    compromiso_id: detalle, descripcion: texto.trim(), porcentaje: porcentajeReal,
-    estado, evidencia_url: evidencia.trim() || null, publicado: publicar
+  e.preventDefault();
+  if(!detalle||!texto.trim()||guardando)return;
+  const gestion=compromisos.find(c=>c.id===detalle);
+  if(!gestion)return;
+  if(archivos.length&&!driveConectada){
+   setError('Conecta Google Drive para adjuntar evidencias a esta gestión.');
+   return;
+  }
+  setGuardando(true);setError('');
+  try{
+   const subt=subtareas.filter(x=>x.compromiso_id===detalle);
+   const porcentajeReal=tipoRegistro==='avance'
+    ?(subt.length?porcentajeSubtareas(subt):Math.max(0,Math.min(100,Number(porcentaje)||0)))
+    :null;
+   const {data:registro,error:e}=await supabase.from('compromisos_avances').insert({
+    compromiso_id:detalle,descripcion:texto.trim(),tipo_registro:tipoRegistro,
+    proxima_accion:proximaAccionTexto.trim()||null,
+    porcentaje:porcentajeReal,estado:gestion.estado,
+    evidencia_url:evidencia.trim()||null,publicado:publicar
    }).select('id').single();
-   if (err) throw err;
-   const fallidos = [];
-   if(archivos.length&&!driveConectada)
-    throw new Error('Conecta Google Drive en Comunidades → Configuración antes de adjuntar archivos.');
-   for (const file of archivos) {
+   if(e)throw e;
+   const actualizacion={};
+   if(tipoRegistro==='avance'&&!subt.length)actualizacion.avance=porcentajeReal;
+   if(tipoRegistro==='resultado')actualizacion.resultado=texto.trim();
+   if(proximaAccionTexto.trim())actualizacion.proxima_accion_texto=proximaAccionTexto.trim();
+   if(Object.keys(actualizacion).length){
+    actualizacion.actualizado_en=new Date().toISOString();
+    const {error:actualizarError}=await supabase.from('compromisos_administracion')
+      .update(actualizacion).eq('id',detalle).eq('comunidad_id',comunidadId);
+    if(actualizarError)throw actualizarError;
+   }
+   const fallidos=[];
+   for(const file of archivos){
     const invalido=validarArchivoDrive(file);
     if(invalido){fallidos.push(invalido);continue;}
-    try{await subirADrive({comunidadId,origenTipo:'compromiso',origenId:detalle,detalleId:avance.id,archivo:file});}
+    try{await subirADrive({comunidadId,origenTipo:'compromiso',
+      origenId:detalle,detalleId:registro.id,archivo:file});}
     catch(eDrive){fallidos.push(file.name+': '+eDrive.message);}
-
    }
-   if(!subt.length){
-    const {error:e}=await supabase.from('compromisos_administracion').update({
-     avance:porcentajeReal,actualizado_en:new Date().toISOString()
-    }).eq('id',detalle).select('id').single();
-    if(e)throw e;
-   }
-   const {error: estadoError}=await supabase.rpc('compromisos_cambiar_etapa',{
-     p_compromiso_id:detalle,p_estado:subt.length?(compromisos.find(c=>c.id===detalle)?.estado||estado):estado,
-     p_proxima_accion:fechasRapidas[detalle]||null,
-     p_observacion:'Cambio al registrar avance: '+texto.trim().slice(0,500)
-   });
-   if(estadoError) throw estadoError;
-   setTexto('');setEvidencia('');setPublicar(false);setArchivos([]);setVersionDocs(v=>v+1);
+   setTexto('');setEvidencia('');setPorcentaje(0);setTipoRegistro('avance');
+   setProximaAccionTexto('');setPublicar(true);setArchivos([]);
+   setDetalle(null);setVersionDocs(v=>v+1);
    await recargarYNotificar();
-   if(fallidos.length) setError('Avance guardado, pero algunos archivos no se adjuntaron: ' + fallidos.join('; '));
-  } catch(err) { setError(err.message || 'No fue posible registrar el avance.'); }
-  finally { setGuardando(false); }
+   if(fallidos.length)setError('Registro guardado; fallaron estos archivos: '+fallidos.join('; '));
+  }catch(e){setError(e.message||'No fue posible registrar la gestión.');}
+  finally{setGuardando(false)}
  }
  async function editarCompromiso(e) {
   e.preventDefault();if(!editando||guardando)return;
@@ -161,28 +169,27 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
    titulo:editForm.titulo.trim(),descripcion:editForm.descripcion,
    referencia_contractual:editForm.referencia_contractual,
    responsable:editForm.responsable,fecha_limite:editForm.fecha_limite||null,
-   fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null
+   fecha_inicio:editForm.fecha_inicio||null,fecha_proxima_accion:editForm.fecha_proxima_accion||null,
+   prioridad:editForm.prioridad||'normal',
+   resultado:editForm.resultado||null,proxima_accion_texto:editForm.proxima_accion_texto||null,
+   documentos_esperados:normalizarDocumentosModelo(editForm.documentos_esperados)
   }).eq('id',editando).select('id').single();
   setGuardando(false);
   if(err)setError(err.message);else {setEditando(null);await recargarYNotificar();}
  }
- async function eliminarCompromiso(item) {
-  if(!window.confirm(`¿Eliminar definitivamente "${item.titulo}" y sus avances y subtareas? Esta acción no se puede deshacer.`))return;
+ async function archivarGestion(item,archivar=true){
+  if(!administrador||guardando)return;
+  const verbo=archivar?'archivar':'restaurar';
+  if(!window.confirm('¿Quieres '+verbo+' esta gestión? Las tareas, avances y documentos se conservarán.'))return;
   setGuardando(true);setError('');
   try{
-   const ids=avances.filter(a=>a.compromiso_id===item.id).map(a=>a.id);
-   const docs=adjuntos.filter(d=>ids.includes(d.avance_id));
-   const {data:driveDocs,error:driveError}=await supabase.rpc('drive_listar_documentos',{
-     p_comunidad_id:comunidadId,p_origen_tipo:'compromiso',p_origen_id:item.id,p_incluir_eliminados:false
+   const {error:e}=await supabase.rpc('gestiones_archivar',{
+    p_gestion_id:item.id,p_archivar:archivar
    });
-   if(driveError)throw driveError;
-   if(driveDocs?.length)throw new Error('El compromiso tiene documentos en Google Drive. Retíralos antes de eliminarlo.');
-   if(docs.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(docs.map(d=>d.ruta));if(se)throw se;}
-   const {error:de}=await supabase.from('compromisos_administracion').delete().eq('id',item.id);
-   if(de)throw de;
+   if(e)throw e;
    await recargarYNotificar();
-  }catch(e){setError(e.message||'No fue posible eliminar.');}
-  finally{setGuardando(false);}
+  }catch(e){setError('No fue posible '+verbo+' la gestión: '+e.message)}
+  finally{setGuardando(false)}
  }
  async function eliminarAdjunto(doc) {
   if(!window.confirm(`¿Eliminar el archivo "${doc.nombre}"? Esta acción no se puede deshacer.`))return;
@@ -272,43 +279,103 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   }catch(e){setError(e.message||'No se pudo eliminar la subtarea.');}
   finally{setGuardando(false);}
  }
- async function cambiarEstado(item, siguiente) {
-  if(!administrador || guardando)return;
-  const fechaNueva=fechasRapidas[item.id];
-  const notaNueva=observacionesRapidas[item.id]?.trim();
-  if(siguiente===item.estado && (!fechaNueva || fechaNueva===item.fecha_proxima_accion) && !notaNueva)return;
-  const subtareasItem=subtareas.filter(x=>x.compromiso_id===item.id);
-  if(siguiente==='completado'&&subtareasItem.some(x=>!x.completada))
-   return setError('Para cerrar el compromiso, marca todas las subtareas.');
+ async function guardarFechaLimite(item){
+  if(!administrador||guardando)return;
+  const limite=limitesRapidos[item.id];
+  if(limite===undefined||limite===(item.fecha_limite||''))return;
+  setGuardando(true);setError('');
+  try{
+   const {error:e}=await supabase.from('compromisos_administracion')
+    .update({fecha_limite:limite||null,actualizado_en:new Date().toISOString()})
+    .eq('id',item.id).eq('comunidad_id',comunidadId);
+   if(e)throw e;
+   await recargarYNotificar();
+  }catch(e){setError('No se pudo guardar la fecha: '+e.message)}
+  finally{setGuardando(false)}
+ }
+ async function cambiarEstado(item,siguiente) {
+  if(!administrador||guardando)return;
   const proxima=fechasRapidas[item.id]||item.fecha_proxima_accion||null;
+  const nota=observacionesRapidas[item.id]?.trim()||'Actualización de seguimiento';
+  const resultado=resultadosRapidos[item.id]?.trim()||item.resultado||null;
+  if(siguiente==='completado'&&!String(resultado||'').trim()){
+   setError('Escribe el resultado antes de completar la gestión.');
+   setAccionesAbiertas(x=>({...x,[item.id]:true}));
+   return;
+  }
   if(siguiente==='en_espera'&&!proxima){
-    return setError('Registra la fecha de la próxima acción antes de pasar el compromiso a En espera.');
+   setError('Registra la fecha de la próxima acción antes de pasar a En espera.');
+   return;
   }
   setGuardando(true);setError('');
-  const {error:err}=await supabase.rpc('compromisos_cambiar_etapa',{
-    p_compromiso_id:item.id,p_estado:siguiente,p_proxima_accion:proxima,
-    p_observacion:observacionesRapidas[item.id]?.trim()||'Cambio de etapa desde compromisos'
-  });
-  if(err)setError('No se pudo cambiar la etapa: '+err.message);
-  else {setObservacionesRapidas(x=>({...x,[item.id]:''}));await recargarYNotificar();}
-  setGuardando(false);
+  try{
+   const {error:e}=await supabase.rpc('gestiones_cambiar_estado',{
+    p_gestion_id:item.id,p_estado:siguiente,p_proxima_accion:proxima,
+    p_observacion:nota,p_resultado:resultado
+   });
+   if(e)throw e;
+   setObservacionesRapidas(x=>({...x,[item.id]:''}));
+   setResultadosRapidos(x=>({...x,[item.id]:''}));
+   await recargarYNotificar();
+  }catch(e){setError('No se pudo cambiar el estado: '+e.message)}
+  finally{setGuardando(false)}
+ }
+ function abrirAccion(item,tipo) {
+  if(tipo==='avance'||tipo==='observacion'||tipo==='resultado'){
+   setDetalle(item.id);setTipoRegistro(tipo);
+   setPorcentaje(item.avance||0);setTexto('');setProximaAccionTexto('');
+  }else if(tipo==='editar'){
+   setEditando(item.id);setEditForm({...inicial,
+    titulo:item.titulo,descripcion:item.descripcion||'',
+    referencia_contractual:item.referencia_contractual||'',
+    responsable:item.responsable||'',fecha_inicio:item.fecha_inicio||'',
+    fecha_limite:item.fecha_limite||'',fecha_proxima_accion:item.fecha_proxima_accion||'',
+    prioridad:item.prioridad||'normal',resultado:item.resultado||'',
+    proxima_accion_texto:item.proxima_accion_texto||'',
+    documentos_esperados:(item.documentos_esperados||[]).join('\n')});
+  }
+  setAccionesAbiertas(v=>({...v,[item.id]:true}));
+ }
+ function imprimirGestion(item,sub,historico,movimientos) {
+  const docs=documentosGestion.filter(x=>x.origen_id===item.id);
+  const html=informeGestionHtml({gestion:item,subtareas:sub,avances:historico,
+    transiciones:movimientos,documentos:docs});
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const enlace=document.createElement('a');
+  enlace.href=url;
+  enlace.download='Coproactiva-informe-gestion-'+item.id.slice(0,8)+'.html';
+  document.body.appendChild(enlace);enlace.click();enlace.remove();
+  window.setTimeout(()=>URL.revokeObjectURL(url),5000);
  }
  async function visibilidad(item) {
   const {error: err} = await supabase.from('compromisos_administracion').update({publicado: !item.publicado}).eq('id', item.id);
   if(err) setError(err.message);else await recargarYNotificar();
  }
- return <section className="compromisos-wrap" aria-label="Compromisos y avances">
-   {!integrado&&<header className="compromisos-cabecera"><h2 className="h4">Compromisos y avances</h2>
-     <p className="chico apagado">Acuerdos, fechas, estado, subtareas y evidencias. Cada ficha se despliega al seleccionarla.</p>
+ const conteos=resumenGestiones(compromisos);
+ const listado=seleccionadoId?compromisos:vistaGestiones(compromisos,vista);
+ return <section className="compromisos-wrap gestiones-wrap" aria-label="Gestiones y avances">
+   {!integrado&&<header className="compromisos-cabecera"><h2 className="h4">Gestiones y avances</h2>
+     <p className="chico apagado">Acciones, resultados y evidencias de administración verificables por comunidad.</p>
    </header>}
    {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
-   {!integrado&&!cargando&&compromisos.length>0&&<div className="compromisos-resumen-global" aria-label="Avance de compromisos">
-     <div><strong>{resumenGlobalCompromisos(compromisos).abiertos}</strong><span>Por resolver</span></div>
-     <div><strong>{resumenGlobalCompromisos(compromisos).completados}</strong><span>Terminados</span></div>
-     <div><strong>{resumenGlobalCompromisos(compromisos).porcentaje}%</strong><span>Avance global</span></div>
+   {!integrado&&<div className="gestiones-pestañas" role="group" aria-label="Filtrar gestiones">
+      <button type="button" className={vista==='activas'?'activo':''} aria-pressed={vista==='activas'}
+        onClick={()=>setVista('activas')}>En seguimiento <strong>{conteos.pendientes+conteos.enProceso}</strong></button>
+      <button type="button" className={vista==='completadas'?'activo':''} aria-pressed={vista==='completadas'}
+        onClick={()=>setVista('completadas')}>Completadas / Historial <strong>{conteos.completadas}</strong></button>
+      <button type="button" className={vista==='archivadas'?'activo':''} aria-pressed={vista==='archivadas'}
+        onClick={()=>setVista('archivadas')}>Archivadas <strong>{conteos.archivadas}</strong></button>
+      <button type="button" className={vista==='todas'?'activo':''} aria-pressed={vista==='todas'}
+        onClick={()=>setVista('todas')}>Todas <strong>{compromisos.length}</strong></button>
+   </div>}
+   {!integrado&&!cargando&&<div className="gestiones-indicadores" aria-label="Estados de gestiones">
+      <span><strong>{conteos.enProceso}</strong> En proceso</span>
+      <span><strong>{conteos.pendientes}</strong> Pendientes</span>
+      <span><strong>{conteos.completadas}</strong> Completadas</span>
    </div>}
    {administrador&&!integrado&&<details className="tarjeta compromisos-crear-desplegable">
-     <summary>+ Nuevo compromiso</summary>
+     <summary>+ Nueva gestión libre</summary>
      <form onSubmit={crear} className="compromisos-form">
        <label>Título<input required maxLength={180} value={nuevo.titulo} onChange={e=>setNuevo({...nuevo,titulo:e.target.value})}/></label>
        <label>Descripción<textarea rows={2} value={nuevo.descripcion} onChange={e=>setNuevo({...nuevo,descripcion:e.target.value})}/></label>
@@ -319,48 +386,56 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
          <label>Fecha comprometida<input type="date" value={nuevo.fecha_limite} onChange={e=>setNuevo({...nuevo,fecha_limite:e.target.value})}/></label>
          <label>Próxima acción<input type="date" value={nuevo.fecha_proxima_accion} onChange={e=>setNuevo({...nuevo,fecha_proxima_accion:e.target.value})}/></label>
        </div>
-       <button className="boton boton-primario" disabled={guardando}>Crear compromiso interno</button>
-     </form>
-   </details>}
-   {administrador&&!integrado&&<details className="tarjeta compromisos-crear-desplegable compromisos-repositorio">
-     <summary>Repositorio de compromisos · {repositorioSantaClara.items.length} modelos</summary>
-     <form className="compromisos-form" onSubmit={agregarDesdeRepositorio}>
-       <p className="micro apagado">Catálogo de referencia de Reserva Santa Clara (23-10-2026). Agrega un modelo sin modificar el original ni los compromisos existentes.</p>
-       <label>Modelo del repositorio
-         <select aria-label="Seleccionar compromiso del repositorio" value={modeloSeleccionado}
-           onChange={e=>setModeloSeleccionado(e.target.value)}>
-           <option value="">Seleccionar compromiso…</option>
-           {repositorioSantaClara.items.map(x=><option key={x.codigo} value={x.codigo}>{String(x.orden).padStart(2,'0')}. {x.titulo}</option>)}
-         </select>
+       <div className="compromisos-grid">
+         <label>Prioridad
+           <select value={nuevo.prioridad} onChange={e=>setNuevo(v=>({...v,prioridad:e.target.value}))}>
+             {Object.entries(PRIORIDADES).map(([v,t])=><option key={v} value={v}>{t}</option>)}
+           </select>
+         </label>
+         <label>Próxima acción (descripción)<input value={nuevo.proxima_accion_texto}
+           onChange={e=>setNuevo(v=>({...v,proxima_accion_texto:e.target.value}))}/>
+         </label>
+       </div>
+       <label>Documentos esperados (uno por línea)
+         <textarea rows={2} value={nuevo.documentos_esperados}
+           onChange={e=>setNuevo(v=>({...v,documentos_esperados:e.target.value}))}/>
        </label>
-       <button className="boton boton-secundario" type="submit" disabled={guardando||!modeloSeleccionado}>
-         Agregar a esta comunidad
-       </button>
+       <button className="boton boton-primario" disabled={guardando}>Crear gestión</button>
      </form>
    </details>}
-   {cargando ? <p className="cargando">Cargando compromisos…</p>
-    : !compromisos.length ? <div className="portal-vacio">No hay compromisos registrados para esta comunidad.</div>
+   {administrador&&!integrado&&<GestionesRepositorio
+     comunidadId={comunidadId} gestiones={compromisos} subtareas={subtareas}
+     onActualizado={recargarYNotificar}/>}
+   {cargando ? <p className="cargando">Cargando gestiones…</p>
+    : !listado.length ? <div className="portal-vacio">
+       {vista==='completadas'?'No hay gestiones completadas.':vista==='archivadas'?'No hay gestiones archivadas.':'No hay gestiones en esta vista.'}
+      </div>
     : <div className="compromisos-lista">
-        {compromisos.map((item,indice)=>{
+        {listado.map((item,indice)=>{
           const sub=ordenarAvances(subtareas.filter(x=>x.compromiso_id===item.id));
           const primeraPendiente=primerPendienteAvances(sub, x=>Boolean(x.completada));
           const realizados=sub.filter(x=>x.completada).length;
           const progreso=sub.length?porcentajeSubtareas(sub):item.avance;
           const historico=avances.filter(x=>x.compromiso_id===item.id);
           const movimientos=transiciones.filter(x=>x.compromiso_id===item.id);
+          const ultimo=historico.find(x=>x.tipo_registro!=='observacion')||historico[0];
+          const documentos=documentosGestion.filter(x=>x.origen_id===item.id);
           const Etiqueta=integrado?'div':'details';
           return <Etiqueta key={item.id} className={'tarjeta compromisos-item'+(integrado?' compromisos-item-integrado':'')}>
             {!integrado&&<summary className="categoria-titulo compromisos-fila compromisos-categoria-titulo">
               <span className="compromisos-titulo crece">
                 <strong>{String(indice+1).padStart(2,'0')}. {item.titulo}</strong>
-                <small>{realizados}/{sub.length} completadas · {progreso}% de avance</small>
+                <small>{item.archivado_en?'Archivada · ':''}{NOMBRES[item.estado]||item.estado} · {progreso}% · Vence {fecha(item.fecha_limite)}</small>
               </span>
               {sub.length>0&&realizados===sub.length&&<span className="categoria-ok" aria-label="Compromiso completado">✓</span>}
-              <span className="portal-estado">{NOMBRES[item.estado]||item.estado}</span>
+              <span className="portal-estado">{item.prioridad==='urgente'?'Urgente':(item.prioridad==='alta'?'Prioridad alta':NOMBRES[item.estado]||item.estado)}</span>
               {administrador&&<button type="button" className="compromisos-icono-eliminar"
-                aria-label={'Eliminar compromiso: '+item.titulo} title="Eliminar compromiso"
+                aria-label={(item.archivado_en?'Restaurar':'Archivar')+' gestión: '+item.titulo}
+                title={item.archivado_en?'Restaurar gestión':'Archivar gestión'}
                 disabled={guardando}
-                onClick={e=>{e.preventDefault();e.stopPropagation();eliminarCompromiso(item);}}>×</button>}
+                onClick={e=>{e.preventDefault();e.stopPropagation();archivarGestion(item,!item.archivado_en)}}>
+                  {item.archivado_en?'↺':'×'}
+                </button>}
               <span className="compromisos-flecha" aria-hidden="true">⌄</span>
             </summary>}
             <div className="compromisos-detalle">
@@ -384,15 +459,166 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   </button>}
               </div>}
               {item.descripcion&&<p>{item.descripcion}</p>}
+              {administrador&&!item.archivado_en&&<div className="gestiones-acciones-rapidas" role="group" aria-label={'Acciones de '+item.titulo}>
+                <button type="button" className="boton boton-primario" disabled={guardando}
+                  onClick={()=>abrirAccion(item,'avance')}>+ Avance</button>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>abrirAccion(item,'observacion')}>+ Observación</button>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>document.getElementById('nueva-tarea-'+item.id)?.focus()}>+ Tarea</button>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>{
+                   const panel=document.getElementById('documentos-gestion-'+item.id);
+                   if(panel){panel.open=true;panel.scrollIntoView({block:'nearest',behavior:'smooth'})}
+                  }}>+ Documento</button>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>abrirAccion(item,'editar')}>Editar</button>
+                {item.estado!=='completado'&&<button type="button" className="boton boton-secundario"
+                  onClick={()=>setAccionesAbiertas(v=>({...v,[item.id]:true}))}>Completar</button>}
+                <button type="button" className="boton boton-texto"
+                  onClick={()=>imprimirGestion(item,sub,historico,movimientos)}>Informe</button>
+              </div>}
+              {administrador&&!item.archivado_en&&<div className="gestiones-control" aria-label="Estado y fechas de gestión">
+                <label>Estado
+                  <select aria-label={'Cambiar estado de '+item.titulo} value={item.estado} disabled={guardando}
+                    onChange={e=>cambiarEstado(item,e.target.value)}>
+                    {Object.entries(NOMBRES).map(([clave,nombre])=>
+                      <option key={clave} value={clave}>{nombre}</option>)}
+                  </select>
+                </label>
+                <label>Fecha límite
+                  <input aria-label={'Fecha límite de '+item.titulo} type="date"
+                    value={limitesRapidos[item.id]??item.fecha_limite??''}
+                    onChange={e=>setLimitesRapidos(v=>({...v,[item.id]:e.target.value}))}/>
+                </label>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>guardarFechaLimite(item)}>Guardar fecha</button>
+                <label>Próxima revisión
+                  <input type="date" value={fechasRapidas[item.id]??item.fecha_proxima_accion??''}
+                    onChange={e=>setFechasRapidas(v=>({...v,[item.id]:e.target.value}))}/>
+                </label>
+                <button type="button" className="boton boton-secundario" disabled={guardando}
+                  onClick={()=>cambiarEstado(item,item.estado)}>Guardar seguimiento</button>
+              </div>}
+              {administrador&&!item.archivado_en&&accionesAbiertas[item.id]&&
+                <div className="gestiones-cierre">
+                 <label>Resultado verificable para cerrar esta gestión
+                  <textarea rows={2} placeholder="Qué se resolvió, entregó o acordó"
+                    value={resultadosRapidos[item.id]??item.resultado??''}
+                    onChange={e=>setResultadosRapidos(v=>({...v,[item.id]:e.target.value}))}/>
+                 </label>
+                 <label>Próxima fecha de revisión
+                  <input type="date" value={fechasRapidas[item.id]??item.fecha_proxima_accion??''}
+                    onChange={e=>setFechasRapidas(v=>({...v,[item.id]:e.target.value}))}/>
+                 </label>
+                 <label>Observación al cambiar estado
+                  <input maxLength={2000} placeholder="Motivo de cierre o seguimiento"
+                    value={observacionesRapidas[item.id]||''}
+                    onChange={e=>setObservacionesRapidas(v=>({...v,[item.id]:e.target.value}))}/>
+                 </label>
+                 <div className="gestiones-cierre-acciones">
+                  <button className="boton boton-primario" type="button" disabled={guardando}
+                    onClick={()=>cambiarEstado(item,'completado')}>Confirmar cierre</button>
+                  <button className="boton boton-secundario" type="button" disabled={guardando}
+                    onClick={()=>cambiarEstado(item,item.estado)}>Guardar resultado / seguimiento</button>
+                  <button className="boton boton-texto" type="button"
+                    onClick={()=>setAccionesAbiertas(v=>({...v,[item.id]:false}))}>Cancelar</button>
+                 </div>
+                </div>}
+              {!administrador&&<button type="button" className="boton boton-secundario gestiones-informe-cliente"
+                onClick={()=>imprimirGestion(item,sub,historico,movimientos)}>Descargar informe de gestión</button>}
+              {item.resultado&&<div className="gestiones-resultado"><strong>Resultado</strong>
+                 <p>{item.resultado}</p></div>}
+              {ultimo&&<div className="gestiones-ultimo"><strong>Último {TIPOS_REGISTRO[ultimo.tipo_registro]||'avance'}</strong>
+                <span>{fecha(ultimo.registrado_en)} · {ultimo.descripcion}</span>
+                {ultimo.proxima_accion&&<small>Próxima acción: {ultimo.proxima_accion}</small>}
+              </div>}
               <div className="compromisos-meta">
                 <span>Inicio: {fecha(item.fecha_inicio)}</span>
                 <span>Comprometida: {fecha(item.fecha_limite)}</span>
                 <span>Próxima acción: {fecha(item.fecha_proxima_accion)}</span>
                 <span>Cierre: {fecha(item.fecha_cierre)}</span>
+                <span>Prioridad: {PRIORIDADES[item.prioridad]||'Normal'}</span>
+                <span>Próximo paso: {item.proxima_accion_texto||'No definido'}</span>
+                <span>{historico.length} avances / observaciones · {documentos.length} documentos</span>
                 {item.referencia_contractual&&<span>Contrato: {item.referencia_contractual}</span>}
               </div>
+              {administrador&&detalle===item.id&&<form className="compromisos-form gestiones-registro-form" onSubmit={registrar}>
+                <div className="gestiones-registro-titulo">
+                 <h3>Registrar {TIPOS_REGISTRO[tipoRegistro]||'avance'}</h3>
+                 <button className="boton boton-texto" type="button" onClick={()=>setDetalle(null)}>Cerrar ×</button>
+                </div>
+                <div className="gestiones-registro-tipos" role="group" aria-label="Tipo de registro">
+                  {Object.entries(TIPOS_REGISTRO).map(([codigo,nombre])=>
+                    <button key={codigo} type="button" aria-pressed={tipoRegistro===codigo}
+                      className={'boton '+(tipoRegistro===codigo?'boton-primario':'boton-secundario')}
+                      onClick={()=>setTipoRegistro(codigo)}>{nombre}</button>)}
+                </div>
+                <label>Descripción de la gestión realizada
+                  <textarea required rows={3} value={texto} onChange={e=>setTexto(e.target.value)}
+                    placeholder="Qué se hizo, cuándo, con quién y cuál fue el resultado"/>
+                </label>
+                <div className="compromisos-grid">
+                 {tipoRegistro==='avance'&&<label>Avance de tareas
+                   <input type="number" min="0" max="100" value={sub.length?porcentajeSubtareas(sub):porcentaje}
+                     disabled={Boolean(sub.length)}
+                     onChange={e=>setPorcentaje(e.target.value)}/>
+                 </label>}
+                 <label>Próxima acción (opcional)
+                   <input maxLength={1000} value={proximaAccionTexto}
+                     onChange={e=>setProximaAccionTexto(e.target.value)}
+                     placeholder="Qué corresponde hacer después"/>
+                 </label>
+                </div>
+                <label>Enlace de evidencia (opcional)
+                  <input type="url" value={evidencia} onChange={e=>setEvidencia(e.target.value)}/>
+                </label>
+                <label>Adjuntar documentos en Google Drive
+                  <input type="file" multiple accept={DRIVE_ACCEPT}
+                    onChange={e=>setArchivos(Array.from(e.target.files||[]))}/>
+                </label>
+                {archivos.length>0&&<p className="micro apagado">{archivos.map(x=>x.name).join(', ')}</p>}
+                <label className="compromisos-check"><input type="checkbox" checked={publicar}
+                  onChange={e=>setPublicar(e.target.checked)}/>
+                  Visible en el portal privado del cliente</label>
+                <button className="boton boton-primario" disabled={guardando}>Guardar registro</button>
+              </form>}
+              {administrador&&editando===item.id&&<form className="compromisos-form" onSubmit={editarCompromiso}>
+                <label>Título<input required value={editForm.titulo} onChange={e=>setEditForm(v=>({...v,titulo:e.target.value}))}/></label>
+                <label>Descripción<textarea value={editForm.descripcion} onChange={e=>setEditForm(v=>({...v,descripcion:e.target.value}))}/></label>
+                <div className="compromisos-grid">
+                  <label>Referencia contractual<input value={editForm.referencia_contractual} onChange={e=>setEditForm(v=>({...v,referencia_contractual:e.target.value}))}/></label>
+                  <label>Responsable<input value={editForm.responsable} onChange={e=>setEditForm(v=>({...v,responsable:e.target.value}))}/></label>
+                  <label>Inicio<input type="date" value={editForm.fecha_inicio} onChange={e=>setEditForm(v=>({...v,fecha_inicio:e.target.value}))}/></label>
+                  <label>Límite<input type="date" value={editForm.fecha_limite} onChange={e=>setEditForm(v=>({...v,fecha_limite:e.target.value}))}/></label>
+                  <label>Próxima acción<input type="date" value={editForm.fecha_proxima_accion} onChange={e=>setEditForm(v=>({...v,fecha_proxima_accion:e.target.value}))}/></label>
+                </div>
+                <div className="compromisos-grid">
+                  <label>Prioridad
+                    <select value={editForm.prioridad} onChange={e=>setEditForm(v=>({...v,prioridad:e.target.value}))}>
+                      {Object.entries(PRIORIDADES).map(([v,t])=><option key={v} value={v}>{t}</option>)}
+                    </select>
+                  </label>
+                  <label>Próxima acción
+                    <input value={editForm.proxima_accion_texto}
+                      onChange={e=>setEditForm(v=>({...v,proxima_accion_texto:e.target.value}))}/>
+                  </label>
+                </div>
+                <label>Resultado documentado
+                  <textarea rows={2} value={editForm.resultado}
+                    onChange={e=>setEditForm(v=>({...v,resultado:e.target.value}))}/>
+                </label>
+                <label>Documentos esperados (uno por línea)
+                  <textarea rows={2} value={editForm.documentos_esperados}
+                    onChange={e=>setEditForm(v=>({...v,documentos_esperados:e.target.value}))}/>
+                </label>
+                <div className="gestiones-cierre-acciones">
+                 <button className="boton boton-primario" disabled={guardando}>Guardar cambios</button>
+                 <button type="button" className="boton boton-secundario" onClick={()=>setEditando(null)}>Cancelar</button>
+                </div>
+              </form>}
               <MotorAvances valor={progreso} completados={realizados} total={sub.length}
-                etiqueta="Avance del compromiso" compacto />
+                etiqueta="Avance de tareas" compacto />
               <section className="compromisos-subtareas-v2" aria-label={'Subtareas de '+item.titulo}>
                 <div className="compromisos-subtareas-cabecera">
                   <div><h3>Subtareas</h3>
@@ -498,7 +724,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                     </button>
                   </nav>}
                 {administrador&&<div className="compromisos-subagregar">
-                  <input aria-label={'Nueva subtarea para '+item.titulo} placeholder="Escribe una nueva subtarea"
+                  <input id={'nueva-tarea-'+item.id} aria-label={'Nueva subtarea para '+item.titulo} placeholder="Escribe una nueva subtarea"
                     value={nuevaSubtarea[item.id]||''}
                     onChange={e=>setNuevaSubtarea(v=>({...v,[item.id]:e.target.value}))}/>
                   <button type="button" className="boton boton-secundario"
@@ -506,100 +732,63 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                     onClick={()=>agregarSubtarea(item)}>+ Agregar</button>
                 </div>}
               </section>
-              {administrador&&<details className="compromisos-opciones"><summary>Administrar fechas, etapa y seguimiento</summary><div className="compromisos-cambiar-etapa">
-                <label>Etapa del compromiso
-                  <select value={item.estado} disabled={guardando} aria-label={'Cambiar etapa de '+item.titulo}
-                    onChange={e=>cambiarEstado(item,e.target.value)}>
-                    {Object.entries(NOMBRES).map(([v,t])=><option key={v} value={v} disabled={v==='completado'&&sub.some(s=>!s.completada)}>{t}</option>)}
-                  </select>
-                </label>
-                <label>Próxima acción
-                  <input type="date" value={fechasRapidas[item.id]??item.fecha_proxima_accion??''}
-                    onChange={e=>setFechasRapidas(x=>({...x,[item.id]:e.target.value}))}/>
-                </label>
-                <label>Nota de seguimiento
-                  <input maxLength={2000} placeholder="Motivo o próximo paso"
-                    value={observacionesRapidas[item.id]||''}
-                    onChange={e=>setObservacionesRapidas(x=>({...x,[item.id]:e.target.value}))}/>
-                </label>
-                <button type="button" disabled={guardando} className="boton boton-secundario"
-                  onClick={()=>cambiarEstado(item,item.estado)}>Guardar fecha / seguimiento</button>
-                <button type="button" disabled={guardando} className="boton boton-secundario"
-                  onClick={()=>cambiarEstado(item,item.estado==='en_espera'?'en_curso':'en_espera')}>
-                  {item.estado==='en_espera'?'Reanudar':'Poner en espera'}
-                </button>
-              </div></details>}
-              <details className="compromisos-adjuntos">
-                <summary>Documentos del compromiso</summary>
+              {(item.documentos_esperados||[]).length>0&&
+                <section className="gestiones-documentos-esperados" aria-label="Documentos esperados de la gestión">
+                  <h3>Documentos esperados</h3>
+                  <ul>{item.documentos_esperados.map((nombre,i)=>{
+                    const existe=documentos.some(d=>d.nombre?.toLocaleLowerCase('es-CL').includes(String(nombre).toLocaleLowerCase('es-CL')));
+                    return <li key={i}><span>{nombre}</span>
+                      <small>{existe?'Documento registrado':'Por verificar'}</small>
+                    </li>;
+                  })}</ul>
+                </section>}
+              <details id={'documentos-gestion-'+item.id} className="compromisos-adjuntos">
+                <summary>Documentos de la gestión ({documentos.length})</summary>
                 <DriveArchivos key={item.id+'-'+versionDocs} comunidadId={comunidadId}
                   origenTipo="compromiso" origenId={item.id} compacto
                   titulo="Documentos · Google Drive" permitirSubir={administrador} soloVistaCliente={soloVistaCliente} ocultarVacio={!administrador}/>
               </details>
-              {administrador&&<div className="compromisos-acciones">
-                <button type="button" className="boton boton-secundario" disabled={guardando}
-                  onClick={()=>{
-                    setEditando(editando===item.id?null:item.id);
-                    setEditForm({titulo:item.titulo,descripcion:item.descripcion||'',
-                      referencia_contractual:item.referencia_contractual||'',fecha_inicio:item.fecha_inicio||'',
-                      fecha_limite:item.fecha_limite||'',fecha_proxima_accion:item.fecha_proxima_accion||'',
-                      responsable:item.responsable||''});
-                  }}>Editar datos y fechas</button>
-                <button type="button" className="boton boton-secundario"
-                  onClick={()=>{setDetalle(detalle===item.id?null:item.id);setPorcentaje(item.avance);setEstado(item.estado);}}>Registrar avance</button>
-                <button type="button" className="boton boton-texto" disabled={guardando}
-                  onClick={()=>visibilidad(item)}>{item.publicado?'Retirar del portal':'Publicar compromiso'}</button>
-                <button type="button" className="boton boton-texto" disabled={guardando}
-                  onClick={()=>eliminarCompromiso(item)}>Eliminar</button>
-              </div>}
-              {administrador&&editando===item.id&&<form className="compromisos-form" onSubmit={editarCompromiso}>
-                <label>Título<input required value={editForm.titulo} onChange={e=>setEditForm(v=>({...v,titulo:e.target.value}))}/></label>
-                <label>Descripción<textarea value={editForm.descripcion} onChange={e=>setEditForm(v=>({...v,descripcion:e.target.value}))}/></label>
-                <div className="compromisos-grid">
-                  <label>Referencia contractual<input value={editForm.referencia_contractual} onChange={e=>setEditForm(v=>({...v,referencia_contractual:e.target.value}))}/></label>
-                  <label>Responsable<input value={editForm.responsable} onChange={e=>setEditForm(v=>({...v,responsable:e.target.value}))}/></label>
-                  <label>Inicio<input type="date" value={editForm.fecha_inicio} onChange={e=>setEditForm(v=>({...v,fecha_inicio:e.target.value}))}/></label>
-                  <label>Límite<input type="date" value={editForm.fecha_limite} onChange={e=>setEditForm(v=>({...v,fecha_limite:e.target.value}))}/></label>
-                  <label>Próxima acción<input type="date" value={editForm.fecha_proxima_accion} onChange={e=>setEditForm(v=>({...v,fecha_proxima_accion:e.target.value}))}/></label>
+              {administrador&&<details className="gestiones-mas-opciones">
+                <summary>••• Más opciones</summary>
+                <div className="gestiones-acciones-rapidas">
+                  <button type="button" className="boton boton-texto" disabled={guardando}
+                    onClick={()=>visibilidad(item)}>{item.publicado?'Ocultar al cliente':'Publicar en portal cliente'}</button>
+                  <button type="button" className="boton boton-texto" disabled={guardando}
+                    onClick={()=>archivarGestion(item,!item.archivado_en)}>
+                      {item.archivado_en?'Restaurar gestión':'Archivar gestión'}</button>
                 </div>
-                <button className="boton boton-primario" disabled={guardando}>Guardar cambios</button>
-              </form>}
-              <details className="compromisos-historial">
-                <summary>Avances e historial ({historico.length+movimientos.length})</summary>
-                {historico.map(a=><details key={a.id} className="compromisos-avance-item">
-                  <summary>{fecha(a.registrado_en)} · {a.porcentaje??'-'}% · {NOMBRES[a.estado]||'Avance'}</summary>
-                  <p>{a.descripcion}</p>
-                  {a.evidencia_url&&/^https:\/\//i.test(a.evidencia_url)&&
-                    <a href={a.evidencia_url} target="_blank" rel="noreferrer">Ver evidencia</a>}
-                  {adjuntos.filter(x=>x.avance_id===a.id).map(doc=><span key={doc.id}>
-                    <button className="boton boton-texto" type="button" onClick={()=>abrirAdjunto(doc)}>📎 {doc.nombre}</button>
-                    {administrador&&<button className="boton boton-texto" type="button" disabled={guardando}
-                      onClick={()=>eliminarAdjunto(doc)}>Eliminar adjunto</button>}
-                  </span>)}
-                </details>)}
-                {movimientos.map(t=><div key={t.id} className="compromisos-transicion">
-                  {fecha(t.cambiado_en)} · {NOMBRES[t.estado_anterior]} → {NOMBRES[t.estado_nuevo]}
-                  {t.observacion&&<p>{t.observacion}</p>}
-                </div>)}
-                {!historico.length&&!movimientos.length&&<p className="micro apagado">Sin movimientos.</p>}
+              </details>}
+              <details className="compromisos-historial gestiones-linea-tiempo">
+                <summary>Historial de gestión y evidencias ({historico.length+movimientos.length})</summary>
+                {ordenCronologico(historico,movimientos).map(a=>
+                  a.tipoLinea==='registro'
+                   ? <article key={'a'+a.id} className="gestiones-evento">
+                      <div className="gestiones-evento-cabecera">
+                       <strong>{fecha(a.registrado_en)} · {TIPOS_REGISTRO[a.tipo_registro]||'Avance'}</strong>
+                       {a.porcentaje!=null&&<span>{a.porcentaje}% registrado</span>}
+                      </div>
+                      <p>{a.descripcion}</p>
+                      {a.proxima_accion&&<p className="micro">Próxima acción: {a.proxima_accion}</p>}
+                      {a.evidencia_url&&/^https:\/\//i.test(a.evidencia_url)&&
+                        <a href={a.evidencia_url} target="_blank" rel="noopener noreferrer">Enlace de evidencia</a>}
+                      <DriveArchivos key={a.id+'-'+versionDocs} comunidadId={comunidadId}
+                        origenTipo="compromiso" origenId={item.id} detalleId={a.id} compacto
+                        titulo="Evidencias asociadas a este avance" permitirSubir={administrador}
+                        soloVistaCliente={soloVistaCliente} ocultarVacio={!administrador}/>
+                    </article>
+                   : <article key={'t'+a.id} className="gestiones-evento gestiones-evento-estado">
+                      <div className="gestiones-evento-cabecera">
+                       <strong>{fecha(a.cambiado_en)} · Estado</strong>
+                       <span>{NOMBRES[a.estado_anterior]||a.estado_anterior}
+                         {' → '}{NOMBRES[a.estado_nuevo]||a.estado_nuevo}</span>
+                      </div>
+                      {a.observacion&&<p>{a.observacion}</p>}
+                      {a.fecha_proxima_accion&&<small>Próxima revisión: {fecha(a.fecha_proxima_accion)}</small>}
+                    </article>
+                )}
+                {!historico.length&&!movimientos.length&&
+                  <p className="micro apagado">Todavía no se registran avances. Cada acción quedará documentada aquí.</p>}
               </details>
-              {administrador&&detalle===item.id&&<form className="compromisos-form" onSubmit={registrar}>
-                <label>Avance realizado<textarea required rows={3} value={texto} onChange={e=>setTexto(e.target.value)}/></label>
-                <div className="compromisos-grid">
-                  <label>Etapa<select value={estado} onChange={e=>setEstado(e.target.value)}>
-                    {Object.entries(NOMBRES).map(([v,t])=><option key={v} value={v}>{t}</option>)}
-                  </select></label>
-                  <label>Porcentaje<input type="number" min="0" max="100" value={sub.length?Math.round(realizados/sub.length*100):porcentaje}
-                    disabled={Boolean(sub.length)} onChange={e=>setPorcentaje(e.target.value)}/></label>
-                </div>
-                <label>Enlace de evidencia (opcional)<input type="url" value={evidencia} onChange={e=>setEvidencia(e.target.value)}/></label>
-                <label>Adjuntar archivos ({driveConectada?'Google Drive: 25 MB':'15 MB'} máximo por archivo)
-                  <input type="file" multiple accept={driveConectada?DRIVE_ACCEPT:'.pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.txt'}
-                    onChange={e=>setArchivos(Array.from(e.target.files||[]))}/></label>
-                {archivos.length>0&&<p className="micro apagado">{archivos.map(x=>x.name).join(', ')}</p>}
-                <label className="compromisos-check"><input type="checkbox" checked={publicar}
-                  onChange={e=>setPublicar(e.target.checked)}/>Publicar este avance al cliente</label>
-                <button className="boton boton-primario" disabled={guardando}>Guardar avance</button>
-              </form>}
             </div>
           </Etiqueta>
         })}

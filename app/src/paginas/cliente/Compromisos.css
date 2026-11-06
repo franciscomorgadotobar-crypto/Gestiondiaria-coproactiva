@@ -244,3 +244,75 @@
  .compromisos-pasos .boton{flex:1 1 120px}
  .compromisos-pasos .conteo{order:-1;flex-basis:100%;text-align:center}
 }
+
+
+/* Gestiones y avances · evolución del checklist sin duplicar el motor */
+.gestiones-wrap{gap:11px}
+.gestiones-pestañas{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.gestiones-pestañas>button{display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:8px 11px;border:1px solid var(--borde);background:var(--tarjeta);border-radius:10px;cursor:pointer;color:var(--texto-titulo);font:650 12px/1.3 var(--fuente-cuerpo)}
+.gestiones-pestañas>button strong{font-variant-numeric:tabular-nums}
+.gestiones-pestañas>button.activo{border-color:var(--naranja);color:var(--enlace);box-shadow:inset 0 -2px 0 var(--naranja)}
+.gestiones-indicadores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.gestiones-indicadores>span{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:9px;border:1px solid var(--borde);border-radius:9px;background:var(--tarjeta);font-size:12px;text-align:center;color:var(--texto-apagado)}
+.gestiones-indicadores strong{font-size:18px;color:var(--texto-titulo);font-variant-numeric:tabular-nums}
+.gestiones-acciones-rapidas{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.gestiones-acciones-rapidas>.boton{min-height:39px;padding:6px 10px;font-size:12px;border-radius:8px;white-space:normal}
+.gestiones-control{display:grid;grid-template-columns:minmax(135px,1fr) minmax(130px,1fr) auto minmax(130px,1fr) auto;gap:7px;align-items:end;padding:9px;background:var(--papel);border-radius:10px}
+.gestiones-control label,.gestiones-cierre label{display:grid;gap:4px;min-width:0;font-size:11px;font-weight:700;color:var(--texto-titulo)}
+.gestiones-control input,.gestiones-control select,.gestiones-cierre :is(input,textarea){box-sizing:border-box;width:100%;min-width:0;min-height:39px;border-radius:8px;border:1px solid var(--borde);padding:7px 9px;background:var(--tarjeta);color:var(--texto-titulo);font:inherit;font-weight:500}
+.gestiones-control button{min-height:39px;font-size:11px;white-space:normal;padding:6px 8px}
+.gestiones-cierre{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border:1px solid var(--borde);border-radius:11px;padding:12px;background:var(--papel)}
+.gestiones-cierre label:first-child{grid-column:1/-1}
+.gestiones-cierre textarea{min-height:76px}
+.gestiones-cierre-acciones{display:flex;gap:7px;flex-wrap:wrap;grid-column:1/-1}
+.gestiones-cierre-acciones>.boton{min-height:39px;padding:8px;font-size:12px}
+.gestiones-resultado,.gestiones-ultimo{display:grid;gap:4px;padding:10px;border:1px solid var(--borde);border-radius:9px;background:var(--tarjeta);font-size:12px;line-height:1.45}
+.gestiones-resultado{border-left:3px solid var(--ok-texto)}
+.gestiones-ultimo{border-left:3px solid var(--naranja)}
+.gestiones-resultado strong,.gestiones-ultimo strong{font-size:12px;color:var(--texto-titulo)}
+.gestiones-ultimo>span,.gestiones-ultimo>small{color:var(--texto-apagado)}
+.gestiones-registro-form{margin:0;border:1px solid var(--borde);border-radius:11px;background:var(--papel);padding:12px}
+.gestiones-registro-titulo{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.gestiones-registro-titulo h3{margin:0;font-size:15px}
+.gestiones-registro-tipos{display:flex;flex-wrap:wrap;gap:6px}
+.gestiones-registro-tipos button{min-height:39px;padding:7px 10px;font-size:12px}
+.gestiones-registro-form .compromisos-check{font-weight:500;font-size:12px}
+.gestiones-registro-form input[type="file"]{max-width:100%}
+.gestiones-mas-opciones>summary{cursor:pointer;color:var(--enlace)}
+.gestiones-mas-opciones .gestiones-acciones-rapidas{padding:8px}
+.gestiones-linea-tiempo .gestiones-evento{display:grid;gap:6px;margin:10px 12px;padding:10px;border:1px solid var(--borde-suave);border-left:3px solid var(--naranja);border-radius:8px;background:var(--tarjeta);font-size:12px}
+.gestiones-linea-tiempo .gestiones-evento p{margin:0;overflow-wrap:anywhere}
+.gestiones-evento-cabecera{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.gestiones-evento-cabecera strong{font-size:12px}
+.gestiones-evento-cabecera span{font-size:11px;color:var(--texto-apagado)}
+.gestiones-linea-tiempo .gestiones-evento-estado{border-left-color:var(--texto-apagado)}
+.gestiones-linea-tiempo .gestiones-evento .drive-compacto{max-width:100%;min-width:0}
+.gestiones-informe-cliente{min-height:42px}
+@media(max-width:950px){
+ .gestiones-control{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .gestiones-control button{min-height:44px}
+}
+@media(max-width:600px){
+ .gestiones-wrap{gap:9px}
+ .gestiones-pestañas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .gestiones-pestañas>button{font-size:11px;justify-content:center;padding:7px;min-width:0}
+ .gestiones-pestañas>button:last-child{grid-column:1/-1}
+ .gestiones-indicadores>span{font-size:10px;gap:4px;padding:8px 3px}
+ .gestiones-indicadores strong{font-size:17px}
+ .gestiones-control{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .gestiones-control button{width:100%;font-size:11px}
+ .gestiones-acciones-rapidas>.boton{flex:1 1 auto;min-height:42px;font-size:12px}
+ .gestiones-cierre{grid-template-columns:1fr}
+ .gestiones-cierre label:first-child,.gestiones-cierre-acciones{grid-column:auto}
+ .gestiones-registro-form{padding:10px}
+ .gestiones-linea-tiempo .gestiones-evento{margin:8px;padding:9px}
+}
+
+
+.gestiones-documentos-esperados{display:grid;gap:7px;border:1px solid var(--borde);border-radius:10px;padding:10px;background:var(--tarjeta)}
+.gestiones-documentos-esperados h3{margin:0;font-size:13px;color:var(--texto-titulo)}
+.gestiones-documentos-esperados ul{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.gestiones-documentos-esperados li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--borde-suave);font-size:12px}
+.gestiones-documentos-esperados li:last-child{border-bottom:0}
+.gestiones-documentos-esperados small{flex:none;font-size:10px;color:var(--texto-apagado)}
+@media(max-width:500px){.gestiones-documentos-esperados li{flex-wrap:wrap;gap:2px}}

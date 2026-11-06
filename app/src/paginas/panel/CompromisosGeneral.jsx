@@ -25,7 +25,7 @@ export default function CompromisosGeneral(){
   const {data,error:err}=await supabase.from('compromisos_administracion')
    .select('id,comunidad_id,titulo,estado,avance,responsable,fecha_limite,fecha_proxima_accion,orden,creado_en')
    .order('orden',{ascending:true,nullsFirst:false});
-  if(err){setError('No fue posible actualizar los compromisos: '+err.message);return;}
+  if(err){setError('No fue posible actualizar las gestiones: '+err.message);return;}
   setItems(data||[]);
   setSeleccionadoId(actual=>(data||[]).some(x=>x.id===actual)?actual:null);
  }
@@ -85,20 +85,20 @@ export default function CompromisosGeneral(){
  },[items,comunidades,filtro,busqueda]);
  return <div className="pantalla modulo-unificado compromisos-general">
    <header className="encabezado modulo-cabecera"><div>
-      <h1 className="h3">Compromisos y avances</h1>
+      <h1 className="h3">Gestiones y avances</h1>
       <p className="chico apagado">Seguimiento consecutivo por comunidad, etapa y fecha comprometida.</p>
    </div></header>
    <div className="cuerpo modulo-contenido compromisos-general-cuerpo">
      {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
-     <div className="compromisos-general-filtros" role="search" aria-label="Filtrar compromisos">
+     <div className="compromisos-general-filtros" role="search" aria-label="Filtrar gestiones">
        <label>Etapa<select value={filtro} onChange={e=>setFiltro(e.target.value)}>
          {ETAPAS.map(([id,t])=><option key={id} value={id}>{t}</option>)}
        </select></label>
        <label>Buscar comunidad o compromiso<input type="search" value={busqueda}
          onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar…"/></label>
      </div>
-     {items!==null&&<section className="compromisos-general-kpis" aria-label="Avance global de compromisos">
-       <div><strong>{global.abiertos}</strong><span>Compromisos pendientes</span></div>
+     {items!==null&&<section className="compromisos-general-kpis" aria-label="Avance global de gestiones">
+       <div><strong>{global.abiertos}</strong><span>Gestiones pendientes</span></div>
        <div><strong>{global.completados}</strong><span>Completados</span></div>
        <div><strong>{global.porcentaje}%</strong><span>Avance global</span></div>
      </section>}
@@ -111,7 +111,7 @@ export default function CompromisosGeneral(){
              onClick={()=>setAbiertos(x=>{const y=new Set(x);y.has(id)?y.delete(id):y.add(id);return y})}>
              <span><strong>{comunidad?.nombre||'Comunidad'}</strong><small>{comunidad?.comuna||''}</small></span>
              <span className="compromisos-general-resumen">
-               <strong>{lista.length} compromisos</strong>
+               <strong>{lista.length} gestiones</strong>
                <small>{lista.filter(c=>c.estado==='completado').length} completados</small>
              </span>
              <span className="compromisos-general-flecha" aria-hidden="true">{abierto?'⌃':'⌄'}</span>
@@ -174,7 +174,7 @@ export default function CompromisosGeneral(){
              </Fragment>)}</div>}
          </section>
        })}
-       {!porComunidad.length&&<p className="vacio">No hay compromisos que coincidan con los filtros.</p>}
+       {!porComunidad.length&&<p className="vacio">No hay gestiones que coincidan con los filtros.</p>}
      </div>}
      {!puedeGestionar&&<p className="micro apagado">La edición está restringida a usuarios con permisos de administración.</p>}
    </div>

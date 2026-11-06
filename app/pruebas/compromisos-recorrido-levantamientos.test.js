@@ -9,6 +9,7 @@ const archivos=leer('src/componentes/DriveArchivos.jsx');
 const motor=leer('src/paginas/terreno/Control.jsx');
 const browser=leer('pruebas/ui-compromisos-escritorio.mjs');
 const repo=JSON.parse(leer('src/datos/repositorioCompromisosSantaClara.json'));
+const modelos=leer('src/paginas/cliente/GestionesRepositorio.jsx');
 
 test('Mismo patrón visual de Levantamientos: categoría, índice y detalle por actividad',()=>{
  for(const clase of ['categoria-titulo','indice-preguntas','pregunta-indice','numero-pregunta','texto-pregunta','volver-indice','pasos']){
@@ -40,8 +41,9 @@ test('Repositorio conserva los 24 compromisos de Santa Clara del 23 de octubre',
  assert.deepEqual(repo.items.map(i=>i.orden),Array.from({length:24},(_,i)=>i+1));
  assert.equal(repo.items.find(i=>i.orden===23).titulo,'Acta de Condiciones Etapa II');
  assert.equal(repo.items.find(i=>i.orden===24).titulo,'Informe de gestión al término');
- assert.match(compromisos,/agregarDesdeRepositorio/);
- assert.match(compromisos,/compromisos\.some\(x=>x\.titulo/);
+ assert.match(compromisos,/<GestionesRepositorio/);
+ assert.match(modelos,/gestiones_crear_desde_tipo/);
+ assert.match(modelos,/Guardar una gestión como modelo/);
 });
 test('Chromium prueba los dos estados del recorrido',()=>{
  assert.match(browser,/compromisos-indice-item/);

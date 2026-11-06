@@ -16,7 +16,7 @@ import Compromisos from '../cliente/Compromisos';
 
 const SECCIONES = [
   ['resumen', 'Resumen'],
-  ['compromisos', 'Compromisos y avances'],
+  ['compromisos', 'Gestiones y avances'],
   ['levantamientos', 'Levantamientos'],
   ['activos', 'Activos'],
   ['plan', 'Plan de mantención'],
@@ -1517,7 +1517,7 @@ function DetalleComunidad({ id }) {
                 <DriveArchivos comunidadId={id} origenTipo="informe" titulo="Informes"
                                ayuda="Informes de gestión · 04 Seguimiento e informes / Informes." />
                 <DriveArchivos comunidadId={id} origenTipo={null} titulo="Historial de todos los documentos"
-                               ayuda="Incluye levantamientos, mantenciones, incidencias y compromisos. Marca “Mostrar eliminados” para ver lo enviado a la papelera." />
+                               ayuda="Incluye levantamientos, mantenciones, incidencias y gestiones. Marca “Mostrar eliminados” para ver lo enviado a la papelera." />
               </>
             ) : <p className="vacio">Solo administración y jefatura pueden ver los documentos de la comunidad.</p>}
           </section>

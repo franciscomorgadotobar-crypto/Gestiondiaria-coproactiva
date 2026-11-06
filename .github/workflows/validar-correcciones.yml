@@ -40,6 +40,9 @@ jobs:
       - name: Verificar recorrido de Compromisos igual a Levantamientos y repositorio Santa Clara
         working-directory: app
         run: node --test pruebas/compromisos-recorrido-levantamientos.test.js
+      - name: Validar Gestiones y avances, biblioteca reutilizable y rollback seguro
+        working-directory: app
+        run: node --test pruebas/gestiones-avances-v1.test.js
       - name: Verificar Motor de Avances compartido entre Levantamientos y Compromisos
         working-directory: app
         run: node --test pruebas/motor-avances.test.js

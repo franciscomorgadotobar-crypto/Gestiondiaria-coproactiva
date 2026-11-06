@@ -9,7 +9,7 @@ import './PortalCliente.css';
 
 const TABS = [
   ['resumen', 'Resumen'],
-  ['compromisos', 'Compromisos y avances'],
+  ['compromisos', 'Gestiones y avances'],
   ['incidencias', 'Incidencias'],
   ['levantamientos', 'Levantamientos'],
   ['mantencion', 'Mantenciones'],
@@ -694,7 +694,7 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
       <div className="portal-inicio-intro">
         <div>
           <h2 className="h4">Gestión de tu comunidad</h2>
-          <p className="chico apagado">Consulta los compromisos de administración, la actividad operativa y sus respaldos.</p>
+          <p className="chico apagado">Consulta las gestiones de administración, sus avances y respaldos.</p>
         </div>
         <span className={atencion.length ? 'portal-estado chip-alerta' : 'portal-estado chip-cumple'}>
           {atencion.length ? `${atencion.length} asuntos por atender` : 'Sin asuntos vencidos'}
@@ -714,7 +714,7 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
           {informes.length > 0 && <div className="portal-documentos-resumen">{informes.slice(0, 2).map((d, i) => <TarjetaDocumento key={`${d.id}-${i}`} documento={d} />)}</div>}
         </section>
       ) : (
-        <p className="portal-sin-movimientos">Todavía no hay movimientos publicados. Consulta los compromisos y documentos desde el menú de navegación.</p>
+        <p className="portal-sin-movimientos">Todavía no hay movimientos publicados. Consulta las gestiones y documentos desde el menú de navegación.</p>
       )}
     </div>
   );
