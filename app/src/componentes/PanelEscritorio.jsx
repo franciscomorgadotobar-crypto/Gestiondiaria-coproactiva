@@ -60,7 +60,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (!masAbierto) return undefined;
     // El menú se monta fuera de la aplicación y bloquea la interacción
     // con el mapa Leaflet, los chips y la navegación inferior.
-    const raizAplicacion = document.getElementById('root');
+    const raizAplicacion = document.getElementById('raiz');
     const estabaInerte = Boolean(raizAplicacion?.inert);
     const scrollBodyAnterior = document.body.style.overflow;
     const scrollHtmlAnterior = document.documentElement.style.overflow;
