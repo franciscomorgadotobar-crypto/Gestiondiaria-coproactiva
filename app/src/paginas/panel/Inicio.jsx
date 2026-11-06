@@ -215,15 +215,17 @@ export default function Inicio() {
           </Link>)}
         </nav>
 
-        {puedeConfigurar && <section className="inicio-accion-principal" aria-label="Acción principal">
-          <div><strong>Iniciar una visita</strong><span>Registrar un nuevo levantamiento en terreno.</span></div>
-          <Link to="/nuevo" className="boton inicio-accion-boton">
-            <span aria-hidden="true">+</span> Nuevo levantamiento
-          </Link>
+        <section className="inicio-accion-principal" aria-label="Accesos rápidos en móvil">
+          {puedeConfigurar && <>
+            <div><strong>Iniciar una visita</strong><span>Registrar un nuevo levantamiento en terreno.</span></div>
+            <Link to="/nuevo" className="boton inicio-accion-boton">
+              <span aria-hidden="true">+</span> Nuevo levantamiento
+            </Link>
+          </>}
           <Link to="/comunidades" className="boton boton-secundario inicio-seleccionar-comunidad-movil">
             Seleccionar comunidad <span aria-hidden="true">›</span>
           </Link>
-        </section>}
+        </section>
 
         <details className="inicio-herramientas">
           <summary><span>Herramientas y consultas</span><span aria-hidden="true" className="inicio-herramientas-flecha">⌄</span></summary>
