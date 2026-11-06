@@ -17,7 +17,7 @@ test('Catálogo no agrega rutas inexistentes y evita duplicados',()=>{
   assert.ok(rutas.has('/configuracion'));
   assert.equal(modulos.length,11,'Se conservan los módulos originales y se añade el Gestor documental');
   assert.deepEqual(modulos.map(m=>m.titulo),[
-    'Gestión comercial','Gestor documental','Levantamientos','Arriendos y ventas','Red de proveedores',
+    'Gestión comercial','Gestor documental','Operaciones','Arriendos y ventas','Red de proveedores',
     'Recepción y atención','Gestión contable','SEO y Analítica','Base de conocimientos',
     'Vista de cliente','Configuración'
   ]);
