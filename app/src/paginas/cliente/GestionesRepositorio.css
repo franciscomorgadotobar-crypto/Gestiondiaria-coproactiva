@@ -1,0 +1,18 @@
+.gestiones-repositorio{margin:10px 0}
+.gestiones-repositorio>summary{cursor:pointer;font-weight:700;min-height:48px;padding:12px 14px;color:var(--texto-titulo)}
+.gestiones-repositorio-cuerpo{display:grid;gap:12px;padding:14px;border-top:1px solid var(--borde)}
+.gestiones-repositorio-form,.gestiones-repositorio-editor{display:grid;gap:12px}
+.gestiones-repositorio-editor{padding:12px;border:1px solid var(--borde);border-radius:12px;background:var(--papel)}
+.gestiones-repositorio-editor h3{margin:0;font-size:15px}
+.gestiones-repositorio label{display:grid;gap:5px;min-width:0;font-size:12px;font-weight:650;color:var(--texto-titulo)}
+.gestiones-repositorio label input,.gestiones-repositorio label select,.gestiones-repositorio label textarea{width:100%;min-height:42px;max-width:100%;font:inherit;font-weight:400;background:var(--tarjeta);border:1px solid var(--borde);border-radius:8px;padding:9px;color:var(--texto-titulo)}
+.gestiones-repositorio label textarea{min-height:86px}
+.gestiones-repositorio-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.gestiones-repositorio-previa{display:grid;gap:6px;padding:11px;border:1px solid var(--borde);background:var(--papel);border-radius:10px}
+.gestiones-repositorio-previa strong{font-size:13px}
+.gestiones-repositorio-previa small,.gestiones-repositorio-previa p{font-size:11px;color:var(--texto-apagado);margin:0}
+.gestiones-repositorio-previa ol{padding-left:21px;margin:5px 0;font-size:12px}
+.gestiones-repositorio-botones{display:flex;align-items:end;gap:8px;flex-wrap:wrap}
+.gestiones-repositorio-desde{flex:1 1 190px}
+.gestiones-repositorio-botones button{min-height:42px}
+@media(max-width:600px){.gestiones-repositorio-grid{grid-template-columns:1fr}.gestiones-repositorio-botones button{flex:1 1 auto;white-space:normal}}
