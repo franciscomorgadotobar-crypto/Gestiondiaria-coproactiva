@@ -364,7 +364,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   Sin subtareas. Agrega las actividades necesarias para medir el avance de este compromiso.
                 </p>}
                 {sub.length>0&&!pasoSubtarea[item.id]&&
-                  <ol className="indice-preguntas compromisos-indice" aria-label={'Actividades de '+item.titulo}>
+                  <ol className={'indice-preguntas compromisos-indice'+(administrador?' compromisos-indice-admin':'')} aria-label={'Actividades de '+item.titulo}>
                     {sub.map((x,indiceSub)=>{
                       const estadoVisual=estadoVisualAvance({completada:x.completada,avance:x.avance});
                       return <li key={x.id} className={'compromisos-indice-item motor-avances-fila--'+estadoVisual}>
@@ -442,7 +442,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                         ayuda="Los archivos se guardan en la carpeta de este compromiso en Google Drive y quedan asociados a la subtarea."/>
                     </details>
                     {administrador&&<button type="button" className="compromisos-subtarea-eliminar"
-                      disabled={guardando} onClick={()=>eliminarSubtarea(item,x)}>Eliminar</button>}
+                      disabled={guardando} aria-label={'Eliminar subtarea: '+x.titulo}
+                      title="Eliminar subtarea" onClick={()=>eliminarSubtarea(item,x)}>Eliminar</button>}
                     </div>
                   </div>;
                 })}
