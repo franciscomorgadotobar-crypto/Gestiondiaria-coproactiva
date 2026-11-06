@@ -383,6 +383,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                         </>}
                       <strong className="compromisos-subtarea-porcentaje">{x.completada?100:(x.avance||0)}%</strong>
                     </div>
+                    <div className="compromisos-subtarea-herramientas">
                     {administrador&&!x.completada&&<label className="compromisos-subtarea-progreso">
                       <span>Avance parcial</span>
                       <select value={x.avance||0} disabled={guardando}
@@ -392,7 +393,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                       </select>
                     </label>}
                     <details className="compromisos-subtarea-drive">
-                      <summary>Adjuntos de esta subtarea · Google Drive</summary>
+                      <summary aria-label={'Adjuntos de esta subtarea: '+x.titulo}>Adjuntos · Google Drive</summary>
                       <DriveArchivos comunidadId={comunidadId} origenTipo="compromiso"
                         origenId={item.id} detalleId={x.id} compacto
                         titulo={'Evidencias · '+x.titulo} permitirSubir={administrador}
@@ -400,7 +401,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                         ayuda="Los archivos se guardan en la carpeta de este compromiso en Google Drive y quedan asociados a la subtarea."/>
                     </details>
                     {administrador&&<button type="button" className="compromisos-subtarea-eliminar"
-                      disabled={guardando} onClick={()=>eliminarSubtarea(item,x)}>Eliminar subtarea</button>}
+                      disabled={guardando} onClick={()=>eliminarSubtarea(item,x)}>Eliminar</button>}
+                    </div>
                   </div>;
                 })}
                 {administrador&&<div className="compromisos-subagregar">
