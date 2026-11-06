@@ -37,7 +37,9 @@ alter table public.compromisos_administracion
   add column if not exists prioridad text not null default 'normal',
   add column if not exists resultado text,
   add column if not exists proxima_accion_texto text,
-  add column if not exists documentos_esperados jsonb not null default '[]'::jsonb;
+  add column if not exists documentos_esperados jsonb not null default '[]'::jsonb,
+  add column if not exists archivado_en timestamptz,
+  add column if not exists archivado_por uuid references auth.users(id);
 alter table public.compromisos_administracion drop constraint if exists gestiones_documentos_esperados_check;
 alter table public.compromisos_administracion add constraint gestiones_documentos_esperados_check
   check(jsonb_typeof(documentos_esperados)='array');
@@ -221,6 +223,37 @@ begin
 end; $$;
 revoke all on function public.gestiones_cambiar_estado(uuid,text,date,text,text) from public,anon;
 grant execute on function public.gestiones_cambiar_estado(uuid,text,date,text,text) to authenticated;
+
+-- Archivar conserva tareas, avances, resultado y referencias de Drive; se puede revertir.
+create or replace function public.gestiones_archivar(p_gestion_id uuid,p_archivar boolean)
+returns public.compromisos_administracion
+language plpgsql security definer set search_path='' as $
+declare anterior public.compromisos_administracion%rowtype;
+        actualizado public.compromisos_administracion%rowtype;
+begin
+ if auth.uid() is null or not public.puede_gestionar_compromisos() then
+  raise exception 'Sin permiso para archivar gestiones';
+ end if;
+ select * into anterior from public.compromisos_administracion
+  where id=p_gestion_id for update;
+ if not found then raise exception 'Gestión no encontrada'; end if;
+ if (anterior.archivado_en is not null) = p_archivar then return anterior; end if;
+ update public.compromisos_administracion
+ set archivado_en=case when p_archivar then now() else null end,
+     archivado_por=case when p_archivar then auth.uid() else null end,
+     actualizado_en=now()
+ where id=p_gestion_id returning * into actualizado;
+ insert into public.compromisos_transiciones(
+  compromiso_id,estado_anterior,estado_nuevo,observacion,fecha_proxima_accion,cambiado_por
+ ) values(
+  p_gestion_id,anterior.estado,anterior.estado,
+  case when p_archivar then 'Gestión archivada sin eliminar su historial'
+    else 'Gestión restaurada del archivo' end,
+  anterior.fecha_proxima_accion,auth.uid());
+ return actualizado;
+end; $;
+revoke all on function public.gestiones_archivar(uuid,boolean) from public,anon;
+grant execute on function public.gestiones_archivar(uuid,boolean) to authenticated;
 
 -- El motor existente mantiene el porcentaje sin forzar estado completado.
 -- Evita que un check cierre indebidamente una gestión pendiente de aprobación.
