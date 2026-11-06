@@ -1,0 +1,20 @@
+/* Motor de avance: patrón y colores compartidos con el checklist de terreno. */
+.motor-avances{display:grid;gap:6px;min-width:0}
+.motor-avances-cabecera{display:flex;align-items:baseline;justify-content:space-between;gap:10px;color:var(--texto-titulo);font-size:13px}
+.motor-avances-cabecera>span{font-weight:700}
+.motor-avances-cabecera strong{font-weight:700;font-variant-numeric:tabular-nums}
+.motor-avances-barra{height:5px;background:var(--niebla);border-radius:10px;overflow:hidden}
+.motor-avances-barra>div{height:100%;background:var(--naranja);border-radius:10px;transition:width .2s ease}
+.motor-avances--compacto{gap:5px}
+.motor-avances--compacto .motor-avances-cabecera{font-size:12px}
+.motor-avances-fila{border-left:3px solid transparent}
+.motor-avances-fila--completado{background:var(--ok-fondo);border-left-color:var(--ok-texto)}
+.motor-avances-fila--en_curso{background:var(--alerta-fondo);border-left-color:var(--alerta-texto)}
+.motor-avances-fila--en_espera{background:var(--info-fondo);border-left-color:var(--info-texto)}
+.motor-avances-fila--critico{background:var(--critico-fondo);border-left-color:var(--critico-texto)}
+.motor-avances-fila--siguiente:not(.motor-avances-fila--completado){box-shadow:inset 0 0 0 1px var(--naranja)}
+.motor-avances-numero{width:26px;height:26px;flex:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--borde);border-radius:50%;font-size:11px;font-weight:800;color:var(--texto-titulo);font-variant-numeric:tabular-nums}
+.motor-avances-fila--completado .motor-avances-numero{border-color:var(--ok-borde);color:var(--ok-texto)}
+.motor-avances-fila--en_curso .motor-avances-numero{border-color:var(--alerta-borde);color:var(--alerta-texto)}
+.motor-avances-siguiente{color:var(--enlace);font-size:11px;font-weight:700}
+@media(prefers-reduced-motion:reduce){.motor-avances-barra>div{transition:none}}
