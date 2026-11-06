@@ -177,23 +177,19 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
   setGuardando(false);
   if(err)setError(err.message);else {setEditando(null);await recargarYNotificar();}
  }
- async function eliminarCompromiso(item) {
-  if(!window.confirm(`¿Eliminar definitivamente "${item.titulo}" y sus avances y subtareas? Esta acción no se puede deshacer.`))return;
+ async function archivarGestion(item,archivar=true){
+  if(!administrador||guardando)return;
+  const verbo=archivar?'archivar':'restaurar';
+  if(!window.confirm('¿Quieres '+verbo+' esta gestión? Las tareas, avances y documentos se conservarán.'))return;
   setGuardando(true);setError('');
   try{
-   const ids=avances.filter(a=>a.compromiso_id===item.id).map(a=>a.id);
-   const docs=adjuntos.filter(d=>ids.includes(d.avance_id));
-   const {data:driveDocs,error:driveError}=await supabase.rpc('drive_listar_documentos',{
-     p_comunidad_id:comunidadId,p_origen_tipo:'compromiso',p_origen_id:item.id,p_incluir_eliminados:false
+   const {error:e}=await supabase.rpc('gestiones_archivar',{
+    p_gestion_id:item.id,p_archivar:archivar
    });
-   if(driveError)throw driveError;
-   if(driveDocs?.length)throw new Error('El compromiso tiene documentos en Google Drive. Retíralos antes de eliminarlo.');
-   if(docs.length){const {error:se}=await supabase.storage.from('compromisos-adjuntos').remove(docs.map(d=>d.ruta));if(se)throw se;}
-   const {error:de}=await supabase.from('compromisos_administracion').delete().eq('id',item.id);
-   if(de)throw de;
+   if(e)throw e;
    await recargarYNotificar();
-  }catch(e){setError(e.message||'No fue posible eliminar.');}
-  finally{setGuardando(false);}
+  }catch(e){setError('No fue posible '+verbo+' la gestión: '+e.message)}
+  finally{setGuardando(false)}
  }
  async function eliminarAdjunto(doc) {
   if(!window.confirm(`¿Eliminar el archivo "${doc.nombre}"? Esta acción no se puede deshacer.`))return;
@@ -368,6 +364,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
         onClick={()=>setVista('activas')}>En seguimiento <strong>{conteos.pendientes+conteos.enProceso}</strong></button>
       <button type="button" className={vista==='completadas'?'activo':''} aria-pressed={vista==='completadas'}
         onClick={()=>setVista('completadas')}>Completadas / Historial <strong>{conteos.completadas}</strong></button>
+      <button type="button" className={vista==='archivadas'?'activo':''} aria-pressed={vista==='archivadas'}
+        onClick={()=>setVista('archivadas')}>Archivadas <strong>{conteos.archivadas}</strong></button>
       <button type="button" className={vista==='todas'?'activo':''} aria-pressed={vista==='todas'}
         onClick={()=>setVista('todas')}>Todas <strong>{compromisos.length}</strong></button>
    </div>}
@@ -410,7 +408,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
      onActualizado={recargarYNotificar}/>}
    {cargando ? <p className="cargando">Cargando gestiones…</p>
     : !listado.length ? <div className="portal-vacio">
-       {vista==='completadas'?'No hay gestiones completadas.':'No hay gestiones en esta vista.'}
+       {vista==='completadas'?'No hay gestiones completadas.':vista==='archivadas'?'No hay gestiones archivadas.':'No hay gestiones en esta vista.'}
       </div>
     : <div className="compromisos-lista">
         {listado.map((item,indice)=>{
@@ -427,14 +425,17 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
             {!integrado&&<summary className="categoria-titulo compromisos-fila compromisos-categoria-titulo">
               <span className="compromisos-titulo crece">
                 <strong>{String(indice+1).padStart(2,'0')}. {item.titulo}</strong>
-                <small>{NOMBRES[item.estado]||item.estado} · {progreso}% · Vence {fecha(item.fecha_limite)}</small>
+                <small>{item.archivado_en?'Archivada · ':''}{NOMBRES[item.estado]||item.estado} · {progreso}% · Vence {fecha(item.fecha_limite)}</small>
               </span>
               {sub.length>0&&realizados===sub.length&&<span className="categoria-ok" aria-label="Compromiso completado">✓</span>}
               <span className="portal-estado">{item.prioridad==='urgente'?'Urgente':(item.prioridad==='alta'?'Prioridad alta':NOMBRES[item.estado]||item.estado)}</span>
               {administrador&&<button type="button" className="compromisos-icono-eliminar"
-                aria-label={'Eliminar compromiso: '+item.titulo} title="Eliminar compromiso"
+                aria-label={(item.archivado_en?'Restaurar':'Archivar')+' gestión: '+item.titulo}
+                title={item.archivado_en?'Restaurar gestión':'Archivar gestión'}
                 disabled={guardando}
-                onClick={e=>{e.preventDefault();e.stopPropagation();eliminarCompromiso(item);}}>×</button>}
+                onClick={e=>{e.preventDefault();e.stopPropagation();archivarGestion(item,!item.archivado_en)}}>
+                  {item.archivado_en?'↺':'×'}
+                </button>}
               <span className="compromisos-flecha" aria-hidden="true">⌄</span>
             </summary>}
             <div className="compromisos-detalle">
@@ -458,7 +459,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   </button>}
               </div>}
               {item.descripcion&&<p>{item.descripcion}</p>}
-              {administrador&&<div className="gestiones-acciones-rapidas" role="group" aria-label={'Acciones de '+item.titulo}>
+              {administrador&&!item.archivado_en&&<div className="gestiones-acciones-rapidas" role="group" aria-label={'Acciones de '+item.titulo}>
                 <button type="button" className="boton boton-primario" disabled={guardando}
                   onClick={()=>abrirAccion(item,'avance')}>+ Avance</button>
                 <button type="button" className="boton boton-secundario" disabled={guardando}
@@ -477,7 +478,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 <button type="button" className="boton boton-texto"
                   onClick={()=>imprimirGestion(item,sub,historico,movimientos)}>Informe</button>
               </div>}
-              {administrador&&<div className="gestiones-control" aria-label="Estado y fechas de gestión">
+              {administrador&&!item.archivado_en&&<div className="gestiones-control" aria-label="Estado y fechas de gestión">
                 <label>Estado
                   <select aria-label={'Cambiar estado de '+item.titulo} value={item.estado} disabled={guardando}
                     onChange={e=>cambiarEstado(item,e.target.value)}>
@@ -499,7 +500,7 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                 <button type="button" className="boton boton-secundario" disabled={guardando}
                   onClick={()=>cambiarEstado(item,item.estado)}>Guardar seguimiento</button>
               </div>}
-              {administrador&&accionesAbiertas[item.id]&&
+              {administrador&&!item.archivado_en&&accionesAbiertas[item.id]&&
                 <div className="gestiones-cierre">
                  <label>Resultado verificable para cerrar esta gestión
                   <textarea rows={2} placeholder="Qué se resolvió, entregó o acordó"
@@ -753,7 +754,8 @@ export default function Compromisos({ comunidadId, administrador = false, soloVi
                   <button type="button" className="boton boton-texto" disabled={guardando}
                     onClick={()=>visibilidad(item)}>{item.publicado?'Ocultar al cliente':'Publicar en portal cliente'}</button>
                   <button type="button" className="boton boton-texto" disabled={guardando}
-                    onClick={()=>eliminarCompromiso(item)}>Eliminar gestión</button>
+                    onClick={()=>archivarGestion(item,!item.archivado_en)}>
+                      {item.archivado_en?'Restaurar gestión':'Archivar gestión'}</button>
                 </div>
               </details>}
               <details className="compromisos-historial gestiones-linea-tiempo">
