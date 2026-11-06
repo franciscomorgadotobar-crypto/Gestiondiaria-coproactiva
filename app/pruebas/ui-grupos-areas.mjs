@@ -1,9 +1,8 @@
 /*
  * Grupos del selector (24-10-2026), en Chromium con perfil Supabase simulado.
  * No consulta ni modifica la base real.
- * - Operaciones: Proveedores y WhatsApp quedan en "Más" (teléfono) y en la
- *   barra lateral (escritorio); Volver desde Proveedores lleva al inicio de
- *   Operaciones.
+ * - Operaciones: tres accesos primarios; las herramientas secundarias
+ *   están plegadas en el Home móvil y la barra lateral persiste en PC.
  * - Comercial en escritorio: Pipeline, Arriendos y ventas, Nueva propiedad y SEO.
  * - Finanzas abre Contabilidad.
  */
@@ -30,7 +29,7 @@ const session = {
 
 const navegador = await chromium.launch({ headless: true });
 try {
-  async function crear({ ancho = 390, alto = 844, rol = 'superadmin', clientesQA = false } = {}) {
+  async function crear({ ancho = 390, alto = 844, rol = 'superadmin', clientesQA = false, comunidadesQA = false } = {}) {
     const movil = ancho < 900;
     const ctx = await navegador.newContext({
       viewport: { width: ancho, height: alto }, isMobile: movil, hasTouch: movil, serviceWorkers: 'block'
@@ -48,6 +47,11 @@ try {
       if (clientesQA && url.includes('/rest/v1/comunidades?'))
         return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
           {id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd', nombre:'Comunidad QA', comuna:'Santiago'}
+        ])});
+      if (comunidadesQA && url.includes('/rest/v1/comunidades?'))
+        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
+          {id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',nombre:'Condominio Plaza Nos (GPR)',comuna:'San Bernardo',direccion:'Avenida Portales 3264',latitud:null,longitud:null},
+          {id:'ffffffff-ffff-4fff-8fff-ffffffffffff',nombre:'Reserva Santa Clara',comuna:'Coquimbo',direccion:'Avda. Waldo Alcalde #1855',latitud:null,longitud:null}
         ])});
       if (clientesQA && url.includes('/rest/v1/plantillas_control?'))
         return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
@@ -115,24 +119,76 @@ try {
     await ctx.close();
   }
 
-  // Operaciones: la barra de cuatro accesos termina en Notificaciones,
-  // sin un quinto botón «Más» ni un diálogo sobre el mapa.
+  // Operaciones: sólo tres accesos. El Home no duplica botones primarios,
+  // KPI ni mapa con la barra inferior.
   {
     const {ctx,page}=await crear({ancho:390,alto:844});
     await page.getByRole('button',{name:/Operaciones/}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const barra=page.locator('.barra-inferior-movil');
     assert.deepEqual(await barra.locator('button').allTextContents(),
-      ['Inicio','Comunidades','Levantamientos','Notificaciones']);
+      ['Inicio','Comunidades','Levantamientos']);
     assert.equal(await barra.getByRole('button',{name:'Más'}).count(),0);
     assert.equal(await page.getByRole('dialog',{name:'Más opciones'}).count(),0);
-    assert.equal(await barra.evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length),4);
+    assert.equal(await barra.evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length),3);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
     await barra.getByRole('button',{name:'Comunidades'}).click();
     await page.waitForURL(u=>u.pathname==='/comunidades',{timeout:15000});
     await barra.getByRole('button',{name:'Inicio'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:15000});
-    console.log('Operaciones · cuatro accesos sin Más, sin mapa bloqueado: OK');
+    console.log('Operaciones · tres accesos sin Notificaciones ni Más: OK');
+    await ctx.close();
+  }
+
+  // Recorrido móvil: el trabajo debe aparecer antes del mapa y herramientas,
+  // y la lista de comunidades debe ocupar menos de 110 px por registro.
+  for(const ancho of [320,390]){
+    const {ctx,page}=await crear({ancho,alto:844,comunidadesQA:true});
+    await page.getByRole('button',{name:/Operaciones/}).click();
+    await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
+    const visible=await page.evaluate(()=>{
+      const root=document.querySelector('.inicio-cuerpo');
+      const mapa=root.querySelector('.tarjeta-mapa');
+      const tablero=root.querySelector('.tablero');
+      const trabajo=root.querySelector('.inicio-trabajo');
+      const herramientas=root.querySelector('.inicio-herramientas');
+      return {
+        ordenTablero:Number(getComputedStyle(tablero).order),
+        ordenTrabajo:Number(getComputedStyle(trabajo).order),
+        ordenMapa:mapa?Number(getComputedStyle(mapa).order):5,
+        ordenHerramientas:Number(getComputedStyle(herramientas).order),
+        visibleHerramientas:herramientas.open,
+        accesosDesktop:getComputedStyle(root.querySelector('.accesos-inicio-desktop')).display,
+        desbordamiento:document.documentElement.scrollWidth>innerWidth+2
+      };
+    });
+    assert.equal(visible.ordenTablero,1);
+    assert.equal(visible.ordenTrabajo,3);
+    assert.equal(visible.ordenHerramientas,4);
+    assert.equal(visible.visibleHerramientas,false);
+    assert.equal(visible.accesosDesktop,'none');
+    assert.equal(visible.desbordamiento,false);
+    const tools=page.locator('details.inicio-herramientas');
+    await tools.locator('summary').click();
+    assert.equal(await tools.locator('a[href="/bitacora"]').count(),1);
+    await tools.locator('summary').click();
+    await page.screenshot({path:'artifacts/ui/home-operaciones-'+ancho+'.png',fullPage:false});
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Comunidades'}).click();
+    await page.waitForURL(u=>u.pathname==='/comunidades',{timeout:20000});
+    const filas=page.locator('.comunidad-fila');
+    await filas.first().waitFor({timeout:15000});
+    assert.equal(await filas.count(),2);
+    for(const fila of await filas.all()){
+      const alto=await fila.evaluate(e=>e.getBoundingClientRect().height);
+      assert.ok(alto<=112,'Comunidad aún demasiado alta '+ancho+'px: '+alto);
+    }
+    assert.equal(await page.locator('.comunidades-kpis').evaluate(e=>getComputedStyle(e).display),'none');
+    await page.screenshot({path:'artifacts/ui/comunidades-lista-'+ancho+'.png',fullPage:false});
+    await page.getByRole('searchbox',{name:'Buscar comunidad'}).fill('Santa Clara');
+    assert.equal(await filas.count(),1);
+    assert.match(await filas.first().innerText(),/Coquimbo/);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+    console.log('Home + Comunidades lista · '+ancho+'px: OK');
     await ctx.close();
   }
 
