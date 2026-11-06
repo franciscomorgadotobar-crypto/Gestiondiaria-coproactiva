@@ -124,3 +124,47 @@
  .inicio-pantalla .inicio-accion-principal{grid-template-columns:1fr;gap:10px}
  .inicio-pantalla .inicio-accion-principal .inicio-accion-boton{width:100%}
 }
+
+
+/* Corrección de contraste: el botón principal heredaba texto blanco de
+   .acceso-principal, mientras la rejilla le imponía fondo blanco. */
+.inicio-pantalla .accesos-inicio .acceso.acceso-principal{
+  background:#fff1e5;
+  border-color:var(--naranja,#ed7130);
+  color:#512d1e;
+  font-weight:750;
+}
+.inicio-pantalla .accesos-inicio .acceso.acceso-principal > span{color:inherit}
+.inicio-pantalla .accesos-inicio .acceso.acceso-principal:hover,
+.inicio-pantalla .accesos-inicio .acceso.acceso-principal:focus-visible{
+  background:#ffe3cd;
+  color:#402315;
+}
+.inicio-pantalla .inicio-seleccionar-comunidad-movil{display:none}
+@media(max-width:899px){
+ .inicio-pantalla .inicio-accion-principal .inicio-seleccionar-comunidad-movil{
+  display:flex;
+  grid-column:1/-1;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:45px;
+  padding:10px 13px;
+  border:1px solid var(--naranja,#ed7130);
+  border-radius:9px;
+  background:#fff1e5;
+  color:#512d1e;
+  font-size:13px;
+  font-weight:750;
+  text-decoration:none;
+ }
+ .inicio-pantalla .inicio-accion-principal .inicio-seleccionar-comunidad-movil span{
+  color:inherit;
+  font-size:17px
+ }
+ .inicio-pantalla .inicio-accion-principal .inicio-seleccionar-comunidad-movil:hover,
+ .inicio-pantalla .inicio-accion-principal .inicio-seleccionar-comunidad-movil:focus-visible{
+  background:#ffe3cd;
+  color:#402315;
+ }
+}
