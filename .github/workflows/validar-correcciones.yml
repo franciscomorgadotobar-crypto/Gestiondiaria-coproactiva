@@ -43,6 +43,9 @@ jobs:
       - name: Verificar Motor de Avances compartido entre Levantamientos y Compromisos
         working-directory: app
         run: node --test pruebas/motor-avances.test.js
+      - name: Comprobar visibilidad privada de documentos de compromisos para el cliente
+        working-directory: app
+        run: node --test pruebas/drive-compromisos-portal-cliente.test.js
       - name: Validar jerarquía de subtareas, checks, progreso y evidencias
         working-directory: app
         run: node --test pruebas/compromisos-subtareas-progreso.test.js
