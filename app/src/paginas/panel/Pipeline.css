@@ -231,3 +231,24 @@
  border-radius:8px;background:var(--tarjeta);padding:6px;font-size:12px}
 .pipeline-lista-tabla td .boton{min-height:37px;font-size:12px;padding:7px 9px}
 @media(max-width:580px){.pipeline-lista-filtros{grid-template-columns:1fr}}
+
+
+@media(max-width:700px){
+  .pipeline-lista-tabla-wrap{overflow:visible;background:transparent;border:0}
+  .pipeline-lista-tabla{min-width:0;width:100%;display:block}
+  .pipeline-lista-tabla thead{display:none}
+  .pipeline-lista-tabla tbody{display:grid;gap:8px}
+  .pipeline-lista-tabla tbody tr{display:grid;gap:6px;padding:12px;
+    background:var(--tarjeta);border:1px solid var(--borde);border-radius:11px}
+  .pipeline-lista-tabla td{max-width:none;display:grid;grid-template-columns:minmax(84px,32%) minmax(0,1fr);
+    align-items:center;gap:9px;padding:4px 0;border:0;overflow-wrap:anywhere}
+  .pipeline-lista-tabla td::before{content:attr(data-label);color:var(--texto-apagado);
+    font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.035em}
+  .pipeline-lista-tabla td:first-child{display:block;padding:2px 0 7px;
+    border-bottom:1px solid var(--borde-suave);margin-bottom:3px}
+  .pipeline-lista-tabla td:first-child::before{display:none}
+  .pipeline-lista-tabla td:first-child strong{font-size:14px}
+  .pipeline-lista-tabla td:last-child{display:flex;justify-content:flex-end}
+  .pipeline-lista-tabla td:last-child::before{display:none}
+  .pipeline-lista-tabla td:last-child button{min-width:126px}
+}
