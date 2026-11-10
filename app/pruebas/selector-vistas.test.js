@@ -54,3 +54,19 @@ test('La biblioteca conserva 202 fichas con referencias y 160 cápsulas automát
     assert.ok(item.referencia && item.texto && item.explicacion && item.categoria,'Cápsula incompleta: '+item.id);
   }
 });
+
+test('Home compacto muestra solo nombre de área y despliega sus submódulos al tocar',()=>{
+  const home=leer('src/paginas/SeleccionArea.jsx');
+  const estilos=leer('src/paginas/SeleccionArea.css');
+  assert.match(home,/useState\(null\)/);
+  assert.match(home,/alternarArea\(area.id\)/);
+  assert.match(home,/aria-expanded=\{areaAbierta===area.id\}/);
+  assert.match(home,/hidden=\{areaAbierta!==area.id\}/);
+  assert.match(home,/area.enlaces.map\(enlace=>/);
+  assert.match(home,/entrar\(area,enlace.ruta\)/);
+  assert.doesNotMatch(home,/<span className="seleccion-home__descripcion">\{area.descripcion\}<\/span>/);
+  assert.doesNotMatch(home,/<span className="seleccion-area-etiqueta">\{area.etiqueta\}<\/span>/);
+  assert.match(estilos,/\.seleccion-home-areas \.seleccion-home__submodulos\[hidden\] \{ display: none; \}/);
+  assert.match(estilos,/\.seleccion-home-areas \.seleccion-area-grid\.vista-cuadricula \.seleccion-home__tarjeta \{/);
+  assert.match(estilos,/min-height: 56px/);
+});
