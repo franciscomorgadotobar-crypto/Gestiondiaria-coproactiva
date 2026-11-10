@@ -72,7 +72,9 @@ try {
     assert.equal(await page.locator('.seo-pantalla').count(),0);
     const area=await page.evaluate(({userId})=>localStorage.getItem('coproactiva_area:'+userId),{userId});
     assert.equal(area,null,'la preferencia de área antigua no modifica la apertura');
-    await page.getByRole('button',{name:/SEO y Analítica/}).click();
+    await page.getByRole('button',{name:'Abrir Comercial'}).click();
+    await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'SEO'}).click();
     await page.waitForURL(url=>url.pathname==='/seo',{timeout:20000});
     await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
     // Al recargar, sigue en el mismo módulo y conserva sus filtros.
@@ -85,10 +87,9 @@ try {
     await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
     assert.equal(new URL(page.url()).searchParams.get('vista'),'business');
     assert.equal(await page.getByRole('combobox',{name:'Período de análisis'}).inputValue(),'90');
-    // Retroceso consecutivo: SEO Business → SEO Resumen → Home.
-    await page.locator('.barra-area-volver').click();
-    await page.waitForURL(url=>url.pathname==='/seo' && !url.searchParams.has('vista'),{timeout:15000});
-    await page.locator('.barra-area-volver').click();
+    // El enlace explícito «Home principal» no es un segundo Atrás; vuelve
+    // directamente al selector, conservando historial Android para filtros.
+    await page.locator('.barra-area-volver').getByText('Home principal').click();
     await page.waitForURL(url=>url.pathname==='/',{timeout:15000});
     await page.locator('.seleccion-home').waitFor();
     console.log('PWA Inicio → SEO → filtros → recarga → Inicio único: OK');
@@ -116,9 +117,9 @@ try {
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
     await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
     assert.equal(await page.getByRole('button',{name:/Finanzas/}).count(),0);
-    assert.equal(await page.getByRole('button',{name:/Administración y ajustes/}).count(),0);
+    assert.equal(await page.getByRole('button',{name:/Administración y ajustes/}).count(),1);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
-    await page.getByRole('button',{name:/Gestión comercial/}).click();
+    await page.getByRole('button',{name:'Abrir Comercial'}).click();
     await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
     console.log('Jefatura → Home filtrado y Pipeline: OK');
     await ctx.close();
