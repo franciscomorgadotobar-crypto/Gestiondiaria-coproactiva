@@ -373,3 +373,17 @@
   .seleccion-home__marca { width:min(30vw,106px); }
   .seleccion-home__cambiar > svg:first-child { display:none; }
 }
+
+
+/* Home principal: cinco áreas, mismo catálogo que el menú lateral.
+   Eliminar el selector visual libera el encabezado en teléfono. */
+.seleccion-home-areas .seleccion-home__cabecera{display:flex;align-items:center;justify-content:space-between}
+.seleccion-home-areas .seleccion-home__tarjetas.vista-cuadricula{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:13px;align-items:stretch
+}
+.seleccion-home-areas .seleccion-home__tarjeta{height:100%;min-height:132px}
+.seleccion-home-areas .seleccion-home__administracion{margin-top:16px}
+@media(max-width:650px){
+ .seleccion-home-areas .seleccion-home__tarjetas.vista-cuadricula{grid-template-columns:1fr;gap:9px}
+ .seleccion-home-areas .seleccion-home__tarjeta{min-height:97px}
+}
