@@ -85,11 +85,10 @@ export function areasDisponibles(perfil) {
   const grupos=[
     {
       id:'comercial',area:'comercial',etiqueta:'COMERCIAL',titulo:'Comercial',
-      descripcion:'Leads, diagnósticos, cotizaciones y actividad comercial.',
+      descripcion:'Leads, propiedades y herramientas comerciales.',
       ruta:'/pipeline',icono:'comercial',visible:comercial,
       enlaces:[
         {ruta:'/pipeline',etiqueta:'Leads y prospectos',visible:true},
-        {ruta:'/propuestas',etiqueta:'Cotizaciones y propuestas',visible:true},
         {ruta:'/propiedades',etiqueta:'Arriendos y ventas',visible:true},
         {ruta:'/seo',etiqueta:'SEO y analítica',visible:administracion},
         {ruta:'/plantillas-correo',etiqueta:'Plantillas de correo',visible:configurar}
@@ -99,19 +98,15 @@ export function areasDisponibles(perfil) {
       id:'operacion',area:'operacion',etiqueta:'OPERACIONES',titulo:'Operaciones de comunidades',
       descripcion:'Comunidades, seguimiento, levantamientos y mantenciones.',
       ruta:'/inicio',icono:'comunidades',visible:true,
-      secciones:[
-        {tipo:'enlace',ruta:'/inicio',etiqueta:'Panel de operaciones',visible:true},
-        {tipo:'enlace',ruta:'/comunidades',etiqueta:'Comunidades',visible:true},
-        {tipo:'submenu',id:'seguimiento',titulo:'Gestión y seguimiento',enlaces:[
-          {ruta:'/bitacora',etiqueta:'Bitácora',visible:true},
-          {ruta:'/mantenciones',etiqueta:'Mantenciones',visible:true}
-        ]},
-        {tipo:'submenu',id:'terreno',titulo:'Terreno y recursos',enlaces:[
-          {ruta:'/nuevo',etiqueta:'Nuevo levantamiento',visible:configurar},
-          {ruta:'/plantillas',etiqueta:'Plantillas de levantamiento',visible:configurar},
-          {ruta:'/mapa',etiqueta:'Mapa de visitas',visible:true},
-          {ruta:'/proveedores',etiqueta:'Red de proveedores',visible:administracion}
-        ]}
+      enlaces:[
+        {ruta:'/inicio',etiqueta:'Panel de operaciones',visible:true},
+        {ruta:'/comunidades',etiqueta:'Comunidades',visible:true},
+        {ruta:'/bitacora',etiqueta:'Bitácora',visible:true},
+        {ruta:'/mantenciones',etiqueta:'Mantenciones',visible:true},
+        {ruta:'/nuevo',etiqueta:'Nuevo levantamiento',visible:configurar},
+        {ruta:'/plantillas',etiqueta:'Plantillas de levantamiento',visible:configurar},
+        {ruta:'/mapa',etiqueta:'Mapa de visitas',visible:true},
+        {ruta:'/proveedores',etiqueta:'Red de proveedores',visible:administracion}
       ]
     },
     {
@@ -145,27 +140,11 @@ export function areasDisponibles(perfil) {
       ]
     }
   ];
-  return grupos.filter(g=>g.visible).map(({visible,...g})=>{
-    if(!g.secciones)return {
-      ...g,enlaces:g.enlaces.filter(enlace=>enlace.visible).map(({visible:_,...enlace})=>enlace)
-    };
-    const secciones=g.secciones.map(seccion=>{
-      if(seccion.tipo==='enlace'){
-        if(!seccion.visible)return null;
-        const {visible:_,...enlace}=seccion;
-        return enlace;
-      }
-      const enlaces=seccion.enlaces.filter(enlace=>enlace.visible).map(({visible:_,...enlace})=>enlace);
-      return enlaces.length?{...seccion,enlaces}:null;
-    }).filter(Boolean);
-    return {
-      ...g,secciones,
-      // Compatibilidad: búsqueda y permisos siguen leyendo el mismo listado
-      // plano, derivado de los submenús (sin duplicar entradas).
-      enlaces:secciones.flatMap(seccion=>seccion.tipo==='submenu'?seccion.enlaces:[seccion])
-        .map(({tipo:_,...enlace})=>enlace)
-    };
-  });
+  return grupos.filter(g=>g.visible).map(({visible,...g})=>({
+    ...g,
+    enlaces:g.enlaces.filter(enlace=>enlace.visible)
+      .map(({visible:_,...enlace})=>enlace)
+  }));
 }
 
 /** Accesos administrativos compartidos por Home principal y lateral.
