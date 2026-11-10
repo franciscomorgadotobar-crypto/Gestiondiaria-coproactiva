@@ -88,6 +88,7 @@ try {
         await page.getByRole('button',{name:opcion,exact:true}).click();
       }else{
         await page.getByRole('button',{name:'Administración y ajustes'}).click();
+        await page.locator('#home-administracion').getByRole('button',{name:'Configuración',exact:true}).click();
       }
       const primera=area.grupo==='Comercial'?'/pipeline':
         area.grupo==='Operaciones'?'/inicio':
