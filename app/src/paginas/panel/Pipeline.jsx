@@ -276,7 +276,11 @@ export default function Pipeline() {
       if(filtroEtapaLista!=='todas'&&p.etapa!==filtroEtapaLista)return false;
       if(filtroResumen==='activos'&&['ganado','perdido'].includes(p.etapa))return false;
       if(filtroResumen==='diagnostico'&&p.etapa!=='diagnostico')return false;
-      if(filtroResumen==='ganados'&&p.etapa!=='ganado')return false;
+      if(filtroResumen==='ganados'){
+        if(p.etapa!=='ganado'||!p.editado_en)return false;
+        const d=new Date(p.editado_en),h=new Date();
+        if(d.getFullYear()!==h.getFullYear()||d.getMonth()!==h.getMonth())return false;
+      }
       if(filtroResumen==='perdidos'&&p.etapa!=='perdido')return false;
       return !q||[p.nombre_condominio,p.comuna,p.direccion,p.nombre_contacto,p.email,
         p.telefono,p.proxima_accion].some(v=>String(v||'').toLocaleLowerCase('es-CL').includes(q));
@@ -975,16 +979,16 @@ export default function Pipeline() {
                 {leadsLista.map(p=>{
                   const responsable=equipo.find(e=>e.id===p.responsable_id);
                   return <tr key={p.id}>
-                    <td><strong>{p.nombre_condominio}</strong><small>{[p.direccion,p.comuna].filter(Boolean).join(', ')||'Sin ubicación'}</small></td>
-                    <td><select value={p.etapa} disabled={guardando}
+                    <td data-label="Prospecto"><strong>{p.nombre_condominio}</strong><small>{[p.direccion,p.comuna].filter(Boolean).join(', ')||'Sin ubicación'}</small></td>
+                    <td data-label="Etapa"><select value={p.etapa} disabled={guardando}
                       aria-label={'Cambiar etapa de '+p.nombre_condominio}
                       onChange={e=>void cambiarEtapa(p,e.target.value)}>
                       {ETAPAS.map(([id,nombre])=><option key={id} value={id}>{nombre}</option>)}
                     </select></td>
-                    <td><span>{p.nombre_contacto||'Sin contacto'}</span><small>{p.email||p.telefono||''}</small></td>
-                    <td>{responsable?.nombre||'Sin asignar'}</td>
-                    <td>{p.proxima_accion||'Sin próxima acción'}<small>{fechaCL(p.fecha_proxima_accion)||''}</small></td>
-                    <td><button type="button" className="boton boton-secundario"
+                    <td data-label="Contacto"><span>{p.nombre_contacto||'Sin contacto'}</span><small>{p.email||p.telefono||''}</small></td>
+                    <td data-label="Responsable">{responsable?.nombre||'Sin asignar'}</td>
+                    <td data-label="Próxima acción">{p.proxima_accion||'Sin próxima acción'}<small>{fechaCL(p.fecha_proxima_accion)||''}</small></td>
+                    <td data-label="Gestionar"><button type="button" className="boton boton-secundario"
                       onClick={()=>abrirGestion(p)}>Gestionar</button></td>
                   </tr>;
                 })}
