@@ -3,18 +3,16 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {completarCorreo,VARIABLES_CORREO,pendientesCorreo,validarBorradorCorreo} from '../src/lib/plantillasCorreo.js';
 const read=(path)=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-test('Home modular restaurado y Cambiar vista disponible',()=>{
+test('Home principal agrupa cinco áreas y elimina Cambiar vista',()=>{
  const app=read('src/App.jsx');
  const selector=read('src/paginas/SeleccionArea.jsx');
  const catalogo=read('src/lib/selectorModulos.js');
  assert.match(app,/return <SeleccionArea \/>/);
- assert.match(selector,/modulosDisponibles\(perfil\)/);
- assert.match(selector,/Cambiar vista/);
- assert.match(selector,/Por módulos/);
- assert.match(selector,/Por áreas/);
- assert.match(selector,/Lista/);
- assert.match(selector,/Cuadrícula/);
- assert.match(catalogo,/return 'modulos'/);
+ assert.match(selector,/areasDisponibles\(perfil\)/);
+ assert.match(selector,/Home principal/);
+ assert.match(selector,/Administración y ajustes/);
+ assert.doesNotMatch(selector,/Cambiar vista|Por módulos|Por áreas/);
+ assert.match(catalogo,/export function areasDisponibles/);
  assert.match(app,/path="\/compromisos"/);
  assert.match(app,/path="\/plantillas-correo"/);
 });
