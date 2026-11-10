@@ -88,9 +88,12 @@ try {
         area.grupo==='Finanzas'?'/contabilidad':'/configuracion';
       await page.waitForURL(u=>u.pathname===primera,{timeout:17000});
       if(area.ruta!==primera){
-        // Este test comprueba homologación visual; el recorrido entre áreas
-        // se valida en el test de navegación lateral.
-        await page.goto(base+area.ruta,{waitUntil:'domcontentloaded'});
+        // La homologación examina la pantalla visual sin reiniciar la PWA.
+        // El recorrido real por enlaces laterales se comprueba por separado.
+        await page.evaluate(destino=>{
+          history.pushState(null,'',destino);
+          dispatchEvent(new PopStateEvent('popstate'));
+        },area.ruta);
         await page.waitForURL(u=>u.pathname===area.ruta,{timeout:17000});
       }
       await page.getByRole('heading',{name:area.heading}).first().waitFor({timeout:17000});
