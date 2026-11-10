@@ -206,3 +206,28 @@
 .pipeline-correo-apertura-detalle>small{flex:0 0 100%;font-size:11px;color:var(--texto-apagado,#777);line-height:1.4}
 .pipeline-correo-historial-item>summary .pipeline-correo-apertura{grid-column:2/4}
 @media(max-width:550px){.pipeline-correo-historial-item>summary .pipeline-correo-apertura{grid-column:1/-1}}
+
+
+/* CRM: Tabla de leads, sin duplicar prospectos ni perder la vista Embudo */
+.pipeline-modos{display:flex;align-items:center;gap:7px;margin:14px 0 11px}
+.pipeline-modos button{min-height:43px;padding:9px 19px}
+.pipeline-lista{display:grid;gap:10px;min-width:0}
+.pipeline-lista-filtros{display:grid;grid-template-columns:minmax(0,2fr) minmax(160px,1fr);gap:10px}
+.pipeline-lista-filtros label{display:grid;gap:5px;font-size:12px;font-weight:700;color:var(--texto-titulo)}
+.pipeline-lista-filtros :is(input,select){width:100%;box-sizing:border-box;min-height:44px;
+ border:1px solid var(--borde);border-radius:9px;padding:9px;background:var(--tarjeta);color:var(--texto-titulo)}
+.pipeline-lista-total{margin:2px 0!important}
+.pipeline-lista-tabla-wrap{overflow-x:auto;max-width:100%;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta)}
+.pipeline-lista-tabla{width:100%;border-collapse:collapse;min-width:830px;font-size:12px}
+.pipeline-lista-tabla th{text-align:left;background:var(--papel);color:var(--texto-apagado);
+ border-bottom:1px solid var(--borde);padding:12px;font-size:11px}
+.pipeline-lista-tabla td{border-bottom:1px solid var(--borde-suave);padding:11px 12px;
+ vertical-align:middle;max-width:310px;overflow-wrap:anywhere}
+.pipeline-lista-tabla tr:last-child td{border-bottom:none}
+.pipeline-lista-tabla tbody tr:hover{background:var(--papel)}
+.pipeline-lista-tabla td strong{display:block;font-size:12px;color:var(--texto-titulo)}
+.pipeline-lista-tabla td small{display:block;font-size:11px;color:var(--texto-apagado);margin-top:3px}
+.pipeline-lista-tabla td select{min-height:37px;max-width:150px;border:1px solid var(--borde);
+ border-radius:8px;background:var(--tarjeta);padding:6px;font-size:12px}
+.pipeline-lista-tabla td .boton{min-height:37px;font-size:12px;padding:7px 9px}
+@media(max-width:580px){.pipeline-lista-filtros{grid-template-columns:1fr}}
