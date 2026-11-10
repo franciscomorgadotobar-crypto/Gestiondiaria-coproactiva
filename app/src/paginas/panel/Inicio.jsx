@@ -114,16 +114,17 @@ export default function Inicio() {
 
   // Herramientas secundarias: no compiten con los accesos fijos del pie.
   // Solo el acceso móvil se pliega; en escritorio sigue disponible la rejilla.
+  const esAdministracion = ['superadmin', 'admin'].includes(perfil?.rol);
   const herramientas = [
     { ruta: '/bitacora', titulo: 'Bitácora' },
     { ruta: '/mantenciones', titulo: 'Mantenciones' },
-    ...(puedeConfigurar ? [
-      { ruta: '/documentos', titulo: 'Gestor documental' },
-      { ruta: '/plantillas', titulo: 'Plantillas' },
-      { ruta: '/vista-cliente', titulo: 'Vista de cliente' }
+    ...(puedeConfigurar ? [{ ruta: '/plantillas', titulo: 'Plantillas' }] : []),
+    ...(esAdministracion ? [
+      { ruta: '/vista-cliente', titulo: 'Vista de cliente' },
+      { ruta: '/proveedores', titulo: 'Red de proveedores' },
+      { ruta: '/whatsapp', titulo: 'Recepción y atención' }
     ] : []),
-    { ruta: '/mapa', titulo: 'Mapa de visitas' },
-    { ruta: '/configuracion', titulo: 'Configuración' }
+    { ruta: '/mapa', titulo: 'Mapa de visitas' }
   ];
 
   /* Las fotos y la firma viven en el bucket, no en la fila: borrar el
