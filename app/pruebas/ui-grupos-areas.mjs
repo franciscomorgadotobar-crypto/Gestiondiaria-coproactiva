@@ -95,7 +95,20 @@ try {
     await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
-    console.log('Home principal · cinco áreas fijas y ajustes aparte: OK');
+    await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
+    const opciones=page.locator('#home-area-operacion');
+    assert.equal(await opciones.locator(':scope > button').count(),2);
+    assert.equal(await opciones.locator(':scope > .seleccion-home__subgrupo').count(),2);
+    assert.equal(await opciones.getByRole('button',{name:'Bitácora'}).count(),0);
+    assert.equal(await opciones.getByRole('button',{name:'Recepción y atención'}).count(),0);
+    assert.equal(await opciones.getByRole('button',{name:'Vista de cliente'}).count(),0);
+    await opciones.getByRole('button',{name:'Gestión y seguimiento'}).click();
+    assert.equal(await opciones.getByRole('button',{name:'Bitácora'}).count(),1);
+    assert.equal(await opciones.getByRole('button',{name:'Mantenciones'}).count(),1);
+    await opciones.getByRole('button',{name:'Terreno y recursos'}).click();
+    assert.equal(await opciones.getByRole('button',{name:'Nuevo levantamiento'}).count(),1);
+    assert.equal(await opciones.getByRole('button',{name:'Red de proveedores'}).count(),1);
+    console.log('Home principal · cuatro accesos de Operaciones con submenús reales: OK');
     await ctx.close();
   }
 
@@ -218,6 +231,8 @@ try {
   {
     const {ctx,page}=await crear({ancho:390,alto:844});
     await page.getByRole('button',{name:/Administración y ajustes/}).click();
+    assert.equal(await page.locator('#home-administracion').getByRole('button',{name:'Vista de cliente'}).count(),1);
+    await page.locator('#home-administracion').getByRole('button',{name:'Configuración',exact:true}).click();
     await page.waitForURL(u=>u.pathname==='/configuracion',{timeout:20000});
     await page.getByRole('heading',{name:'Configuración'}).waitFor();
     const barra=page.locator('.barra-inferior-movil');
@@ -255,6 +270,11 @@ try {
     const documental=lateral.getByRole('button',{name:'Desplegar Gestión documental'});
     assert.equal(await comercial.getAttribute('aria-expanded'),'true');
     await operaciones.click();
+    const seguimiento=lateral.getByRole('button',{name:'Desplegar Gestión y seguimiento'});
+    assert.equal(await seguimiento.getAttribute('aria-expanded'),'false');
+    await seguimiento.click();
+    assert.equal(await seguimiento.getAttribute('aria-expanded'),'true');
+    assert.equal(await lateral.getByRole('link',{name:'Bitácora'}).count(),1);
     assert.equal(new URL(page.url()).pathname,'/pipeline',
       'Desplegar Operaciones no debe sacarte de Comercial');
     assert.equal(await comercial.getAttribute('aria-expanded'),'true');
