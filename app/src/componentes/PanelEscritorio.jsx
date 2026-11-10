@@ -149,11 +149,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // El Home principal y el lateral comparten un catálogo único por áreas.
   const gruposLaterales = esCliente ? [] : areasDisponibles(perfil);
   const opcionesAdministracion = enlacesAdministracion(perfil);
-  // La barra muestra solo el grupo en el que se está: Comercial (Pipeline,
-  // Arriendos y ventas, SEO), Operaciones (levantamientos, comunidades,
-  // mantenciones, bitácora, mapa, proveedores y WhatsApp), Finanzas
-  // (contabilidad) o Configuración (equipo y clientes). Para ir a otro grupo
-  // está "Cambiar de área".
+  // El lateral y el Home comparten las áreas; en Operaciones se agrupan
+  // el seguimiento diario y las herramientas de terreno.
   // La ruta manda sobre el grupo guardado: el Pipeline es Comercial aunque se
   // llegue por un enlace directo. Las rutas compartidas (/nuevo,
   // /notificaciones, /mi-cuenta) usan el grupo elegido.
@@ -268,18 +265,13 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
         { ruta: '/bitacora', etiqueta: 'Bitácora', mostrar: true },
         { ruta: '/comunidades', etiqueta: 'Comunidades', mostrar: true },
-        { ruta: '/vista-cliente', etiqueta: 'Vista de cliente', mostrar: esAdministracion },
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true },
-        // Proveedores y WhatsApp son de administración. Sus subsecciones
-        // aparecen debajo solo mientras se está en ellas.
+        // Herramientas de Proveedores, sólo cuando se utiliza esa pantalla.
         { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: esAdministracion, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
         { ruta: '/proveedores/postulantes', etiqueta: 'Postulantes', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
         { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
         { ruta: '/proveedores/comunicaciones', etiqueta: 'Comunicaciones', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
-        { ruta: '/whatsapp', etiqueta: 'WhatsApp', mostrar: esAdministracion, activo: p => p === '/whatsapp' },
-        { ruta: '/whatsapp/automatizaciones', etiqueta: 'Automatizaciones', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true },
-        { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true }
       ];
 
   const inicio = esCliente ? '/portal' : '/';
@@ -341,7 +333,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'mantenciones', etiqueta: 'Mantenciones', ruta: '/mantenciones' },
     { id: 'mapa', etiqueta: 'Mapa', ruta: '/mapa' },
     { id: 'proveedores', etiqueta: 'Proveedores', ruta: '/proveedores', mostrar: esAdministracion },
-    { id: 'whatsapp', etiqueta: 'WhatsApp', ruta: '/whatsapp', mostrar: esAdministracion }
   ].filter(x => x.mostrar !== false);
 
   // Comercial conserva el mismo menú principal también al entrar en SEO.
