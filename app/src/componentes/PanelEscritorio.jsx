@@ -7,7 +7,7 @@ import { guardarArea, limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } 
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
-import { leerOrganizacion, modulosDisponibles } from '../lib/selectorModulos';
+import { areasDisponibles } from '../lib/selectorModulos';
 import { leerAutomaticas, guardarAutomaticas } from '../lib/conocimientos';
 
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
@@ -146,18 +146,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const puedeCambiarArea = Boolean(puedeConfigurar);
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
   const esSuperadmin = perfil?.rol === 'superadmin';
-  // El menú lateral utiliza en vivo la misma organización del Home.
-  const [organizacion, setOrganizacion] = useState(() => leerOrganizacion(perfil?.id));
-  useEffect(() => {
-    const sincronizar = () => setOrganizacion(leerOrganizacion(perfil?.id));
-    sincronizar();
-    window.addEventListener('coproactiva:organizacion-cambio', sincronizar);
-    return () => window.removeEventListener('coproactiva:organizacion-cambio', sincronizar);
-  }, [perfil?.id]);
-  const modulosPlanos = esCliente ? [] : modulosDisponibles(perfil);
-
-
-
+  // El Home principal y el lateral comparten un catálogo único por áreas.
+  const gruposLaterales = esCliente ? [] : areasDisponibles(perfil);
   // La barra muestra solo el grupo en el que se está: Comercial (Pipeline,
   // Arriendos y ventas, SEO), Operaciones (levantamientos, comunidades,
   // mantenciones, bitácora, mapa, proveedores y WhatsApp), Finanzas
@@ -177,8 +167,26 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const enOperacion = grupo === 'operacion';
   // Restaurar la navegación lateral de escritorio en Operaciones sin
   // cambiar el portal cliente ni las pantallas de Comercial/Finanzas.
-  const mostrarPanelIzquierdo = esCliente || enOperacion;
+  const mostrarPanelIzquierdo = true;
   const enAprendizaje = grupo === 'aprendizaje';
+  const enDocumental = grupo === 'documental';
+  // Cada área se expande de forma independiente. Cambiar el acordeón no navega.
+  const [gruposAbiertos,setGruposAbiertos]=useState(()=>new Set([grupo]));
+  useEffect(()=>{
+    if(!grupo)return;
+    setGruposAbiertos(prev=>{
+      if(prev.has(grupo))return prev;
+      const next=new Set(prev);next.add(grupo);return next;
+    });
+  },[grupo]);
+  function alternarGrupo(id){
+    setGruposAbiertos(prev=>{
+      const next=new Set(prev);
+      if(next.has(id))next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const alertasTotales = alertasMantencion + alertasGenerales;
   const levantamientosActivo = pathname === '/nuevo'
     || pathname.startsWith('/control/')
@@ -188,7 +196,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     : enConfiguracion ? 'Configuración'
     : enComercial ? 'Comercial'
     : enFinanzas ? 'Finanzas'
-    : enAprendizaje ? 'Aprendizaje'
+    : enAprendizaje ? 'Base de conocimientos'
+    : enDocumental ? 'Gestión documental'
     : puedeConfigurar ? 'Operaciones' : null;
 
   // La comunidad seleccionada es el contexto del menú cliente.
@@ -401,41 +410,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (item.ruta && pathname !== item.ruta) navegar(item.ruta, { replace: desdeMas });
   }
 
-  // Navegación de escritorio: las tres áreas de trabajo permanecen a la
-  // vista. Solo se despliegan los destinos de la sección activa, sin obligar
-  // a volver al selector inicial. Administración es un acceso transversal.
-  const gruposLaterales = [
-    { id: 'comercial', etiqueta: 'Comercial', ruta: '/pipeline', icono: 'comercial', mostrar: puedeConfigurar },
-    { id: 'operacion', etiqueta: 'Operaciones', ruta: '/inicio', icono: 'comunidades', mostrar: true },
-    { id: 'finanzas', etiqueta: 'Finanzas', ruta: '/contabilidad', icono: 'contabilidad', mostrar: esAdministracion }
-  ].filter(item => item.mostrar);
-
-  function abrirGrupoLateral(item) {
-    guardarArea(item.id);
-    if (pathname !== item.ruta) navegar(item.ruta, { replace:true });
-  }
-
-  function esModuloActivo(item) {
-    if (item.id === 'conocimientos') return activa(pathname, '/conocimientos');
-    if (item.id === 'levantamientos') {
-      // Módulo original «Levantamientos»: contiene Inicio, Comunidades,
-      // Levantamientos, Mantenciones, Bitácora, Plantillas y Mapa.
-      // Proveedores y WhatsApp son módulos principales independientes.
-      return ['/inicio','/comunidades','/nuevo','/control','/mantenciones','/bitacora','/plantillas','/mapa']
-        .some(r => activa(pathname,r));
-    }
-    if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
-    if (item.id === 'notificaciones') return pathname === '/notificaciones';
-    if (item.id === 'configuracion') return ['/configuracion','/equipo','/clientes'].some(r => activa(pathname,r));
-    return item.ruta ? activa(pathname, item.ruta.split('#')[0]) : false;
-  }
-
-  function irModuloPlano(item, { desdeMas = false } = {}) {
-    if (desdeMas) setMasAbierto(false, { alNavegar: true });
-    if (item.area) guardarArea(item.area);
-    navegar(item.ruta, desdeMas ? { replace: true } : undefined);
-  }
-
   function enlacesDelGrupo() {
     return accesos.filter(item => item.mostrar).map(item => (
       <Link key={item.ruta} to={item.ruta} replace
@@ -449,79 +423,85 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }
 
   return (
-    <div className={"layout-escritorio" + (!mostrarPanelIzquierdo ? " layout-sin-panel-lateral" : "")}>
-      {mostrarPanelIzquierdo && <nav className={'barra-lateral' + (organizacion === 'modulos' && !esCliente ? ' barra-lateral-modulos' : '')} aria-label="Navegación">
+    <div className="layout-escritorio">
+      {mostrarPanelIzquierdo && <nav className="barra-lateral" aria-label="Navegación">
         <Link to={inicio} className="marca-lateral" aria-label="CoproActiva">
-          <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva" />
+          <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="CoproActiva"/>
         </Link>
+        {!esCliente&&<Link to="/" className="enlace-lateral home-principal-lateral"
+          onClick={()=>limpiarArea()}>
+          <span className="enlace-lateral-icono"><IconoNavegacion tipo="inicio" /></span>
+          <span>Home principal</span>
+        </Link>}
         <div className="enlaces-lateral">
-          {esCliente ? enlacesDelGrupo() : organizacion === 'modulos' ? (
-            <>
-              <span className="micro apagado etiqueta-lateral">Módulos</span>
-              {modulosPlanos.map(item => (
-                <Link key={item.id} to={item.ruta} replace
-                      onClick={() => { if (item.area) guardarArea(item.area); }}
-                      aria-current={esModuloActivo(item) ? 'page' : undefined}
-                      className={'enlace-lateral' + (esModuloActivo(item) ? ' activo' : '')}>
-                  <span className="enlace-lateral-icono">
-                    <IconoNavegacion tipo={iconoRutaCoproactiva(item.ruta)} />
-                  </span>
+          {esCliente ? enlacesDelGrupo() : <>
+            <span className="micro apagado etiqueta-lateral">Áreas de trabajo</span>
+            {gruposLaterales.map(item=>(
+              <div key={item.id} className="grupo-navegacion-lateral">
+                <button type="button" onClick={()=>alternarGrupo(item.id)}
+                  className={'grupo-navegacion-boton'+(grupo===item.id?' activo':'')}
+                  aria-expanded={gruposAbiertos.has(item.id)}
+                  aria-controls={'menu-area-'+item.id}
+                  aria-label={'Desplegar '+item.titulo}>
+                  <span className="enlace-lateral-icono"><IconoNavegacion tipo={item.icono}/></span>
                   <span>{item.titulo}</span>
+                  <span className="grupo-navegacion-flecha" aria-hidden="true">
+                    {gruposAbiertos.has(item.id)?'⌄':'›'}
+                  </span>
+                </button>
+                <div id={'menu-area-'+item.id} className="grupo-navegacion-enlaces"
+                  aria-label={'Opciones de '+item.titulo}
+                  hidden={!gruposAbiertos.has(item.id)}>
+                  {item.enlaces.map(enlace=>{
+                    const activo=activa(pathname,enlace.ruta);
+                    return <Link key={enlace.ruta} to={enlace.ruta}
+                      onClick={()=>guardarArea(item.id)}
+                      aria-current={activo?'page':undefined}
+                      className={'enlace-lateral enlace-lateral-hijo'+(activo?' activo':'')}>
+                      <span className="enlace-lateral-icono">
+                        <IconoNavegacion tipo={iconoRutaCoproactiva(enlace.ruta)}/>
+                      </span>
+                      <span>{enlace.etiqueta}</span>
+                    </Link>;
+                  })}
+                </div>
+              </div>
+            ))}
+            <div className="grupo-navegacion-lateral grupo-navegacion-administracion">
+              <button type="button" onClick={()=>alternarGrupo('configuracion')}
+                className={'grupo-navegacion-boton'+(enConfiguracion?' activo':'')}
+                aria-expanded={gruposAbiertos.has('configuracion')}
+                aria-controls="menu-area-configuracion"
+                aria-label="Desplegar Administración y ajustes">
+                <span className="enlace-lateral-icono"><IconoNavegacion tipo="configuracion"/></span>
+                <span>Administración y ajustes</span>
+                <span className="grupo-navegacion-flecha" aria-hidden="true">
+                  {gruposAbiertos.has('configuracion')?'⌄':'›'}
+                </span>
+              </button>
+              <div id="menu-area-configuracion" className="grupo-navegacion-enlaces"
+                aria-label="Opciones de administración y ajustes"
+                hidden={!gruposAbiertos.has('configuracion')}>
+                <Link to="/configuracion" className={'enlace-lateral enlace-lateral-hijo'+(pathname==='/configuracion'?' activo':'')}>
+                  <span className="enlace-lateral-icono"><IconoNavegacion tipo="configuracion"/></span>
+                  <span>Configuración</span>
                 </Link>
-              ))}
-            </>
-          ) : (
-            <>
-              <span className="micro apagado etiqueta-lateral">Áreas de trabajo</span>
-              {gruposLaterales.map(item => (
-                <div key={item.id} className="grupo-navegacion-lateral">
-                  <button type="button" onClick={() => abrirGrupoLateral(item)}
-                          className={'grupo-navegacion-boton' + (grupo === item.id ? ' activo' : '')}
-                          aria-expanded={grupo === item.id}
-                          aria-label={'Ir al área ' + item.etiqueta}>
-                    <span className="enlace-lateral-icono"><IconoNavegacion tipo={item.icono}/></span>
-                    <span>{item.etiqueta}</span>
-                    <span className="grupo-navegacion-flecha" aria-hidden="true">{grupo === item.id ? '⌄' : '›'}</span>
-                  </button>
-                  {grupo === item.id && (
-                    <div className="grupo-navegacion-enlaces" aria-label={'Módulos de ' + item.etiqueta}>
-                      {enlacesDelGrupo()}
-                    </div>
-                  )}
-                </div>
-              ))}
-              {esAdministracion && (
-                <div className="grupo-navegacion-lateral grupo-navegacion-administracion">
-                  <button type="button" onClick={() => navegar('/configuracion')}
-                          className={'grupo-navegacion-boton' + (enConfiguracion ? ' activo' : '')}
-                          aria-expanded={enConfiguracion}
-                          title="Equipo, usuarios, permisos, accesos de clientes y configuración general.">
-                    <span className="enlace-lateral-icono"><IconoNavegacion tipo="configuracion"/></span>
-                    <span>Administración y ajustes</span>
-                    <span className="grupo-navegacion-flecha" aria-hidden="true">{enConfiguracion ? '⌄' : '›'}</span>
-                  </button>
-                  {enConfiguracion && (
-                    <div className="grupo-navegacion-enlaces" aria-label="Opciones de administración y ajustes">
-                      {enlacesDelGrupo()}
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
+                <Link to="/mi-cuenta" className={'enlace-lateral enlace-lateral-hijo'+(pathname==='/mi-cuenta'?' activo':'')}>
+                  <span className="enlace-lateral-icono"><IconoNavegacion tipo="configuracion"/></span>
+                  <span>Mi cuenta</span>
+                </Link>
+                {esAdministracion&&<Link to="/equipo" className={'enlace-lateral enlace-lateral-hijo'+(activa(pathname,'/equipo')?' activo':'')}>
+                  <span className="enlace-lateral-icono"><IconoNavegacion tipo="equipo"/></span>
+                  <span>Equipo y permisos</span>
+                </Link>}
+                {esSuperadmin&&<Link to="/clientes" className={'enlace-lateral enlace-lateral-hijo'+(activa(pathname,'/clientes')?' activo':'')}>
+                  <span className="enlace-lateral-icono"><IconoNavegacion tipo="clientes"/></span>
+                  <span>Clientes y accesos</span>
+                </Link>}
+              </div>
+            </div>
+          </>}
         </div>
-        {!esCliente && organizacion !== 'modulos' && (
-          <div className="coproactiva-aprendizaje-lateral">
-            <span className="micro apagado etiqueta-lateral">Aprendizaje</span>
-            <Link to="/conocimientos"
-                  className={'coproactiva-aprendizaje-boton' + (activa(pathname, '/conocimientos') ? ' activo' : '')}
-                  aria-current={activa(pathname, '/conocimientos') ? 'page' : undefined}>
-              <span className="enlace-lateral-icono"><IconoNavegacion tipo="conocimientos" /></span>
-              <span>Base de conocimientos</span>
-            </Link>
-          </div>
-        )}
-
         <div className="crece" />
         <div className="usuario-lateral">
           <div className="usuario-lateral-identidad">
@@ -541,11 +521,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             </span>
           </div>
           <div className="usuario-lateral-acciones">
-            {!esCliente && <Link to="/mi-cuenta">Mi cuenta</Link>}
-            {puedeConfigurar && (
-              <button type="button" onClick={cambiarArea}>
-                Ir al inicio
-              </button>
+            {!esCliente && (
+              <button type="button" onClick={cambiarArea}>Home principal</button>
             )}
             {!esCliente && tutorialContextual && (
               <button
@@ -565,27 +542,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       </nav>}
 
       <div className={'area-escritorio' + (anchoCompleto ? ' ancho-completo' : '')}>
-        {!mostrarPanelIzquierdo && (
-          <header className="barra-contextual-escritorio" aria-label="Navegación contextual">
-            <button type="button" className="barra-contextual-marca"
-              aria-label="Ir al Home de módulos" onClick={cambiarArea}>
-              <img src={import.meta.env.BASE_URL + 'brand/imagologo-horizontal-naranja.svg'} alt="Coproactiva" />
-            </button>
-            <div className="barra-contextual-ubicacion">
-              <button type="button" className="barra-contextual-home" onClick={cambiarArea}>
-                ‹ Home de módulos
-              </button>
-              {nombreArea && <span className="barra-contextual-seccion" aria-label={'Área actual: ' + nombreArea}>
-                {nombreArea}
-              </span>}
-            </div>
-            <div className="barra-contextual-cuenta">
-              <Campana miId={perfil?.id} />
-              <Link to="/mi-cuenta">Mi cuenta</Link>
-              <button type="button" onClick={salir}>Salir</button>
-            </div>
-          </header>
-        )}
         {/* En escritorio con menú lateral, las alertas también están disponibles
             sin depender del Home ni de una pantalla funcional específica. */}
         {mostrarPanelIzquierdo && (
@@ -675,45 +631,33 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   <button ref={cerrarMasRef} type="button" onClick={() => setMasAbierto(false)} aria-label="Cerrar menú">×</button>
                 </div>
                 <div className="menu-mas-secciones">
-                  {!enOperacion && (organizacion === 'modulos' && !esCliente ? (
-                    <div className="menu-mas-grupo" role="group" aria-label="Todos los módulos">
-                      <p className="menu-mas-grupo-titulo">Todos los módulos</p>
+                  {!enOperacion && menuMasOperacion.length>0 && (
+                    <div className="menu-mas-grupo" role="group" aria-label={'Opciones de '+nombreArea}>
+                      <p className="menu-mas-grupo-titulo">Opciones · {nombreArea}</p>
                       <div className="menu-mas-enlaces">
-                        {modulosPlanos.map(item => (
-                          <button key={item.id} type="button" onClick={() => irModuloPlano(item, { desdeMas: true })}
-                                  aria-current={esModuloActivo(item) ? 'page' : undefined}>
-                            <span>{item.titulo}</span>
+                        {menuMasOperacion.map(item=>(
+                          <button key={item.id} type="button" onClick={()=>ejecutarItemMovil(item)}>
+                            <span>{item.etiqueta}{item.badge>0?` (${item.badge})`:''}</span>
                             <span aria-hidden="true">›</span>
                           </button>
                         ))}
-                      </div>
-                    </div>
-                  ) : menuMasOperacion.length > 0 && (
-                    <div className="menu-mas-grupo" role="group" aria-label={'Módulos y acciones de ' + nombreArea}>
-                      <p className="menu-mas-grupo-titulo">Módulos y acciones · {nombreArea}</p>
-                      <div className="menu-mas-enlaces">
-                        {menuMasOperacion.map(item => (
-                          <button key={item.id} type="button" onClick={() => ejecutarItemMovil(item)}>
-                            <span>
-                              {item.etiqueta}
-                              {item.badge > 0 ? ` (${item.badge})` : ''}
-                            </span>
-                            <span aria-hidden="true">›</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  {!enOperacion && organizacion !== 'modulos' && !esCliente && (
-                    <div className="menu-mas-grupo" role="group" aria-label="Aprendizaje">
-                      <p className="menu-mas-grupo-titulo">Aprendizaje</p>
-                      <div className="menu-mas-enlaces">
-                        <Link to="/conocimientos" onClick={() => setMasAbierto(false, { alNavegar: true })}>
-                          Base de conocimientos <span aria-hidden="true">›</span>
-                        </Link>
                       </div>
                     </div>
                   )}
+                  {!esCliente&&<div className="menu-mas-grupo" role="group" aria-label="Navegación principal">
+                    <p className="menu-mas-grupo-titulo">Navegación principal</p>
+                    <div className="menu-mas-enlaces">
+                      <button type="button" onClick={()=>{
+                        setMasAbierto(false,{alNavegar:true});cambiarArea();
+                      }}>Home principal <span aria-hidden="true">›</span></button>
+                      {gruposLaterales.filter(x=>x.id!==grupo).map(x=>(
+                        <button type="button" key={x.id} onClick={()=>{
+                          setMasAbierto(false,{alNavegar:true});
+                          guardarArea(x.id);navegar(x.ruta);
+                        }}>{x.titulo}<span aria-hidden="true">›</span></button>
+                      ))}
+                    </div>
+                  </div>}
                   {enAprendizaje && (
                     <div className="menu-mas-grupo" role="group" aria-label="Preferencias de aprendizaje">
                       <p className="menu-mas-grupo-titulo">Preferencias de aprendizaje</p>
@@ -738,7 +682,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                       </Link>
                       {puedeCambiarArea && !enOperacion && (
                         <button type="button" onClick={() => { setMasAbierto(false, { alNavegar: true }); cambiarArea(); }}>
-                          Ir al inicio
+                          Home principal
                           <span aria-hidden="true">›</span>
                         </button>
                       )}
