@@ -185,22 +185,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       return next;
     });
   }
-  const [subgruposAbiertos,setSubgruposAbiertos]=useState(()=>new Set());
-  function alternarSubgrupo(id){
-    setSubgruposAbiertos(prev=>{
-      const next=new Set(prev);
-      if(next.has(id))next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-  useEffect(()=>{
-    // En rutas profundas se expande el submenú que contiene la pantalla.
-    const operacion=gruposLaterales.find(item=>item.id==='operacion');
-    const actual=operacion?.secciones?.find(seccion=>seccion.tipo==='submenu'
-      && seccion.enlaces.some(enlace=>activa(pathname,enlace.ruta)));
-    if(actual)setSubgruposAbiertos(prev=>new Set(prev).add(actual.id));
-  },[pathname,perfil?.rol]);
   const alertasTotales = alertasMantencion + alertasGenerales;
   const levantamientosActivo = pathname === '/nuevo'
     || pathname.startsWith('/control/')
@@ -253,7 +237,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         // "Inicio" del grupo Comercial es el Pipeline.
         { ruta: '/pipeline', etiqueta: 'Pipeline', mostrar: true },
         { ruta: '/documentos', etiqueta: 'Gestor documental', mostrar: true },
-        { ruta: '/propuestas', etiqueta: 'Propuestas comerciales', mostrar: true, hijo: true },
         { ruta: '/propiedades', etiqueta: 'Arriendos y ventas', mostrar: true, activo: activaPropiedades },
         { ruta: '/propiedades/nueva', etiqueta: 'Nueva propiedad', mostrar: true, hijo: true },
         { ruta: '/seo', etiqueta: 'SEO y analítica', mostrar: esAdministracion },
@@ -339,7 +322,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // Las secciones de SEO son navegación interna, no reemplazan esta barra.
   const opcionesComercial = [
     { id: 'pipeline', etiqueta: 'Pipeline', ruta: '/pipeline' },
-    { id: 'propuestas', etiqueta: 'Propuestas', ruta: '/propuestas' },
     { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
     { id: 'seo', etiqueta: 'SEO', ruta: '/seo', mostrar: esAdministracion },
     { id: 'plantillas-correo', etiqueta: 'Plantillas de correo', ruta: '/plantillas-correo', mostrar: puedeConfigurar },
@@ -465,51 +447,18 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 <div id={'menu-area-'+item.id} className="grupo-navegacion-enlaces"
                   aria-label={'Opciones de '+item.titulo}
                   hidden={!gruposAbiertos.has(item.id)}>
-                  {item.secciones
-                    ? item.secciones.map(seccion=>seccion.tipo==='submenu'
-                      ? <div key={seccion.id} className="grupo-navegacion-subgrupo">
-                          <button type="button" className="grupo-navegacion-subgrupo-boton"
-                            onClick={()=>alternarSubgrupo(seccion.id)}
-                            aria-expanded={subgruposAbiertos.has(seccion.id)}
-                            aria-controls={'menu-subarea-'+seccion.id}
-                            aria-label={'Desplegar '+seccion.titulo}>
-                            <span>{seccion.titulo}</span>
-                            <span aria-hidden="true">{subgruposAbiertos.has(seccion.id)?'⌄':'›'}</span>
-                          </button>
-                          <div id={'menu-subarea-'+seccion.id} className="grupo-navegacion-subgrupo-enlaces"
-                            hidden={!subgruposAbiertos.has(seccion.id)}>
-                            {seccion.enlaces.map(enlace=>{
-                              const activo=activa(pathname,enlace.ruta);
-                              return <Link key={enlace.ruta} to={enlace.ruta}
-                                onClick={()=>guardarArea(item.id)}
-                                aria-current={activo?'page':undefined}
-                                className={'enlace-lateral enlace-lateral-hijo'+(activo?' activo':'')}>
-                                <span>{enlace.etiqueta}</span>
-                              </Link>;
-                            })}
-                          </div>
-                        </div>
-                      : <Link key={seccion.ruta} to={seccion.ruta}
-                          onClick={()=>guardarArea(item.id)}
-                          aria-current={activa(pathname,seccion.ruta)?'page':undefined}
-                          className={'enlace-lateral enlace-lateral-hijo'+(activa(pathname,seccion.ruta)?' activo':'')}>
-                          <span className="enlace-lateral-icono">
-                            <IconoNavegacion tipo={iconoRutaCoproactiva(seccion.ruta)}/>
-                          </span>
-                          <span>{seccion.etiqueta}</span>
-                        </Link>)
-                    : item.enlaces.map(enlace=>{
-                        const activo=activa(pathname,enlace.ruta);
-                        return <Link key={enlace.ruta} to={enlace.ruta}
-                          onClick={()=>guardarArea(item.id)}
-                          aria-current={activo?'page':undefined}
-                          className={'enlace-lateral enlace-lateral-hijo'+(activo?' activo':'')}>
-                          <span className="enlace-lateral-icono">
-                            <IconoNavegacion tipo={iconoRutaCoproactiva(enlace.ruta)}/>
-                          </span>
-                          <span>{enlace.etiqueta}</span>
-                        </Link>;
-                      })}
+                  {item.enlaces.map(enlace=>{
+                    const activo=activa(pathname,enlace.ruta);
+                    return <Link key={enlace.ruta} to={enlace.ruta}
+                      onClick={()=>guardarArea(item.id)}
+                      aria-current={activo?'page':undefined}
+                      className={'enlace-lateral enlace-lateral-hijo'+(activo?' activo':'')}>
+                      <span className="enlace-lateral-icono">
+                        <IconoNavegacion tipo={iconoRutaCoproactiva(enlace.ruta)}/>
+                      </span>
+                      <span>{enlace.etiqueta}</span>
+                    </Link>;
+                  })}
                 </div>
               </div>
             ))}
