@@ -88,70 +88,35 @@ async function clickDestino(page,ruta,etiqueta) {
 }
 
 async function irPantalla(page,vista) {
-  // Abre siempre desde el Home único, sin un selector intermedio.
+  // Auditoría de diseño: elegir primero una de las cinco áreas canónicas.
+  // El recorrido real de enlaces laterales se comprueba por separado en
+  // ui-grupos-areas; aquí se prueban 14 vistas a diferentes anchos.
   await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:22000});
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:12000});
   const ruta=vista.ruta;
-  const operacion=/^\/(nuevo|comunidades|plantillas|bitacora|mantenciones)/.test(ruta);
-
-  const raiz=ruta.startsWith('/nuevo')?'/inicio'
-    :ruta.startsWith('/comunidades')?'/inicio'
-    :ruta.startsWith('/plantillas')?'/inicio'
-    :ruta.startsWith('/bitacora')?'/inicio'
-    :ruta.startsWith('/mantenciones')?'/inicio'
-    :ruta.startsWith('/proveedores')?'/proveedores'
-    :ruta.startsWith('/contabilidad')?'/contabilidad'
-    :ruta.startsWith('/propiedades')?'/propiedades':'/pipeline';
-  const nombre={
-    '/inicio':'Levantamientos','/proveedores':'Red de proveedores',
-    '/contabilidad':'Gestión contable','/propiedades':'Arriendos y ventas',
-    '/pipeline':'Gestión comercial'
-  }[raiz];
-  await page.locator('.seleccion-home__tarjeta').filter({hasText:nombre}).first().click();
-  await page.waitForURL(u=>u.pathname===raiz,{timeout:12000});
-  if(operacion) {
-    if(ruta==='/nuevo') {
-      await page.locator('a[href="/nuevo"]:visible').first().waitFor({timeout:12000});
-      await clickDestino(page,'/nuevo','Nuevo levantamiento');
-    }
-    else if(ruta.startsWith('/comunidades')) {
-      await clickDestino(page,'/comunidades','Comunidades');
-      if(ruta!=='/comunidades')
-        await page.locator('a[href="'+ruta+'"]:visible').first().click();
-    } else if(ruta.startsWith('/plantillas')) {
-      await clickDestino(page,'/plantillas','Plantillas');
-      if(ruta!=='/plantillas')
-        await page.locator('a[href="'+ruta+'"]:visible').first().click();
-    } else if(ruta.startsWith('/bitacora')) {
-      await clickDestino(page,'/bitacora','Bitácora');
-      if(ruta!=='/bitacora')
-        await page.locator('a[href="'+ruta+'"]:visible').first().click();
-    } else if(ruta.startsWith('/mantenciones'))
-      await clickDestino(page,'/mantenciones','Mantenciones');
-  } else if(ruta.startsWith('/contabilidad/')) {
-    // La ruta raíz cambia antes de montar la vista Contabilidad (React lazy).
-    // Esperar a su navegación real evita una carrera en escritorio.
-    const ancho=page.viewportSize()?.width||1280;
-    if(ancho>=900) {
-      await page.locator('.contabilidad-nav a[href="'+ruta+'"]:visible').first().waitFor({timeout:12000});
-    } else {
-      await page.locator('.barra-inferior-movil:visible').first().waitFor({timeout:12000});
-    }
-    const etiquetas={asientos:'Asientos',reportes:'Reportes',plan:'Plan de cuentas',
-      configuracion:'Configuración',entidades:'Entidades'};
-    await clickDestino(page,ruta,etiquetas[ruta.split('/')[2]]||'Resumen');
-  } else if(ruta.startsWith('/propiedades/')) {
-    await page.locator('a[href^="/propiedades/nueva"]:visible').first().click();
-  } else if(ruta.startsWith('/proveedores/')) {
-    await page.locator('a[href="'+ruta+'"]:visible').first().click();
-  } else if(ruta.startsWith('/seo?')) {
-    const destino=new URLSearchParams(ruta.split('?')[1]).get('vista');
-    const nombre=destino==='analytics' ? 'Audiencia' : 'Google Maps';
-    const nav=page.locator('button[aria-label="Ir a '+nombre+'"]:visible').first();
-    if(await nav.count()) await nav.click();
-    else await page.getByRole('button',{name:nombre,exact:true}).first().click();
+  const esOperacion=/^\/(nuevo|control|comunidades|plantillas|bitacora|mantenciones|mapa|proveedores|whatsapp)/.test(ruta);
+  const esFinanzas=ruta.startsWith('/contabilidad');
+  const esDocumental=ruta.startsWith('/documentos');
+  const esConocimiento=ruta.startsWith('/conocimientos');
+  const area=esOperacion?'Operaciones de comunidades'
+    :esFinanzas?'Gestión contable / Finanzas'
+    :esDocumental?'Gestión documental'
+    :esConocimiento?'Base de conocimientos':'Comercial';
+  const raiz=esOperacion?'/inicio':esFinanzas?'/contabilidad'
+    :esDocumental?'/documentos':esConocimiento?'/conocimientos':'/pipeline';
+  await page.getByRole('button',{name:'Abrir '+area}).click();
+  await page.waitForURL(u=>u.pathname===raiz,{timeout:15000});
+  if(ruta!==raiz){
+    // La auditoría visual prueba pantallas internas sin depender de la
+    // posición del enlace en escritorio/móvil. React Router recibe un evento
+    // de historial SPA, sin recargar la PWA ni perder autenticación local.
+    await page.evaluate(destino=>{
+      window.history.pushState(null,'',destino);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    },ruta);
+    await page.waitForURL(u=>u.pathname===ruta.split('?')[0],{timeout:15000});
   }
-  await page.waitForTimeout(120);
+  await page.waitForTimeout(150);
 }
 
 await mkdir('artifacts/ui/internas',{recursive:true});
