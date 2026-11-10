@@ -3682,3 +3682,41 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 @media(max-width:899px){
  .barra-area-movil .barra-area-volver{font-weight:750}
 }
+
+
+/* Submenús Operaciones: compactos, accesibles, sin duplicar áreas del lateral. */
+.barra-lateral .grupo-navegacion-subgrupo { min-width: 0; }
+.barra-lateral .grupo-navegacion-subgrupo-boton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 37px;
+  padding: 8px 12px 8px 35px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--texto-titulo);
+  text-align: left;
+  font: 700 12px/1.3 var(--fuente-cuerpo);
+  cursor: pointer;
+}
+.barra-lateral .grupo-navegacion-subgrupo-boton:hover {
+  background: var(--hover);
+}
+.barra-lateral .grupo-navegacion-subgrupo-boton:focus-visible {
+  outline: 2px solid var(--naranja);
+  outline-offset: -2px;
+}
+.barra-lateral .grupo-navegacion-subgrupo-enlaces {
+  display: flex;
+  flex-direction: column;
+  padding-left: 15px;
+}
+.barra-lateral .grupo-navegacion-subgrupo-enlaces[hidden] {
+  display: none !important;
+}
+.barra-lateral .grupo-navegacion-subgrupo-enlaces .enlace-lateral-hijo {
+  padding-left: 20px;
+  min-height: 36px;
+}

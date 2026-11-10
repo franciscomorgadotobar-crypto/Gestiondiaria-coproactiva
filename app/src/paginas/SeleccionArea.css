@@ -510,3 +510,39 @@
 @media (prefers-reduced-motion: reduce) {
   .seleccion-home-areas .vista-cuadricula .seleccion-home__flecha { transition: none; }
 }
+
+
+/* Segundo nivel en Operaciones: solo los títulos permanecen visibles;
+   las herramientas se revelan al abrir cada submenú. */
+.seleccion-home-areas .seleccion-home__subgrupo {
+  min-width: 0;
+}
+.seleccion-home-areas .seleccion-home__subgrupo-boton {
+  font-weight: 700;
+}
+.seleccion-home-areas .seleccion-home__subgrupo-flecha {
+  font-size: 19px;
+  line-height: 1;
+}
+.seleccion-home-areas .seleccion-home__subgrupo-enlaces {
+  padding: 0 0 4px 12px;
+  border-left: 2px solid #f1d9c6;
+  margin-left: 8px;
+}
+.seleccion-home-areas .seleccion-home__subgrupo-enlaces[hidden],
+.seleccion-home-areas .seleccion-home__ajustes-opciones[hidden] {
+  display: none;
+}
+.seleccion-home-areas .seleccion-home__submodulo-hijo {
+  min-height: 42px;
+  padding: 8px 9px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.seleccion-home-areas .seleccion-home__ajustes-opciones {
+  padding: 5px 12px 10px;
+  border: 1px solid #eee0d3;
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  background: #fff;
+}

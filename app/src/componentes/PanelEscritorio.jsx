@@ -7,7 +7,7 @@ import { guardarArea, limpiarArea, inicioSegunArea, areaGuardada, grupoDeRuta } 
 import { useTutoriales } from '../lib/tutorialesContexto';
 import { volverPorJerarquia } from '../lib/navegacion';
 import { pasosHastaSelector } from '../lib/historialSelector';
-import { areasDisponibles } from '../lib/selectorModulos';
+import { areasDisponibles, enlacesAdministracion } from '../lib/selectorModulos';
 import { leerAutomaticas, guardarAutomaticas } from '../lib/conocimientos';
 
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
@@ -148,11 +148,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const esSuperadmin = perfil?.rol === 'superadmin';
   // El Home principal y el lateral comparten un catálogo único por áreas.
   const gruposLaterales = esCliente ? [] : areasDisponibles(perfil);
-  // La barra muestra solo el grupo en el que se está: Comercial (Pipeline,
-  // Arriendos y ventas, SEO), Operaciones (levantamientos, comunidades,
-  // mantenciones, bitácora, mapa, proveedores y WhatsApp), Finanzas
-  // (contabilidad) o Configuración (equipo y clientes). Para ir a otro grupo
-  // está "Cambiar de área".
+  const opcionesAdministracion = enlacesAdministracion(perfil);
+  // El lateral y el Home comparten las áreas; en Operaciones se agrupan
+  // el seguimiento diario y las herramientas de terreno.
   // La ruta manda sobre el grupo guardado: el Pipeline es Comercial aunque se
   // llegue por un enlace directo. Las rutas compartidas (/nuevo,
   // /notificaciones, /mi-cuenta) usan el grupo elegido.
@@ -187,6 +185,22 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       return next;
     });
   }
+  const [subgruposAbiertos,setSubgruposAbiertos]=useState(()=>new Set());
+  function alternarSubgrupo(id){
+    setSubgruposAbiertos(prev=>{
+      const next=new Set(prev);
+      if(next.has(id))next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  useEffect(()=>{
+    // En rutas profundas se expande el submenú que contiene la pantalla.
+    const operacion=gruposLaterales.find(item=>item.id==='operacion');
+    const actual=operacion?.secciones?.find(seccion=>seccion.tipo==='submenu'
+      && seccion.enlaces.some(enlace=>activa(pathname,enlace.ruta)));
+    if(actual)setSubgruposAbiertos(prev=>new Set(prev).add(actual.id));
+  },[pathname,perfil?.rol]);
   const alertasTotales = alertasMantencion + alertasGenerales;
   const levantamientosActivo = pathname === '/nuevo'
     || pathname.startsWith('/control/')
@@ -251,18 +265,13 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         { ruta: '/plantillas', etiqueta: 'Plantillas', mostrar: puedeConfigurar },
         { ruta: '/bitacora', etiqueta: 'Bitácora', mostrar: true },
         { ruta: '/comunidades', etiqueta: 'Comunidades', mostrar: true },
-        { ruta: '/vista-cliente', etiqueta: 'Vista de cliente', mostrar: esAdministracion },
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true },
-        // Proveedores y WhatsApp son de administración. Sus subsecciones
-        // aparecen debajo solo mientras se está en ellas.
+        // Herramientas de Proveedores, sólo cuando se utiliza esa pantalla.
         { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: esAdministracion, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
         { ruta: '/proveedores/postulantes', etiqueta: 'Postulantes', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
         { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
         { ruta: '/proveedores/comunicaciones', etiqueta: 'Comunicaciones', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
-        { ruta: '/whatsapp', etiqueta: 'WhatsApp', mostrar: esAdministracion, activo: p => p === '/whatsapp' },
-        { ruta: '/whatsapp/automatizaciones', etiqueta: 'Automatizaciones', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true },
-        { ruta: '/whatsapp/configuracion', etiqueta: 'Configuración', mostrar: esSuperadmin && activa(pathname, '/whatsapp'), hijo: true }
       ];
 
   const inicio = esCliente ? '/portal' : '/';
@@ -324,7 +333,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'mantenciones', etiqueta: 'Mantenciones', ruta: '/mantenciones' },
     { id: 'mapa', etiqueta: 'Mapa', ruta: '/mapa' },
     { id: 'proveedores', etiqueta: 'Proveedores', ruta: '/proveedores', mostrar: esAdministracion },
-    { id: 'whatsapp', etiqueta: 'WhatsApp', ruta: '/whatsapp', mostrar: esAdministracion }
   ].filter(x => x.mostrar !== false);
 
   // Comercial conserva el mismo menú principal también al entrar en SEO.
@@ -457,18 +465,51 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 <div id={'menu-area-'+item.id} className="grupo-navegacion-enlaces"
                   aria-label={'Opciones de '+item.titulo}
                   hidden={!gruposAbiertos.has(item.id)}>
-                  {item.enlaces.map(enlace=>{
-                    const activo=activa(pathname,enlace.ruta);
-                    return <Link key={enlace.ruta} to={enlace.ruta}
-                      onClick={()=>guardarArea(item.id)}
-                      aria-current={activo?'page':undefined}
-                      className={'enlace-lateral enlace-lateral-hijo'+(activo?' activo':'')}>
-                      <span className="enlace-lateral-icono">
-                        <IconoNavegacion tipo={iconoRutaCoproactiva(enlace.ruta)}/>
-                      </span>
-                      <span>{enlace.etiqueta}</span>
-                    </Link>;
-                  })}
+                  {item.secciones
+                    ? item.secciones.map(seccion=>seccion.tipo==='submenu'
+                      ? <div key={seccion.id} className="grupo-navegacion-subgrupo">
+                          <button type="button" className="grupo-navegacion-subgrupo-boton"
+                            onClick={()=>alternarSubgrupo(seccion.id)}
+                            aria-expanded={subgruposAbiertos.has(seccion.id)}
+                            aria-controls={'menu-subarea-'+seccion.id}
+                            aria-label={'Desplegar '+seccion.titulo}>
+                            <span>{seccion.titulo}</span>
+                            <span aria-hidden="true">{subgruposAbiertos.has(seccion.id)?'⌄':'›'}</span>
+                          </button>
+                          <div id={'menu-subarea-'+seccion.id} className="grupo-navegacion-subgrupo-enlaces"
+                            hidden={!subgruposAbiertos.has(seccion.id)}>
+                            {seccion.enlaces.map(enlace=>{
+                              const activo=activa(pathname,enlace.ruta);
+                              return <Link key={enlace.ruta} to={enlace.ruta}
+                                onClick={()=>guardarArea(item.id)}
+                                aria-current={activo?'page':undefined}
+                                className={'enlace-lateral enlace-lateral-hijo'+(activo?' activo':'')}>
+                                <span>{enlace.etiqueta}</span>
+                              </Link>;
+                            })}
+                          </div>
+                        </div>
+                      : <Link key={seccion.ruta} to={seccion.ruta}
+                          onClick={()=>guardarArea(item.id)}
+                          aria-current={activa(pathname,seccion.ruta)?'page':undefined}
+                          className={'enlace-lateral enlace-lateral-hijo'+(activa(pathname,seccion.ruta)?' activo':'')}>
+                          <span className="enlace-lateral-icono">
+                            <IconoNavegacion tipo={iconoRutaCoproactiva(seccion.ruta)}/>
+                          </span>
+                          <span>{seccion.etiqueta}</span>
+                        </Link>)
+                    : item.enlaces.map(enlace=>{
+                        const activo=activa(pathname,enlace.ruta);
+                        return <Link key={enlace.ruta} to={enlace.ruta}
+                          onClick={()=>guardarArea(item.id)}
+                          aria-current={activo?'page':undefined}
+                          className={'enlace-lateral enlace-lateral-hijo'+(activo?' activo':'')}>
+                          <span className="enlace-lateral-icono">
+                            <IconoNavegacion tipo={iconoRutaCoproactiva(enlace.ruta)}/>
+                          </span>
+                          <span>{enlace.etiqueta}</span>
+                        </Link>;
+                      })}
                 </div>
               </div>
             ))}
@@ -487,22 +528,17 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               <div id="menu-area-configuracion" className="grupo-navegacion-enlaces"
                 aria-label="Opciones de administración y ajustes"
                 hidden={!gruposAbiertos.has('configuracion')}>
-                <Link to="/configuracion" className={'enlace-lateral enlace-lateral-hijo'+(pathname==='/configuracion'?' activo':'')}>
-                  <span className="enlace-lateral-icono"><IconoNavegacion tipo="configuracion"/></span>
-                  <span>Configuración</span>
-                </Link>
-                <Link to="/mi-cuenta" className={'enlace-lateral enlace-lateral-hijo'+(pathname==='/mi-cuenta'?' activo':'')}>
-                  <span className="enlace-lateral-icono"><IconoNavegacion tipo="configuracion"/></span>
-                  <span>Mi cuenta</span>
-                </Link>
-                {esAdministracion&&<Link to="/equipo" className={'enlace-lateral enlace-lateral-hijo'+(activa(pathname,'/equipo')?' activo':'')}>
-                  <span className="enlace-lateral-icono"><IconoNavegacion tipo="equipo"/></span>
-                  <span>Equipo y permisos</span>
-                </Link>}
-                {esSuperadmin&&<Link to="/clientes" className={'enlace-lateral enlace-lateral-hijo'+(activa(pathname,'/clientes')?' activo':'')}>
-                  <span className="enlace-lateral-icono"><IconoNavegacion tipo="clientes"/></span>
-                  <span>Clientes y accesos</span>
-                </Link>}
+                {opcionesAdministracion.map(enlace=>{
+                  const activo=activa(pathname,enlace.ruta);
+                  return <Link key={enlace.ruta} to={enlace.ruta}
+                    aria-current={activo?'page':undefined}
+                    className={'enlace-lateral enlace-lateral-hijo'+(activo?' activo':'')}>
+                    <span className="enlace-lateral-icono">
+                      <IconoNavegacion tipo={iconoRutaCoproactiva(enlace.ruta)}/>
+                    </span>
+                    <span>{enlace.etiqueta}</span>
+                  </Link>;
+                })}
               </div>
             </div>
           </>}
