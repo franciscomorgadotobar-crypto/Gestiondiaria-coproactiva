@@ -510,3 +510,17 @@
 @media (prefers-reduced-motion: reduce) {
   .seleccion-home-areas .vista-cuadricula .seleccion-home__flecha { transition: none; }
 }
+
+/* Administración es un área independiente con enlaces directos. */
+.seleccion-home-areas .seleccion-home__ajustes-opciones {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 12px 10px;
+  border: 1px solid #eee0d3;
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  background: #fff;
+}
+.seleccion-home-areas .seleccion-home__ajustes-opciones[hidden] {
+  display: none;
+}
