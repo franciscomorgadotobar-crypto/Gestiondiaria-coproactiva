@@ -14,7 +14,7 @@
  * lo consulte. Los valores de la versión anterior (crm, seo, propiedades,
  * proveedores, whatsapp, contabilidad) se leen como su grupo actual. */
 const PREFIJO = 'coproactiva_area:';
-const AREAS = ['comercial', 'operacion', 'finanzas'];
+const AREAS = ['comercial', 'operacion', 'finanzas', 'documental', 'aprendizaje'];
 const EQUIVALENCIAS = {
   crm: 'comercial', seo: 'comercial', propiedades: 'comercial',
   proveedores: 'operacion', whatsapp: 'operacion', contabilidad: 'finanzas'
@@ -31,7 +31,9 @@ export function normalizarArea(valor) {
 /* Grupo al que pertenece una ruta. «Mi cuenta» pertenece a Configuración;
  * /nuevo y /notificaciones conservan el grupo de contexto. */
 const RUTAS_GRUPO = [
-  ['comercial', ['/pipeline', '/documentos', '/propuestas', '/propiedades', '/seo', '/plantillas-correo']],
+  ['comercial', ['/pipeline', '/propuestas', '/propiedades', '/seo', '/plantillas-correo']],
+  ['documental', ['/documentos']],
+  ['aprendizaje', ['/conocimientos']],
   ['finanzas', ['/contabilidad']],
   ['configuracion', ['/configuracion', '/mi-cuenta', '/equipo', '/clientes']],
   ['operacion', ['/inicio', '/vista-cliente', '/comunidades', '/compromisos', '/mantenciones', '/bitacora', '/plantillas',
@@ -77,5 +79,7 @@ export function inicioSegunArea() {
   const area = areaGuardada();
   if (area === 'comercial') return '/pipeline';
   if (area === 'finanzas') return '/contabilidad';
+  if (area === 'documental') return '/documentos';
+  if (area === 'aprendizaje') return '/conocimientos';
   return '/inicio';
 }
