@@ -92,6 +92,7 @@ try {
     assert.equal(await page.getByRole('button',{name:'Cambiar vista'}).count(),0);
     assert.equal(await page.locator('.seleccion-home__administracion').count(),1);
     await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
     console.log('Home principal · cinco áreas fijas y ajustes aparte: OK');
