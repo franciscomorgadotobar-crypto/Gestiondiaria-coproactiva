@@ -18,9 +18,10 @@ test('El módulo se abre desde Comercial y la ficha del prospecto',()=>{
   assert.match(app,/Route path="\/propuestas"/);
   assert.match(app,/SoloComercial/);
   assert.match(app,/Route path="\/documentos"/);
-  assert.match(nav,/Gestor documental/);
-  assert.match(selector,/id:'documentos', titulo:'Gestor documental'/);
-  assert.match(area,/\['comercial', \['\/pipeline', '\/documentos', '\/propuestas'/);
+  assert.match(selector,/titulo:'Gestión documental'/);
+  assert.match(selector,/ruta:'\/propuestas'/);
+  assert.match(area,/\['comercial', \['\/pipeline', '\/propuestas'/);
+  assert.match(area,/\['documental', \['\/documentos'/);
   assert.match(pipeline,/to=\{'\/documentos\?prospecto='\+prospectoSeleccionado\.id\}/);
 });
 test('Se conserva el generador comercial y su documento',()=>{
