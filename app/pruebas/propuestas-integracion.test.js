@@ -14,12 +14,13 @@ const catalogo=leer('src/lib/plantillasDocumentales.js');
 const adjuntos=leer('src/componentes/AdjuntosCorreo.jsx');
 const selector=leer('src/lib/selectorModulos.js');
 
-test('El módulo se abre desde Comercial y la ficha del prospecto',()=>{
+test('El módulo interno se conserva sin anunciarlo en la navegación comercial',()=>{
   assert.match(app,/Route path="\/propuestas"/);
   assert.match(app,/SoloComercial/);
   assert.match(app,/Route path="\/documentos"/);
   assert.match(selector,/titulo:'Gestión documental'/);
-  assert.match(selector,/ruta:'\/propuestas'/);
+  // El módulo interno se conserva, pero no figura como opción operativa del menú.
+  assert.doesNotMatch(selector,/ruta:'\/propuestas',etiqueta:'Cotizaciones y propuestas'/);
   assert.match(area,/\['comercial', \['\/pipeline', '\/propuestas'/);
   assert.match(area,/\['documental', \['\/documentos'/);
   assert.match(pipeline,/to=\{'\/documentos\?prospecto='\+prospectoSeleccionado\.id\}/);
