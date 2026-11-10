@@ -49,7 +49,8 @@ try{
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:'Abrir Comercial'}).click();
+  await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
+  await page.getByRole('button',{name:'Leads y prospectos'}).click();
   await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
   await page.getByRole('button',{name:'Embudo',exact:true}).click();
   await page.getByRole('button',{name:'Gestionar prospecto Edificio de prueba'}).waitFor({timeout:15000});
