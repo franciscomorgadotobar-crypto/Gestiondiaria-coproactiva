@@ -353,6 +353,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'conta-entidades', etiqueta: 'Entidades', ruta: '/contabilidad/entidades' },
     { id: 'conta-configuracion', etiqueta: 'Configuración', ruta: '/contabilidad/configuracion' }
   ];
+  const opcionesDocumental = [
+    {id:'documentos',etiqueta:'Documentos',ruta:'/documentos'},
+    {id:'nuevo-doc',etiqueta:'Nuevo documento',ruta:'/documentos/nuevo'}
+  ];
   const opcionesConfiguracion = [
     { id: 'ajustes', etiqueta: 'Configuración', ruta: '/configuracion' },
     { id: 'mi-cuenta', etiqueta: 'Mi cuenta', ruta: '/mi-cuenta' },
@@ -366,6 +370,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       window.dispatchEvent(new CustomEvent('coproactiva:conocimientos:buscar', { detail: { accion: 'alternar' } })) }
   ]
     : enComercial ? opcionesComercial
+    : enDocumental ? opcionesDocumental
     : enFinanzas ? opcionesFinanzas
     : enConfiguracion ? opcionesConfiguracion
     : opcionesOperacion;
@@ -383,7 +388,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // tarjetas/chips del Home: «Más» no debe convertirse en un tercer menú.
   const menuMasOperacion = enOperacion ? [] : opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
-  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enAprendizaje;
+  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enDocumental || enAprendizaje;
   // Operaciones se navega por cuatro accesos; Configuración contiene Mi cuenta.
   // «Más» permanece solo en áreas con navegación secundaria real.
   const mostrarMasMovil = mostrarBarraMovil && !enOperacion && !enConfiguracion;
@@ -521,9 +526,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             </span>
           </div>
           <div className="usuario-lateral-acciones">
-            {!esCliente && (
-              <button type="button" onClick={cambiarArea}>Home principal</button>
-            )}
             {!esCliente && tutorialContextual && (
               <button
                 type="button"
@@ -554,7 +556,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             fijo en la que se eligió la primera vez, sin salida. */}
         {pathname !== '/' && (
           <div className="barra-area-movil">
-            {(puedeCambiarArea || !['/', '/inicio'].includes(pathname)) && (
+            {!esCliente ? (
+              <button type="button" className="barra-area-volver" onClick={cambiarArea}>
+                ‹ Home principal
+              </button>
+            ) : (
               <button type="button" className="barra-area-volver" onClick={volverGlobal}>
                 ‹ Volver
               </button>
