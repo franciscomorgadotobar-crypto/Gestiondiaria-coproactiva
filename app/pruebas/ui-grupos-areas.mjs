@@ -82,45 +82,33 @@ try {
   }
 
 
-  // Home modular recuperado. Los cuatro estados se seleccionan en el mismo Home.
+  // Home principal: cinco categorías, sin selector de vistas alternativas.
   {
     const {ctx,page}=await crear();
     assert.equal(await page.locator('.seleccion-home').count(),1);
-    assert.equal(await page.locator('.home-general').count(),0);
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),11);
-    assert.match(await page.locator('.seleccion-home__tarjeta').last().innerText(),/Configuración/);
-    await page.getByRole('button',{name:'Cambiar vista'}).click();
-    const dialogo=page.getByRole('dialog',{name:'Opciones de visualización'});
-    assert.equal(await dialogo.getByRole('button',{name:'Por módulos'}).getAttribute('aria-pressed'),'true');
-    assert.equal(await dialogo.getByRole('button',{name:'Lista'}).getAttribute('aria-pressed'),'true');
-    await dialogo.getByRole('button',{name:'Cuadrícula'}).click();
-    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-cuadricula').count(),1);
-    await dialogo.getByRole('button',{name:'Por áreas'}).click();
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
+    assert.deepEqual(await page.locator('.seleccion-home__titulo').allInnerTexts(),
+      ['Comercial','Operaciones de comunidades','Gestión contable / Finanzas','Gestión documental','Base de conocimientos']);
+    assert.equal(await page.getByRole('button',{name:'Cambiar vista'}).count(),0);
     assert.equal(await page.locator('.seleccion-home__administracion').count(),1);
-    await dialogo.getByRole('button',{name:'Lista'}).click();
-    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-lista').count(),1);
-    await dialogo.getByRole('button',{name:'Por módulos'}).click();
-    await dialogo.getByRole('button',{name:'Cerrar opciones de vista'}).click();
     await page.reload({waitUntil:'domcontentloaded'});
-    await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),11);
-    assert.equal(await page.locator('.seleccion-home__tarjetas.vista-lista').count(),1);
-    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth + 2));
-    console.log('Home modular · dos organizaciones, dos presentaciones y persistencia: OK');
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+    console.log('Home principal · cinco áreas fijas y ajustes aparte: OK');
     await ctx.close();
   }
 
-  // Cada tarjeta lleva a un módulo real y el menú permite volver.
+  // Comercial permite volver desde cualquier sección a Home principal.
   {
     const {ctx,page}=await crear();
-    await page.getByRole('button',{name:/SEO y Analítica/}).click();
-    await page.waitForURL(u=>u.pathname==='/seo',{timeout:20000});
-    await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor();
-    await page.locator('.barra-inferior-movil').getByRole('button',{name:'Más'}).click();
-    await page.getByRole('dialog',{name:'Más opciones'}).getByRole('button',{name:'Ir al inicio'}).click();
+    await page.getByRole('button',{name:'Abrir Comercial'}).click();
+    await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
+    await page.getByRole('button',{name:'Más',exact:true}).last().click();
+    await page.getByRole('dialog',{name:'Más opciones'})
+      .getByRole('button',{name:'Home principal'}).first().click();
     await page.waitForURL(u=>u.pathname==='/',{timeout:20000});
-    assert.equal(await page.locator('.seleccion-home').count(),1);
-    console.log('SEO → Home modular, navegación sin pantalla adicional: OK');
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
+    console.log('Comercial → Home principal: OK');
     await ctx.close();
   }
 
@@ -128,7 +116,7 @@ try {
   // KPI ni mapa con la barra inferior.
   {
     const {ctx,page}=await crear({ancho:390,alto:844});
-    await page.getByRole('button',{name:/Operaciones/}).click();
+    await page.getByRole('button',{name:'Abrir Operaciones de comunidades'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const barra=page.locator('.barra-inferior-movil');
     assert.deepEqual(await barra.locator('button').allTextContents(),
@@ -149,7 +137,7 @@ try {
   // autenticado. Al pulsar un grupo, solo esa persona debe abrirse.
   {
     const {ctx,page}=await crear({ancho:390,alto:844,pendientesQA:true});
-    await page.getByRole('button',{name:/Operaciones/}).click();
+    await page.getByRole('button',{name:'Abrir Operaciones de comunidades'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const grupos=page.locator('.inicio-trabajo .grupo-trabajador');
     await page.waitForFunction(()=>document.querySelectorAll('.inicio-trabajo .grupo-trabajador').length===2);
@@ -173,7 +161,7 @@ try {
   // y la lista de comunidades debe ocupar menos de 110 px por registro.
   for(const ancho of [320,390]){
     const {ctx,page}=await crear({ancho,alto:844,comunidadesQA:true});
-    await page.getByRole('button',{name:/Operaciones/}).click();
+    await page.getByRole('button',{name:'Abrir Operaciones de comunidades'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const visible=await page.evaluate(()=>{
       const root=document.querySelector('.inicio-cuerpo');
@@ -224,7 +212,7 @@ try {
   // Mi cuenta vive en Configuración, sin un menú Más duplicado.
   {
     const {ctx,page}=await crear({ancho:390,alto:844});
-    await page.getByRole('button',{name:/Configuración/}).click();
+    await page.getByRole('button',{name:/Administración y ajustes/}).click();
     await page.waitForURL(u=>u.pathname==='/configuracion',{timeout:20000});
     await page.getByRole('heading',{name:'Configuración'}).waitFor();
     const barra=page.locator('.barra-inferior-movil');
@@ -236,30 +224,23 @@ try {
     await ctx.close();
   }
 
-  // Respeto estricto de permisos, incluso en la vista de módulos.
+  // El Home y el lateral respetan permisos sin opciones visuales alternas.
   {
     const {ctx,page}=await crear({rol:'jefatura'});
     const titulos=await page.locator('.seleccion-home__titulo').allInnerTexts();
-    assert.deepEqual(titulos,['Gestión comercial','Gestor documental','Operaciones','Arriendos y ventas','Base de conocimientos','Configuración']);
-    assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
-    assert.equal(await page.getByRole('button',{name:/Configuración/}).count(),1);
-    await page.getByRole('button',{name:/Configuración/}).click();
-    await page.waitForURL(u=>u.pathname==='/configuracion',{timeout:15000});
-    assert.equal(await page.getByRole('link',{name:/Mi cuenta/}).count()>0,true);
-    assert.equal(await page.getByRole('link',{name:/Equipo y permisos/}).count(),0);
-    await page.evaluate(()=>history.back());
-    await page.waitForURL(u=>u.pathname==='/',{timeout:15000});
-    await page.getByRole('button',{name:/Gestión comercial/}).click();
+    assert.deepEqual(titulos,['Comercial','Operaciones de comunidades','Gestión documental','Base de conocimientos']);
+    assert.equal(await page.getByRole('button',{name:'Abrir Gestión contable / Finanzas'}).count(),0);
+    await page.getByRole('button',{name:'Abrir Comercial'}).click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
-    console.log('Jefatura · catálogo filtrado y navegación al Pipeline: OK');
+    console.log('Jefatura · cuatro áreas autorizadas: OK');
     await ctx.close();
   }
 
   {
     const {ctx,page}=await crear({ancho:1280,alto:850});
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),11);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
-    await page.getByRole('button',{name:/Operaciones/}).click();
+    await page.getByRole('button',{name:'Abrir Operaciones de comunidades'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     console.log('Escritorio · acceso al módulo Operaciones: OK');
     await ctx.close();
