@@ -101,10 +101,10 @@ test('Cada área contiene opciones directas sin submenús intermedios',()=>{
 test('Home y lateral muestran solo opciones directas del catálogo común',()=>{
   const home=leer('src/paginas/SeleccionArea.jsx');
   const lateral=leer('src/componentes/PanelEscritorio.jsx');
-  assert.match(home,/area.enlaces.map\\(enlace=>/);
-  assert.match(lateral,/item.enlaces.map\\(enlace=>/);
+  assert.match(home,/area.enlaces.map\(enlace=>/);
+  assert.match(lateral,/item.enlaces.map\(enlace=>/);
   assert.doesNotMatch(home,/area.secciones|alternarSubmenu|submenuAbierto/);
   assert.doesNotMatch(lateral,/item.secciones|alternarSubgrupo|subgruposAbiertos/);
-  assert.match(home,/enlacesAdministracion\\(perfil\\)/);
-  assert.match(lateral,/enlacesAdministracion\\(perfil\\)/);
+  assert.match(home,/enlacesAdministracion\(perfil\)/);
+  assert.match(lateral,/enlacesAdministracion\(perfil\)/);
 });
