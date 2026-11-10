@@ -686,12 +686,6 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                       <Link to="/mi-cuenta" onClick={() => setMasAbierto(false, { alNavegar: true })}>
                         Mi cuenta <span aria-hidden="true">›</span>
                       </Link>
-                      {puedeCambiarArea && !enOperacion && (
-                        <button type="button" onClick={() => { setMasAbierto(false, { alNavegar: true }); cambiarArea(); }}>
-                          Home principal
-                          <span aria-hidden="true">›</span>
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
