@@ -83,8 +83,15 @@ try {
   page.on('pageerror',e=>errores.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-  // SEO se abre desde su tarjeta del Home modular.
-  await page.getByRole('button',{name:/SEO y Analítica/}).click();
+  // SEO pertenece a Comercial y se accede desde su barra contextual.
+  await page.getByRole('button',{name:'Abrir Comercial'}).click();
+  await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
+  if(await page.locator('.barra-inferior-movil:visible').count()){
+    await page.locator('.barra-inferior-movil').getByRole('button',{name:'SEO'}).click();
+  } else {
+    const lateral=page.getByRole('navigation',{name:'Navegación'});
+    await lateral.getByRole('link',{name:'SEO y analítica'}).click();
+  }
   await page.getByRole('heading',{name:'SEO y Analítica'}).waitFor({timeout:20000});
   await page.getByRole('button',{name:/Apariciones en Google Maps.*Fuente: Business Profile/}).waitFor({timeout:20000});
   await page.getByText('101',{exact:true}).waitFor({timeout:20000});
