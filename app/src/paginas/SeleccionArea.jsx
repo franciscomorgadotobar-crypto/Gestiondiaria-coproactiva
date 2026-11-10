@@ -1,4 +1,4 @@
-import {useEffect} from 'react';
+import {useEffect,useState} from 'react';
 import {useLocation,useNavigate} from 'react-router-dom';
 import {useSesion} from '../lib/sesion';
 import {guardarArea} from '../lib/area';
@@ -20,10 +20,14 @@ export default function SeleccionArea(){
   },[location.state?.selectorCoproactiva,navegar]);
 
   const areas=areasDisponibles(perfil);
+  const [areaAbierta,setAreaAbierta]=useState(null);
   const puedeAdministrar=['superadmin','admin'].includes(perfil?.rol);
-  function entrar(area){
+  function entrar(area,ruta){
     guardarArea(area.area);
-    navegar(area.ruta,{state:{desdeSelectorCoproactiva:true}});
+    navegar(ruta,{state:{desdeSelectorCoproactiva:true}});
+  }
+  function alternarArea(id){
+    setAreaAbierta(actual=>actual===id?null:id);
   }
   return (
     <main className="pantalla seleccion-home seleccion-home-areas">
@@ -41,22 +45,33 @@ export default function SeleccionArea(){
         <nav className="seleccion-area-grid seleccion-home__tarjetas vista-cuadricula"
              aria-label="Áreas de trabajo">
           {areas.map(area=>(
-            <button key={area.id} type="button"
-              className="tarjeta seleccion-area-opcion seleccion-home__tarjeta"
-              onClick={()=>entrar(area)}
-              aria-label={'Abrir '+area.titulo}>
-              <span className="seleccion-home__detalle">
-                <span className="seleccion-area-etiqueta">{area.etiqueta}</span>
+            <div key={area.id}
+              className={'seleccion-home__grupo'+(areaAbierta===area.id?' abierto':'')}>
+              <button type="button"
+                className="tarjeta seleccion-area-opcion seleccion-home__tarjeta"
+                onClick={()=>alternarArea(area.id)}
+                aria-expanded={areaAbierta===area.id}
+                aria-controls={'home-area-'+area.id}
+                aria-label={'Mostrar opciones de '+area.titulo}>
                 <span className="seleccion-home__titulo">{area.titulo}</span>
-                <span className="seleccion-home__descripcion">{area.descripcion}</span>
-              </span>
-              <span className="seleccion-home__flecha" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
-                     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m9 5 7 7-7 7"/>
-                </svg>
-              </span>
-            </button>
+                <span className="seleccion-home__flecha" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
+                       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m9 5 7 7-7 7"/>
+                  </svg>
+                </span>
+              </button>
+              <div id={'home-area-'+area.id} className="seleccion-home__submodulos"
+                   hidden={areaAbierta!==area.id}>
+                {area.enlaces.map(enlace=>(
+                  <button key={enlace.ruta} type="button"
+                    className="seleccion-home__submodulo"
+                    onClick={()=>entrar(area,enlace.ruta)}>
+                    <span>{enlace.etiqueta}</span><span aria-hidden="true">›</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         <div className="seleccion-home__administracion">

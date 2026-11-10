@@ -84,7 +84,8 @@ try {
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
   // SEO pertenece a Comercial y se accede desde su barra contextual.
-  await page.getByRole('button',{name:'Abrir Comercial'}).click();
+  await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
+  await page.getByRole('button',{name:'Leads y prospectos'}).click();
   await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
   if(await page.locator('.barra-inferior-movil:visible').count()){
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'SEO'}).click();

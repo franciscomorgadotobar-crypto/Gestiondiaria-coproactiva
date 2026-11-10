@@ -78,11 +78,17 @@ try {
     for(const area of areas){
       await page.goto(base+'/',{waitUntil:'domcontentloaded'});
       await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-      const grupoHome=area.grupo==='Comercial'?'Abrir Comercial':
-        area.grupo==='Operaciones'?'Abrir Operaciones de comunidades':
-        area.grupo==='Finanzas'?'Abrir Gestión contable / Finanzas':
-        'Administración y ajustes';
-      await page.getByRole('button',{name:grupoHome}).click();
+      const grupoHome=area.grupo==='Comercial'?'Comercial':
+        area.grupo==='Operaciones'?'Operaciones de comunidades':
+        area.grupo==='Finanzas'?'Gestión contable / Finanzas':null;
+      if(grupoHome){
+        await page.getByRole('button',{name:'Mostrar opciones de '+grupoHome}).click();
+        const opcion=area.grupo==='Comercial'?'Leads y prospectos':
+          area.grupo==='Operaciones'?'Panel de operaciones':'Resumen financiero';
+        await page.getByRole('button',{name:opcion,exact:true}).click();
+      }else{
+        await page.getByRole('button',{name:'Administración y ajustes'}).click();
+      }
       const primera=area.grupo==='Comercial'?'/pipeline':
         area.grupo==='Operaciones'?'/inicio':
         area.grupo==='Finanzas'?'/contabilidad':'/configuracion';

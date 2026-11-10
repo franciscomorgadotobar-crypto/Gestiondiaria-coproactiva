@@ -128,7 +128,8 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).first().waitFor({timeout:16000});
-  await page.getByRole('button',{name:'Abrir Comercial'}).click();
+  await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
+    await page.getByRole('button',{name:'Leads y prospectos'}).click();
   await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:15000});
   for(const vista of rutas){
    if(vista.ruta!=='/pipeline'){

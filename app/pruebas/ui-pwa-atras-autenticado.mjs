@@ -72,7 +72,8 @@ try {
     assert.equal(await page.locator('.seo-pantalla').count(),0);
     const area=await page.evaluate(({userId})=>localStorage.getItem('coproactiva_area:'+userId),{userId});
     assert.equal(area,null,'la preferencia de área antigua no modifica la apertura');
-    await page.getByRole('button',{name:'Abrir Comercial'}).click();
+    await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
+    await page.getByRole('button',{name:'Leads y prospectos'}).click();
     await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
     await page.locator('.barra-inferior-movil').getByRole('button',{name:'SEO'}).click();
     await page.waitForURL(url=>url.pathname==='/seo',{timeout:20000});
@@ -119,7 +120,8 @@ try {
     assert.equal(await page.getByRole('button',{name:/Finanzas/}).count(),0);
     assert.equal(await page.getByRole('button',{name:/Administración y ajustes/}).count(),1);
     assert.equal(await page.getByRole('button',{name:/SEO y Analítica/}).count(),0);
-    await page.getByRole('button',{name:'Abrir Comercial'}).click();
+    await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
+    await page.getByRole('button',{name:'Leads y prospectos'}).click();
     await page.waitForURL(url=>url.pathname==='/pipeline',{timeout:20000});
     console.log('Jefatura → Home filtrado y Pipeline: OK');
     await ctx.close();

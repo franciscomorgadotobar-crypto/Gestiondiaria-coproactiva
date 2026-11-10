@@ -104,7 +104,10 @@ async function irPantalla(page,vista) {
     :esConocimiento?'Base de conocimientos':'Comercial';
   const raiz=esOperacion?'/inicio':esFinanzas?'/contabilidad'
     :esDocumental?'/documentos':esConocimiento?'/conocimientos':'/pipeline';
-  await page.getByRole('button',{name:'Abrir '+area}).click();
+  await page.getByRole('button',{name:'Mostrar opciones de '+area}).click();
+  const primerDestino=esOperacion?'Panel de operaciones':esFinanzas?'Resumen financiero'
+    :esDocumental?'Gestor documental':esConocimiento?'Biblioteca de conocimientos':'Leads y prospectos';
+  await page.getByRole('button',{name:primerDestino,exact:true}).click();
   await page.waitForURL(u=>u.pathname===raiz,{timeout:15000});
   if(ruta!==raiz){
     // La auditoría visual prueba pantallas internas sin depender de la
