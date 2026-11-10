@@ -70,3 +70,83 @@ export function modulosDisponibles(perfil) {
   ];
   return destinos.filter(d => d.visible).map(({visible, ...d}) => d);
 }
+
+
+/**
+ * Catálogo único de navegación. Home principal y menú lateral leen de aquí
+ * los mismos cinco grupos y las mismas reglas de acceso.
+ *
+ * Las rutas no se reemplazan: todas siguen usando las pantallas existentes.
+ * "Gestiones y avances" está dentro de la ficha de cada comunidad.
+ */
+export function areasDisponibles(perfil) {
+  if(!perfil || perfil.rol==='cliente' || !perfil.activo)return [];
+  const rol=perfil.rol;
+  const comercial=['superadmin','admin','jefatura'].includes(rol);
+  const administracion=['superadmin','admin'].includes(rol);
+  const configurar=['superadmin','admin','jefatura'].includes(rol);
+  const grupos=[
+    {
+      id:'comercial',area:'comercial',etiqueta:'COMERCIAL',titulo:'Comercial',
+      descripcion:'Leads, diagnósticos, cotizaciones y actividad comercial.',
+      ruta:'/pipeline',icono:'comercial',visible:comercial,
+      enlaces:[
+        {ruta:'/pipeline',etiqueta:'Leads y prospectos',visible:true},
+        {ruta:'/propuestas',etiqueta:'Cotizaciones y propuestas',visible:true},
+        {ruta:'/propiedades',etiqueta:'Arriendos y ventas',visible:true},
+        {ruta:'/seo',etiqueta:'SEO y analítica',visible:administracion},
+        {ruta:'/plantillas-correo',etiqueta:'Plantillas de correo',visible:configurar}
+      ]
+    },
+    {
+      id:'operacion',area:'operacion',etiqueta:'OPERACIONES',titulo:'Operaciones de comunidades',
+      descripcion:'Comunidades, gestiones, levantamientos, mantenciones y atención.',
+      ruta:'/inicio',icono:'comunidades',visible:true,
+      enlaces:[
+        {ruta:'/inicio',etiqueta:'Panel de operaciones',visible:true},
+        {ruta:'/comunidades',etiqueta:'Comunidades',visible:true},
+        {ruta:'/nuevo',etiqueta:'Nuevo levantamiento',visible:configurar},
+        {ruta:'/bitacora',etiqueta:'Bitácora',visible:true},
+        {ruta:'/mantenciones',etiqueta:'Mantenciones',visible:true},
+        {ruta:'/plantillas',etiqueta:'Plantillas de levantamiento',visible:configurar},
+        {ruta:'/mapa',etiqueta:'Mapa de visitas',visible:true},
+        {ruta:'/proveedores',etiqueta:'Red de proveedores',visible:administracion},
+        {ruta:'/whatsapp',etiqueta:'Recepción y atención',visible:administracion},
+        {ruta:'/vista-cliente',etiqueta:'Vista de cliente',visible:administracion}
+      ]
+    },
+    {
+      id:'finanzas',area:'finanzas',etiqueta:'FINANZAS',titulo:'Gestión contable / Finanzas',
+      descripcion:'Asientos, libros, reportes, entidades y control contable.',
+      ruta:'/contabilidad',icono:'contabilidad',visible:administracion,
+      enlaces:[
+        {ruta:'/contabilidad',etiqueta:'Resumen financiero',visible:true},
+        {ruta:'/contabilidad/asientos',etiqueta:'Asientos',visible:true},
+        {ruta:'/contabilidad/plan',etiqueta:'Plan de cuentas',visible:true},
+        {ruta:'/contabilidad/reportes',etiqueta:'Reportes',visible:true},
+        {ruta:'/contabilidad/entidades',etiqueta:'Entidades',visible:true},
+        {ruta:'/contabilidad/configuracion',etiqueta:'Configuración contable',visible:true}
+      ]
+    },
+    {
+      id:'documental',area:'documental',etiqueta:'DOCUMENTOS',titulo:'Gestión documental',
+      descripcion:'Documentos, plantillas y archivos de trabajo.',
+      ruta:'/documentos',icono:'documentos',visible:comercial,
+      enlaces:[
+        {ruta:'/documentos',etiqueta:'Gestor documental',visible:true},
+        {ruta:'/documentos/nuevo',etiqueta:'Nuevo documento',visible:true}
+      ]
+    },
+    {
+      id:'aprendizaje',area:'aprendizaje',etiqueta:'CONOCIMIENTOS',titulo:'Base de conocimientos',
+      descripcion:'Biblioteca y material de consulta para la administración.',
+      ruta:'/conocimientos',icono:'conocimientos',visible:true,
+      enlaces:[
+        {ruta:'/conocimientos',etiqueta:'Biblioteca de conocimientos',visible:true}
+      ]
+    }
+  ];
+  return grupos.filter(g=>g.visible).map(({visible,...g})=>({
+    ...g,enlaces:g.enlaces.filter(enlace=>enlace.visible).map(({visible:_,...enlace})=>enlace)
+  }));
+}
