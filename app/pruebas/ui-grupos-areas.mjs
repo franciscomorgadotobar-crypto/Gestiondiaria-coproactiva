@@ -102,7 +102,8 @@ try {
   // Comercial permite volver desde cualquier sección a Home principal.
   {
     const {ctx,page}=await crear();
-    await page.getByRole('button',{name:'Abrir Comercial'}).click();
+    await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
+    await page.getByRole('button',{name:'Leads y prospectos'}).click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
     await page.getByRole('button',{name:'Más',exact:true}).last().click();
     await page.getByRole('dialog',{name:'Más opciones'})
@@ -117,7 +118,8 @@ try {
   // KPI ni mapa con la barra inferior.
   {
     const {ctx,page}=await crear({ancho:390,alto:844});
-    await page.getByRole('button',{name:'Abrir Operaciones de comunidades'}).click();
+    await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
+    await page.getByRole('button',{name:'Panel de operaciones'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const barra=page.locator('.barra-inferior-movil');
     assert.deepEqual(await barra.locator('button').allTextContents(),
@@ -138,7 +140,8 @@ try {
   // autenticado. Al pulsar un grupo, solo esa persona debe abrirse.
   {
     const {ctx,page}=await crear({ancho:390,alto:844,pendientesQA:true});
-    await page.getByRole('button',{name:'Abrir Operaciones de comunidades'}).click();
+    await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
+    await page.getByRole('button',{name:'Panel de operaciones'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const grupos=page.locator('.inicio-trabajo .grupo-trabajador');
     await page.waitForFunction(()=>document.querySelectorAll('.inicio-trabajo .grupo-trabajador').length===2);
@@ -162,7 +165,8 @@ try {
   // y la lista de comunidades debe ocupar menos de 110 px por registro.
   for(const ancho of [320,390]){
     const {ctx,page}=await crear({ancho,alto:844,comunidadesQA:true});
-    await page.getByRole('button',{name:'Abrir Operaciones de comunidades'}).click();
+    await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
+    await page.getByRole('button',{name:'Panel de operaciones'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     const visible=await page.evaluate(()=>{
       const root=document.querySelector('.inicio-cuerpo');
@@ -230,8 +234,9 @@ try {
     const {ctx,page}=await crear({rol:'jefatura'});
     const titulos=await page.locator('.seleccion-home__titulo').allInnerTexts();
     assert.deepEqual(titulos,['Comercial','Operaciones de comunidades','Gestión documental','Base de conocimientos']);
-    assert.equal(await page.getByRole('button',{name:'Abrir Gestión contable / Finanzas'}).count(),0);
-    await page.getByRole('button',{name:'Abrir Comercial'}).click();
+    assert.equal(await page.getByRole('button',{name:'Mostrar opciones de Gestión contable / Finanzas'}).count(),0);
+    await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
+    await page.getByRole('button',{name:'Leads y prospectos'}).click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
     console.log('Jefatura · cuatro áreas autorizadas: OK');
     await ctx.close();
@@ -240,7 +245,8 @@ try {
   // Acordeón lateral: sin navegación al expandir y dos áreas abiertas a la vez.
   {
     const {ctx,page}=await crear({ancho:1280,alto:850});
-    await page.getByRole('button',{name:'Abrir Comercial'}).click();
+    await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
+    await page.getByRole('button',{name:'Leads y prospectos'}).click();
     await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
     const lateral=page.getByRole('navigation',{name:'Navegación'});
     await lateral.waitFor({state:'visible'});
@@ -271,7 +277,8 @@ try {
     const {ctx,page}=await crear({ancho:1280,alto:850});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
-    await page.getByRole('button',{name:'Abrir Operaciones de comunidades'}).click();
+    await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
+    await page.getByRole('button',{name:'Panel de operaciones'}).click();
     await page.waitForURL(u=>u.pathname==='/inicio',{timeout:20000});
     console.log('Escritorio · acceso al módulo Operaciones: OK');
     await ctx.close();
