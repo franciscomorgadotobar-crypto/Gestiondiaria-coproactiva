@@ -71,40 +71,40 @@ test('Home compacto muestra solo nombre de área y despliega sus submódulos al 
   assert.match(estilos,/min-height: 56px/);
 });
 
-test('Operaciones mantiene cuatro accesos iniciales y solo rutas reales',()=>{
+test('Cada área contiene opciones directas sin submenús intermedios',()=>{
   const perfil={id:'qa',rol:'superadmin',activo:true};
-  const area=areasDisponibles(perfil).find(g=>g.id==='operacion');
-  assert.deepEqual(area.secciones.map(s=>s.etiqueta??s.titulo),[
-    'Panel de operaciones','Comunidades','Gestión y seguimiento','Terreno y recursos'
-  ]);
-  assert.deepEqual(area.secciones.find(s=>s.id==='seguimiento').enlaces.map(e=>e.etiqueta),[
-    'Bitácora','Mantenciones'
-  ]);
-  assert.deepEqual(area.secciones.find(s=>s.id==='terreno').enlaces.map(e=>e.etiqueta),[
+  const areas=areasDisponibles(perfil);
+  const operaciones=areas.find(g=>g.id==='operacion');
+  assert.deepEqual(operaciones.enlaces.map(e=>e.etiqueta),[
+    'Panel de operaciones','Comunidades','Bitácora','Mantenciones',
     'Nuevo levantamiento','Plantillas de levantamiento','Mapa de visitas','Red de proveedores'
   ]);
-  assert.ok(!area.enlaces.some(e=>e.ruta==='/whatsapp'||e.ruta==='/vista-cliente'));
-  assert.ok(!area.secciones.some(s=>s.titulo==='Recepción y atención'));
-  assert.equal(new Set(area.enlaces.map(e=>e.ruta)).size,area.enlaces.length);
+  const comercial=areas.find(g=>g.id==='comercial');
+  assert.deepEqual(comercial.enlaces.map(e=>e.etiqueta),[
+    'Leads y prospectos','Arriendos y ventas','SEO y analítica','Plantillas de correo'
+  ]);
+  assert.ok(areas.every(g=>!('secciones' in g)));
+  assert.ok(!operaciones.enlaces.some(e=>['/whatsapp','/vista-cliente'].includes(e.ruta)));
+  assert.ok(!comercial.enlaces.some(e=>e.ruta==='/propuestas'));
+  assert.equal(new Set(operaciones.enlaces.map(e=>e.ruta)).size,operaciones.enlaces.length);
   assert.equal(grupoDeRuta('/vista-cliente'),'configuracion');
   assert.ok(enlacesAdministracion(perfil).some(e=>e.ruta==='/vista-cliente'));
   assert.ok(!enlacesAdministracion({rol:'jefatura',activo:true}).some(e=>e.ruta==='/vista-cliente'));
   const jefatura=areasDisponibles({rol:'jefatura',activo:true}).find(g=>g.id==='operacion');
   assert.ok(!jefatura.enlaces.some(e=>e.ruta==='/proveedores'));
   const terreno=areasDisponibles({rol:'terreno',activo:true}).find(g=>g.id==='operacion');
-  assert.equal(terreno.secciones.length,4);
-  assert.equal(terreno.secciones.find(s=>s.id==='terreno').enlaces.length,1);
+  assert.deepEqual(terreno.enlaces.map(e=>e.etiqueta),[
+    'Panel de operaciones','Comunidades','Bitácora','Mantenciones','Mapa de visitas'
+  ]);
 });
 
-test('Home y menú lateral comparten submenús independientes',()=>{
+test('Home y lateral muestran solo opciones directas del catálogo común',()=>{
   const home=leer('src/paginas/SeleccionArea.jsx');
   const lateral=leer('src/componentes/PanelEscritorio.jsx');
-  assert.match(home,/area.secciones.map\(seccion=>/);
-  assert.match(home,/alternarSubmenu\(seccion.id\)/);
-  assert.match(home,/hidden=\{submenuAbierto!==seccion.id\}/);
-  assert.match(lateral,/item.secciones.map\(seccion=>/);
-  assert.match(lateral,/alternarSubgrupo\(seccion.id\)/);
-  assert.match(lateral,/hidden=\{!subgruposAbiertos.has\(seccion.id\)\}/);
-  assert.match(home,/enlacesAdministracion\(perfil\)/);
-  assert.match(lateral,/enlacesAdministracion\(perfil\)/);
+  assert.match(home,/area.enlaces.map\\(enlace=>/);
+  assert.match(lateral,/item.enlaces.map\\(enlace=>/);
+  assert.doesNotMatch(home,/area.secciones|alternarSubmenu|submenuAbierto/);
+  assert.doesNotMatch(lateral,/item.secciones|alternarSubgrupo|subgruposAbiertos/);
+  assert.match(home,/enlacesAdministracion\\(perfil\\)/);
+  assert.match(lateral,/enlacesAdministracion\\(perfil\\)/);
 });
