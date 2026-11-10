@@ -331,7 +331,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // Las secciones de SEO son navegación interna, no reemplazan esta barra.
   const opcionesComercial = [
     { id: 'pipeline', etiqueta: 'Pipeline', ruta: '/pipeline' },
-    { id: 'documentos', etiqueta: 'Documentos', ruta: '/documentos' },
+    { id: 'propuestas', etiqueta: 'Propuestas', ruta: '/propuestas' },
     { id: 'propiedades', etiqueta: 'Arriendos', ruta: '/propiedades', activo: activaPropiedades },
     { id: 'seo', etiqueta: 'SEO', ruta: '/seo', mostrar: esAdministracion },
     { id: 'plantillas-correo', etiqueta: 'Plantillas de correo', ruta: '/plantillas-correo', mostrar: puedeConfigurar },
