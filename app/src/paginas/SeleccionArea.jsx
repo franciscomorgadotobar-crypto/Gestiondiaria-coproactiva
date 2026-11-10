@@ -3,7 +3,7 @@ import {useLocation,useNavigate} from 'react-router-dom';
 import {useSesion} from '../lib/sesion';
 import {guardarArea} from '../lib/area';
 import {registrarIndiceSelector} from '../lib/historialSelector';
-import {areasDisponibles} from '../lib/selectorModulos';
+import {areasDisponibles,enlacesAdministracion} from '../lib/selectorModulos';
 import Campana from '../componentes/Campana';
 import './SeleccionArea.css';
 
@@ -21,6 +21,9 @@ export default function SeleccionArea(){
 
   const areas=areasDisponibles(perfil);
   const [areaAbierta,setAreaAbierta]=useState(null);
+  const [submenuAbierto,setSubmenuAbierto]=useState(null);
+  const [administracionAbierta,setAdministracionAbierta]=useState(false);
+  const administracion=enlacesAdministracion(perfil);
   const puedeAdministrar=['superadmin','admin'].includes(perfil?.rol);
   function entrar(area,ruta){
     guardarArea(area.area);
@@ -28,6 +31,10 @@ export default function SeleccionArea(){
   }
   function alternarArea(id){
     setAreaAbierta(actual=>actual===id?null:id);
+    setSubmenuAbierto(null);
+  }
+  function alternarSubmenu(id){
+    setSubmenuAbierto(actual=>actual===id?null:id);
   }
   return (
     <main className="pantalla seleccion-home seleccion-home-areas">
@@ -63,20 +70,51 @@ export default function SeleccionArea(){
               </button>
               <div id={'home-area-'+area.id} className="seleccion-home__submodulos"
                    hidden={areaAbierta!==area.id}>
-                {area.enlaces.map(enlace=>(
-                  <button key={enlace.ruta} type="button"
-                    className="seleccion-home__submodulo"
-                    onClick={()=>entrar(area,enlace.ruta)}>
-                    <span>{enlace.etiqueta}</span><span aria-hidden="true">›</span>
-                  </button>
-                ))}
+                {area.secciones
+                  ? area.secciones.map(seccion=>seccion.tipo==='submenu'
+                    ? <div key={seccion.id} className="seleccion-home__subgrupo">
+                        <button type="button" className="seleccion-home__submodulo seleccion-home__subgrupo-boton"
+                          onClick={()=>alternarSubmenu(seccion.id)}
+                          aria-expanded={submenuAbierto===seccion.id}
+                          aria-controls={'home-subarea-'+seccion.id}>
+                          <span>{seccion.titulo}</span>
+                          <span className="seleccion-home__subgrupo-flecha" aria-hidden="true">
+                            {submenuAbierto===seccion.id?'⌃':'⌄'}
+                          </span>
+                        </button>
+                        <div id={'home-subarea-'+seccion.id}
+                             className="seleccion-home__subgrupo-enlaces"
+                             hidden={submenuAbierto!==seccion.id}>
+                          {seccion.enlaces.map(enlace=>(
+                            <button key={enlace.ruta} type="button"
+                              className="seleccion-home__submodulo seleccion-home__submodulo-hijo"
+                              onClick={()=>entrar(area,enlace.ruta)}>
+                              <span>{enlace.etiqueta}</span><span aria-hidden="true">›</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    : <button key={seccion.ruta} type="button"
+                        className="seleccion-home__submodulo"
+                        onClick={()=>entrar(area,seccion.ruta)}>
+                        <span>{seccion.etiqueta}</span><span aria-hidden="true">›</span>
+                      </button>)
+                  : area.enlaces.map(enlace=>(
+                    <button key={enlace.ruta} type="button"
+                      className="seleccion-home__submodulo"
+                      onClick={()=>entrar(area,enlace.ruta)}>
+                      <span>{enlace.etiqueta}</span><span aria-hidden="true">›</span>
+                    </button>
+                  ))}
               </div>
             </div>
           ))}
         </nav>
         <div className="seleccion-home__administracion">
           <button type="button" className="seleccion-home__ajustes-enlace"
-                  onClick={()=>navegar('/configuracion')}>
+                  onClick={()=>setAdministracionAbierta(v=>!v)}
+                  aria-expanded={administracionAbierta}
+                  aria-controls="home-administracion">
             <span className="seleccion-home__ajustes-icono" aria-hidden="true">⚙</span>
             <span className="seleccion-home__detalle">
               <span className="seleccion-home__ajustes-titulo">Administración y ajustes</span>
@@ -86,8 +124,17 @@ export default function SeleccionArea(){
                   : 'Mi cuenta y preferencias personales.'}
               </span>
             </span>
-            <span aria-hidden="true">›</span>
+            <span aria-hidden="true">{administracionAbierta?'⌄':'›'}</span>
           </button>
+          <div id="home-administracion" className="seleccion-home__ajustes-opciones"
+               hidden={!administracionAbierta}>
+            {administracion.map(enlace=>(
+              <button key={enlace.ruta} type="button" className="seleccion-home__submodulo"
+                onClick={()=>navegar(enlace.ruta)}>
+                <span>{enlace.etiqueta}</span><span aria-hidden="true">›</span>
+              </button>
+            ))}
+          </div>
         </div>
         <footer className="seleccion-home__pie">
           <p>Las cinco áreas comparten la misma navegación del menú lateral.</p>
