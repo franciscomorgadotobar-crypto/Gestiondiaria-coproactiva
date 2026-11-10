@@ -10,7 +10,7 @@ const panel = leer('componentes/PanelEscritorio.jsx');
 const iconos = leer('componentes/IconoNavegacion.jsx');
 const area = leer('paginas/SeleccionArea.jsx');
 
-test('carga la capa corporativa al final de los estilos, sin modificar Home', () => {
+test('carga identidad común y Home principal por cinco áreas', () => {
   const imports = [
     "import './estilos/tokens.css'",
     "import './estilos/base.css'",
@@ -21,8 +21,8 @@ test('carga la capa corporativa al final de los estilos, sin modificar Home', ()
   assert.deepEqual(imports,imports.slice().sort((a,b)=>a-b),'Orden de cascada CSS');
   assert.match(capa,/NO modificar ni sustituir el selector de áreas/);
   assert.doesNotMatch(capa,/\.seleccion-area-grid\s*[{,]/);
-  assert.match(area,/guardarArea\(area\)/,'Home mantiene su navegación');
-  assert.match(area,/seleccion-area-grid/,'Home conserva ambas vistas');
+  assert.match(area,/guardarArea\(area.area\)/,'Home conserva navegación por áreas');
+  assert.match(area,/seleccion-area-grid/,'Home conserva rejilla adaptativa');
 });
 
 test('tipografía, tarjetas, botones, colores y responsive comparten tokens', () => {
@@ -78,10 +78,11 @@ test('ingreso y recuperación tienen un único estilo y acceso conservado', () =
 test('barra lateral usa iconos para cada área con rutas y permisos intactos', () => {
   assert.match(panel,/IconoNavegacion, \{ iconoRutaCoproactiva \}/);
   assert.match(panel,/brand\/imagologo-horizontal-naranja\.svg/);
-  assert.match(panel,/iconoRutaCoproactiva\(item.ruta\)/);
+  assert.match(panel,/iconoRutaCoproactiva\(enlace.ruta\)/);
   assert.match(panel,/accesos\.filter\(item => item.mostrar\)/);
   assert.match(panel,/className=\{'enlace-lateral'/);
-  assert.match(panel,/gruposLaterales\.map\(item =>/);
+  assert.match(panel,/gruposLaterales\.map\(item=>/);
+  assert.match(panel,/alternarGrupo\(item.id\)/);
   assert.match(panel,/Administración y ajustes/);
   for(const ruta of ['/pipeline','/propiedades','/proveedores','/whatsapp',
     '/seo','/contabilidad','/configuracion','/comunidades','/mantenciones',
