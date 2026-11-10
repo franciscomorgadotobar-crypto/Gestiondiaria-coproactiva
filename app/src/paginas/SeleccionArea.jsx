@@ -21,7 +21,6 @@ export default function SeleccionArea(){
 
   const areas=areasDisponibles(perfil);
   const [areaAbierta,setAreaAbierta]=useState(null);
-  const [submenuAbierto,setSubmenuAbierto]=useState(null);
   const [administracionAbierta,setAdministracionAbierta]=useState(false);
   const administracion=enlacesAdministracion(perfil);
   const puedeAdministrar=['superadmin','admin'].includes(perfil?.rol);
@@ -31,10 +30,6 @@ export default function SeleccionArea(){
   }
   function alternarArea(id){
     setAreaAbierta(actual=>actual===id?null:id);
-    setSubmenuAbierto(null);
-  }
-  function alternarSubmenu(id){
-    setSubmenuAbierto(actual=>actual===id?null:id);
   }
   return (
     <main className="pantalla seleccion-home seleccion-home-areas">
@@ -70,42 +65,13 @@ export default function SeleccionArea(){
               </button>
               <div id={'home-area-'+area.id} className="seleccion-home__submodulos"
                    hidden={areaAbierta!==area.id}>
-                {area.secciones
-                  ? area.secciones.map(seccion=>seccion.tipo==='submenu'
-                    ? <div key={seccion.id} className="seleccion-home__subgrupo">
-                        <button type="button" className="seleccion-home__submodulo seleccion-home__subgrupo-boton"
-                          onClick={()=>alternarSubmenu(seccion.id)}
-                          aria-expanded={submenuAbierto===seccion.id}
-                          aria-controls={'home-subarea-'+seccion.id}>
-                          <span>{seccion.titulo}</span>
-                          <span className="seleccion-home__subgrupo-flecha" aria-hidden="true">
-                            {submenuAbierto===seccion.id?'⌃':'⌄'}
-                          </span>
-                        </button>
-                        <div id={'home-subarea-'+seccion.id}
-                             className="seleccion-home__subgrupo-enlaces"
-                             hidden={submenuAbierto!==seccion.id}>
-                          {seccion.enlaces.map(enlace=>(
-                            <button key={enlace.ruta} type="button"
-                              className="seleccion-home__submodulo seleccion-home__submodulo-hijo"
-                              onClick={()=>entrar(area,enlace.ruta)}>
-                              <span>{enlace.etiqueta}</span><span aria-hidden="true">›</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    : <button key={seccion.ruta} type="button"
-                        className="seleccion-home__submodulo"
-                        onClick={()=>entrar(area,seccion.ruta)}>
-                        <span>{seccion.etiqueta}</span><span aria-hidden="true">›</span>
-                      </button>)
-                  : area.enlaces.map(enlace=>(
-                    <button key={enlace.ruta} type="button"
-                      className="seleccion-home__submodulo"
-                      onClick={()=>entrar(area,enlace.ruta)}>
-                      <span>{enlace.etiqueta}</span><span aria-hidden="true">›</span>
-                    </button>
-                  ))}
+                {area.enlaces.map(enlace=>(
+                  <button key={enlace.ruta} type="button"
+                    className="seleccion-home__submodulo"
+                    onClick={()=>entrar(area,enlace.ruta)}>
+                    <span>{enlace.etiqueta}</span><span aria-hidden="true">›</span>
+                  </button>
+                ))}
               </div>
             </div>
           ))}
