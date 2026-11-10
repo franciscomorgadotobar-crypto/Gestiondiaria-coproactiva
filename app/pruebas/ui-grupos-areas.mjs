@@ -236,6 +236,36 @@ try {
     await ctx.close();
   }
 
+  // Acordeón lateral: sin navegación al expandir y dos áreas abiertas a la vez.
+  {
+    const {ctx,page}=await crear({ancho:1280,alto:850});
+    await page.getByRole('button',{name:'Abrir Comercial'}).click();
+    await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
+    const lateral=page.getByRole('navigation',{name:'Navegación'});
+    await lateral.waitFor({state:'visible'});
+    const comercial=lateral.getByRole('button',{name:'Desplegar Comercial'});
+    const operaciones=lateral.getByRole('button',{name:'Desplegar Operaciones de comunidades'});
+    const documental=lateral.getByRole('button',{name:'Desplegar Gestión documental'});
+    assert.equal(await comercial.getAttribute('aria-expanded'),'true');
+    await operaciones.click();
+    assert.equal(new URL(page.url()).pathname,'/pipeline',
+      'Desplegar Operaciones no debe sacarte de Comercial');
+    assert.equal(await comercial.getAttribute('aria-expanded'),'true');
+    assert.equal(await operaciones.getAttribute('aria-expanded'),'true');
+    await documental.click();
+    assert.equal(new URL(page.url()).pathname,'/pipeline');
+    assert.equal(await documental.getAttribute('aria-expanded'),'true');
+    await lateral.getByRole('link',{name:'Comunidades',exact:true}).click();
+    await page.waitForURL(u=>u.pathname==='/comunidades',{timeout:20000});
+    assert.equal(await documental.getAttribute('aria-expanded'),'true');
+    assert.equal(await operaciones.getAttribute('aria-expanded'),'true');
+    await lateral.getByRole('link',{name:'Home principal'}).click();
+    await page.waitForURL(u=>u.pathname==='/',{timeout:20000});
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
+    console.log('Lateral · 5 áreas navegables e independientes, Home principal: OK');
+    await ctx.close();
+  }
+
   {
     const {ctx,page}=await crear({ancho:1280,alto:850});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
