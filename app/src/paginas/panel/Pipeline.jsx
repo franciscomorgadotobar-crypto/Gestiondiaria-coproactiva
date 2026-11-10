@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { usePestanaHistorial } from '../../lib/pestanasHistorial';
 import { useSesion } from '../../lib/sesion';
-import { inicioSegunArea } from '../../lib/area';
 import './Pipeline.css';
 import { useVolverGlobal, volverPorJerarquia } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
@@ -107,6 +106,18 @@ export default function Pipeline() {
   const [filtroResumen,setFiltroResumen]=useState(null);
   const [etapaFocalizada,setEtapaFocalizada]=useState(false);
   const [vistaCompletaMovil,setVistaCompletaMovil]=useState(false);
+  // El modo de visualización pertenece al CRM, no al Home principal.
+  const [modoCRM,setModoCRM]=useState(()=>{
+    try{return localStorage.getItem('coproactiva_crm_vista')==='embudo'?'embudo':'lista';}
+    catch{return 'lista'}
+  });
+  const [busquedaLista,setBusquedaLista]=useState('');
+  const [filtroEtapaLista,setFiltroEtapaLista]=useState('todas');
+  function cambiarModoCRM(v){
+    if(!['lista','embudo'].includes(v))return;
+    setModoCRM(v);
+    try{localStorage.setItem('coproactiva_crm_vista',v)}catch{/* Sin almacenamiento */}
+  }
   const [arrastrandoId,setArrastrandoId]=useState(null);
   const [soltarEn,setSoltarEn]=useState('');
   const [correoProspecto, setCorreoProspecto] = useState(null);
@@ -258,6 +269,27 @@ export default function Pipeline() {
     }
     return m;
   }, [prospectos]);
+
+  const leadsLista = useMemo(()=>{
+    const q=busquedaLista.trim().toLocaleLowerCase('es-CL');
+    return (prospectos??[]).filter(p=>{
+      if(filtroEtapaLista!=='todas'&&p.etapa!==filtroEtapaLista)return false;
+      if(filtroResumen==='activos'&&['ganado','perdido'].includes(p.etapa))return false;
+      if(filtroResumen==='diagnostico'&&p.etapa!=='diagnostico')return false;
+      if(filtroResumen==='ganados'){
+        if(p.etapa!=='ganado'||!p.editado_en)return false;
+        const d=new Date(p.editado_en),h=new Date();
+        if(d.getFullYear()!==h.getFullYear()||d.getMonth()!==h.getMonth())return false;
+      }
+      if(filtroResumen==='perdidos'&&p.etapa!=='perdido')return false;
+      return !q||[p.nombre_condominio,p.comuna,p.direccion,p.nombre_contacto,p.email,
+        p.telefono,p.proxima_accion].some(v=>String(v||'').toLocaleLowerCase('es-CL').includes(q));
+    }).sort((a,b)=>{
+      const fa=Date.parse(a.fecha_proxima_accion||'')||Number.MAX_SAFE_INTEGER;
+      const fb=Date.parse(b.fecha_proxima_accion||'')||Number.MAX_SAFE_INTEGER;
+      return fa-fb||String(a.nombre_condominio||'').localeCompare(String(b.nombre_condominio||''),'es-CL');
+    });
+  },[prospectos,busquedaLista,filtroEtapaLista,filtroResumen]);
 
   const activos = (prospectos ?? []).filter(p => p.etapa !== 'ganado' && p.etapa !== 'perdido').length;
 
@@ -652,12 +684,11 @@ export default function Pipeline() {
         />
       )}
       <header className="encabezado modulo-cabecera">
-        <div className="fila navegacion-interna" style={{ marginBottom: 8 }}>
-          <button className="boton boton-texto" style={{ padding: '4px 8px 4px 0' }}
-            onClick={() => prospectoSeleccionado ? cerrarGestion() : navegar(inicioSegunArea())}>
-            {prospectoSeleccionado ? '‹ Volver al embudo' : '‹ Inicio'}
-          </button>
-        </div>
+        {prospectoSeleccionado&&
+          <div className="fila navegacion-interna" style={{marginBottom:8}}>
+            <button className="boton boton-texto" type="button"
+              onClick={cerrarGestion}>‹ Volver a leads y prospectos</button>
+          </div>}
         <div className="fila">
           <div className="crece">
             <span className="comercial-eyebrow">Comercial · Gestión de prospectos</span>
@@ -908,6 +939,64 @@ export default function Pipeline() {
           </section>
         )}
 
+        <div className="pipeline-modos" role="group" aria-label="Vista de leads y prospectos">
+          <button type="button" aria-pressed={modoCRM==='lista'}
+            className={'boton '+(modoCRM==='lista'?'boton-primario':'boton-secundario')}
+            onClick={()=>cambiarModoCRM('lista')}>Lista</button>
+          <button type="button" aria-pressed={modoCRM==='embudo'}
+            className={'boton '+(modoCRM==='embudo'?'boton-primario':'boton-secundario')}
+            onClick={()=>cambiarModoCRM('embudo')}>Embudo</button>
+        </div>
+        {modoCRM==='lista'?<section className="pipeline-lista" aria-label="Listado de leads">
+          <div className="pipeline-lista-filtros">
+            <label>Buscar leads
+              <input type="search" value={busquedaLista}
+                onChange={e=>setBusquedaLista(e.target.value)}
+                placeholder="Comunidad, contacto, comuna o próxima acción"/>
+            </label>
+            <label>Etapa
+              <select value={filtroEtapaLista} onChange={e=>setFiltroEtapaLista(e.target.value)}>
+                <option value="todas">Todas las etapas</option>
+                {ETAPAS.map(([id,nombre])=><option key={id} value={id}>{nombre}</option>)}
+              </select>
+            </label>
+          </div>
+          <p className="micro apagado pipeline-lista-total">
+            {leadsLista.length} de {(prospectos??[]).length} prospectos
+          </p>
+          {prospectos===null&&!error&&<p className="cargando">Cargando prospectos…</p>}
+          <div className="pipeline-lista-tabla-wrap">
+            <table className="pipeline-lista-tabla">
+              <thead><tr>
+                <th scope="col">Lead / comunidad</th>
+                <th scope="col">Etapa</th>
+                <th scope="col">Contacto</th>
+                <th scope="col">Responsable</th>
+                <th scope="col">Próxima acción</th>
+                <th scope="col">Gestionar</th>
+              </tr></thead>
+              <tbody>
+                {leadsLista.map(p=>{
+                  const responsable=equipo.find(e=>e.id===p.responsable_id);
+                  return <tr key={p.id}>
+                    <td data-label="Prospecto"><strong>{p.nombre_condominio}</strong><small>{[p.direccion,p.comuna].filter(Boolean).join(', ')||'Sin ubicación'}</small></td>
+                    <td data-label="Etapa"><select value={p.etapa} disabled={guardando}
+                      aria-label={'Cambiar etapa de '+p.nombre_condominio}
+                      onChange={e=>void cambiarEtapa(p,e.target.value)}>
+                      {ETAPAS.map(([id,nombre])=><option key={id} value={id}>{nombre}</option>)}
+                    </select></td>
+                    <td data-label="Contacto"><span>{p.nombre_contacto||'Sin contacto'}</span><small>{p.email||p.telefono||''}</small></td>
+                    <td data-label="Responsable">{responsable?.nombre||'Sin asignar'}</td>
+                    <td data-label="Próxima acción">{p.proxima_accion||'Sin próxima acción'}<small>{fechaCL(p.fecha_proxima_accion)||''}</small></td>
+                    <td data-label="Gestionar"><button type="button" className="boton boton-secundario"
+                      onClick={()=>abrirGestion(p)}>Gestionar</button></td>
+                  </tr>;
+                })}
+                {!leadsLista.length&&prospectos!==null&&<tr><td colSpan={6}>Sin prospectos para los filtros seleccionados.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </section>:<>
         <div className="pipeline-etapas-encabezado">
           <strong>{filtroResumen?resumenEtapa[filtroResumen]:etapaFocalizada?
             ETAPAS.find(([id])=>id===etapa)?.[1]:'Todas las etapas'}</strong>
@@ -965,6 +1054,7 @@ export default function Pipeline() {
             })}
           </div>
         )}
+        </>}
         </>}
       </div>
     </div>

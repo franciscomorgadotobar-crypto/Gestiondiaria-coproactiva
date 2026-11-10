@@ -1,69 +1,49 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {modulosDisponibles, leerOrganizacion, guardarOrganizacion} from '../src/lib/selectorModulos.js';
+import {readFileSync} from 'node:fs';
+import {areasDisponibles} from '../src/lib/selectorModulos.js';
+import {grupoDeRuta} from '../src/lib/area.js';
+const leer=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('Catálogo no agrega rutas inexistentes y evita duplicados',()=>{
-  const modulos=modulosDisponibles({id:'admin-qa',rol:'superadmin',activo:true});
-  const rutas=new Set(modulos.map(x=>x.ruta));
-  assert.equal(rutas.size,modulos.length);
-  assert.equal(modulos.find(x=>x.id==='conocimientos').ruta,'/conocimientos');
-  assert.ok(modulos.every(x=>x.tipo!=='popup'),'Todos los módulos abren sus propias pantallas');
-  assert.ok(rutas.has('/pipeline'));
-  assert.ok(rutas.has('/documentos'));
-  assert.ok(modulos.find(x=>x.id==='documentos')?.titulo==='Gestor documental');
-  assert.ok(rutas.has('/seo'));
-  assert.ok(rutas.has('/inicio'));
-  assert.ok(rutas.has('/contabilidad'));
-  assert.ok(rutas.has('/configuracion'));
-  assert.equal(modulos.length,11,'Se conservan los módulos originales y se añade el Gestor documental');
-  assert.deepEqual(modulos.map(m=>m.titulo),[
-    'Gestión comercial','Gestor documental','Operaciones','Arriendos y ventas','Red de proveedores',
-    'Recepción y atención','Gestión contable','SEO y Analítica','Base de conocimientos',
-    'Vista de cliente','Configuración'
-  ]);
-  assert.ok(!rutas.has('/mi-cuenta'),'Mi cuenta es transversal, no módulo');
+test('Home principal y lateral reciben las mismas cinco áreas, sin duplicación',()=>{
+  const areas=areasDisponibles({id:'admin-qa',rol:'superadmin',activo:true});
+  assert.deepEqual(areas.map(x=>x.id),['comercial','operacion','finanzas','documental','aprendizaje']);
+  assert.equal(new Set(areas.map(x=>x.id)).size,5);
+  const rutas=areas.flatMap(x=>x.enlaces.map(e=>e.ruta));
+  assert.equal(new Set(rutas).size,rutas.length,'Una ruta pertenece a una sola área');
+  assert.equal(areas.find(x=>x.id==='operacion').enlaces.find(x=>x.ruta==='/comunidades').etiqueta,'Comunidades');
+  assert.equal(areas.find(x=>x.id==='documental').ruta,'/documentos');
+  assert.equal(areas.find(x=>x.id==='aprendizaje').ruta,'/conocimientos');
+  assert.equal(grupoDeRuta('/documentos/nuevo'),'documental');
+  assert.equal(grupoDeRuta('/conocimientos'),'aprendizaje');
+  assert.equal(grupoDeRuta('/pipeline'),'comercial');
 });
-
-test('Roles preservan autorizaciones del menú',()=>{
-  const modulos=rol=>modulosDisponibles({id:rol,rol,activo:true}).map(x=>x.id);
-  const jefatura=modulos('jefatura');
-  assert.ok(jefatura.includes('crm') && jefatura.includes('propiedades'));
-  assert.ok(jefatura.includes('levantamientos'));
-  assert.equal(jefatura.length,6);
-  assert.ok(jefatura.includes('conocimientos'));
-  for(const id of ['seo','contabilidad','whatsapp','proveedores'])
-    assert.ok(!jefatura.includes(id),'No visible para jefatura: '+id);
-  assert.ok(modulos('admin').includes('contabilidad'));
-  assert.ok(!modulos('admin').includes('clientes'));
-  assert.ok(modulos('superadmin').includes('configuracion'));
-  assert.equal(modulos('admin').length,11);
-  assert.equal(modulos('admin').at(-1),'configuracion');
-  assert.equal(modulos('superadmin').at(-1),'configuracion');
-  assert.equal(modulos('jefatura').at(-1),'configuracion',
-    'Mi cuenta y preferencias siempre están en Configuración');
-  assert.deepEqual(modulos('terreno'), ['levantamientos','conocimientos','configuracion']);
-  assert.deepEqual(modulos('cliente'),[]);
-  assert.deepEqual(modulosDisponibles({id:'s',rol:'superadmin',activo:false}),[]);
+test('Permisos: ninguna opción se eleva de rol en la navegación unificada',()=>{
+  const areas=rol=>areasDisponibles({id:rol,rol,activo:true});
+  const nombres=rol=>areas(rol).map(x=>x.id);
+  assert.deepEqual(nombres('jefatura'),['comercial','operacion','documental','aprendizaje']);
+  assert.deepEqual(nombres('terreno'),['operacion','aprendizaje']);
+  assert.deepEqual(nombres('cliente'),[]);
+  assert.deepEqual(areasDisponibles({rol:'superadmin',activo:false}),[]);
+  assert.ok(!areas('jefatura').find(x=>x.id==='operacion').enlaces.some(x=>x.ruta==='/proveedores'));
+  assert.ok(!areas('jefatura').find(x=>x.id==='comercial').enlaces.some(x=>x.ruta==='/seo'));
+  assert.ok(areas('admin').some(x=>x.id==='finanzas'));
 });
-
-test('La organización es local por usuario y se mantiene tras volver al Home',()=>{
-  const values=new Map();
-  globalThis.localStorage={
-    getItem(key){return values.has(key)?values.get(key):null},
-    setItem(key,value){values.set(key,value)}
-  };
-  try{
-    assert.equal(leerOrganizacion('persona-a'),'modulos');
-    guardarOrganizacion('persona-a','modulos');
-    assert.equal(leerOrganizacion('persona-a'),'modulos');
-    assert.equal(leerOrganizacion('persona-b'),'modulos');
-    guardarOrganizacion('persona-a','areas');
-    assert.equal(leerOrganizacion('persona-a'),'areas');
-    guardarOrganizacion('persona-a','no-valido');
-    assert.equal(leerOrganizacion('persona-a'),'areas');
-  }finally{delete globalThis.localStorage;}
+test('No existen Cambio de vista global ni Inicio redundante en Comercial',()=>{
+  const home=leer('src/paginas/SeleccionArea.jsx');
+  const panel=leer('src/componentes/PanelEscritorio.jsx');
+  const pipeline=leer('src/paginas/panel/Pipeline.jsx');
+  assert.match(home,/areasDisponibles\(perfil\)/);
+  assert.match(panel,/areasDisponibles\(perfil\)/);
+  assert.doesNotMatch(home,/Cambiar vista|Por módulos|Por áreas|mostrarOpcionesVista/);
+  assert.doesNotMatch(pipeline,/‹ Inicio|inicioSegunArea/);
+  assert.match(panel,/Home principal/);
+  assert.match(panel,/alternarGrupo\(item\.id\)/);
+  assert.doesNotMatch(panel,/mostrarPanelIzquierdo = esCliente \|\| enOperacion/);
+  assert.match(pipeline,/cambiarModoCRM\('lista'\)/);
+  assert.match(pipeline,/pipeline-lista-tabla/);
+  assert.match(pipeline,/cambiarModoCRM\('embudo'\)/);
 });
-
 test('La biblioteca conserva 202 fichas con referencias y 160 cápsulas automáticas', async()=>{
   const { readFileSync } = await import('node:fs');
   const datos=JSON.parse(readFileSync(new URL('../src/datos/ley21442.contenidos.json',import.meta.url),'utf8'));

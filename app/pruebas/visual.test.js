@@ -121,6 +121,6 @@ test('mismos ejes de alineación y navegación contextual en todo el sistema',()
   assert.match(seoEstilos,/cabecera\.modulo-cabecera\{display:flex/);
   assert.doesNotMatch(seoEstilos,/margin:16px clamp\(16px/);
   assert.match(panel,/menu-mas-grupo-cuenta/);
-  assert.match(panel,/Módulos y acciones/);
+  assert.match(panel,/Navegación principal/);
   assert.match(base,/max-height: calc\(100dvh - 88px/);
 });

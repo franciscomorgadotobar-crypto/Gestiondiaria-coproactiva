@@ -18,9 +18,10 @@ test('El módulo se abre desde Comercial y la ficha del prospecto',()=>{
   assert.match(app,/Route path="\/propuestas"/);
   assert.match(app,/SoloComercial/);
   assert.match(app,/Route path="\/documentos"/);
-  assert.match(nav,/Gestor documental/);
-  assert.match(selector,/id:'documentos', titulo:'Gestor documental'/);
-  assert.match(area,/\['comercial', \['\/pipeline', '\/documentos', '\/propuestas'/);
+  assert.match(selector,/titulo:'Gestión documental'/);
+  assert.match(selector,/ruta:'\/propuestas'/);
+  assert.match(area,/\['comercial', \['\/pipeline', '\/propuestas'/);
+  assert.match(area,/\['documental', \['\/documentos'/);
   assert.match(pipeline,/to=\{'\/documentos\?prospecto='\+prospectoSeleccionado\.id\}/);
 });
 test('Se conserva el generador comercial y su documento',()=>{
@@ -106,7 +107,8 @@ test('Accesos contextuales desde CRM, Correo, Comunidades, Proveedores y Operaci
  assert.match(comunidad,/Nuevo informe de gestión/);
  assert.match(proveedores,/Ver documentos en gestor/);
  assert.match(proveedores,/abrir el gestor documental/);
- assert.match(inicio,/ruta: '\/documentos', titulo: 'Gestor documental'/);
+ assert.doesNotMatch(inicio,/ruta: '\/documentos', titulo: 'Gestor documental'/);
+ assert.match(selector,/id:'documental'/);
  assert.match(inicio,/<Link key=\{h\.ruta\} to=\{h\.ruta\}/);
  assert.match(pipeline,/to=\{'\/documentos\?prospecto='\+prospectoSeleccionado\.id\}/);
  assert.match(adjuntos,/Abrir gestor documental para crear un documento/);

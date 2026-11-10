@@ -3664,3 +3664,21 @@ input[type='checkbox'] { accent-color: var(--naranja); }
     text-transform:none;
   }
 }
+
+
+/* Navegación única por áreas: los acordeones se abren independientemente
+   de la ruta, y el contenido oculto NO ocupa espacio en el lateral. */
+.barra-lateral .grupo-navegacion-enlaces[hidden]{display:none!important}
+.barra-lateral .grupo-navegacion-boton{width:100%;text-align:left}
+.barra-lateral .home-principal-lateral{display:flex;align-items:center;gap:9px;margin:5px 12px 9px;
+ border:1px solid var(--borde);border-radius:10px;color:var(--texto-titulo);
+ background:var(--tarjeta);font-weight:750;text-decoration:none;min-height:43px}
+.barra-lateral .home-principal-lateral:hover,
+.barra-lateral .home-principal-lateral:focus-visible{border-color:var(--naranja);background:#fff1e5}
+.barra-lateral .grupo-navegacion-lateral{min-width:0}
+.barra-lateral .grupo-navegacion-boton:focus-visible{outline:2px solid var(--naranja);outline-offset:-2px}
+.barra-lateral .grupo-navegacion-enlaces{padding-bottom:4px}
+.barra-lateral .grupo-navegacion-enlaces .enlace-lateral-hijo{font-size:12px;min-height:39px;line-height:1.4}
+@media(max-width:899px){
+ .barra-area-movil .barra-area-volver{font-weight:750}
+}

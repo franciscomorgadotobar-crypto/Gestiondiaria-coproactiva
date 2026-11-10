@@ -78,12 +78,24 @@ try {
     for(const area of areas){
       await page.goto(base+'/',{waitUntil:'domcontentloaded'});
       await page.getByRole('heading',{name:/Hola/}).waitFor({timeout:20000});
-      const destino={ '/pipeline':'Gestión comercial', '/inicio':'Levantamientos',
-        '/propiedades':'Arriendos y ventas','/proveedores':'Red de proveedores',
-        '/whatsapp':'Recepción y atención','/contabilidad':'Gestión contable',
-        '/seo':'SEO y Analítica','/configuracion':'Configuración' }[area.ruta];
-      await page.locator('.seleccion-home__tarjeta').filter({hasText:destino}).first().click();
-      await page.waitForURL(u=>u.pathname===area.ruta,{timeout:17000});
+      const grupoHome=area.grupo==='Comercial'?'Abrir Comercial':
+        area.grupo==='Operaciones'?'Abrir Operaciones de comunidades':
+        area.grupo==='Finanzas'?'Abrir Gestión contable / Finanzas':
+        'Administración y ajustes';
+      await page.getByRole('button',{name:grupoHome}).click();
+      const primera=area.grupo==='Comercial'?'/pipeline':
+        area.grupo==='Operaciones'?'/inicio':
+        area.grupo==='Finanzas'?'/contabilidad':'/configuracion';
+      await page.waitForURL(u=>u.pathname===primera,{timeout:17000});
+      if(area.ruta!==primera){
+        // La homologación examina la pantalla visual sin reiniciar la PWA.
+        // El recorrido real por enlaces laterales se comprueba por separado.
+        await page.evaluate(destino=>{
+          history.pushState(null,'',destino);
+          dispatchEvent(new PopStateEvent('popstate'));
+        },area.ruta);
+        await page.waitForURL(u=>u.pathname===area.ruta,{timeout:17000});
+      }
       await page.getByRole('heading',{name:area.heading}).first().waitFor({timeout:17000});
       const aspecto = await page.evaluate(()=>{
         const modulo=document.querySelector('.pantalla.modulo-unificado, .wa-page.modulo-unificado');

@@ -10,10 +10,10 @@ const inicio=leer('src/paginas/panel/Inicio.jsx');
 const levantamiento=leer('src/paginas/terreno/Control.jsx');
 const diagnostico=leer('src/paginas/comercial/DiagnosticoComercial.jsx');
 
-test('Campana disponible en Home, barra móvil y las variantes de escritorio',()=>{
+test('Campana disponible en Home, barra móvil y lateral permanente',()=>{
   assert.match(home,/<Campana miId=\{perfil\?\.id\}/);
-  assert.equal((panel.match(/<Campana miId=\{perfil\?\.id\}/g)||[]).length,3);
-  assert.match(panel,/barra-contextual-cuenta/);
+  assert.equal((panel.match(/<Campana miId=\{perfil\?\.id\}/g)||[]).length,2);
+  assert.doesNotMatch(panel,/barra-contextual-cuenta/);
   assert.match(panel,/barra-campana-escritorio/);
   assert.match(panel,/barra-area-derecha/);
   assert.doesNotMatch(inicio,/<Campana/);

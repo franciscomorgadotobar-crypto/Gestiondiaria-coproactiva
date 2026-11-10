@@ -49,8 +49,9 @@ try{
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/Gestión comercial/}).click();
+  await page.getByRole('button',{name:'Abrir Comercial'}).click();
   await page.waitForURL(u=>u.pathname==='/pipeline',{timeout:20000});
+  await page.getByRole('button',{name:'Embudo',exact:true}).click();
   await page.getByRole('button',{name:'Gestionar prospecto Edificio de prueba'}).waitFor({timeout:15000});
   assert.equal(await page.getByRole('link',{name:'Iniciar diagnóstico'}).count(),0,'embudo sin diagnóstico');
   assert.equal(await page.getByRole('heading',{name:'Editar prospecto'}).count(),0);
@@ -78,7 +79,7 @@ try{
   await page.waitForURL(u=>u.pathname==='/pipeline'&&!u.searchParams.has('accion'),{timeout:15000});
   console.log('Retorno ficha '+width+'px:',page.url());
   await page.getByRole('heading',{name:'Gestionar prospecto'}).waitFor();
-  await page.getByRole('button',{name:/Volver al embudo/}).click();
+  await page.getByRole('button',{name:/Volver (al embudo|a leads y prospectos)/}).first().click();
   await page.getByRole('button',{name:'Gestionar prospecto Edificio de prueba'}).waitFor();
   assert.equal(new URL(page.url()).searchParams.get('prospecto'),null);
   assert.deepEqual(errors,[],'sin errores JS al navegar');

@@ -11,7 +11,7 @@ const campos=read('componentes/DialogoCampos.jsx');
 const foco=read('lib/focoDialogo.js');
 const css=read('estilos/modulos.css');
 
-test('Home modular restaurado y Cambiar vista conserva navegación SPA',()=>{
+test('Home principal conserva navegación SPA sin Inicio redundante',()=>{
  assert.match(panel,/function cambiarArea\(\)/);
  assert.match(panel,/navegar\('\/', \{ replace:true \}\)/);
  assert.doesNotMatch(panel,/window\.location\.href\s*=\s*import\.meta\.env\.BASE_URL/);
@@ -19,7 +19,8 @@ test('Home modular restaurado y Cambiar vista conserva navegación SPA',()=>{
  assert.match(router,/import SeleccionArea from/);
  assert.doesNotMatch(router,/function RestaurarAreaGuardada/);
  assert.ok((panel.match(/onClick=\{cambiarArea\}/g)||[]).length>=1);
- assert.match(panel,/Ir al inicio/);
+ assert.match(panel,/Home principal/);
+ assert.doesNotMatch(panel,/Ir al inicio/);
  assert.doesNotMatch(panel,/className="barra-area-cambiar"/);
 });
 test('los dos diálogos comparten foco accesible y respetan Atrás Android',()=>{
