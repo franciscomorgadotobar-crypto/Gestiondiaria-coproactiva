@@ -408,9 +408,9 @@ export default function Pipeline() {
     setHistorialCorreosError('');
     const cargarHistorial=async()=>{
       const {data,error}=await supabase.from('prospecto_correos')
-        .select('id,asunto,mensaje,destinatario,estado,creado_en,enviado_en,error,adjuntos,seguimiento_activo,primera_apertura,ultima_apertura,aperturas_total')
+        .select('id,asunto,mensaje,destinatario,remitente,origen,estado,creado_en,enviado_en,error,adjuntos,seguimiento_activo,primera_apertura,ultima_apertura,aperturas_total')
         .eq('prospecto_id',prospectoSeleccionadoId)
-        .order('creado_en',{ascending:false}).limit(30);
+        .order('creado_en',{ascending:false}).limit(100);
       if(!activo)return;
       if(error){
         setHistorialCorreosError('No fue posible cargar el historial de correos.');
@@ -768,20 +768,22 @@ export default function Pipeline() {
                   <div className="pipeline-historial-contenido">
                     {historialCorreosError&&<p className="chico" role="alert">{historialCorreosError}</p>}
                     {!historialCorreosCargando&&!historialCorreosError&&!historialCorreos.length&&
-                      <p className="chico apagado">No hay correos enviados desde este CRM.</p>}
+                      <p className="chico apagado">No hay correos registrados con este prospecto.</p>}
                     {historialCorreos.map(c=><details key={c.id} defaultOpen={c.id===correoDestacado} className="pipeline-correo-historial-item">
                       <summary>
                         <span className="pipeline-correo-fecha">{fechaCL(c.enviado_en||c.creado_en,true)||'Sin fecha'}</span>
                         <span className="pipeline-correo-asunto">{c.asunto}</span>
-                        <span className={'pipeline-correo-estado '+(c.estado==='enviado'?'ok':'')}>{c.estado==='enviado'?'Enviado':c.estado==='fallido'?'Fallido':'Pendiente'}</span>
+                        <span className={'pipeline-correo-estado '+(c.estado==='enviado'?'ok':'')}>{c.estado==='enviado'?'Enviado':c.estado==='recibido'?'Recibido':c.estado==='fallido'?'Fallido':'Pendiente'}</span>
                         {c.estado==='enviado'&&c.seguimiento_activo&&
                           <span className={'pipeline-correo-apertura'+(c.primera_apertura?' detectada':'')}>
                             {c.primera_apertura?'◉ Apertura detectada':'○ Sin apertura detectada'}
                           </span>}
                       </summary>
                       <div className="pipeline-correo-historial-detalle">
+                        {c.origen==='gmail'&&c.remitente&&<p className="chico apagado">De: {c.remitente}</p>}
                         <p className="chico apagado">Para: {c.destinatario}</p>
-                        {c.estado==='enviado'&&
+                        {c.origen==='gmail'&&<p className="micro apagado">Histórico importado desde contacto@coproactiva.cl.</p>}
+                        {c.estado==='enviado'&&c.origen!=='gmail'&&
                           <div className="pipeline-correo-apertura-detalle">
                             {!c.seguimiento_activo
                               ? <span>Este correo no tiene seguimiento de aperturas.</span>
@@ -803,7 +805,7 @@ export default function Pipeline() {
                           </div>}
                       </div>
                     </details>)}
-                    {historialCorreos.length===30&&<p className="micro apagado">Se muestran los 30 registros más recientes.</p>}
+                    {historialCorreos.length===100&&<p className="micro apagado">Se muestran los 100 registros más recientes.</p>}
                   </div>
                 </details>
                 <div className="pipeline-ficha-etapa">
