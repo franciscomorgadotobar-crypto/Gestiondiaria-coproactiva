@@ -94,6 +94,21 @@ try {
     await page.reload({waitUntil:'domcontentloaded'});
     await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
+    // Regresión de tarjetas compactas: iconos, texto y flecha centrados, sin
+    // altura desperdiciada ni contenido recortado en el Home móvil.
+    const tarjetas=await page.locator('.seleccion-home__tarjeta').evaluateAll(els=>els.map(el=>{
+      const b=el.getBoundingClientRect();
+      const arrow=el.querySelector('.seleccion-home__flecha')?.getBoundingClientRect();
+      const texto=el.querySelector('.seleccion-home__detalle')?.getBoundingClientRect();
+      return {height:b.height,arrowOffset:arrow?Math.abs((arrow.top+arrow.height/2)-(b.top+b.height/2)):100,
+        textoDerecha:texto?.right,arrowIzquierda:arrow?.left};
+    }));
+    for(const card of tarjetas){
+      assert.ok(card.height<=138,'Tarjeta móvil demasiado alta: '+JSON.stringify(card));
+      assert.ok(card.arrowOffset<=4,'Flecha desalineada verticalmente: '+JSON.stringify(card));
+      assert.ok(card.textoDerecha<=card.arrowIzquierda+2,
+        'La flecha se superpone al texto: '+JSON.stringify(card));
+    }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
     await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
     const opciones=page.locator('#home-area-operacion');
