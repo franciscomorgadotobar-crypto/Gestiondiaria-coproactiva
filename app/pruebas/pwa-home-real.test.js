@@ -144,3 +144,13 @@ test('el inicio siempre usa perfil actual, no la preferencia recordada',()=>{
   assert.doesNotMatch(app,/areaGuardada\(\)/);
   assert.match(app,/\['superadmin', 'admin', 'jefatura'\]\.includes\(perfil\.rol\)/);
 });
+
+
+test('PWA comprueba versiones al recuperar foco en Home sin interrumpir pantallas internas',()=>{
+  const main=readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8');
+  assert.match(main,/addEventListener\('visibilitychange'/);
+  assert.match(main,/addEventListener\('pageshow'/);
+  assert.match(main,/window\.location\.pathname !== rutaHome/);
+  assert.match(main,/await registro\.update\(\)/);
+  assert.match(main,/document\.visibilityState === 'visible'/);
+});

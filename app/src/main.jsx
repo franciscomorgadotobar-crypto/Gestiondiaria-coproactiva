@@ -49,13 +49,32 @@ if ('serviceWorker' in navigator && !Capacitor.isNativePlatform()) {
     window.location.reload();
   });
 
-  window.addEventListener('load', async () => {
+  // Una pestaña Chrome que permanece abierta durante horas no dispara 'load'
+  // al volver a primer plano. Revisar también la PWA al regresar a Home.
+  // No consultar en formularios internos: una activación podría recargar
+  // datos aún no guardados en campo.
+  let ultimaRevision = 0;
+  async function comprobarActualizacion(desdeInicio = false) {
+    if (document.visibilityState === 'hidden') return;
+    const rutaHome = (raiz || '') + '/';
+    if (!desdeInicio && window.location.pathname !== rutaHome) return;
+    const ahora = Date.now();
+    if (!desdeInicio && ahora - ultimaRevision < 45000) return;
+    ultimaRevision = ahora;
     try {
       const registro = await navigator.serviceWorker.ready;
       await registro.update();
     } catch {
-      // La app sigue operativa aunque no se pueda comprobar la actualización.
+      // Sin red, continuar trabajando con el contenido disponible.
     }
+  }
+
+  window.addEventListener('load', () => comprobarActualizacion(true));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') comprobarActualizacion();
+  });
+  window.addEventListener('pageshow', (evento) => {
+    if (evento.persisted) comprobarActualizacion();
   });
 }
 
