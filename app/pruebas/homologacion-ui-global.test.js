@@ -22,7 +22,12 @@ test('carga identidad común y Home principal por cinco áreas', () => {
   assert.match(capa,/NO modificar ni sustituir el selector de áreas/);
   assert.doesNotMatch(capa,/\.seleccion-area-grid\s*[{,]/);
   assert.match(area,/guardarArea\(area.area\)/,'Home conserva navegación por áreas');
-  assert.match(area,/seleccion-area-grid/,'Home conserva rejilla adaptativa');
+  assert.match(area,/className="seleccion-home__tarjetas"/,'Home conserva rejilla de áreas');
+  const css=leer('paginas/SeleccionArea.css');
+  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Rejilla en escritorio');
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'Rejilla en tableta');
+  assert.match(css,/grid-template-columns:minmax\(0,1fr\)/,'Rejilla en móvil');
+  assert.match(area,/aria-label="Administración y ajustes"/,'Ajustes accesibles en la barra superior');
 });
 
 test('tipografía, tarjetas, botones, colores y responsive comparten tokens', () => {

@@ -1,526 +1,138 @@
-/* Home de módulos Coproactiva - vista lista/cuadrícula del mockup aprobado.
-   Esta hoja solo afecta al selector de áreas, no a las pantallas internas. */
-.seleccion-home {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  width: 100%;
-  padding: clamp(22px, 5vh, 48px) 20px 64px;
-  background: #fffaf6;
-  color: var(--texto-titulo);
+/* Home principal Coproactiva. Los estilos quedan encapsulados en .seleccion-home. */
+.seleccion-home{
+  --home-navy:#17243b;--home-orange:var(--naranja,#d5863b);
+  display:block;min-height:100vh;min-height:100dvh;width:100%;
+  padding:0;background:radial-gradient(ellipse at 85% 35%,#eef0f7 0%,transparent 55%),linear-gradient(135deg,#fffaf7 0%,#f6f4f4 65%,#f0eff2 100%);
+  color:var(--home-navy);font-family:var(--fuente-cuerpo);
 }
-.seleccion-home__contenido {
-  width: 100%;
-  max-width: 920px;
-  margin: 0 auto;
+.seleccion-home *{box-sizing:border-box}
+.seleccion-home__barra{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  min-height:86px;padding:15px clamp(16px,4.1vw,64px);
+  border-bottom:1px solid #e9e4e1;background:rgba(255,255,255,.78);
 }
-.seleccion-home__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.seleccion-home__barra-marca,.seleccion-home__barra-acciones{display:flex;align-items:center;gap:20px;min-width:0}
+.seleccion-home__marca{display:block;width:clamp(150px,17vw,228px);height:auto;max-height:50px;object-fit:contain}
+.seleccion-home__barra-separador{height:29px;width:1px;background:#d6d0cf;flex-shrink:0}
+.seleccion-home__barra-titulo{color:#566174;font-size:17px;white-space:nowrap}
+.seleccion-home__barra-acciones{gap:17px}
+.seleccion-home__administracion{position:relative;z-index:10}
+.seleccion-home__ajustes-enlace{
+  min-height:44px;display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:9px 15px;border:1px solid #e2dfe2;border-radius:13px;
+  background:#fff;color:var(--home-navy);font:700 13px/1.25 var(--fuente-cuerpo);
+  box-shadow:0 3px 12px rgba(23,36,59,.06);cursor:pointer;white-space:nowrap
 }
-.seleccion-home__marca {
-  display: block;
-  width: clamp(145px, 24vw, 191px);
-  max-height: 44px;
-  object-fit: contain;
-  object-position: left center;
+.seleccion-home__ajustes-enlace:hover{border-color:var(--home-orange);background:#fff9f3}
+.seleccion-home__ajustes-opciones{
+  position:absolute;right:0;top:calc(100% + 9px);width:min(270px,calc(100vw - 32px));
+  padding:7px;background:#fff;border:1px solid #e6e1dd;border-radius:13px;
+  box-shadow:0 14px 35px rgba(23,36,59,.16);z-index:20
 }
-.seleccion-home__cambiar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  gap: 7px;
-  min-height: 40px;
-  padding: 7px 12px;
-  border: 1px solid #f1e4d8;
-  border-radius: 999px;
-  background: #fff6ee;
-  color: #a84d15;
-  font: 600 12px/1.3 var(--fuente-cuerpo);
-  cursor: pointer;
-  box-shadow: 0 2px 9px rgba(120, 72, 36, .04);
+.seleccion-home__ajustes-opciones button{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  width:100%;min-height:44px;padding:10px 12px;background:transparent;border:0;
+  border-radius:9px;color:#29374d;font:650 13px/1.4 var(--fuente-cuerpo);text-align:left;cursor:pointer
 }
-.seleccion-home__cambiar:hover { background: #ffefdf; }
-.seleccion-home__introduccion {
-  margin: clamp(28px, 5vh, 48px) 0 22px;
+.seleccion-home__ajustes-opciones button:hover{background:#fff4e9}
+.seleccion-home__ajustes-opciones svg{width:16px;height:16px;flex:none;color:var(--enlace)}
+.seleccion-home__avatar{
+  display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;
+  border-radius:50%;background:#ffebdf;color:#944715;font:700 15px/1 var(--fuente-display)
 }
-.seleccion-home__introduccion h1 {
-  margin: 0;
-  font: 750 clamp(24px, 3.5vw, 31px)/1.18 var(--fuente-display);
-  letter-spacing: -.035em;
-  color: #18263a;
+.seleccion-home__contenido{width:min(100% - 2*clamp(16px,4.1vw,64px),1450px);margin:0 auto;padding:clamp(36px,5vh,54px) 0 36px}
+.seleccion-home__introduccion{margin:0 0 38px}
+.seleccion-home__acento{display:block;width:51px;height:6px;border-radius:99px;background:var(--home-orange);margin:0 0 15px}
+.seleccion-home__introduccion h1{
+  margin:0;color:var(--home-navy);font:800 clamp(27px,3.6vw,42px)/1.18 var(--fuente-display);
+  letter-spacing:-.035em
 }
-.seleccion-home__introduccion p {
-  margin: 5px 0 0;
-  color: #77808b;
-  font-size: 14px;
-  line-height: 1.4;
+.seleccion-home__introduccion h1 span{font-size:.8em}
+.seleccion-home__introduccion p{margin:8px 0 0;color:#465267;font-size:clamp(15px,1.5vw,19px);line-height:1.4}
+.seleccion-home__tarjetas{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;
+  gap:20px
 }
-.seleccion-home .seleccion-area-grid {
-  display: grid;
-  gap: 12px;
-  width: 100%;
+.seleccion-home__grupo{
+  min-width:0;border-radius:19px;background:#fff;
+  border:1px solid #eee9e7;box-shadow:0 9px 22px rgba(23,36,59,.075);
+  transition:box-shadow .18s,border-color .18s
 }
-.seleccion-home .seleccion-area-grid.vista-lista {
-  grid-template-columns: minmax(0, 1fr);
+.seleccion-home__grupo:hover,.seleccion-home__grupo.abierto{
+  border-color:#e8b18c;box-shadow:0 11px 28px rgba(23,36,59,.11)
 }
-.seleccion-home .seleccion-area-grid.vista-cuadricula {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.seleccion-home__grupo:first-child{border-color:var(--home-orange)}
+.seleccion-home__tarjeta{
+  position:relative;display:flex;align-items:flex-start;width:100%;min-height:190px;
+  gap:18px;padding:27px 26px 44px;
+  border:0;border-radius:19px;background:transparent;color:inherit;text-align:left;
+  cursor:pointer;font:inherit
 }
-.seleccion-home .seleccion-area-opcion.seleccion-home__tarjeta {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  width: 100%;
-  min-width: 0;
-  min-height: 90px;
-  gap: 12px;
-  padding: 16px 19px;
-  border: 1px solid #f0eae3;
-  border-radius: 17px;
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(48, 34, 22, .055);
-  text-align: left;
-  cursor: pointer;
-  color: #18263a;
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+.seleccion-home__icono{
+  display:grid;place-items:center;flex:0 0 69px;width:69px;height:69px;
+  border-radius:20px;color:#b44e18;background:#fff0e5
 }
-.seleccion-home .seleccion-area-opcion.seleccion-home__tarjeta:hover {
-  transform: translateY(-2px);
-  border-color: #f1c5a4;
-  box-shadow: 0 8px 24px rgba(48, 34, 22, .09);
+.seleccion-home__grupo--operacion .seleccion-home__icono{background:#e6f0ff;color:#2365b0}
+.seleccion-home__grupo--finanzas .seleccion-home__icono{background:#e7f5e6;color:#28793d}
+.seleccion-home__grupo--documental .seleccion-home__icono{background:#eee7fc;color:#654097}
+.seleccion-home__grupo--aprendizaje .seleccion-home__icono{background:#e5f2fe;color:#1d6595}
+.seleccion-home__detalle{display:flex;flex-direction:column;gap:10px;min-width:0;padding-top:4px}
+.seleccion-home__titulo{
+  color:var(--home-navy);font:800 clamp(17px,1.5vw,22px)/1.22 var(--fuente-display);
+  letter-spacing:-.025em;overflow-wrap:break-word
 }
-.seleccion-home .seleccion-area-opcion.seleccion-home__tarjeta:focus-visible,
-.seleccion-home__cambiar:focus-visible,
-.seleccion-home__salir:focus-visible {
-  outline: 3px solid #d5863b;
-  outline-offset: 3px;
+.seleccion-home__descripcion{color:#465267;font-size:clamp(13px,1.2vw,16px);line-height:1.45}
+.seleccion-home__flecha{
+  position:absolute;right:20px;bottom:20px;display:grid;place-items:center;
+  width:36px;height:36px;border-radius:50%;background:#fff0e7;color:#c75d21
 }
-.seleccion-home__detalle {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
+.seleccion-home__flecha svg{transition:transform .2s}
+.seleccion-home__flecha svg.girada{transform:rotate(90deg)}
+.seleccion-home__submodulos{padding:4px 15px 15px;border-top:1px solid #f0eae6}
+.seleccion-home__submodulos[hidden]{display:none}
+.seleccion-home__submodulo{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  width:100%;min-height:44px;padding:9px 12px;border:0;border-radius:9px;
+  background:transparent;color:#29374d;text-align:left;
+  font:650 13px/1.35 var(--fuente-cuerpo);cursor:pointer
 }
-.seleccion-home .seleccion-area-etiqueta {
-  display: block;
-  color: #d15b13;
-  font: 750 10px/1.35 var(--fuente-cuerpo);
-  letter-spacing: .025em;
-  text-transform: uppercase;
+.seleccion-home__submodulo:hover{background:#fff3e9}
+.seleccion-home__submodulo svg{flex:none;width:16px;height:16px;color:#c75d21}
+.seleccion-home__pie{margin-top:28px}
+.seleccion-home__salir{min-height:44px;border:0;background:transparent;color:var(--enlace);font:700 12px/1.3 var(--fuente-cuerpo);cursor:pointer}
+.seleccion-home button:focus-visible{outline:3px solid var(--borde-foco,#d5863b);outline-offset:3px}
+@media(max-width:1090px){
+  .seleccion-home__tarjetas{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+  .seleccion-home__tarjeta{min-height:162px;padding:22px 20px 44px}
 }
-.seleccion-home__titulo {
-  display: block;
-  margin-top: 3px;
-  color: #18263a;
-  font: 700 16px/1.28 var(--fuente-display);
-  letter-spacing: -.025em;
-  overflow-wrap: anywhere;
-}
-.seleccion-home__descripcion {
-  display: block;
-  margin-top: 5px;
-  color: #747c86;
-  font: 400 12.5px/1.37 var(--fuente-cuerpo);
-  overflow-wrap: anywhere;
-}
-.seleccion-home__flecha {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
-  margin-left: auto;
-  border-radius: 999px;
-  background: #fff4e9;
-  color: #c76b30;
-}
-.seleccion-home .vista-cuadricula .seleccion-home__tarjeta {
-  align-items: flex-start;
-  flex-direction: column;
-  min-height: 135px;
-  gap: 6px;
-  padding: 18px 18px 39px;
-}
-.seleccion-home .vista-cuadricula .seleccion-home__detalle {
-  flex: 1 1 auto;
-}
-.seleccion-home .vista-cuadricula .seleccion-home__flecha {
-  position: absolute;
-  right: 13px;
-  bottom: 13px;
-}
-.seleccion-home .vista-cuadricula .seleccion-home__descripcion { padding-right: 8px; }
-.seleccion-home__pie {
-  margin-top: 26px;
-  color: #8a8380;
-  font-size: 12px;
-}
-.seleccion-home__pie p { margin: 0 0 14px; }
-.seleccion-home__salir {
-  padding: 8px 0;
-  border: 0;
-  background: transparent;
-  color: #bc672c;
-  font: 700 11px/1.2 var(--fuente-cuerpo);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-@media (max-width: 719px) {
-  .seleccion-home { padding: 20px 14px 36px; }
-  .seleccion-home__introduccion { margin: 28px 3px 21px; }
-  .seleccion-home .seleccion-area-grid { gap: 10px; }
-  .seleccion-home .seleccion-area-opcion.seleccion-home__tarjeta { padding: 14px 15px; min-height: 90px; }
-  .seleccion-home .vista-lista .seleccion-home__tarjeta { gap: 10px; }
-  .seleccion-home .vista-cuadricula .seleccion-home__tarjeta { min-height: 148px; padding: 15px 13px 37px; }
-  .seleccion-home .vista-cuadricula .seleccion-home__titulo { font-size: 13.5px; }
-  .seleccion-home .vista-cuadricula .seleccion-home__descripcion { font-size: 11.5px; padding-right: 0; }
-  .seleccion-home .vista-cuadricula .seleccion-home__flecha { width: 24px; height: 24px; }
-  .seleccion-home__pie { padding-left: 3px; }
-}
-@media (max-width: 359px) {
-  .seleccion-home .seleccion-area-grid.vista-cuadricula { grid-template-columns: 1fr; }
-  .seleccion-home__marca { width: 128px; }
-  .seleccion-home__cambiar { padding: 8px; gap: 4px; font-size: 11px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .seleccion-home .seleccion-home__tarjeta { transition: none; }
-  .seleccion-home .seleccion-home__tarjeta:hover { transform: none; }
-}
-
-
-/* Las tres áreas son la acción primaria; administración es transversal. */
-.seleccion-home__administracion {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #eee2d6;
-}
-.seleccion-home__ajustes-enlace {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 13px;
-  padding: 13px 16px;
-  border: 1px solid #eee0d3;
-  border-radius: 14px;
-  background: #fff9f4;
-  color: #704a2e;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-.seleccion-home__ajustes-enlace:hover { background: #fff1e5; border-color: #e4c5ac; }
-.seleccion-home__ajustes-enlace:focus-visible { outline: 3px solid #d5863b; outline-offset: 3px; }
-.seleccion-home__ajustes-icono {
-  display: grid;
-  place-items: center;
-  width: 35px;
-  height: 35px;
-  flex: none;
-  border-radius: 11px;
-  background: #f7eadc;
-  font-size: 19px;
-}
-.seleccion-home__ajustes-titulo { font: 700 14px/1.4 var(--fuente-display); color: #5c4638; }
-.seleccion-home__ajustes-enlace > span:last-child { font-size: 25px; color: #b7794a; }
-
-
-/* Selector único: organización (áreas/módulos) y presentación (lista/cuadrícula). */
-.seleccion-home__selector-vistas {
-  position: relative;
-  flex: 0 0 auto;
-  z-index: 20;
-}
-.seleccion-home__selector-vistas .seleccion-home__cambiar {
-  min-height: 52px;
-  gap: 9px;
-  padding: 8px 12px;
-  text-align: left;
-}
-.seleccion-home__cambiar-etiqueta {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-.seleccion-home__cambiar-etiqueta strong {
-  font: 750 13px/1.2 var(--fuente-cuerpo);
-  color: #935326;
-  white-space: nowrap;
-}
-.seleccion-home__cambiar-etiqueta small {
-  font: 500 11px/1.25 var(--fuente-cuerpo);
-  color: #736a64;
-  white-space: nowrap;
-}
-.seleccion-home__cambiar > svg:first-child { flex: 0 0 18px; }
-.seleccion-home__cambiar > svg:last-child {
-  flex: 0 0 15px;
-  transition: transform .18s ease;
-}
-.seleccion-home__desplegable-abierto { transform: rotate(180deg); }
-.seleccion-home__menu-vistas {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 9px);
-  display: grid;
-  gap: 15px;
-  width: min(310px, calc(100vw - 28px));
-  padding: 16px;
-  border: 1px solid #ecded0;
-  border-radius: 17px;
-  background: #fffefd;
-  box-shadow: 0 14px 37px rgba(50, 40, 30, .16);
-  color: #18263a;
-}
-.seleccion-home__menu-vistas-cabecera {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 9px;
-}
-.seleccion-home__menu-vistas-cabecera strong {
-  font: 750 14px/1.3 var(--fuente-display);
-}
-.seleccion-home__menu-vistas-cabecera button {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  background: #fff4e8;
-  color: #985123;
-  font-size: 24px;
-  cursor: pointer;
-}
-.seleccion-home__grupo-vistas { display: grid; gap: 8px; }
-.seleccion-home__grupo-vistas > span {
-  font: 700 12px/1.4 var(--fuente-cuerpo);
-  color: #687078;
-}
-.seleccion-home__botones-vistas {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-.seleccion-home__botones-vistas button {
-  min-width: 0;
-  min-height: 43px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 9px 8px;
-  border: 1px solid #eee0d3;
-  border-radius: 10px;
-  background: #fff9f5;
-  color: #61666c;
-  font: 650 12px/1.3 var(--fuente-cuerpo);
-  cursor: pointer;
-  white-space: nowrap;
-}
-.seleccion-home__botones-vistas button.activo {
-  border-color: #e0bd9f;
-  background: #fff0e0;
-  color: #935326;
-  box-shadow: inset 0 0 0 1px #f3d9c0;
-}
-.seleccion-home__botones-vistas button:hover { background: #fff1e5; }
-.seleccion-home__botones-vistas button:focus-visible,
-.seleccion-home__menu-vistas-cabecera button:focus-visible {
-  outline: 2px solid #d5863b;
-  outline-offset: 2px;
-}
-@media (max-width: 719px) {
-  .seleccion-home__cabecera { gap: 9px; }
-  .seleccion-home__selector-vistas .seleccion-home__cambiar { gap: 7px; padding: 7px 10px; }
-  .seleccion-home__cambiar-etiqueta strong { font-size: 12px; }
-  .seleccion-home__cambiar-etiqueta small { font-size: 10px; }
-}
-@media (max-width: 359px) {
-  .seleccion-home__marca { width: 110px; }
-  .seleccion-home__selector-vistas .seleccion-home__cambiar { gap: 5px; padding: 7px; }
-  .seleccion-home__cambiar-etiqueta strong { font-size: 11px; }
-  .seleccion-home__cambiar-etiqueta small { font-size: 9px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .seleccion-home__cambiar > svg:last-child { transition: none; }
-}
-
-/* Campana visible en el Home sin empujar el selector fuera del teléfono. */
-.seleccion-home__cabecera > .campana-contenedor { flex:0 0 44px; }
-.seleccion-home__selector-vistas { margin-left:auto; }
-@media (max-width:719px) {
-  .seleccion-home__cabecera { gap:8px; }
-  .seleccion-home__marca { width:min(30vw,130px); }
-  .seleccion-home__selector-vistas .seleccion-home__cambiar { min-height:44px;gap:5px;padding:7px 8px; }
-  .seleccion-home__cambiar-etiqueta small { display:none; }
-  /* El menú de "Cambiar vista" también queda siempre dentro del teléfono. */
-  .seleccion-home__menu-vistas { right:-52px; }
-}
-@media (max-width:359px) {
-  .seleccion-home__marca { width:min(30vw,106px); }
-  .seleccion-home__cambiar > svg:first-child { display:none; }
-}
-
-
-/* Home principal: cinco áreas, mismo catálogo que el menú lateral.
-   Eliminar el selector visual libera el encabezado en teléfono. */
-.seleccion-home-areas .seleccion-home__cabecera{display:flex;align-items:center;justify-content:space-between}
-.seleccion-home-areas .seleccion-home__tarjetas.vista-cuadricula{
- display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:13px;align-items:stretch
-}
-.seleccion-home-areas .seleccion-home__tarjeta{height:100%;min-height:132px}
-.seleccion-home-areas .seleccion-home__administracion{margin-top:16px}
 @media(max-width:650px){
- .seleccion-home-areas .seleccion-home__tarjetas.vista-cuadricula{grid-template-columns:1fr;gap:9px}
- .seleccion-home-areas .seleccion-home__tarjeta{min-height:97px}
+  .seleccion-home__barra{min-height:68px;padding:11px 16px;gap:8px}
+  .seleccion-home__marca{width:clamp(118px,30vw,150px)}
+  .seleccion-home__barra-separador,.seleccion-home__barra-titulo{display:none}
+  .seleccion-home__barra-acciones{gap:7px}
+  .seleccion-home__ajustes-enlace{width:44px;height:44px;padding:10px}
+  .seleccion-home__ajustes-enlace span{display:none}
+  .seleccion-home__avatar{width:36px;height:36px;flex-basis:36px;font-size:12px}
+  .seleccion-home__contenido{width:calc(100% - 32px);padding:28px 0 26px}
+  .seleccion-home__introduccion{margin-bottom:23px}
+  .seleccion-home__acento{height:5px;width:41px;margin-bottom:12px}
+  .seleccion-home__introduccion h1{font-size:clamp(24px,6vw,30px)}
+  .seleccion-home__introduccion p{font-size:14px}
+  .seleccion-home__tarjetas{grid-template-columns:minmax(0,1fr);gap:12px}
+  .seleccion-home__tarjeta{min-height:124px;gap:14px;padding:19px 17px 40px}
+  .seleccion-home__icono{flex-basis:51px;width:51px;height:51px;border-radius:15px}
+  .seleccion-home__icono svg{width:25px;height:25px}
+  .seleccion-home__detalle{gap:5px}
+  .seleccion-home__titulo{font-size:17px}
+  .seleccion-home__descripcion{font-size:13px}
+  .seleccion-home__flecha{width:30px;height:30px;right:12px;bottom:12px}
 }
-
-
-/* Home principal compacto: el título de cada área es el único dato visible
-   hasta que la persona despliega sus destinos. Se mantiene el catálogo de
-   permisos compartido con el menú lateral. */
-.seleccion-home-areas .seleccion-home__tarjetas.vista-cuadricula {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-  max-width: 740px;
-  align-items: start;
+@media(max-width:359px){
+  .seleccion-home__marca{width:112px}
+  .seleccion-home__barra-acciones{gap:3px}
+  .seleccion-home__tarjeta{gap:11px;padding-left:13px;padding-right:12px}
+  .seleccion-home__titulo{font-size:15px}
 }
-.seleccion-home-areas .seleccion-home__grupo {
-  min-width: 0;
-  border: 1px solid #f0eae3;
-  border-radius: 14px;
-  background: #fff;
-  overflow: hidden;
-  box-shadow: 0 3px 12px rgba(48, 34, 22, .045);
-}
-.seleccion-home-areas .seleccion-area-grid.vista-cuadricula .seleccion-home__tarjeta {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  position: static;
-  width: 100%;
-  height: auto;
-  min-height: 58px;
-  padding: 10px 16px;
-  margin: 0;
-  gap: 12px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.seleccion-home-areas .seleccion-area-grid .seleccion-home__tarjeta:hover {
-  transform: none;
-  background: #fff8f1;
-  box-shadow: none;
-}
-.seleccion-home-areas .seleccion-home__titulo {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.3;
-  letter-spacing: -.02em;
-}
-.seleccion-home-areas .vista-cuadricula .seleccion-home__flecha {
-  position: static;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  margin-left: auto;
-  transform: rotate(90deg);
-  transition: transform .16s ease;
-}
-.seleccion-home-areas .seleccion-home__grupo.abierto .seleccion-home__flecha {
-  transform: rotate(-90deg);
-}
-.seleccion-home-areas .seleccion-home__submodulos {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 12px 9px;
-  border-top: 1px solid #f0eae3;
-}
-.seleccion-home-areas .seleccion-home__submodulos[hidden] { display: none; }
-.seleccion-home-areas .seleccion-home__submodulo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  min-height: 44px;
-  gap: 12px;
-  padding: 9px 10px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: #344154;
-  text-align: left;
-  font: 600 13px/1.35 var(--fuente-cuerpo);
-  cursor: pointer;
-}
-.seleccion-home-areas .seleccion-home__submodulo:hover { background: #fff4e9; }
-.seleccion-home-areas .seleccion-home__submodulo:focus-visible {
-  outline: 2px solid #d5863b;
-  outline-offset: -2px;
-}
-.seleccion-home-areas .seleccion-home__submodulo > span:last-child {
-  font-size: 20px;
-  color: #c76b30;
-}
-@media (max-width: 650px) {
-  .seleccion-home-areas { padding: 15px 14px 28px; }
-  .seleccion-home-areas .seleccion-home__introduccion { margin: 16px 3px 14px; }
-  .seleccion-home-areas .seleccion-home__tarjetas.vista-cuadricula {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 7px;
-  }
-  .seleccion-home-areas .seleccion-area-grid.vista-cuadricula .seleccion-home__tarjeta {
-    min-height: 56px;
-    padding: 10px 14px;
-  }
-  .seleccion-home-areas .vista-cuadricula .seleccion-home__titulo { font-size: 15px; }
-  .seleccion-home-areas .seleccion-home__administracion {
-    margin-top: 12px;
-    padding-top: 12px;
-  }
-  .seleccion-home-areas .seleccion-home__ajustes-enlace {
-    min-height: 56px;
-    padding: 9px 12px;
-  }
-  .seleccion-home-areas .seleccion-home__ajustes-enlace .seleccion-home__descripcion {
-    display: none;
-  }
-  .seleccion-home-areas .seleccion-home__ajustes-icono {
-    width: 30px;
-    height: 30px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .seleccion-home-areas .vista-cuadricula .seleccion-home__flecha { transition: none; }
-}
-
-/* Administración es un área independiente con enlaces directos. */
-.seleccion-home-areas .seleccion-home__ajustes-opciones {
-  display: flex;
-  flex-direction: column;
-  padding: 5px 12px 10px;
-  border: 1px solid #eee0d3;
-  border-top: 0;
-  border-radius: 0 0 12px 12px;
-  background: #fff;
-}
-.seleccion-home-areas .seleccion-home__ajustes-opciones[hidden] {
-  display: none;
+@media(prefers-reduced-motion:reduce){
+ .seleccion-home__grupo,.seleccion-home__flecha svg{transition:none}
 }
