@@ -55,20 +55,36 @@ test('La biblioteca conserva 202 fichas con referencias y 160 cápsulas automát
   }
 });
 
-test('Home compacto muestra solo nombre de área y despliega sus submódulos al tocar',()=>{
+test('Home aprobado: cinco tarjetas por área, ajustes superiores y destinos desplegables accesibles',()=>{
   const home=leer('src/paginas/SeleccionArea.jsx');
   const estilos=leer('src/paginas/SeleccionArea.css');
+  // Los enlaces y permisos son los del mismo catálogo del menú lateral.
+  assert.match(home,/areasDisponibles\(perfil\)/);
+  assert.match(home,/area\.enlaces\.map\(enlace=>/);
+  assert.match(home,/entrar\(area,enlace\.ruta\)/);
+  assert.match(home,/guardarArea\(area\.area\)/);
+  // Accesos plegables: uno abierto, estado y destino vinculados por ARIA.
   assert.match(home,/useState\(null\)/);
-  assert.match(home,/alternarArea\(area.id\)/);
-  assert.match(home,/aria-expanded=\{areaAbierta===area.id\}/);
-  assert.match(home,/hidden=\{areaAbierta!==area.id\}/);
-  assert.match(home,/area.enlaces.map\(enlace=>/);
-  assert.match(home,/entrar\(area,enlace.ruta\)/);
-  assert.doesNotMatch(home,/<span className="seleccion-home__descripcion">\{area.descripcion\}<\/span>/);
-  assert.doesNotMatch(home,/<span className="seleccion-area-etiqueta">\{area.etiqueta\}<\/span>/);
-  assert.match(estilos,/\.seleccion-home-areas \.seleccion-home__submodulos\[hidden\] \{ display: none; \}/);
-  assert.match(estilos,/\.seleccion-home-areas \.seleccion-area-grid\.vista-cuadricula \.seleccion-home__tarjeta \{/);
-  assert.match(estilos,/min-height: 56px/);
+  assert.match(home,/setAreaAbierta\(v=>v===area\.id\?null:area\.id\)/);
+  assert.match(home,/aria-expanded=\{abierta\}/);
+  assert.match(home,/aria-controls=\{'home-area-'\+area\.id\}/);
+  assert.match(home,/hidden=\{!abierta\}/);
+  assert.match(estilos,/\.seleccion-home__submodulos\[hidden\]\{display:none\}/);
+  // Administración se despliega en cabecera, con nombre accesible en móvil.
+  assert.match(home,/className="seleccion-home__barra"/);
+  assert.match(home,/aria-label="Administración y ajustes"/);
+  assert.match(home,/enlacesAdministracion\(perfil\)/);
+  assert.match(home,/setAdministracionAbierta\(v=>!v\)/);
+  assert.match(home,/id="home-administracion"/);
+  // Layout 3/2/1 y tamaño táctil compatible con teléfonos.
+  assert.match(estilos,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(estilos,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(estilos,/grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(estilos,/min-height:44px/);
+  assert.match(estilos,/button:focus-visible/);
+  assert.match(home,/PRESENTACION\[area\.id\]/);
+  assert.match(home,/<IconoArea tipo=\{vista\.icono\}/);
+  assert.doesNotMatch(home,/Cambiar vista|Por módulos|Por áreas|mostrarOpcionesVista/);
 });
 
 test('Cada área contiene opciones directas sin submenús intermedios',()=>{
