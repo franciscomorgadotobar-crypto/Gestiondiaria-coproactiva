@@ -128,6 +128,40 @@ try {
     await ctx.close();
   }
 
+  // El Home web comparte la compacidad de móvil: sin segunda fila vacía
+  // ni flechas aisladas en la esquina inferior de cada tarjeta.
+  for(const ancho of [768,1280,1600]){
+    const {ctx,page}=await crear({ancho,alto:900});
+    const medidas=await page.locator('.seleccion-home__tarjeta').evaluateAll(els=>els.map(el=>{
+      const box=el.getBoundingClientRect();
+      const icon=el.querySelector('.seleccion-home__icono')?.getBoundingClientRect();
+      const arrow=el.querySelector('.seleccion-home__flecha')?.getBoundingClientRect();
+      const text=el.querySelector('.seleccion-home__detalle')?.getBoundingClientRect();
+      const center=r=>r.top+r.height/2;
+      return {
+        titulo:el.querySelector('.seleccion-home__titulo')?.textContent,
+        altura:box.height,
+        desfaseIcono:icon?Math.abs(center(icon)-center(box)):999,
+        desfaseFlecha:arrow?Math.abs(center(arrow)-center(box)):999,
+        textoDerecha:text?.right,
+        flechaIzquierda:arrow?.left
+      };
+    }));
+    assert.equal(medidas.length,5,'Home debe conservar las cinco tarjetas');
+    for(const card of medidas){
+      assert.ok(card.altura<=160,'Tarjeta web demasiado alta a '+ancho+'px: '+JSON.stringify(card));
+      assert.ok(card.desfaseIcono<=4,'Icono descentrado a '+ancho+'px: '+JSON.stringify(card));
+      assert.ok(card.desfaseFlecha<=4,'Flecha descentrada a '+ancho+'px: '+JSON.stringify(card));
+      assert.ok(card.textoDerecha<=card.flechaIzquierda+2,
+        'Texto superpuesto a flecha a '+ancho+'px: '+JSON.stringify(card));
+    }
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),
+      'Desbordamiento horizontal en web a '+ancho+'px');
+    if(ancho===1280)await page.screenshot({path:'artifacts/ui/home-web-compacto-1280.png',fullPage:false});
+    console.log('Home web compacto · '+ancho+'px: OK');
+    await ctx.close();
+  }
+
   // Comercial permite volver desde cualquier sección a Home principal.
   {
     const {ctx,page}=await crear();
