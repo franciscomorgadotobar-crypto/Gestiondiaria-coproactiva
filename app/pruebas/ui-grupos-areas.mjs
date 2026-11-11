@@ -100,11 +100,14 @@ try {
       const b=el.getBoundingClientRect();
       const arrow=el.querySelector('.seleccion-home__flecha')?.getBoundingClientRect();
       const texto=el.querySelector('.seleccion-home__detalle')?.getBoundingClientRect();
+      const descripcion=el.querySelector('.seleccion-home__descripcion');
       return {height:b.height,arrowOffset:arrow?Math.abs((arrow.top+arrow.height/2)-(b.top+b.height/2)):100,
-        textoDerecha:texto?.right,arrowIzquierda:arrow?.left};
+        textoDerecha:texto?.right,arrowIzquierda:arrow?.left,
+        descripcionOculta:descripcion?getComputedStyle(descripcion).display==='none':false};
     }));
     for(const card of tarjetas){
-      assert.ok(card.height<=138,'Tarjeta móvil demasiado alta: '+JSON.stringify(card));
+      assert.ok(card.height<=82,'Tarjeta móvil debe ser una fila compacta: '+JSON.stringify(card));
+      assert.equal(card.descripcionOculta,true,'El detalle se muestra al desplegar el área');
       assert.ok(card.arrowOffset<=4,'Flecha desalineada verticalmente: '+JSON.stringify(card));
       assert.ok(card.textoDerecha<=card.arrowIzquierda+2,
         'La flecha se superpone al texto: '+JSON.stringify(card));
