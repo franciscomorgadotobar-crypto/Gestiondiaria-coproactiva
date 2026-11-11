@@ -114,27 +114,28 @@
   .seleccion-home__ajustes-enlace{width:44px;height:44px;padding:10px}
   .seleccion-home__ajustes-enlace span{display:none}
   .seleccion-home__avatar{width:36px;height:36px;flex-basis:36px;font-size:12px}
-  .seleccion-home__contenido{width:calc(100% - 32px);padding:24px 0 18px}
-  .seleccion-home__introduccion{margin-bottom:18px}
+  .seleccion-home__contenido{width:calc(100% - 32px);padding:18px 0 14px}
+  .seleccion-home__introduccion{margin-bottom:14px}
   .seleccion-home__acento{height:5px;width:41px;margin-bottom:12px}
   .seleccion-home__introduccion h1{font-size:clamp(24px,6vw,30px)}
   .seleccion-home__introduccion p{font-size:14px}
-  .seleccion-home__tarjetas{grid-template-columns:minmax(0,1fr);gap:10px}
-  /* En móvil: icono, texto y flecha comparten una sola fila sin vacío inferior. */
-  .seleccion-home__grupo,.seleccion-home__tarjeta{border-radius:15px}
+  .seleccion-home__tarjetas{grid-template-columns:minmax(0,1fr);gap:8px}
+  /* Móvil: una fila compacta. El detalle aparece al desplegar el área;
+     ocultar la descripción de marketing libera el espacio vertical. */
+  .seleccion-home__grupo,.seleccion-home__tarjeta{border-radius:13px}
   .seleccion-home__tarjeta{
-    min-height:92px;align-items:center;gap:12px;padding:13px 14px
+    min-height:66px;align-items:center;gap:10px;padding:8px 12px
   }
-  .seleccion-home__icono{flex-basis:48px;width:48px;height:48px;border-radius:14px}
-  .seleccion-home__icono svg{width:24px;height:24px}
-  .seleccion-home__detalle{flex:1 1 auto;gap:4px;padding-top:0}
+  .seleccion-home__icono{flex-basis:40px;width:40px;height:40px;border-radius:12px}
+  .seleccion-home__icono svg{width:22px;height:22px}
+  .seleccion-home__detalle{flex:1 1 auto;gap:0;padding-top:0}
   .seleccion-home__titulo{font-size:16px;line-height:1.22}
-  .seleccion-home__descripcion{font-size:12.5px;line-height:1.35}
+  .seleccion-home__descripcion{display:none}
   .seleccion-home__flecha{
-    position:static;flex:0 0 30px;width:30px;height:30px;
+    position:static;flex:0 0 28px;width:28px;height:28px;
     margin-left:auto;align-self:center
   }
-  .seleccion-home__pie{margin-top:14px}
+  .seleccion-home__pie{margin-top:10px}
 }
 @media(max-width:359px){
   .seleccion-home__marca{width:112px}
