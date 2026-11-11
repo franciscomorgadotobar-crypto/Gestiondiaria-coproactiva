@@ -59,7 +59,7 @@ export default function SeleccionArea(){
       <div className="seleccion-home__barra-acciones">
         <div className="seleccion-home__administracion">
           <button type="button" className="seleccion-home__ajustes-enlace"
-            aria-expanded={administracionAbierta} aria-controls="home-administracion"
+            aria-label="Administración y ajustes" aria-expanded={administracionAbierta} aria-controls="home-administracion"
             onClick={()=>setAdministracionAbierta(v=>!v)}>
             <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3.5 14 5l2.4-.4 1.1 2.2 2.3 1-.3 2.5 1.5 1.7-1.5 1.8.3 2.5-2.3 1-1.1 2.2-2.4-.4-2 1.4-2-1.4-2.4.4-1.1-2.2-2.3-1 .3-2.5L3 12l1.5-1.7-.3-2.5 2.3-1 1.1-2.2L10 5Z"/><circle cx="12" cy="12" r="3"/></svg>
             <span>Administración y ajustes</span>
