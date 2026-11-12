@@ -94,23 +94,26 @@ try {
     await page.reload({waitUntil:'domcontentloaded'});
     await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
-    // Regresión de tarjetas compactas: iconos, texto y flecha centrados, sin
-    // altura desperdiciada ni contenido recortado en el Home móvil.
+    // Primer mockup aprobado: sin flecha, con descripción visible y sin vacío.
     const tarjetas=await page.locator('.seleccion-home__tarjeta').evaluateAll(els=>els.map(el=>{
       const b=el.getBoundingClientRect();
-      const arrow=el.querySelector('.seleccion-home__flecha')?.getBoundingClientRect();
-      const texto=el.querySelector('.seleccion-home__detalle')?.getBoundingClientRect();
+      const icono=el.querySelector('.seleccion-home__icono')?.getBoundingClientRect();
+      const detalle=el.querySelector('.seleccion-home__detalle')?.getBoundingClientRect();
       const descripcion=el.querySelector('.seleccion-home__descripcion');
-      return {height:b.height,arrowOffset:arrow?Math.abs((arrow.top+arrow.height/2)-(b.top+b.height/2)):100,
-        textoDerecha:texto?.right,arrowIzquierda:arrow?.left,
-        descripcionOculta:descripcion?getComputedStyle(descripcion).display==='none':false};
+      const d=descripcion?.getBoundingClientRect();
+      return {
+        altura:b.height, tieneFlecha:!!el.querySelector('.seleccion-home__flecha'),
+        descripcionVisible:!!d&&d.height>0&&getComputedStyle(descripcion).display!=='none',
+        textoDentro:!!detalle&&detalle.right<=b.right-8&&detalle.left>=b.left,
+        iconoCentrado:!!icono&&Math.abs((icono.top+icono.height/2)-(b.top+b.height/2))<=6
+      };
     }));
     for(const card of tarjetas){
-      assert.ok(card.height<=82,'Tarjeta móvil debe ser una fila compacta: '+JSON.stringify(card));
-      assert.equal(card.descripcionOculta,true,'El detalle se muestra al desplegar el área');
-      assert.ok(card.arrowOffset<=4,'Flecha desalineada verticalmente: '+JSON.stringify(card));
-      assert.ok(card.textoDerecha<=card.arrowIzquierda+2,
-        'La flecha se superpone al texto: '+JSON.stringify(card));
+      assert.ok(card.altura<=132,'Tarjeta móvil demasiado alta: '+JSON.stringify(card));
+      assert.equal(card.tieneFlecha,false,'El mockup aprobado no tiene flecha');
+      assert.equal(card.descripcionVisible,true,'La descripción debe permanecer visible');
+      assert.equal(card.textoDentro,true,'El texto debe quedar dentro de la tarjeta');
+      assert.equal(card.iconoCentrado,true,'El icono debe estar centrado');
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
     await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
@@ -131,37 +134,35 @@ try {
     await ctx.close();
   }
 
-  // El Home web comparte la compacidad de móvil: sin segunda fila vacía
-  // ni flechas aisladas en la esquina inferior de cada tarjeta.
+  // Las tarjetas web/tablet también conservan el mockup sin flechas.
   for(const ancho of [768,1280,1600]){
     const {ctx,page}=await crear({ancho,alto:900});
     const medidas=await page.locator('.seleccion-home__tarjeta').evaluateAll(els=>els.map(el=>{
       const box=el.getBoundingClientRect();
-      const icon=el.querySelector('.seleccion-home__icono')?.getBoundingClientRect();
-      const arrow=el.querySelector('.seleccion-home__flecha')?.getBoundingClientRect();
-      const text=el.querySelector('.seleccion-home__detalle')?.getBoundingClientRect();
+      const icono=el.querySelector('.seleccion-home__icono')?.getBoundingClientRect();
+      const texto=el.querySelector('.seleccion-home__detalle')?.getBoundingClientRect();
+      const descripcion=el.querySelector('.seleccion-home__descripcion')?.getBoundingClientRect();
       const center=r=>r.top+r.height/2;
       return {
-        titulo:el.querySelector('.seleccion-home__titulo')?.textContent,
         altura:box.height,
-        desfaseIcono:icon?Math.abs(center(icon)-center(box)):999,
-        desfaseFlecha:arrow?Math.abs(center(arrow)-center(box)):999,
-        textoDerecha:text?.right,
-        flechaIzquierda:arrow?.left
+        desfaseIcono:icono?Math.abs(center(icono)-center(box)):999,
+        tieneFlecha:!!el.querySelector('.seleccion-home__flecha'),
+        descripcionVisible:!!descripcion&&descripcion.height>0,
+        textoDentro:!!texto&&texto.right<=box.right-8
       };
     }));
     assert.equal(medidas.length,5,'Home debe conservar las cinco tarjetas');
     for(const card of medidas){
       assert.ok(card.altura<=160,'Tarjeta web demasiado alta a '+ancho+'px: '+JSON.stringify(card));
-      assert.ok(card.desfaseIcono<=4,'Icono descentrado a '+ancho+'px: '+JSON.stringify(card));
-      assert.ok(card.desfaseFlecha<=4,'Flecha descentrada a '+ancho+'px: '+JSON.stringify(card));
-      assert.ok(card.textoDerecha<=card.flechaIzquierda+2,
-        'Texto superpuesto a flecha a '+ancho+'px: '+JSON.stringify(card));
+      assert.ok(card.desfaseIcono<=6,'Icono descentrado a '+ancho+'px: '+JSON.stringify(card));
+      assert.equal(card.tieneFlecha,false,'Sin flechas en las tarjetas web');
+      assert.equal(card.descripcionVisible,true,'Descripción visible en web');
+      assert.equal(card.textoDentro,true,'Texto recortado en web');
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),
       'Desbordamiento horizontal en web a '+ancho+'px');
     if(ancho===1280)await page.screenshot({path:'artifacts/ui/home-web-compacto-1280.png',fullPage:false});
-    console.log('Home web compacto · '+ancho+'px: OK');
+    console.log('Home primer mockup sin flechas · '+ancho+'px: OK');
     await ctx.close();
   }
 

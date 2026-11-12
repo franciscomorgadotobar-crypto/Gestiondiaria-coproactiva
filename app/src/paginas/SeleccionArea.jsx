@@ -91,7 +91,7 @@ export default function SeleccionArea(){
               <span className="seleccion-home__icono"><IconoArea tipo={vista.icono}/></span>
               <span className="seleccion-home__detalle"><strong className="seleccion-home__titulo">{area.titulo}</strong>
                 <span className="seleccion-home__descripcion">{vista.texto}</span></span>
-              <span className="seleccion-home__flecha"><Flecha abierta={abierta}/></span>
+
             </button>
             <div id={'home-area-'+area.id} className="seleccion-home__submodulos" hidden={!abierta}>
               {area.enlaces.map(enlace=><button key={enlace.ruta} className="seleccion-home__submodulo" type="button" onClick={()=>entrar(area,enlace.ruta)}>
