@@ -63,32 +63,25 @@
 }
 .seleccion-home__grupo:first-child{border-color:var(--home-orange)}
 .seleccion-home__tarjeta{
-  position:relative;display:flex;align-items:center;width:100%;min-height:112px;
-  gap:13px;padding:17px 19px;
+  position:relative;display:flex;align-items:center;width:100%;min-height:100px;
+  gap:14px;padding:15px 17px;
   border:0;border-radius:19px;background:transparent;color:inherit;text-align:left;
   cursor:pointer;font:inherit
 }
 .seleccion-home__icono{
-  display:grid;place-items:center;flex:0 0 58px;width:58px;height:58px;
+  display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;
   border-radius:16px;color:#b44e18;background:#fff0e5
 }
 .seleccion-home__grupo--operacion .seleccion-home__icono{background:#e6f0ff;color:#2365b0}
 .seleccion-home__grupo--finanzas .seleccion-home__icono{background:#e7f5e6;color:#28793d}
 .seleccion-home__grupo--documental .seleccion-home__icono{background:#eee7fc;color:#654097}
 .seleccion-home__grupo--aprendizaje .seleccion-home__icono{background:#e5f2fe;color:#1d6595}
-.seleccion-home__detalle{display:flex;flex:1 1 auto;flex-direction:column;gap:6px;min-width:0;padding-top:0}
+.seleccion-home__detalle{display:flex;flex:1 1 auto;flex-direction:column;gap:5px;min-width:0;padding-top:0}
 .seleccion-home__titulo{
   color:var(--home-navy);font:800 clamp(17px,1.3vw,19px)/1.24 var(--fuente-display);
   letter-spacing:-.025em;overflow-wrap:break-word
 }
 .seleccion-home__descripcion{color:#465267;font-size:clamp(13px,1vw,14px);line-height:1.4}
-.seleccion-home__flecha{
-  position:static;display:grid;place-items:center;flex:0 0 32px;
-  width:32px;height:32px;margin-left:auto;align-self:center;
-  border-radius:50%;background:#fff0e7;color:#c75d21
-}
-.seleccion-home__flecha svg{transition:transform .2s}
-.seleccion-home__flecha svg.girada{transform:rotate(90deg)}
 .seleccion-home__submodulos{padding:4px 15px 15px;border-top:1px solid #f0eae6}
 .seleccion-home__submodulos[hidden]{display:none}
 .seleccion-home__submodulo{
@@ -104,7 +97,7 @@
 .seleccion-home button:focus-visible{outline:3px solid var(--borde-foco,#d5863b);outline-offset:3px}
 @media(max-width:1090px){
   .seleccion-home__tarjetas{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
-  .seleccion-home__tarjeta{min-height:108px;padding:16px 18px}
+  .seleccion-home__tarjeta{min-height:98px;padding:14px 16px}
 }
 @media(max-width:650px){
   .seleccion-home__barra{min-height:68px;padding:11px 16px;gap:8px}
@@ -120,21 +113,17 @@
   .seleccion-home__introduccion h1{font-size:clamp(24px,6vw,30px)}
   .seleccion-home__introduccion p{font-size:14px}
   .seleccion-home__tarjetas{grid-template-columns:minmax(0,1fr);gap:8px}
-  /* Móvil: una fila compacta. El detalle aparece al desplegar el área;
-     ocultar la descripción de marketing libera el espacio vertical. */
-  .seleccion-home__grupo,.seleccion-home__tarjeta{border-radius:13px}
+  /* Primer mockup aprobado: sin flechas, icono y bloque de dos líneas,
+     sin espacio sobrante. La altura se adapta al texto, nunca lo recorta. */
+  .seleccion-home__grupo,.seleccion-home__tarjeta{border-radius:14px}
   .seleccion-home__tarjeta{
-    min-height:66px;align-items:center;gap:10px;padding:8px 12px
+    min-height:76px;align-items:center;gap:12px;padding:11px 13px
   }
-  .seleccion-home__icono{flex-basis:40px;width:40px;height:40px;border-radius:12px}
-  .seleccion-home__icono svg{width:22px;height:22px}
-  .seleccion-home__detalle{flex:1 1 auto;gap:0;padding-top:0}
+  .seleccion-home__icono{flex-basis:46px;width:46px;height:46px;border-radius:13px}
+  .seleccion-home__icono svg{width:24px;height:24px}
+  .seleccion-home__detalle{flex:1 1 auto;gap:4px;min-width:0;padding-top:0}
   .seleccion-home__titulo{font-size:16px;line-height:1.22}
-  .seleccion-home__descripcion{display:none}
-  .seleccion-home__flecha{
-    position:static;flex:0 0 28px;width:28px;height:28px;
-    margin-left:auto;align-self:center
-  }
+  .seleccion-home__descripcion{display:block;font-size:12.5px;line-height:1.35;overflow-wrap:break-word}
   .seleccion-home__pie{margin-top:10px}
 }
 @media(max-width:359px){
@@ -144,5 +133,5 @@
   .seleccion-home__titulo{font-size:15px}
 }
 @media(prefers-reduced-motion:reduce){
- .seleccion-home__grupo,.seleccion-home__flecha svg{transition:none}
+ .seleccion-home__grupo{transition:none}
 }
