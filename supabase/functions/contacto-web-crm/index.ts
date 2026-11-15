@@ -54,6 +54,14 @@ function response(obj: unknown, status: number, origin: string) {
  }});
 }
 const normal = (v: unknown,max:number) => typeof v==='string'?v.trim().slice(0,max):'';
+// Teléfonos de relleno que pasan la validación chilena pero no son de nadie:
+// +56 9 1234 5678, +56 9 8765 4321, +56 9 9999 9999, +56 9 0000 0000, etc.
+// Se revisan los 8 dígitos que siguen al prefijo (9 o 2-7).
+function telefonoDeRelleno(tel: string) {
+ const resto = tel.slice(1);
+ if (/^(\d)\1{7}$/.test(resto)) return true;
+ return '01234567890123456789'.includes(resto) || '98765432109876543210'.includes(resto);
+}
 async function sha(s:string) {
  const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
  return Array.from(new Uint8Array(hash),v=>v.toString(16).padStart(2,'0')).join('');
@@ -81,6 +89,10 @@ Deno.serve(async req => {
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))return response({ok:false,errores:['Correo electrónico inválido']},400,origin);
   const tel=telefono.replace(/^\+?56/,'');
   if(!/^[2-79][0-9]{8}$/.test(tel))return response({ok:false,errores:['Teléfono chileno inválido']},400,origin);
+  if(telefonoDeRelleno(tel)){
+   console.log('Formulario web rechazado: teléfono de relleno');
+   return response({ok:false,errores:['Ingresa un teléfono real para poder contactarte.']},400,origin);
+  }
   if(body.privacy!==true)return response({ok:false,errores:['Debes aceptar la política de privacidad.']},400,origin);
   const secret=Deno.env.get('WEB_FORM_TURNSTILE_SECRET');
   if(secret) {
