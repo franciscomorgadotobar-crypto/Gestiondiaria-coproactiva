@@ -31,7 +31,7 @@ Si hay dos reglas contradictorias, se modifica la fuente original en lugar de a�
 1. Leer este contrato y localizar el componente aprobado más parecido.
 2. Reutilizar las variables CSS existentes en vez de inventar estilos duplicados.
 3. Ejecutar la prueba estática y **la prueba geométrica de Chromium sobre la UI renderizada**.
-4. Pasar la batería completa en 320/360/390/412/768/1280 px para Pipeline, Documentos, Propiedades y SEO.
+4. Pasar la batería completa en 320/360/390/412/768/1280 px para Pipeline, Documentos, Propiedades, SEO y Jarvis.
 5. Si una prueba falla, corregir la causa y añadir regresión. No desactivar test ni ocultar el desborde.
 6. Revisar las capturas artifacts/ui/contrato-*.png en los artifacts de GitHub Actions y confirmar legibilidad general.
 7. Si se añade un módulo, incorporar su ruta a la matriz de la prueba visual.

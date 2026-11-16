@@ -24,7 +24,14 @@ const rutas=[
  {ruta:'/pipeline',nombre:'Pipeline comercial',slug:'pipeline',card:'.pipeline-indicador'},
  {ruta:'/documentos',nombre:'Gestor documental',slug:'documentos',card:'.documentos-plantilla'},
  {ruta:'/propiedades',nombre:'Propiedades',slug:'propiedades',card:'.propiedades-sitio'},
- {ruta:'/seo',nombre:'SEO y Analítica',slug:'seo',card:'.seo-exec-kpi'}
+ {ruta:'/seo',nombre:'SEO y Analítica',slug:'seo',card:'.seo-exec-kpi'},
+ // Jarvis es transversal: no usa la raíz ni la etiqueta del área Comercial.
+ {ruta:'/jarvis',nombre:'Jarvis',slug:'jarvis',card:'.jarvis-indicador',raiz:'.jarvis',sinEtiqueta:true}
+];
+const AGENDA_QA=[
+ {clave:'qa-1',ambito:'operacion',tipo:'compromiso',titulo:'Recepción documental del proyecto con un título deliberadamente extenso para forzar el ajuste de línea',detalle:'En ejecución · 64% de avance · Responsable de prueba',comunidad_id:null,comunidad:'Condominio de prueba con nombre largo (Inmobiliaria)',prospecto_id:null,fecha:'2026-11-10',dias:-5,urgencia:'vencido',accion:'Registrar avance o cerrar el compromiso',ruta:'/compromisos'},
+ {clave:'qa-2',ambito:'comercial',tipo:'prospecto',titulo:'Hacer seguimiento a la propuesta',detalle:'Etapa: propuesta',comunidad_id:null,comunidad:null,prospecto_id:null,fecha:'2026-11-15',dias:0,urgencia:'hoy',accion:'Hacer seguimiento a la propuesta',ruta:'/pipeline'},
+ {clave:'qa-3',ambito:'legal',tipo:'brecha_ciclo',titulo:'Asamblea ordinaria anual',detalle:'Sin fecha registrada · Ley 21.442, artículo 14',comunidad_id:null,comunidad:'Condominio de prueba',prospecto_id:null,fecha:null,dias:null,urgencia:'brecha',accion:'Registrar la última o la próxima fecha, o marcar que no aplica',ruta:'/jarvis?vista=ciclo'}
 ];
 const ANCHOS=[320,360,390,412,768,1280];
 const MARGEN=12;
@@ -42,8 +49,8 @@ function dentro(r,w,etiqueta){
 async function verificar(page,vista,width){
  await page.getByRole('heading',{name:new RegExp(vista.nombre,'i')}).first().waitFor({timeout:16000});
  await page.waitForTimeout(100);
- const info=await page.evaluate(({slug,card})=>{
-  const root=document.querySelector('.comercial-'+slug);
+ const info=await page.evaluate(({slug,card,raiz})=>{
+  const root=document.querySelector(raiz||'.comercial-'+slug);
   const title=root?.querySelector('h1');
   const header=root?.querySelector('.documentos-gestor-cabecera, .modulo-cabecera');
   const eyebrow=root?.querySelector('.comercial-eyebrow');
@@ -65,13 +72,13 @@ async function verificar(page,vista,width){
    buttons:docButtons.map(px),filters:filters?{width:filters.clientWidth,scrollWidth:filters.scrollWidth}:null,
    headings:[...root?.querySelectorAll('h1')||[]].map(e=>e.textContent)
   };
- },{slug:vista.slug,card:vista.card});
+ },{slug:vista.slug,card:vista.card,raiz:vista.raiz});
  const label=vista.slug+' @ '+width+'px';
  assert.equal(info.route,vista.ruta,label+' ruta equivocada '+fmt(info));
  assert.ok(info.root,label+' no montó el módulo');
  assert.ok(info.scrollWidth<=width+2,label+' desbordamiento del documento '+fmt(info));
  dentro(info.title,width,label+' título');
- dentro(info.eyebrow,width,label+' etiqueta');
+ if(!vista.sinEtiqueta)dentro(info.eyebrow,width,label+' etiqueta');
  if(info.first)dentro(info.first,width,label+' primera tarjeta');
  if(vista.slug==='documentos'){
   dentro(info.search,width,label+' buscador');
@@ -101,7 +108,8 @@ async function verificar(page,vista,width){
 }
 
 await mkdir('artifacts/ui',{recursive:true});
-const browser=await chromium.launch({headless:true});
+// UI_QA_CHROME permite usar un Chrome ya instalado cuando no se descargó el de Playwright.
+const browser=await chromium.launch({headless:true,executablePath:process.env.UI_QA_CHROME||undefined});
 try{
  for(const width of ANCHOS){
   const ctx=await browser.newContext({viewport:{width,height:860},
@@ -116,6 +124,7 @@ try{
     headers:{'content-range':'0-0/*'},body:JSON.stringify(body)});
    if(path.includes('/auth/v1/user'))return json(user);
    if(path.includes('/rest/v1/perfiles'))return json(url.searchParams.has('id')?perfil:[perfil]);
+   if(path.includes('/rest/v1/rpc/jarvis_agenda'))return json(AGENDA_QA);
    if(path.includes('/functions/v1/correo-archivos'))return json({ok:true,archivos:[]});
    if(path.includes('/functions/v1/'))return json({
     disponible:false,searchConsole:{disponible:false},analytics:{disponible:false},

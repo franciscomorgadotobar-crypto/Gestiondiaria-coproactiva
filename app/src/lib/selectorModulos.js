@@ -32,6 +32,10 @@ export function modulosDisponibles(perfil) {
   // (commit histórico c99a7bd). Los submódulos se navegan DENTRO de cada
   // módulo principal y no se presentan como tarjetas independientes.
   const destinos = [
+    // Jarvis va primero: es la lectura transversal de todas las áreas.
+    { id:'jarvis', titulo:'Jarvis', etiqueta:'ANTICIPACIÓN',
+      descripcion:'Lo que viene y lo que hay que hacer en toda la gestión.',
+      ruta:'/jarvis', area:null, visible:comercial },
     { id:'crm', titulo:'Gestión comercial', etiqueta:'CRM',
       descripcion:'Leads, pipeline y diagnóstico comercial de prospectos.',
       ruta:'/pipeline', area:'comercial', visible:comercial },

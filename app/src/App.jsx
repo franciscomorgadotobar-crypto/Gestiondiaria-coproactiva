@@ -48,6 +48,8 @@ const SEO = lazy(() => import('./paginas/panel/SEO'));
 const Propuestas = lazy(() => import('./paginas/panel/Propuestas'));
 const GestorDocumental = lazy(() => import('./paginas/panel/GestorDocumental'));
 const DocumentoEditor = lazy(() => import('./paginas/panel/DocumentoEditor'));
+// Jarvis cruza todas las áreas: se descarga al entrar, no en el arranque.
+const Jarvis = lazy(() => import('./paginas/panel/Jarvis'));
 // Importar plantillas desde Excel es de oficina; el lector de Excel, además,
 // se carga recién al usarlo (ver lib/excelPlantillas.js).
 const ImportarPlantillas = lazy(() => import('./paginas/panel/ImportarPlantillas'));
@@ -230,6 +232,7 @@ export default function App() {
           <VistaCliente/>
         </Suspense></Interna>
       } />
+      <Route path="/jarvis" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando Jarvis…</p>}><Jarvis /></Suspense></SoloComercial></Interna>} />
       <Route path="/compromisos" element={<Interna><CompromisosGeneral /></Interna>} />
       <Route path="/plantillas-correo" element={<Interna><PlantillasCorreo /></Interna>} />
       <Route path="/conocimientos" element={<Interna><Suspense fallback={<p className="cargando">Cargando biblioteca…</p>}><Conocimientos /></Suspense></Interna>} />
