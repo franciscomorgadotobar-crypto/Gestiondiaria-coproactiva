@@ -196,6 +196,9 @@ jobs:
       - name: Contrato visual real en Chromium (320, 360, 390, 412, 768 y 1280 px)
         working-directory: app
         run: node pruebas/ui-contrato-diseno.mjs
+      - name: Validar geometría de las cuatro vistas de Jarvis
+        working-directory: app
+        run: node pruebas/ui-jarvis.mjs
       - name: Revisar pantallas homologadas en navegador móvil y escritorio
         working-directory: app
         run: node pruebas/ui-homologacion-modulos.mjs
