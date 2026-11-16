@@ -121,6 +121,9 @@ jobs:
       - name: Validar selector por áreas y por módulos con permisos
         working-directory: app
         run: node --test pruebas/selector-vistas.test.js
+      - name: Validar Jarvis (agenda, ciclo y permisos)
+        working-directory: app
+        run: node --test pruebas/jarvis.test.js
       - name: Validar biblioteca educativa y rotación sin repeticiones
         working-directory: app
         run: node --test pruebas/conocimientos.test.js
@@ -236,6 +239,9 @@ jobs:
       - name: Contrato visual real en Chromium (320, 360, 390, 412, 768 y 1280 px)
         working-directory: app
         run: node pruebas/ui-contrato-diseno.mjs
+      - name: Validar geometría de las cuatro vistas de Jarvis
+        working-directory: app
+        run: node pruebas/ui-jarvis.mjs
       - name: Verificar Compromisos en PC y móvil con 24 registros simulados
         working-directory: app
         run: node pruebas/ui-compromisos-escritorio.mjs

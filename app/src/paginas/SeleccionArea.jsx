@@ -8,6 +8,7 @@ import Campana from '../componentes/Campana';
 import './SeleccionArea.css';
 
 const PRESENTACION={
+  jarvis:{icono:'jarvis',texto:'Lo que viene y lo que hay que hacer en toda la gestión.'},
   comercial:{icono:'comercial',texto:'Leads, oportunidades y herramientas comerciales.'},
   operacion:{icono:'operacion',texto:'Gestión diaria, comunidades y mantenciones.'},
   finanzas:{icono:'finanzas',texto:'Contabilidad, reportes y control financiero.'},
@@ -17,6 +18,7 @@ const PRESENTACION={
 function IconoArea({tipo}){
   const comun={fill:'none',stroke:'currentColor',strokeWidth:1.85,strokeLinecap:'round',strokeLinejoin:'round'};
   const dibujos={
+    jarvis:<><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></>,
     comercial:<><path d="m3 9 5-5 5 3 3-2 5 5-5 6-4 4-4-3-5-5Z"/><path d="m8 10 4 4 3-2 4 2M6 14l4 4m4-9-3 3"/></>,
     operacion:<><path d="M4 21V5l9-3v19M13 9h7v12M2 21h20"/><path d="M8 7h1m-1 4h1m-1 4h1m8-2h1m-1 4h1"/></>,
     finanzas:<><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></>,
@@ -84,6 +86,15 @@ export default function SeleccionArea(){
         {areas.map(area=>{
           const vista=PRESENTACION[area.id]||{icono:'aprendizaje',texto:area.descripcion};
           const abierta=areaAbierta===area.id;
+          // Jarvis no tiene submenú: la tarjeta entra directo al módulo.
+          if(area.directo)return <div key={area.id} className={'seleccion-home__grupo seleccion-home__grupo--'+vista.icono}>
+            <button type="button" className="seleccion-home__tarjeta" onClick={()=>entrar(area,area.ruta)}
+              aria-label={'Abrir '+area.titulo}>
+              <span className="seleccion-home__icono"><IconoArea tipo={vista.icono}/></span>
+              <span className="seleccion-home__detalle"><strong className="seleccion-home__titulo">{area.titulo}</strong>
+                <span className="seleccion-home__descripcion">{vista.texto}</span></span>
+            </button>
+          </div>;
           return <div key={area.id} className={'seleccion-home__grupo seleccion-home__grupo--'+vista.icono+(abierta?' abierto':'')}>
             <button type="button" className="seleccion-home__tarjeta" onClick={()=>setAreaAbierta(v=>v===area.id?null:area.id)}
               aria-expanded={abierta} aria-controls={'home-area-'+area.id}

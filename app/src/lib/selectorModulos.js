@@ -71,7 +71,7 @@ export function modulosDisponibles(perfil) {
 
 /**
  * Catálogo único de navegación. Home principal y menú lateral leen de aquí
- * los mismos cinco grupos y las mismas reglas de acceso.
+ * Jarvis, los cinco grupos de trabajo y las mismas reglas de acceso.
  *
  * Las rutas no se reemplazan: todas siguen usando las pantallas existentes.
  * "Gestiones y avances" está dentro de la ficha de cada comunidad.
@@ -83,6 +83,15 @@ export function areasDisponibles(perfil) {
   const administracion=['superadmin','admin'].includes(rol);
   const configurar=['superadmin','admin','jefatura'].includes(rol);
   const grupos=[
+    // Jarvis cruza todas las áreas: va primero y entra directo, sin submenú.
+    {
+      id:'jarvis',area:null,etiqueta:'ANTICIPACIÓN',titulo:'Jarvis',
+      descripcion:'Lo que viene y lo que hay que hacer en toda la gestión.',
+      ruta:'/jarvis',icono:'jarvis',directo:true,visible:comercial,
+      enlaces:[
+        {ruta:'/jarvis',etiqueta:'Lo que viene',visible:true}
+      ]
+    },
     {
       id:'comercial',area:'comercial',etiqueta:'COMERCIAL',titulo:'Comercial',
       descripcion:'Leads, propiedades y herramientas comerciales.',
