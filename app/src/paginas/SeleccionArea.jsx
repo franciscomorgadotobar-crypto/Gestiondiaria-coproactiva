@@ -86,21 +86,29 @@ export default function SeleccionArea(){
         {areas.map(area=>{
           const vista=PRESENTACION[area.id]||{icono:'aprendizaje',texto:area.descripcion};
           const abierta=areaAbierta===area.id;
+          // Jarvis no tiene submenú: la tarjeta entra directo al módulo.
+          if(area.directo)return <div key={area.id} className={'seleccion-home__grupo seleccion-home__grupo--'+vista.icono}>
+            <button type="button" className="seleccion-home__tarjeta" onClick={()=>entrar(area,area.ruta)}
+              aria-label={'Abrir '+area.titulo}>
+              <span className="seleccion-home__icono"><IconoArea tipo={vista.icono}/></span>
+              <span className="seleccion-home__detalle"><strong className="seleccion-home__titulo">{area.titulo}</strong>
+                <span className="seleccion-home__descripcion">{vista.texto}</span></span>
+            </button>
+          </div>;
           return <div key={area.id} className={'seleccion-home__grupo seleccion-home__grupo--'+vista.icono+(abierta?' abierto':'')}>
-            <button type="button" className="seleccion-home__tarjeta"
-              onClick={()=>area.directo?entrar(area,area.ruta):setAreaAbierta(v=>v===area.id?null:area.id)}
-              aria-expanded={area.directo?undefined:abierta} aria-controls={area.directo?undefined:'home-area-'+area.id}
-              aria-label={(area.directo?'Abrir ':'Mostrar opciones de ')+area.titulo}>
+            <button type="button" className="seleccion-home__tarjeta" onClick={()=>setAreaAbierta(v=>v===area.id?null:area.id)}
+              aria-expanded={abierta} aria-controls={'home-area-'+area.id}
+              aria-label={'Mostrar opciones de '+area.titulo}>
               <span className="seleccion-home__icono"><IconoArea tipo={vista.icono}/></span>
               <span className="seleccion-home__detalle"><strong className="seleccion-home__titulo">{area.titulo}</strong>
                 <span className="seleccion-home__descripcion">{vista.texto}</span></span>
 
             </button>
-            {!area.directo&&<div id={'home-area-'+area.id} className="seleccion-home__submodulos" hidden={!abierta}>
+            <div id={'home-area-'+area.id} className="seleccion-home__submodulos" hidden={!abierta}>
               {area.enlaces.map(enlace=><button key={enlace.ruta} className="seleccion-home__submodulo" type="button" onClick={()=>entrar(area,enlace.ruta)}>
                 <span>{enlace.etiqueta}</span><Flecha/>
               </button>)}
-            </div>}
+            </div>
           </div>;
         })}
       </nav>

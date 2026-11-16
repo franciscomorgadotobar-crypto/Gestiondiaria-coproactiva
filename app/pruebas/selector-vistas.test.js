@@ -5,10 +5,14 @@ import {areasDisponibles,enlacesAdministracion} from '../src/lib/selectorModulos
 import {grupoDeRuta} from '../src/lib/area.js';
 const leer=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('Home principal y lateral reciben las mismas cinco áreas, sin duplicación',()=>{
+test('Home principal y lateral reciben Jarvis y las mismas cinco áreas, sin duplicación',()=>{
   const areas=areasDisponibles({id:'admin-qa',rol:'superadmin',activo:true});
-  assert.deepEqual(areas.map(x=>x.id),['comercial','operacion','finanzas','documental','aprendizaje']);
-  assert.equal(new Set(areas.map(x=>x.id)).size,5);
+  assert.deepEqual(areas.map(x=>x.id),['jarvis','comercial','operacion','finanzas','documental','aprendizaje']);
+  assert.equal(new Set(areas.map(x=>x.id)).size,6);
+  const jarvis=areas.find(x=>x.id==='jarvis');
+  assert.equal(jarvis.ruta,'/jarvis');
+  assert.equal(jarvis.directo,true,'Jarvis entra directo, sin submenú');
+  assert.equal(grupoDeRuta('/jarvis'),null,'Jarvis es transversal: conserva el área de contexto');
   const rutas=areas.flatMap(x=>x.enlaces.map(e=>e.ruta));
   assert.equal(new Set(rutas).size,rutas.length,'Una ruta pertenece a una sola área');
   assert.equal(areas.find(x=>x.id==='operacion').enlaces.find(x=>x.ruta==='/comunidades').etiqueta,'Comunidades');
@@ -21,7 +25,7 @@ test('Home principal y lateral reciben las mismas cinco áreas, sin duplicación
 test('Permisos: ninguna opción se eleva de rol en la navegación unificada',()=>{
   const areas=rol=>areasDisponibles({id:rol,rol,activo:true});
   const nombres=rol=>areas(rol).map(x=>x.id);
-  assert.deepEqual(nombres('jefatura'),['comercial','operacion','documental','aprendizaje']);
+  assert.deepEqual(nombres('jefatura'),['jarvis','comercial','operacion','documental','aprendizaje']);
   assert.deepEqual(nombres('terreno'),['operacion','aprendizaje']);
   assert.deepEqual(nombres('cliente'),[]);
   assert.deepEqual(areasDisponibles({rol:'superadmin',activo:false}),[]);
@@ -55,7 +59,7 @@ test('La biblioteca conserva 202 fichas con referencias y 160 cápsulas automát
   }
 });
 
-test('Home aprobado: cinco tarjetas por área, ajustes superiores y destinos desplegables accesibles',()=>{
+test('Home aprobado: Jarvis y cinco tarjetas por área, ajustes superiores y destinos desplegables accesibles',()=>{
   const home=leer('src/paginas/SeleccionArea.jsx');
   const estilos=leer('src/paginas/SeleccionArea.css');
   // Los enlaces y permisos son los del mismo catálogo del menú lateral.
@@ -83,6 +87,9 @@ test('Home aprobado: cinco tarjetas por área, ajustes superiores y destinos des
   assert.match(estilos,/min-height:44px/);
   assert.match(estilos,/button:focus-visible/);
   assert.match(home,/PRESENTACION\[area\.id\]/);
+  // Jarvis: única tarjeta directa, con el mismo destino y permisos del catálogo.
+  assert.match(home,/if\(area\.directo\)return/);
+  assert.match(home,/onClick=\{\(\)=>entrar\(area,area\.ruta\)\}/);
   assert.match(home,/<IconoArea tipo=\{vista\.icono\}/);
   assert.doesNotMatch(home,/Cambiar vista|Por módulos|Por áreas|mostrarOpcionesVista/);
 });
