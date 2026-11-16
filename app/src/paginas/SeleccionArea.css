@@ -72,6 +72,7 @@
   display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;
   border-radius:16px;color:#b44e18;background:#fff0e5
 }
+.seleccion-home__grupo--jarvis .seleccion-home__icono{background:#2b3138;color:#f3c9a0}
 .seleccion-home__grupo--operacion .seleccion-home__icono{background:#e6f0ff;color:#2365b0}
 .seleccion-home__grupo--finanzas .seleccion-home__icono{background:#e7f5e6;color:#28793d}
 .seleccion-home__grupo--documental .seleccion-home__icono{background:#eee7fc;color:#654097}

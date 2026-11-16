@@ -15,7 +15,7 @@ const MODULOS_OPERACION = new Set([
   '/mapa', '/ayuda', '/nuevo', '/proveedores', '/whatsapp', '/compromisos'
 ]);
 
-const MODULOS_COMPARTIDOS = new Set(['/mi-cuenta', '/notificaciones']);
+const MODULOS_COMPARTIDOS = new Set(['/mi-cuenta', '/notificaciones', '/jarvis']);
 
 export function destinoVolverPorJerarquia(pathname, inicioDeArea = '/inicio') {
   const ruta = String(pathname || '/').replace(/\/+$/, '') || '/';

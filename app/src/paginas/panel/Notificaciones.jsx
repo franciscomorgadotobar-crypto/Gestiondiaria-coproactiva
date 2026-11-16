@@ -101,11 +101,12 @@ export default function Notificaciones() {
             const urgente = n.tipo === 'bitacora_urgente';
             const esProspectoWeb = n.tipo === 'lead_web';
             const esAperturaCorreo = n.tipo === 'correo_apertura';
+            const esJarvis = n.tipo === 'jarvis_resumen';
             const contenido = (
               <>
                 <div className="notificacion-superior">
                   <span className={'notificacion-tipo ' + (urgente ? 'urgente' : n.origen)}>
-                    {urgente ? 'Urgente' : esAperturaCorreo ? 'Apertura de correo' : esProspectoWeb ? 'Comercial' : n.origen === 'bitacora' ? 'Bitácora' : 'Mantención'}
+                    {urgente ? 'Urgente' : esJarvis ? 'Jarvis' : esAperturaCorreo ? 'Apertura de correo' : esProspectoWeb ? 'Comercial' : n.origen === 'bitacora' ? 'Bitácora' : 'Mantención'}
                   </span>
                   {!n.leida && <span className="notificacion-nueva">Nueva</span>}
                 </div>
@@ -115,6 +116,14 @@ export default function Notificaciones() {
               </>
             );
 
+            if (esJarvis) {
+              return <Link key={n.tabla+n.id} to="/jarvis"
+                className={'tarjeta notificacion-item'+(!n.leida?' no-leida':'')}
+                onClick={()=>marcarLeida(n.tabla,n.id)}>
+                  {contenido}
+                  <span className="notificacion-destino">Abrir Jarvis ›</span>
+                </Link>;
+            }
             if (esAperturaCorreo) {
               const url=n.correo_origen==='proveedores'
                 ? '/proveedores/comunicaciones'+(n.correo_registro_id?'?destinatario='+encodeURIComponent(n.correo_registro_id):'')
