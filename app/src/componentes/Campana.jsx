@@ -19,6 +19,7 @@ function destino(n) {
   if(n.tipo==='lead_web')return n.prospecto_id
     ? '/pipeline?prospecto='+encodeURIComponent(n.prospecto_id)
     : '/pipeline?etapa=nuevo';
+  if(n.tipo==='jarvis_resumen')return '/jarvis';
   if(n.tabla==='notificaciones_mantenimiento')return '/mantenciones';
   if(n.bitacora_id)return '/bitacora/'+encodeURIComponent(n.bitacora_id);
   return '/notificaciones';

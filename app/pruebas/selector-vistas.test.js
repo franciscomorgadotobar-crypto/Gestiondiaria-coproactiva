@@ -15,9 +15,10 @@ test('Catálogo no agrega rutas inexistentes y evita duplicados',()=>{
   assert.ok(rutas.has('/inicio'));
   assert.ok(rutas.has('/contabilidad'));
   assert.ok(rutas.has('/configuracion'));
-  assert.equal(modulos.length,11,'Se conservan los módulos originales y se añade el Gestor documental');
+  assert.equal(modulos.length,12,'Módulos originales, Gestor documental y Jarvis');
+  assert.equal(modulos.find(x=>x.id==='jarvis').ruta,'/jarvis');
   assert.deepEqual(modulos.map(m=>m.titulo),[
-    'Gestión comercial','Gestor documental','Levantamientos','Arriendos y ventas','Red de proveedores',
+    'Jarvis','Gestión comercial','Gestor documental','Levantamientos','Arriendos y ventas','Red de proveedores',
     'Recepción y atención','Gestión contable','SEO y Analítica','Base de conocimientos',
     'Vista de cliente','Configuración'
   ]);
@@ -29,14 +30,16 @@ test('Roles preservan autorizaciones del menú',()=>{
   const jefatura=modulos('jefatura');
   assert.ok(jefatura.includes('crm') && jefatura.includes('propiedades'));
   assert.ok(jefatura.includes('levantamientos'));
-  assert.equal(jefatura.length,5);
+  assert.equal(jefatura.length,6);
+  assert.ok(jefatura.includes('jarvis'),'Jefatura ve Jarvis');
   assert.ok(jefatura.includes('conocimientos'));
   for(const id of ['seo','contabilidad','configuracion','whatsapp','proveedores'])
     assert.ok(!jefatura.includes(id),'No visible para jefatura: '+id);
   assert.ok(modulos('admin').includes('contabilidad'));
   assert.ok(!modulos('admin').includes('clientes'));
   assert.ok(modulos('superadmin').includes('configuracion'));
-  assert.equal(modulos('admin').length,11);
+  assert.equal(modulos('admin').length,12);
+  assert.ok(!modulos('terreno').includes('jarvis'),'Terreno no ve Jarvis');
   assert.equal(modulos('admin').at(-1),'configuracion');
   assert.equal(modulos('superadmin').at(-1),'configuracion');
   assert.equal(modulos('jefatura').at(-1),'conocimientos',
