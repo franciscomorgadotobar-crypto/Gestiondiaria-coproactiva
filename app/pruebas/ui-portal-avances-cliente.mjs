@@ -1,6 +1,6 @@
 /**
  * QA con navegador de la vista cliente real y simulada:
- * estado por materia y check-in administrativo visible, sin escribir en Supabase.
+ * estado por materia y PDF, sin mostrar check-in administrativo.
  */
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
@@ -22,8 +22,13 @@ const levantamiento={id:controlId,comunidad_id:comunidadId,
  plantilla_nombre:'Primera visita de administración',estado:'enviado',periodo:'noviembre 2026',
  programado_para:'2026-11-15T12:00:00Z',creado_en:'2026-11-14T09:00:00Z',
  enviado_en:'2026-11-15T16:00:00Z',checkin_en:null};
-const autorizacion={control_id:controlId,autorizado_en:'2026-11-16T18:00:00Z',
- autorizado_por_nombre:'Administrador QA',motivo:'No se pudo registrar GPS en la visita realizada.'};
+const levantamientoDetalle={
+ levantamiento:{id:controlId,plantilla_nombre:'Primera visita de administración',
+   estado:'enviado',creado_en:'2026-11-14T09:00:00Z',enviado_en:'2026-11-15T16:00:00Z'},
+ items:[{id:'01234567-89ab-4cde-8f01-234567890abc',grupo:'Accesos',
+   texto:'Puerta principal',estado:'cumple',nota:'Revisada',respuesta:'Conforme'}],
+ adjuntos:[]
+};
 
 const navegador=await chromium.launch({headless:true});
 try {
@@ -73,11 +78,11 @@ try {
        if(name==='vista_cliente_cuentas')return resp([{
          cliente_id:clienteId,cliente_nombre:'Equipazo',cliente_email:'cliente@coproactiva.test'
        }]);
-       if(name==='checkins_administrativos_visibles'){
+       if(name==='portal_levantamiento_detalle'){
          const p=JSON.parse(route.request().postData()||'{}');
-         assert.equal(p.p_comunidad_id,comunidadId);
+         assert.equal(p.p_control_id,controlId);
          assert.equal(p.p_usuario_cliente,rol==='superadmin'?clienteId:null);
-         return resp([autorizacion]);
+         return resp(levantamientoDetalle);
        }
        if(name.endsWith('_levantamientos'))return resp([levantamiento]);
        return resp([]);
@@ -102,16 +107,18 @@ try {
      else await page.getByRole('link',{name:seccion,exact:true}).click();
    }
    await abrirSeccion('Levantamientos');
-   const detalle=page.locator('.portal-checkin-administrativo');
-   await detalle.getByText('Check-in administrativo (sin GPS)').waitFor({timeout:15000});
-   assert.match(await detalle.innerText(),/No se pudo registrar GPS/);
-   assert.match(await detalle.innerText(),/Administrador QA/);
-   assert.match(await detalle.innerText(),/no acredita presencia geolocalizada/);
-   assert.equal(await page.locator('.portal-checkin-real').count(),0);
+   assert.equal(await page.getByText('Check-in administrativo (sin GPS)').count(),0);
+   assert.equal(await page.locator('.portal-checkin-administrativo').count(),0);
+   assert.equal(await page.getByText('No se pudo registrar GPS').count(),0);
+   const botonPdf=page.getByRole('button',{name:'Abrir informe PDF del levantamiento'});
+   await botonPdf.waitFor({timeout:15000});
+   await botonPdf.click();
+   await page.waitForFunction(()=>document.querySelector('.portal-boton-pdf')?.textContent?.includes('Abrir informe PDF'),{timeout:25000});
+   assert.ok(llamadas.includes('portal_levantamiento_detalle'));
+   assert.ok(!llamadas.includes('checkins_administrativos_visibles'));
+   assert.equal(await page.locator('.portal-visor-levantamiento').count(),0);
    await abrirSeccion('Resumen');
-   await page.locator('.portal-checkin-resumen').waitFor();
-   await page.locator('.portal-checkin-resumen').click();
-   await page.locator('.portal-checkin-administrativo').waitFor();
+   assert.equal(await page.locator('.portal-checkin-resumen').count(),0);
    assert.deepEqual(errores,[]);
    // El cliente con una sola comunidad no llega a ver el dashboard.
    if(rol==='cliente'){
@@ -133,6 +140,6 @@ try {
        'En la simulación administrativa no debe aparecer el botón de cliente');
    }
    await ctx.close();
-   console.log('Portal con check-in administrativo: OK '+rol+' '+ancho+'px');
+   console.log('Portal PDF sin check-in administrativo: OK '+rol+' '+ancho+'px');
  }
 } finally {await navegador.close();}
