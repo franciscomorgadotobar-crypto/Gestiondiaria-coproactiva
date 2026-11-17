@@ -15,6 +15,7 @@ export const iconoRutaCoproactiva = ruta => {
   if (r.startsWith('/contabilidad')) return 'contabilidad';
   if (r.startsWith('/configuracion') || r.startsWith('/equipo') || r.startsWith('/clientes')) return 'configuracion';
   if (r.startsWith('/comunidades')) return 'comunidades';
+  if (r.startsWith('/vista-cliente')) return 'vista-cliente';
   if (r.startsWith('/mantenciones')) return 'mantenciones';
   if (r.startsWith('/plantillas')) return 'plantillas';
   if (r.startsWith('/bitacora')) return 'bitacora';
@@ -41,6 +42,7 @@ export default function IconoNavegacion({ tipo = 'inicio', size = 19 }) {
     case 'contabilidad': return <svg {...icon}><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h3M15 15h1M8 18h3M15 18h1"/></svg>;
     case 'configuracion': return <svg {...icon}><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>;
     case 'comunidades': return <svg {...icon}><path d="M4 21V5h16v16M2 21h20M8 9h2M14 9h2M8 13h2M14 13h2M10 21v-4h4v4"/></svg>;
+    case 'vista-cliente': return <svg {...icon}><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg>;
     case 'mantenciones': return <svg {...icon}><path d="m14 4 6 6-4 4-6-6"/><path d="M13 11 4 20l-2-2 9-9M18 2l4 4"/></svg>;
     case 'plantillas': return <svg {...icon}><path d="M7 3h10l3 3v15H4V3zM14 3v5h6M8 12h8M8 16h8"/></svg>;
     case 'bitacora': return <svg {...icon}><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/></svg>;
