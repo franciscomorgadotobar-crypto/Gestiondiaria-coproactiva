@@ -118,14 +118,14 @@ try {
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
     await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
     const opciones=page.locator('#home-area-operacion');
-    assert.equal(await opciones.locator(':scope > button').count(),8);
+    assert.equal(await opciones.locator(':scope > button').count(),9);
     assert.equal(await opciones.locator('.seleccion-home__subgrupo').count(),0);
     assert.deepEqual(await opciones.locator(':scope > button > span:first-child').allTextContents(),[
-      'Panel de operaciones','Comunidades','Bitácora','Mantenciones',
+      'Panel de operaciones','Comunidades','Vista Cliente','Bitácora','Mantenciones',
       'Nuevo levantamiento','Plantillas de levantamiento','Mapa de visitas','Red de proveedores'
     ]);
     assert.equal(await opciones.getByRole('button',{name:'Recepción y atención'}).count(),0);
-    assert.equal(await opciones.getByRole('button',{name:'Vista de cliente'}).count(),0);
+    assert.equal(await opciones.getByRole('button',{name:'Vista Cliente'}).count(),1);
     await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
     const opcionesComercial=page.locator('#home-area-comercial');
     assert.equal(await opcionesComercial.locator(':scope > button').count(),4);
@@ -318,7 +318,7 @@ try {
   {
     const {ctx,page}=await crear({ancho:390,alto:844});
     await page.getByRole('button',{name:/Administración y ajustes/}).click();
-    assert.equal(await page.locator('#home-administracion').getByRole('button',{name:'Vista de cliente'}).count(),1);
+    assert.equal(await page.locator('#home-administracion').getByRole('button',{name:'Vista Cliente'}).count(),0);
     await page.locator('#home-administracion').getByRole('button',{name:'Configuración',exact:true}).click();
     await page.waitForURL(u=>u.pathname==='/configuracion',{timeout:20000});
     await page.getByRole('heading',{name:'Configuración'}).waitFor();
@@ -361,6 +361,7 @@ try {
     assert.equal(await lateral.getByRole('button',{name:'Desplegar Terreno y recursos'}).count(),0);
     assert.equal(await lateral.getByRole('link',{name:'Bitácora'}).count(),1);
     assert.equal(await lateral.getByRole('link',{name:'Nuevo levantamiento'}).count(),1);
+    assert.equal(await lateral.getByRole('link',{name:'Vista Cliente'}).count(),1);
     assert.equal(new URL(page.url()).pathname,'/pipeline',
       'Desplegar Operaciones no debe sacarte de Comercial');
     assert.equal(await comercial.getAttribute('aria-expanded'),'true');
