@@ -1,0 +1,107 @@
+/**
+ * QA con navegador de la vista cliente real y simulada:
+ * estado por materia y check-in administrativo visible, sin escribir en Supabase.
+ */
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+
+const base=process.env.UI_QA_URL||'http://127.0.0.1:5173';
+const usuarioId='aaaaaaa0-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const clienteId='ddddddd0-dddd-4ddd-8ddd-dddddddddddd';
+const comunidadId='bbbbbbb0-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const controlId='eeeeeee0-eeee-4eee-8eee-eeeeeeeeeeee';
+const comunidad={id:comunidadId,comunidad_id:comunidadId,nombre:'Reserva Santa Clara',
+ direccion:'Avda. Waldo Alcalde #1855',comuna:'Coquimbo',latitud:null,longitud:null,
+ estado:'activo',por_agendar:0,agendados:0,pendientes:0};
+const materia={id:'ccccccc0-cccc-4ccc-8ccc-cccccccccccc',comunidad_id:comunidadId,
+ orden:1,materia:'Designación del primer administrador',avance:'completado',
+ estado_detalle:'Escritura pública del 13 de octubre de 2026',
+ a_cargo_de:'Coproactiva',fecha_informe:'2026-11-17',creado_en:'2026-11-17T10:00:00Z'};
+const levantamiento={id:controlId,comunidad_id:comunidadId,
+ plantilla_id:'ffffffff-ffff-4fff-8fff-ffffffffffff',
+ plantilla_nombre:'Primera visita de administración',estado:'enviado',periodo:'noviembre 2026',
+ programado_para:'2026-11-15T12:00:00Z',creado_en:'2026-11-14T09:00:00Z',
+ enviado_en:'2026-11-15T16:00:00Z',checkin_en:null};
+const autorizacion={control_id:controlId,autorizado_en:'2026-11-16T18:00:00Z',
+ autorizado_por_nombre:'Administrador QA',motivo:'No se pudo registrar GPS en la visita realizada.'};
+
+const navegador=await chromium.launch({headless:true});
+try {
+ for(const rol of ['cliente','superadmin'])for(const ancho of [390,1280]){
+   const ahora=Math.floor(Date.now()/1000);
+   const jwt=[
+     Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url'),
+     Buffer.from(JSON.stringify({sub:usuarioId,role:'authenticated',exp:ahora+7200})).toString('base64url'),
+     'firma-prueba-local'
+   ].join('.');
+   const user={id:usuarioId,aud:'authenticated',role:'authenticated',
+     email:'qa@coproactiva.test',app_metadata:{provider:'email',providers:['email']},
+     user_metadata:{},created_at:new Date().toISOString()};
+   const session={access_token:jwt,token_type:'bearer',expires_at:ahora+7200,expires_in:7200,
+     refresh_token:'token-local',user};
+   const ctx=await navegador.newContext({viewport:{width:ancho,height:900},
+     serviceWorkers:'block',isMobile:ancho<650,hasTouch:ancho<650});
+   await ctx.addInitScript(s=>localStorage.setItem('sb-sin-configurar-auth-token',JSON.stringify(s)),session);
+   const llamadas=[];
+   await ctx.route('https://sin-configurar.supabase.co/**',async route=>{
+     const url=new URL(route.request().url()),path=url.pathname;
+     const resp=value=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(value)});
+     if(path.includes('/auth/v1/user'))return resp(user);
+     if(path.includes('/rest/v1/perfiles'))return resp({
+       id:usuarioId,nombre:'QA Coproactiva',rol,activo:true,email:user.email,bottom_nav:[]
+     });
+     if(path.includes('/rest/v1/comunidades')){
+       return resp(url.searchParams.has('id')?comunidad:[comunidad]);
+     }
+     if(path.includes('/rest/v1/estado_avance_materias'))return resp([materia]);
+     if(path.includes('/rpc/')){
+       const name=path.split('/').pop();
+       llamadas.push(name);
+       if(name==='portal_cliente_dashboard')return resp([comunidad]);
+       if(name==='vista_cliente_cuentas')return resp([{
+         cliente_id:clienteId,cliente_nombre:'Equipazo',cliente_email:'cliente@coproactiva.test'
+       }]);
+       if(name==='checkins_administrativos_visibles'){
+         const p=JSON.parse(route.request().postData()||'{}');
+         assert.equal(p.p_comunidad_id,comunidadId);
+         assert.equal(p.p_usuario_cliente,rol==='superadmin'?clienteId:null);
+         return resp([autorizacion]);
+       }
+       if(name.endsWith('_levantamientos'))return resp([levantamiento]);
+       return resp([]);
+     }
+     if(path.includes('/functions/v1/'))return resp({});
+     return resp([]);
+   });
+   const page=await ctx.newPage(),errores=[];
+   page.on('pageerror',e=>errores.push(e.message));
+   const url=rol==='cliente'
+     ?base+'/portal/comunidades/'+comunidadId
+     :base+'/vista-cliente?comunidad='+comunidadId+'&cliente='+clienteId+'&seccion=compromisos';
+   await page.goto(url,{waitUntil:'domcontentloaded'});
+   await page.getByRole('heading',{name:'Estado de avances y compromisos - Reserva Santa Clara'}).waitFor({timeout:25000});
+   assert.equal(await page.getByText('Estado de avance de la puesta en marcha').count(),0);
+   assert.equal(await page.getByRole('button',{name:'Editar materia: Designación del primer administrador'}).count(),0);
+   assert.ok(llamadas.some(x=>x.endsWith('_levantamientos')));
+   const pestañas=page.locator('.portal-pestanas-movil');
+   async function abrirSeccion(seccion){
+     const boton=pestañas.getByRole('button',{name:seccion,exact:true});
+     if(await boton.isVisible())await boton.click();
+     else await page.getByRole('link',{name:seccion,exact:true}).click();
+   }
+   await abrirSeccion('Levantamientos');
+   const detalle=page.locator('.portal-checkin-administrativo');
+   await detalle.getByText('Check-in administrativo (sin GPS)').waitFor({timeout:15000});
+   assert.match(await detalle.innerText(),/No se pudo registrar GPS/);
+   assert.match(await detalle.innerText(),/Administrador QA/);
+   assert.match(await detalle.innerText(),/no acredita presencia geolocalizada/);
+   assert.equal(await page.locator('.portal-checkin-real').count(),0);
+   await abrirSeccion('Resumen');
+   await page.locator('.portal-checkin-resumen').waitFor();
+   await page.locator('.portal-checkin-resumen').click();
+   await page.locator('.portal-checkin-administrativo').waitFor();
+   assert.deepEqual(errores,[]);
+   await ctx.close();
+   console.log('Portal con check-in administrativo: OK '+rol+' '+ancho+'px');
+ }
+} finally {await navegador.close();}

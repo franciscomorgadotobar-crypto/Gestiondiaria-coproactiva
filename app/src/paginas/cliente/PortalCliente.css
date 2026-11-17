@@ -274,3 +274,47 @@
 /* Una sola navegación visible: menú lateral en escritorio, pestañas dentro de comunidad en móvil. */
 @media (min-width: 769px) {.portal-pestanas-movil {display:none !important;}}
 @media (max-width: 768px) {.portal-pestanas-movil {display:flex;overflow-x:auto;gap:6px;scrollbar-width:thin;}}
+
+/* Diferencia un check-in administrativo de la ubicación GPS registrada. */
+.portal-checkin-administrativo {
+  margin: 9px 0;
+  padding: 11px 13px;
+  border: 1px solid #d8bc9d;
+  border-left: 4px solid #a65a22;
+  border-radius: 8px;
+  background: #fffaf4;
+  color: #384353;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.portal-checkin-administrativo strong { color: #914414; font-size: 13px; }
+.portal-checkin-administrativo p { margin: 5px 0 0; overflow-wrap: anywhere; }
+.portal-checkin-administrativo p:last-child { color: #68717d; font-size: 11.5px; }
+.portal-checkin-real { margin: 8px 0; color: var(--ok-texto); }
+.portal-checkin-resumen {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid #e4b98f;
+  border-radius: 9px;
+  background: #fff8ef;
+  color: #914414;
+  font: 650 13px/1.4 var(--fuente-cuerpo);
+  cursor: pointer;
+}
+.portal-checkin-resumen:hover { background: #fff0df; }
+.portal-checkin-resumen:focus-visible { outline: 2px solid #a65a22; outline-offset: 2px; }
+
+/* Vista administrativa embebida: sus pestañas deben poder navegarse en PC.
+   El portal de un cliente mantiene su navegación lateral de escritorio. */
+@media(min-width:769px) {
+  .portal-pestanas-movil.portal-pestanas-vista-previa {
+    display: flex !important;
+    overflow-x: auto;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}

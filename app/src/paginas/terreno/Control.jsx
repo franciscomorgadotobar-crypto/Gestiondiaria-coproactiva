@@ -675,18 +675,18 @@ export default function Levantamiento() {
     <div className="pantalla pantalla-angosta modulo-unificado">
       {pedirExcepcionCheckIn && (
         <DialogoCampos
-          titulo="Autorizar finalización sin check-in"
-          mensaje="Solo superadministradores. Se registrarán la fecha, tu usuario y el motivo. No se inventará una ubicación GPS ni un check-in presencial."
+          titulo="Registrar check-in administrativo (sin GPS)"
+          mensaje="Acción exclusiva de superadministradores. Registra la autorización, fecha y motivo, incluso después de enviar el levantamiento. No acredita presencia física ni inventa coordenadas. El cliente verá esta anotación si tiene el levantamiento habilitado."
           campos={[{
             id: 'motivo',
-            label: 'Motivo de la excepción',
+            label: 'Motivo del registro administrativo',
             obligatorio: true,
             multiline: true,
             filas: 3,
             placeholder: 'Ej.: visita realizada, pero no fue posible registrar el check-in por falta de señal.',
-            ayuda: 'Mínimo 12 caracteres; quedará registrado en el historial del levantamiento.'
+            ayuda: 'Entre 12 y 500 caracteres. Este motivo será visible para el cliente con acceso al levantamiento.'
           }]}
-          textoConfirmar={autorizandoExcepcion ? 'Autorizando…' : 'Autorizar excepción'}
+          textoConfirmar={autorizandoExcepcion ? 'Registrando…' : 'Registrar check-in administrativo'}
           textoCancelar="Cancelar"
           onConfirmar={autorizarSinCheckIn}
           onCancelar={() => { if (!autorizandoExcepcion) setPedirExcepcionCheckIn(false); }}
@@ -749,9 +749,9 @@ export default function Levantamiento() {
           </p>
         ) : excepcionCheckIn ? (
           <div className="aviso" style={{ marginBottom: 10 }}>
-            <strong>Finalización sin check-in autorizada</strong>
+            <strong>Check-in administrativo (sin GPS)</strong>
             <p className="chico" style={{ margin: '5px 0 0' }}>
-              No hay ubicación GPS registrada. Autorización del {new Date(excepcionCheckIn.autorizado_en).toLocaleString('es-CL')}.
+              Registro administrativo del {new Date(excepcionCheckIn.autorizado_en).toLocaleString('es-CL')}. No acredita presencia ni registra coordenadas GPS.
             </p>
             <p className="micro" style={{ margin: '5px 0 0' }}>Motivo: {excepcionCheckIn.motivo}</p>
           </div>
@@ -761,10 +761,10 @@ export default function Levantamiento() {
                     onClick={hacerCheckIn} disabled={ubicando || cerrado}>
               {ubicando ? 'Obteniendo ubicación…' : 'Hacer check-in'}
             </button>
-            {perfil?.rol === 'superadmin' && !cerrado && (
+            {perfil?.rol === 'superadmin' && control.estado !== 'anulado' && control.destino_tipo !== 'prospecto' && (
               <button className="boton boton-secundario boton-movil boton-ancho"
                       onClick={() => { setError(null); setPedirExcepcionCheckIn(true); }}>
-                Autorizar finalización sin check-in
+                Registrar check-in administrativo (sin GPS)
               </button>
             )}
           </div>

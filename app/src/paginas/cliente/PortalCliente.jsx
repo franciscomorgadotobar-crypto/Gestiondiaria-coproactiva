@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import MapaPortalCliente from './MapaPortalCliente';
-import Compromisos from './Compromisos';
+import EstadoMaterias from './EstadoMaterias';
 import DriveArchivos from '../../componentes/DriveArchivos';
 import './PortalCliente.css';
 
@@ -129,19 +129,28 @@ async function cargarDetalleComunidad(comunidadId, clienteId = null) {
   const rpc=(tipo)=>supabase.rpc(vista ? 'vista_cliente_'+tipo : 'portal_cliente_'+tipo,
     vista ? {p_comunidad_id:comunidadId,p_usuario_cliente:clienteId}
           : {p_comunidad_id:comunidadId});
-  const [rl, rm, rr, ri, rd] = await Promise.all([
+  const [rl, rm, rr, ri, rd, re] = await Promise.all([
     rpc('levantamientos'),
     rpc('mantenciones'),
     rpc('requerimientos'),
     rpc('incidencias'),
-    rpc('documentos')
+    rpc('documentos'),
+    supabase.rpc('checkins_administrativos_visibles',{
+      p_comunidad_id:comunidadId,p_usuario_cliente:clienteId||null
+    })
   ]);
 
   const fallo = [rl, rm, rr, ri, rd].find(r => r.error)?.error;
   if (fallo) throw fallo;
 
+  // Se enriquece exclusivamente el conjunto de levantamientos ya autorizado
+  // para la cuenta; no se revela información de otras plantillas ni comunidades.
+  const checkinsPorControl=new Map((re.data||[]).map(x=>[x.control_id,x]));
   return {
-    levantamientos: rl.data ?? [],
+    levantamientos: (rl.data??[]).map(l=>({
+      ...l,checkin_administrativo:checkinsPorControl.get(l.id)||null
+    })),
+    errorCheckins:re.error?.message||null,
     mantenciones: rm.data ?? [],
     requerimientos: rr.data ?? [],
     incidencias: ri.data ?? [],
@@ -588,7 +597,8 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   const esVistaPrevia = Boolean(vistaPrevia);
   const clienteId = vistaPrevia?.clienteId || null;
   const [params, setParams] = useSearchParams();
-  const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'resumen';
+  // La ficha de comunidad abre el informe por materia. Resumen sigue accesible como pestaña.
+  const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'compromisos';
   const tab = tabInicial; // URL permite volver de Documentos a Incidencias con Atrás.
   const [vista, setVista] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -644,7 +654,8 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   function cambiarTab(nuevo) {
     if (tab === nuevo || !TABS.some(([clave]) => clave === nuevo)) return;
     const siguientes = new URLSearchParams(params);
-    if (nuevo === 'resumen') siguientes.delete('seccion');
+    // Resumen requiere parámetro explícito: el acceso sin seccion abre los avances.
+    if (nuevo === 'compromisos') siguientes.delete('seccion');
     else siguientes.set('seccion', nuevo);
     setParams(siguientes, { replace: false, preventScrollReset: true });
   }
@@ -665,7 +676,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            <nav className="pestanas portal-pestanas-movil" aria-label="Secciones de la comunidad">
+            <nav className={`pestanas portal-pestanas-movil${esVistaPrevia ? " portal-pestanas-vista-previa" : ""}`} aria-label="Secciones de la comunidad">
               {TABS.map(([clave, texto]) => (
                 <button key={clave} type="button" className={tab === clave ? 'activo' : ''} aria-pressed={tab === clave}
                         onClick={() => cambiarTab(clave)}>
@@ -675,7 +686,9 @@ function DetalleCliente({ id, vistaPrevia = null }) {
             </nav>
 
             {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} vistaPrevia={esVistaPrevia} />}
-            {tab === 'compromisos' && <Compromisos comunidadId={id} administrador={!esVistaPrevia && ['admin','superadmin','jefatura'].includes(perfil?.rol)} soloVistaCliente={esVistaPrevia} />}
+            {tab === 'compromisos' && <EstadoMaterias comunidadId={id}
+              nombreComunidad={vista?.comunidad?.nombre||'Comunidad'}
+              administrador={false} soloLecturaCliente={true} />}
             {tab === 'incidencias' && <IncidenciasComunidad vista={vista} />}
             {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} />}
             {tab === 'mantencion' && <MantencionesComunidad vista={vista} />}
@@ -689,6 +702,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
 
 function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
+  const regularizaciones= vista.levantamientos.filter(l=>Boolean(l.checkin_administrativo));
   return (
     <div className="portal-inicio-redisenado">
       <div className="portal-inicio-intro">
@@ -700,6 +714,11 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
           {atencion.length ? `${atencion.length} asuntos por atender` : 'Sin asuntos vencidos'}
         </span>
       </div>
+      {regularizaciones.length>0&&<button type="button"
+        className="portal-checkin-resumen" onClick={()=>cambiarTab('levantamientos')}>
+        {regularizaciones.length} check-in administrativo{regularizaciones.length===1?'':'s'} registrado{regularizaciones.length===1?'':'s'}.
+        Ver detalle de levantamientos
+      </button>}
       <section className="portal-resumen" aria-label="Indicadores de gestión">
         <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'} />
         <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
@@ -793,6 +812,9 @@ function LevantamientosComunidad({ vista }) {
   return (
     <section className="portal-seccion portal-seccion-sin-margen">
       <EncabezadoSeccion titulo="Levantamientos" cantidad={vista.levantamientos.length} />
+      {vista.errorCheckins && <div className="aviso aviso-critico" role="alert">
+        No fue posible consultar los registros administrativos de check-in: {vista.errorCheckins}
+      </div>}
       {vista.levantamientos.length === 0 ? (
         <EstadoVacio titulo="Sin levantamientos visibles" texto="No hay levantamientos habilitados para tu cuenta en esta comunidad." />
       ) : (
@@ -813,6 +835,19 @@ function LevantamientosComunidad({ vista }) {
                   {l.enviado_en && <span>Realizado: {fechaCL(l.enviado_en, true)}</span>}
                   {!l.programado_para && <span>Creado: {fechaCL(l.creado_en)}</span>}
                 </div>
+                {l.checkin_administrativo ? (
+                  <div className="portal-checkin-administrativo" role="status">
+                    <strong>Check-in administrativo (sin GPS)</strong>
+                    <p>Autorizado el {fechaCL(l.checkin_administrativo.autorizado_en,true)}
+                      {' · '}Por: {l.checkin_administrativo.autorizado_por_nombre||'Administración'}</p>
+                    <p>Motivo: {l.checkin_administrativo.motivo}</p>
+                    <p>Registro administrativo; no acredita presencia geolocalizada.</p>
+                  </div>
+                ) : l.checkin_en ? (
+                  <p className="micro portal-checkin-real">
+                    Check-in con ubicación: {fechaCL(l.checkin_en,true)}
+                  </p>
+                ) : null}
                 {pdfUrl && (
                   <div className="portal-acciones">
                     <a className="portal-enlace" href={pdfUrl} target="_blank" rel="noreferrer">Abrir informe PDF</a>
