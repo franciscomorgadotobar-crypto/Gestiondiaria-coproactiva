@@ -163,8 +163,8 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
                 </button>
                 :<span>{item.materia}</span>}</td>
               <td><EtiquetaAvance valor={item.avance}/></td>
-              <td className="estado-materias__detalle">{item.estado_detalle||'—'}</td>
-              <td>{item.a_cargo_de||'—'}</td>
+              <td className="estado-materias__detalle">{item.estado_detalle||'Sin información'}</td>
+              <td>{item.a_cargo_de||'Sin información'}</td>
             </tr>
             {editando===item.id&&<tr key={'editar-'+item.id} className="estado-materias__edicion-fila">
               <td colSpan={4}><FormularioMateria {...editarProps}/></td>
@@ -183,8 +183,8 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
             </div>
             <EtiquetaAvance valor={item.avance}/>
           </div>
-          <p className="estado-materias__movil-estado">{item.estado_detalle||'—'}</p>
-          <p className="estado-materias__movil-responsable"><strong>A cargo de:</strong> {item.a_cargo_de||'—'}</p>
+          <p className="estado-materias__movil-estado">{item.estado_detalle||'Sin información'}</p>
+          <p className="estado-materias__movil-responsable"><strong>A cargo de:</strong> {item.a_cargo_de||'Sin información'}</p>
           {editando===item.id&&<FormularioMateria {...editarProps}/>}
         </div>)}
       </div>
