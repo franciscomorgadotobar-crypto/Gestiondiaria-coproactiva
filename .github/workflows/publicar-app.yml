@@ -6,80 +6,81 @@ on:
       - develop
   workflow_dispatch:
 
+# El antiguo push a gh-pages con GITHUB_TOKEN no activaba la publicación.
+# Solo el flujo oficial de GitHub Pages puede declarar el sitio desplegado.
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: publicar-app-coproactiva-v2
+  group: publicar-app-coproactiva-v3
   cancel-in-progress: true
 
 jobs:
-  build-y-publicacion:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
-
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
       - name: Configurar Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
           cache-dependency-path: app/package-lock.json
-
       - name: Instalar dependencias
         working-directory: app
-        run: npm install
-
+        run: npm install --no-audit --no-fund
       - name: Compilar aplicación
         working-directory: app
         env:
           VITE_SUPABASE_URL: https://vnjqzpbtcccpnxngoqfx.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuanF6cGJ0Y2NjcG54bmdvcWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTAyNDcsImV4cCI6MjEwNDE2NjI0N30.7-vPmb-MhVvc-gdwJnHNVDitpG7sXVSSbClxLXl6OtQ
         run: npm run build
-
-      - name: Preparar rutas de GitHub Pages
+      - name: Preparar versión web para rutas directas
         run: |
           cp app/dist/index.html app/dist/404.html
           touch app/dist/.nojekyll
-          rm -rf /tmp/coproactiva-dist
-          cp -a app/dist /tmp/coproactiva-dist
+          test -s app/dist/index.html
+          test -s app/dist/CNAME
+      - name: Subir sitio a GitHub Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: app/dist
 
-      - name: Publicar en gh-pages
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan publicar-app
-          git rm -rf .
-          # npm install deja node_modules sin seguimiento; no debe publicarse ni
-          # añadirse al commit de Pages. El compilado ya se copió a /tmp.
-          git clean -fdx
-          cp -a /tmp/coproactiva-dist/. .
-          # Solo el contenido compilado del sitio debe existir al preparar el commit.
-          test ! -d app/node_modules
-          git add -A
-          git commit -m "Publicar app CoproActiva"
-          git push origin HEAD:gh-pages --force
-
-      - name: Verificar respuesta real de app.coproactiva.cl
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar versión web
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Comprobar dominio público
         shell: bash
         run: |
           set -euo pipefail
-          esperado="$(grep -oE '/assets/index-[^"]+\.js' /tmp/coproactiva-dist/index.html | head -n 1)"
-          test -n "$esperado"
-          for intento in $(seq 1 18); do
-            if curl -fsSL --connect-timeout 8 --max-time 15 \
+          for intento in $(seq 1 12); do
+            if curl --fail --silent --show-error --location --connect-timeout 8 --max-time 15 \
                  -H 'Cache-Control: no-cache' \
-                 "https://app.coproactiva.cl/?verificacion=${GITHUB_SHA}" \
+                 "https://app.coproactiva.cl/?version=${GITHUB_SHA}" \
                  -o /tmp/coproactiva-live.html \
-                 && grep -Fq "$esperado" /tmp/coproactiva-live.html \
-                 && curl -fsSLo /dev/null --connect-timeout 8 --max-time 15 \
-                      "https://app.coproactiva.cl$esperado"; then
-              echo "PUBLICACION WEB VERIFICADA: el dominio sirve $esperado"
-              exit 0
+                 && grep -Fq 'Coproactiva App Diaria' /tmp/coproactiva-live.html; then
+              bundle="$(grep -oE '/assets/index-[^"]+\.js' /tmp/coproactiva-live.html | head -n 1)"
+              if test -n "$bundle" && curl --fail --silent --show-error \
+                    --location --max-time 15 -o /dev/null \
+                    "https://app.coproactiva.cl$bundle"; then
+                echo "Sitio accesible y bundle JS servido en app.coproactiva.cl"
+                exit 0
+              fi
             fi
-            echo "Intento $intento/18: el dominio aún no sirve el bundle esperado"
+            echo "Publicación todavía no visible en el dominio: intento $intento/12"
             sleep 5
           done
-          echo "::error::El dominio público no responde con el bundle de este despliegue."
+          echo "::error::Pages puede haberse desplegado, pero no se verificó app.coproactiva.cl."
           exit 1
