@@ -11,7 +11,9 @@ test('Operaciones ofrece selección de comunidad visible y navegable',()=>{
  assert.match(home,/<span>Seleccionar comunidad<\/span>/);
  assert.match(home,/inicio-seleccionar-comunidad-movil/);
  assert.match(home,/to="\/comunidades" className="boton boton-secundario inicio-seleccionar-comunidad-movil"/);
- assert.match(comunidad,/seccion === 'compromisos' && <Compromisos comunidadId=\{id\}/);
+ assert.match(comunidad,/seccion === 'compromisos' && <div className="estado-materias__contenedor"/);
+ assert.match(comunidad,/<EstadoMaterias comunidadId=\{id\}/);
+ assert.match(comunidad,/<Compromisos comunidadId=\{id\}/);
 });
 test('La tarjeta naranja no puede heredar letras blancas sobre un fondo claro',()=>{
  assert.match(css,/\.inicio-pantalla \.accesos-inicio \.acceso\.acceso-principal\{/);
