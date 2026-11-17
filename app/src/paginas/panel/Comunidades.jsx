@@ -13,6 +13,7 @@ import DriveArchivos from '../../componentes/DriveArchivos';
 import DocumentosVinculados from '../../componentes/DocumentosVinculados';
 import { conexionDrive, eliminarDeDrive, prepararCarpetasDrive, subirADrive, validarArchivoDrive } from '../../lib/drive';
 import Compromisos from '../cliente/Compromisos';
+import EstadoMaterias from '../cliente/EstadoMaterias';
 
 const SECCIONES = [
   ['resumen', 'Resumen'],
@@ -1134,7 +1135,14 @@ function DetalleComunidad({ id }) {
           ))}
         </div>
 
-        {seccion === 'compromisos' && <Compromisos comunidadId={id} administrador={puedeGestionar} />}
+        {seccion === 'compromisos' && <div className="estado-materias__contenedor">
+          <EstadoMaterias comunidadId={id} nombreComunidad={comunidad?.nombre||''}
+            administrador={puedeGestionar}/>
+          <details className="estado-materias__seguimiento-anterior">
+            <summary>Gestiones anteriores y biblioteca de procesos</summary>
+            <Compromisos comunidadId={id} administrador={puedeGestionar}/>
+          </details>
+        </div>}
         {seccion === 'resumen' && (
           <Resumen
             controles={controles}
