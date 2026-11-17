@@ -1,9 +1,8 @@
 name: Publicar app CoproActiva
 
+# Archivo histórico: esta rama no debe volver a publicar en gh-pages.
+# La publicación vigente se ejecuta exclusivamente desde develop.
 on:
-  push:
-    branches:
-      - claude/figma-coproactiva-interface-9y82xq
   workflow_dispatch:
 
 permissions:
@@ -15,6 +14,8 @@ concurrency:
 
 jobs:
   build-y-publicacion:
+    # Impide un despliegue accidental desde esta rama archivada, incluso por ejecución manual.
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
       - name: Descargar código
