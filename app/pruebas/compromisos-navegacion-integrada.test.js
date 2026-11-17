@@ -12,7 +12,10 @@ test('Compromisos se gestionan dentro de Comunidades, no como submenú',()=>{
  assert.match(app,/<Route path="\/compromisos" element=\{<Navigate to="\/comunidades" replace \/>\}/);
  assert.doesNotMatch(panel,/ruta: '\/compromisos'/);
  assert.match(comunidades,/\['compromisos', 'Gestiones y avances'\]/);
- assert.match(comunidades,/seccion === 'compromisos' && <Compromisos comunidadId=\{id\}/);
+ assert.match(comunidades,/seccion === 'compromisos' && <div className="estado-materias__contenedor"/);
+ assert.match(comunidades,/<EstadoMaterias comunidadId=\{id\}/);
+ assert.match(comunidades,/<details className="estado-materias__seguimiento-anterior">/);
+ assert.match(comunidades,/<Compromisos comunidadId=\{id\}/);
 });
 test('El módulo visible se llama Operaciones y conserva rutas y permisos',()=>{
  assert.match(modulos,/id:'levantamientos', titulo:'Operaciones', etiqueta:'OPERACIONES'/);

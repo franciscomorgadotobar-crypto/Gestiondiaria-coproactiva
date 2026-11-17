@@ -27,10 +27,6 @@ function IconoArea({tipo}){
   };
   return <svg viewBox="0 0 24 24" width="29" height="29" aria-hidden="true" {...comun}>{dibujos[tipo]||dibujos.aprendizaje}</svg>;
 }
-function Flecha({abierta=false}){
-  return <svg className={abierta?'girada':''} viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>;
-}
-
 /** Home principal: reutiliza el mismo catálogo de rutas y permisos que el lateral. */
 export default function SeleccionArea(){
   const {perfil,salir}=useSesion();
@@ -68,7 +64,7 @@ export default function SeleccionArea(){
           </button>
           {administracionAbierta&&<div id="home-administracion" className="seleccion-home__ajustes-opciones">
             {administracion.map(enlace=><button key={enlace.ruta} type="button" onClick={()=>navegar(enlace.ruta)}>
-              <span>{enlace.etiqueta}</span><Flecha/>
+              <span>{enlace.etiqueta}</span>
             </button>)}
           </div>}
         </div>
@@ -102,11 +98,10 @@ export default function SeleccionArea(){
               <span className="seleccion-home__icono"><IconoArea tipo={vista.icono}/></span>
               <span className="seleccion-home__detalle"><strong className="seleccion-home__titulo">{area.titulo}</strong>
                 <span className="seleccion-home__descripcion">{vista.texto}</span></span>
-
             </button>
             <div id={'home-area-'+area.id} className="seleccion-home__submodulos" hidden={!abierta}>
               {area.enlaces.map(enlace=><button key={enlace.ruta} className="seleccion-home__submodulo" type="button" onClick={()=>entrar(area,enlace.ruta)}>
-                <span>{enlace.etiqueta}</span><Flecha/>
+                <span>{enlace.etiqueta}</span>
               </button>)}
             </div>
           </div>;
