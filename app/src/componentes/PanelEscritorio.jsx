@@ -156,7 +156,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // /notificaciones, /mi-cuenta) usan el grupo elegido.
   // Configuración no se guarda como grupo (es una visita), así que se
   // reconoce solo por la ruta.
-  let grupo = esCliente ? null : (pathname.startsWith('/conocimientos') ? 'aprendizaje' : (grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion'));
+  let grupo = esCliente ? (pathname.startsWith('/conocimientos') ? 'aprendizaje' : null) : (pathname.startsWith('/conocimientos') ? 'aprendizaje' : (grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion'));
   if (grupo === 'comercial' && !puedeConfigurar) grupo = 'operacion';
   if (grupo === 'finanzas' && !esAdministracion) grupo = 'operacion';
   const enConfiguracion = grupo === 'configuracion';
