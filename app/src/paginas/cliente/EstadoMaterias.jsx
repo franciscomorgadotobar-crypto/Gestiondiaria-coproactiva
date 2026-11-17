@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react';
+import {Fragment,useEffect,useState} from 'react';
 import {supabase} from '../../lib/supabase';
 import './EstadoMaterias.css';
 
@@ -154,7 +154,7 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
             <th scope="col">Materia</th><th scope="col">Avance</th>
             <th scope="col">Estado</th><th scope="col">A cargo de</th>
           </tr></thead>
-          <tbody>{materias.map((item,i)=><>
+          <tbody>{materias.map(item=><Fragment key={item.id}>
             <tr key={item.id} className="estado-materias__fila">
               <td>{administrador
                 ?<button type="button" className="estado-materias__materia" onClick={()=>abrir(item)}
@@ -169,11 +169,11 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
             {editando===item.id&&<tr key={'editar-'+item.id} className="estado-materias__edicion-fila">
               <td colSpan={4}><FormularioMateria {...editarProps}/></td>
             </tr>}
-          </>)}</tbody>
+          </Fragment>)}</tbody>
         </table>
       </div>
       <div className="estado-materias__movil">
-        {materias.map((item,i)=><div className="estado-materias__movil-tarjeta" key={item.id}>
+        {materias.map(item=><div className="estado-materias__movil-tarjeta" key={item.id}>
           <div className="estado-materias__movil-cabecera">
             <div className="estado-materias__movil-materia">
               {administrador?<button type="button" className="estado-materias__materia"
