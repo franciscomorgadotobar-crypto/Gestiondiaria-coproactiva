@@ -84,14 +84,19 @@ try {
    assert.equal(await page.getByRole('button',{name:'Editar materia: Designación del primer administrador'}).count(),0);
    assert.ok(llamadas.some(x=>x.endsWith('_levantamientos')));
    const pestañas=page.locator('.portal-pestanas-movil');
-   await pestañas.getByRole('button',{name:'Levantamientos'}).click();
+   async function abrirSeccion(seccion){
+     const boton=pestañas.getByRole('button',{name:seccion,exact:true});
+     if(await boton.isVisible())await boton.click();
+     else await page.getByRole('link',{name:seccion,exact:true}).click();
+   }
+   await abrirSeccion('Levantamientos');
    const detalle=page.locator('.portal-checkin-administrativo');
    await detalle.getByText('Check-in administrativo (sin GPS)').waitFor({timeout:15000});
    assert.match(await detalle.innerText(),/No se pudo registrar GPS/);
    assert.match(await detalle.innerText(),/Administrador QA/);
    assert.match(await detalle.innerText(),/no acredita presencia geolocalizada/);
    assert.equal(await page.locator('.portal-checkin-real').count(),0);
-   await pestañas.getByRole('button',{name:'Resumen'}).click();
+   await abrirSeccion('Resumen');
    await page.locator('.portal-checkin-resumen').waitFor();
    await page.locator('.portal-checkin-resumen').click();
    await page.locator('.portal-checkin-administrativo').waitFor();
