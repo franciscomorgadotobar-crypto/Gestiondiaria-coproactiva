@@ -215,8 +215,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         enlacePortal('incidencias', 'Incidencias'),
         enlacePortal('levantamientos', 'Levantamientos'),
         enlacePortal('mantencion', 'Mantenciones'),
-        enlacePortal('documentos', 'Documentos')
-      ] : [{ ruta: '/portal', etiqueta: 'Mis comunidades', mostrar: true }])
+        enlacePortal('documentos', 'Documentos'),
+        { ruta: '/conocimientos', etiqueta: 'Base de conocimientos', mostrar: true }
+      ] : [
+        { ruta: '/portal', etiqueta: 'Mis comunidades', mostrar: true },
+        { ruta: '/conocimientos', etiqueta: 'Base de conocimientos', mostrar: true }
+      ])
     : enConfiguracion
     ? [
         { ruta: '/mi-cuenta', etiqueta: 'Mi cuenta', mostrar: true },
@@ -674,8 +678,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   <div className="menu-mas-grupo menu-mas-grupo-cuenta" role="group" aria-label="Cuenta y navegación">
                     <p className="menu-mas-grupo-titulo">{enOperacion ? 'Cuenta' : 'Cuenta y navegación'}</p>
                     <div className="menu-mas-enlaces">
-                      <Link to="/mi-cuenta" onClick={() => setMasAbierto(false, { alNavegar: true })}>
-                        Mi cuenta <span aria-hidden="true">›</span>
+                      <Link to={esCliente ? '/portal' : '/mi-cuenta'}
+                        onClick={() => setMasAbierto(false, { alNavegar: true })}>
+                        {esCliente ? 'Mi portal' : 'Mi cuenta'} <span aria-hidden="true">›</span>
                       </Link>
                     </div>
                   </div>
