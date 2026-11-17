@@ -323,7 +323,7 @@ export default function PortalCliente({ vistaPrevia = null }) {
 }
 
 function DashboardCliente() {
-  const { perfil, salir } = useSesion();
+  const { perfil } = useSesion();
   const [vistas, setVistas] = useState(null);
   const navegar = useNavigate();
   const [error, setError] = useState(null);
@@ -390,7 +390,7 @@ function DashboardCliente() {
               Lo que requiere atención, lo que viene y lo que ya se realizó en tus comunidades.
             </p>
           </div>
-          <button className="boton boton-texto" onClick={salir}>Salir</button>
+
         </div>
       </header>
 
