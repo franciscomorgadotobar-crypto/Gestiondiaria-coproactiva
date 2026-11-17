@@ -373,6 +373,10 @@ try {
     await page.waitForURL(u=>u.pathname==='/comunidades',{timeout:20000});
     assert.equal(await documental.getAttribute('aria-expanded'),'true');
     assert.equal(await operaciones.getAttribute('aria-expanded'),'true');
+    await lateral.getByRole('link',{name:'Vista Cliente'}).click();
+    await page.waitForURL(u=>u.pathname==='/vista-cliente',{timeout:20000});
+    await page.getByRole('heading',{name:'Vista de cliente'}).waitFor();
+    assert.equal(await lateral.getByRole('link',{name:'Vista Cliente'}).getAttribute('aria-current'),'page');
     await lateral.getByRole('link',{name:'Home principal'}).click();
     await page.waitForURL(u=>u.pathname==='/',{timeout:20000});
     assert.equal(await page.locator('.seleccion-home__tarjeta').count(),6);
