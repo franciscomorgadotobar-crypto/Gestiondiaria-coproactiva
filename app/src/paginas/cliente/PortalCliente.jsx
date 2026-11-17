@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import MapaPortalCliente from './MapaPortalCliente';
-import Compromisos from './Compromisos';
+import EstadoMaterias from './EstadoMaterias';
 import DriveArchivos from '../../componentes/DriveArchivos';
 import './PortalCliente.css';
 
@@ -588,7 +588,8 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   const esVistaPrevia = Boolean(vistaPrevia);
   const clienteId = vistaPrevia?.clienteId || null;
   const [params, setParams] = useSearchParams();
-  const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'resumen';
+  // La ficha de comunidad abre el informe por materia. Resumen sigue accesible como pestaña.
+  const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'compromisos';
   const tab = tabInicial; // URL permite volver de Documentos a Incidencias con Atrás.
   const [vista, setVista] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -644,7 +645,8 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   function cambiarTab(nuevo) {
     if (tab === nuevo || !TABS.some(([clave]) => clave === nuevo)) return;
     const siguientes = new URLSearchParams(params);
-    if (nuevo === 'resumen') siguientes.delete('seccion');
+    // Resumen requiere parámetro explícito: el acceso sin seccion abre los avances.
+    if (nuevo === 'compromisos') siguientes.delete('seccion');
     else siguientes.set('seccion', nuevo);
     setParams(siguientes, { replace: false, preventScrollReset: true });
   }
@@ -675,7 +677,9 @@ function DetalleCliente({ id, vistaPrevia = null }) {
             </nav>
 
             {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} vistaPrevia={esVistaPrevia} />}
-            {tab === 'compromisos' && <Compromisos comunidadId={id} administrador={!esVistaPrevia && ['admin','superadmin','jefatura'].includes(perfil?.rol)} soloVistaCliente={esVistaPrevia} />}
+            {tab === 'compromisos' && <EstadoMaterias comunidadId={id}
+              nombreComunidad={vista?.comunidad?.nombre||'Comunidad'}
+              administrador={false} soloLecturaCliente={true} />}
             {tab === 'incidencias' && <IncidenciasComunidad vista={vista} />}
             {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} />}
             {tab === 'mantencion' && <MantencionesComunidad vista={vista} />}
