@@ -102,9 +102,10 @@ try {
   assert.ok(scrollWidth<=ancho+2,'El estado por materia desborda horizontalmente: '+ancho+'/'+scrollWidth);
   await page.screenshot({path:'artifacts/ui/estado-materias-'+ancho+'.png',fullPage:false});
   await page.getByRole('button',{name:'Editar materia: Designación del primer administrador'}).click();
-  await page.getByLabel('Estado (descripción de la gestión)').fill('Antecedentes verificados en QA');
-  await page.getByLabel('Avance',{exact:true}).selectOption('en_curso');
-  await page.getByRole('button',{name:'Guardar cambios'}).click();
+  const editor=page.locator(ancho<=720?'.estado-materias__movil':'.estado-materias__tabla-contenedor');
+  await editor.getByLabel('Estado (descripción de la gestión)').fill('Antecedentes verificados en QA');
+  await editor.getByLabel('Avance',{exact:true}).selectOption('en_curso');
+  await editor.getByRole('button',{name:'Guardar cambios'}).click();
   await page.getByText('Antecedentes verificados en QA').first().waitFor();
   assert.equal(grabadas,1,'La edición debe guardarse una vez sin duplicados');
   assert.equal(datos[0].avance,'en_curso');
