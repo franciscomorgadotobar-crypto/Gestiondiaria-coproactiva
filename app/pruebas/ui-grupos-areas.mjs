@@ -134,6 +134,39 @@ try {
     await ctx.close();
   }
 
+  // Regresión del ajuste solicitado: no reservar altura vacía por tarjeta.
+  // Mide contenido e insets reales a todos los anchos relevantes del Home.
+  for (const ancho of [320,360,390,412,768,1280,1600]) {
+    const {ctx,page}=await crear({ancho,alto:900});
+    const tarjetasCompactas=await page.locator('.seleccion-home__tarjeta').evaluateAll(els=>els.map(el=>{
+      const caja=el.getBoundingClientRect();
+      const icono=el.querySelector('.seleccion-home__icono')?.getBoundingClientRect();
+      const detalle=el.querySelector('.seleccion-home__detalle')?.getBoundingClientRect();
+      const cs=getComputedStyle(el);
+      const relleno=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+      const borde=parseFloat(cs.borderTopWidth)+parseFloat(cs.borderBottomWidth);
+      const contenido=Math.max(icono?.height||0,detalle?.height||0);
+      return {
+        altura:caja.height,
+        vacio:caja.height-contenido-relleno-borde,
+        textoDentro:!!detalle&&detalle.left>=caja.left&&detalle.right<=caja.right-7&&detalle.bottom<=caja.bottom-7,
+        flecha:!!el.querySelector('.seleccion-home__flecha')
+      };
+    }));
+    assert.equal(tarjetasCompactas.length,6);
+    for (const tarjeta of tarjetasCompactas) {
+      assert.ok(tarjeta.altura>=44,'Área táctil insuficiente a '+ancho+'px: '+JSON.stringify(tarjeta));
+      assert.ok(tarjeta.vacio<=3,'Altura vacía reservada a '+ancho+'px: '+JSON.stringify(tarjeta));
+      assert.equal(tarjeta.textoDentro,true,'Texto fuera de tarjeta a '+ancho+'px: '+JSON.stringify(tarjeta));
+      assert.equal(tarjeta.flecha,false,'Las tarjetas no deben volver a mostrar flechas');
+    }
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),
+      'Desbordamiento horizontal del Home a '+ancho+'px');
+    if([320,390,1280].includes(ancho))
+      await page.screenshot({path:'artifacts/ui/home-ajustado-'+ancho+'.png',fullPage:false});
+    await ctx.close();
+  }
+
   // Las tarjetas web/tablet también conservan el mockup sin flechas.
   for(const ancho of [768,1280,1600]){
     const {ctx,page}=await crear({ancho,alto:900});
