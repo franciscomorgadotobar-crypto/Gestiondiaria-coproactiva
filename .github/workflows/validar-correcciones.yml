@@ -49,6 +49,12 @@ jobs:
       - name: "Verificar informe Santa Clara: 12 materias, 3 estados y permisos"
         working-directory: app
         run: node --test pruebas/estado-avance-materias.test.js
+      - name: Validar portal de cliente y cabecera de Estado de avances y compromisos
+        working-directory: app
+        run: node --test pruebas/portal-cliente-avances.test.js
+      - name: Validar autorización y visualización de check-in administrativo
+        working-directory: app
+        run: node --test pruebas/checkin-administrativo-cliente.test.js
       - name: Verificar Motor de Avances compartido entre Levantamientos y Compromisos
         working-directory: app
         run: node --test pruebas/motor-avances.test.js
@@ -251,6 +257,9 @@ jobs:
       - name: Estado por materia y edición real en Chromium (320–1280px)
         working-directory: app
         run: node pruebas/ui-estado-materias.mjs
+      - name: Portal y vista previa de cliente con avances y check-in administrativo
+        working-directory: app
+        run: node pruebas/ui-portal-avances-cliente.mjs
       - name: Verificar Compromisos en PC y móvil con 24 registros simulados
         working-directory: app
         run: node pruebas/ui-compromisos-escritorio.mjs
