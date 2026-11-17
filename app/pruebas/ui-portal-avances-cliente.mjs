@@ -41,7 +41,14 @@ try {
      refresh_token:'token-local',user};
    const ctx=await navegador.newContext({viewport:{width:ancho,height:900},
      serviceWorkers:'block',isMobile:ancho<650,hasTouch:ancho<650});
-   await ctx.addInitScript(s=>localStorage.setItem('sb-sin-configurar-auth-token',JSON.stringify(s)),session);
+   // Inyectar una sola vez. Tras cerrar sesión, el contexto no debe reponer
+   // automáticamente la credencial cuando se compruebe la ruta protegida.
+   await ctx.addInitScript(s=>{
+     if(!sessionStorage.getItem('qa-sesion-cargada')){
+       localStorage.setItem('sb-sin-configurar-auth-token',JSON.stringify(s));
+       sessionStorage.setItem('qa-sesion-cargada','1');
+     }
+   },session);
    const llamadas=[];
    let cierres=0;
    await ctx.route('https://sin-configurar.supabase.co/**',async route=>{
