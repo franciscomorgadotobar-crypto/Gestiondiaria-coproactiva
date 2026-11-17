@@ -65,7 +65,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          esperado="$(grep -oE '/assets/index-[^"]+\.js' app/dist/index.html | head -n 1)"
+          esperado="$(grep -oE '/assets/index-[^"]+\.js' /tmp/coproactiva-dist/index.html | head -n 1)"
           test -n "$esperado"
           for intento in $(seq 1 18); do
             if curl -fsSL --connect-timeout 8 --max-time 15 \
