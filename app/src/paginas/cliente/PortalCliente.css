@@ -307,3 +307,14 @@
 }
 .portal-checkin-resumen:hover { background: #fff0df; }
 .portal-checkin-resumen:focus-visible { outline: 2px solid #a65a22; outline-offset: 2px; }
+
+/* Vista administrativa embebida: sus pestañas deben poder navegarse en PC.
+   El portal de un cliente mantiene su navegación lateral de escritorio. */
+@media(min-width:769px) {
+  .portal-pestanas-movil.portal-pestanas-vista-previa {
+    display: flex !important;
+    overflow-x: auto;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
