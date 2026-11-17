@@ -106,7 +106,11 @@ try {
   await editor.getByLabel('Estado (descripción de la gestión)').fill('Antecedentes verificados en QA');
   await editor.locator('.estado-materias__campos select').selectOption('en_curso');
   await editor.getByRole('button',{name:'Guardar cambios'}).click();
-  await page.getByText('Antecedentes verificados en QA').first().waitFor();
+  const detalleActualizado=page.locator(ancho<=720
+    ? '.estado-materias__movil-tarjeta .estado-materias__movil-estado'
+    : '.estado-materias__tabla .estado-materias__detalle'
+  ).filter({hasText:'Antecedentes verificados en QA'});
+  await detalleActualizado.first().waitFor({state:'visible'});
   assert.equal(grabadas,1,'La edición debe guardarse una vez sin duplicados');
   assert.equal(datos[0].avance,'en_curso');
   assert.equal(datos[0].estado_detalle,'Antecedentes verificados en QA');
