@@ -85,7 +85,7 @@ try {
   await page.getByRole('link',{name:/Reserva Santa Clara/}).first().click();
   await page.waitForURL(u=>u.pathname==='/comunidades/'+comunidadId,{timeout:20000});
   await page.getByRole('tab',{name:'Gestiones y avances'}).click();
-  await page.getByText('Estado de avance de la puesta en marcha').waitFor();
+  await page.getByText('Estado de avances y compromisos - Reserva Santa Clara').waitFor();
   await page.getByText('Al 17 de noviembre de 2026.').waitFor();
   assert.equal(await page.locator('.estado-materias__seguimiento-anterior').count(),1);
   assert.equal(await page.locator('.estado-materias__seguimiento-anterior').getAttribute('open'),null);
