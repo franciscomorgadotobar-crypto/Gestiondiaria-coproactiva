@@ -256,6 +256,9 @@ jobs:
         run: node pruebas/ui-auditoria-internas.mjs
       - name: Adjuntar capturas de QA
         if: always()
+        # La cuota de artefactos no puede invalidar pruebas UI que ya pasaron.
+        # El error de subida continúa visible en el job para su seguimiento.
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: capturas-ui-sin-sesion
