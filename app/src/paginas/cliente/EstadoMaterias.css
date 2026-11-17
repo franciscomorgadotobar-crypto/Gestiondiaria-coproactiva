@@ -73,3 +73,13 @@
  .estado-materias__leyenda{display:grid;gap:5px}
  .estado-materias__pie{font-size:9px;line-height:1.45}
 }
+
+/* El motor anterior se conserva accesible, pero no compite con el informe principal. */
+.estado-materias__contenedor{display:grid;gap:13px;min-width:0}
+.estado-materias__seguimiento-anterior{min-width:0;border:1px solid #ded8d1;border-radius:10px;background:#fff;overflow:hidden}
+.estado-materias__seguimiento-anterior>summary{min-height:44px;padding:12px 16px;font-size:13px;font-weight:700;color:var(--enlace);cursor:pointer;list-style-position:inside}
+.estado-materias__seguimiento-anterior[open]>summary{border-bottom:1px solid var(--borde-suave)}
+.estado-materias__seguimiento-anterior>.compromisos-wrap{padding:14px;min-width:0}
+@media(max-width:720px){
+ .estado-materias__seguimiento-anterior>.compromisos-wrap{padding:11px}
+}
