@@ -99,7 +99,7 @@ test('Cada área contiene opciones directas sin submenús intermedios',()=>{
   const areas=areasDisponibles(perfil);
   const operaciones=areas.find(g=>g.id==='operacion');
   assert.deepEqual(operaciones.enlaces.map(e=>e.etiqueta),[
-    'Panel de operaciones','Comunidades','Bitácora','Mantenciones',
+    'Panel de operaciones','Comunidades','Vista Cliente','Bitácora','Mantenciones',
     'Nuevo levantamiento','Plantillas de levantamiento','Mapa de visitas','Red de proveedores'
   ]);
   const comercial=areas.find(g=>g.id==='comercial');
@@ -107,12 +107,15 @@ test('Cada área contiene opciones directas sin submenús intermedios',()=>{
     'Leads y prospectos','Arriendos y ventas','SEO y analítica','Plantillas de correo'
   ]);
   assert.ok(areas.every(g=>!('secciones' in g)));
-  assert.ok(!operaciones.enlaces.some(e=>['/whatsapp','/vista-cliente'].includes(e.ruta)));
+  assert.ok(!operaciones.enlaces.some(e=>e.ruta==='/whatsapp'));
+  assert.equal(operaciones.enlaces.filter(e=>e.ruta==='/vista-cliente').length,1);
   assert.ok(!comercial.enlaces.some(e=>e.ruta==='/propuestas'));
   assert.equal(new Set(operaciones.enlaces.map(e=>e.ruta)).size,operaciones.enlaces.length);
-  assert.equal(grupoDeRuta('/vista-cliente'),'configuracion');
-  assert.ok(enlacesAdministracion(perfil).some(e=>e.ruta==='/vista-cliente'));
+  assert.equal(grupoDeRuta('/vista-cliente'),'operacion');
+  assert.ok(!enlacesAdministracion(perfil).some(e=>e.ruta==='/vista-cliente'));
   assert.ok(!enlacesAdministracion({rol:'jefatura',activo:true}).some(e=>e.ruta==='/vista-cliente'));
+  assert.equal(areasDisponibles({rol:'jefatura',activo:true}).find(g=>g.id==='operacion').enlaces.some(e=>e.ruta==='/vista-cliente'),true);
+  assert.equal(areasDisponibles({rol:'terreno',activo:true}).find(g=>g.id==='operacion').enlaces.some(e=>e.ruta==='/vista-cliente'),false);
   const jefatura=areasDisponibles({rol:'jefatura',activo:true}).find(g=>g.id==='operacion');
   assert.ok(!jefatura.enlaces.some(e=>e.ruta==='/proveedores'));
   const terreno=areasDisponibles({rol:'terreno',activo:true}).find(g=>g.id==='operacion');
