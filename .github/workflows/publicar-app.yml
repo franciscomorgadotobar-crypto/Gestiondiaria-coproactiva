@@ -60,3 +60,26 @@ jobs:
           git add -A
           git commit -m "Publicar app CoproActiva"
           git push origin HEAD:gh-pages --force
+
+      - name: Verificar respuesta real de app.coproactiva.cl
+        shell: bash
+        run: |
+          set -euo pipefail
+          esperado="$(grep -oE '/assets/index-[^"]+\.js' app/dist/index.html | head -n 1)"
+          test -n "$esperado"
+          for intento in $(seq 1 18); do
+            if curl -fsSL --connect-timeout 8 --max-time 15 \
+                 -H 'Cache-Control: no-cache' \
+                 "https://app.coproactiva.cl/?verificacion=${GITHUB_SHA}" \
+                 -o /tmp/coproactiva-live.html \
+                 && grep -Fq "$esperado" /tmp/coproactiva-live.html \
+                 && curl -fsSLo /dev/null --connect-timeout 8 --max-time 15 \
+                      "https://app.coproactiva.cl$esperado"; then
+              echo "PUBLICACION WEB VERIFICADA: el dominio sirve $esperado"
+              exit 0
+            fi
+            echo "Intento $intento/18: el dominio aún no sirve el bundle esperado"
+            sleep 5
+          done
+          echo "::error::El dominio público no responde con el bundle de este despliegue."
+          exit 1
