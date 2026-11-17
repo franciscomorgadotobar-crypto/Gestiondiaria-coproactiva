@@ -43,10 +43,15 @@ try {
      serviceWorkers:'block',isMobile:ancho<650,hasTouch:ancho<650});
    await ctx.addInitScript(s=>localStorage.setItem('sb-sin-configurar-auth-token',JSON.stringify(s)),session);
    const llamadas=[];
+   let cierres=0;
    await ctx.route('https://sin-configurar.supabase.co/**',async route=>{
      const url=new URL(route.request().url()),path=url.pathname;
      const resp=value=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(value)});
      if(path.includes('/auth/v1/user'))return resp(user);
+     if(path.includes('/auth/v1/logout')){
+       cierres++;
+       return route.fulfill({status:204,body:''});
+     }
      if(path.includes('/rest/v1/perfiles'))return resp({
        id:usuarioId,nombre:'QA Coproactiva',rol,activo:true,email:user.email,bottom_nav:[]
      });
@@ -101,6 +106,25 @@ try {
    await page.locator('.portal-checkin-resumen').click();
    await page.locator('.portal-checkin-administrativo').waitFor();
    assert.deepEqual(errores,[]);
+   // El cliente con una sola comunidad no llega a ver el dashboard.
+   if(rol==='cliente'){
+     if(ancho<900){
+       const boton=page.getByRole('button',{name:'Cerrar sesión',exact:true});
+       assert.equal(await boton.isVisible(),true,'Botón de salida visible en móvil');
+       await boton.click();
+     }else{
+       const boton=page.locator('.usuario-lateral-salir');
+       assert.equal(await boton.isVisible(),true,'Salida disponible en sidebar');
+       await boton.click();
+     }
+     await page.waitForURL(u=>u.pathname==='/ingreso',{timeout:15000});
+     assert.equal(cierres,1,'Se solicita una única salida');
+     await page.goto(base+'/portal/comunidades/'+comunidadId,{waitUntil:'domcontentloaded'});
+     await page.waitForURL(u=>u.pathname==='/ingreso',{timeout:15000});
+   }else if(ancho<900){
+     assert.equal(await page.getByRole('button',{name:'Cerrar sesión',exact:true}).count(),0,
+       'En la simulación administrativa no debe aparecer el botón de cliente');
+   }
    await ctx.close();
    console.log('Portal con check-in administrativo: OK '+rol+' '+ancho+'px');
  }
