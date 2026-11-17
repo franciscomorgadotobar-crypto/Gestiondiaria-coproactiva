@@ -58,7 +58,7 @@ export function modulosDisponibles(perfil) {
       ruta:'/conocimientos', area:null, visible:true },
     { id:'vista-cliente', titulo:'Vista de cliente', etiqueta:'PORTAL CLIENTE',
       descripcion:'Previsualiza el portal según la comunidad y cuenta cliente, sin editar datos.',
-      ruta:'/vista-cliente', area:'operacion', visible:administracion },
+      ruta:'/vista-cliente', area:'operacion', visible:comercial },
     // Ajustes y configuración siempre al final del catálogo y navegación plana.
     { id:'configuracion', titulo:'Configuración', etiqueta:'AJUSTES',
       descripcion:administracion ? 'Mi cuenta, equipo y permisos.' : 'Mi cuenta y preferencias personales.',
@@ -110,6 +110,7 @@ export function areasDisponibles(perfil) {
       enlaces:[
         {ruta:'/inicio',etiqueta:'Panel de operaciones',visible:true},
         {ruta:'/comunidades',etiqueta:'Comunidades',visible:true},
+        {ruta:'/vista-cliente',etiqueta:'Vista Cliente',visible:configurar},
         {ruta:'/bitacora',etiqueta:'Bitácora',visible:true},
         {ruta:'/mantenciones',etiqueta:'Mantenciones',visible:true},
         {ruta:'/nuevo',etiqueta:'Nuevo levantamiento',visible:configurar},
@@ -156,16 +157,14 @@ export function areasDisponibles(perfil) {
   }));
 }
 
-/** Accesos administrativos compartidos por Home principal y lateral.
- * La vista de cliente es una herramienta de previsualización, no Operaciones. */
+/** Accesos de administración y ajustes, separados del catálogo de Operaciones. */
 export function enlacesAdministracion(perfil){
   if(!perfil || perfil.rol==='cliente' || !perfil.activo)return [];
   const admin=['admin','superadmin'].includes(perfil.rol);
   return [
     {ruta:'/configuracion',etiqueta:'Configuración'},
     {ruta:'/mi-cuenta',etiqueta:'Mi cuenta'},
-    ...(admin?[{ruta:'/vista-cliente',etiqueta:'Vista de cliente'},
-      {ruta:'/equipo',etiqueta:'Equipo y permisos'}]:[]),
+    ...(admin?[{ruta:'/equipo',etiqueta:'Equipo y permisos'}]:[]),
     ...(perfil.rol==='superadmin'?[{ruta:'/clientes',etiqueta:'Clientes y accesos'}]:[])
   ];
 }
