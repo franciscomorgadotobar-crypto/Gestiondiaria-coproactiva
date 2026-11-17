@@ -45,3 +45,13 @@ test('Portal y simulador muestran motivo, fecha y responsable sin falsificar GPS
  assert.match(css,/\.portal-checkin-administrativo/);
  assert.match(css,/\.portal-checkin-resumen/);
 });
+
+test('Corrección de ambigüedad en ON CONFLICT preserva seguridad y no simula GPS',()=>{
+ const fix=leer('../supabase/migrations/202611170003_fix_checkin_administrativo_control_id_ambiguo.sql');
+ assert.match(fix,/ON CONFLICT ON CONSTRAINT control_checkin_excepciones_pkey DO NOTHING;/);
+ assert.doesNotMatch(fix,/ON CONFLICT\s*\(\s*control_id\s*\)/);
+ assert.match(fix,/public\.mi_rol\(\)::text IS DISTINCT FROM 'superadmin'/);
+ assert.match(fix,/v_control\.checkin_en IS NOT NULL/);
+ assert.match(fix,/REVOKE ALL ON FUNCTION public\.autorizar_control_sin_checkin\(uuid,text\) FROM PUBLIC,anon/);
+ assert.doesNotMatch(fix,/UPDATE\s+public\.controles|SET\s+checkin_en|SET\s+checkin_lat/i);
+});
