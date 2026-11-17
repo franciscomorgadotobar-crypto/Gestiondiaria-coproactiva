@@ -1,19 +1,8 @@
 name: Construir APK Android con Capacitor
 
+# La APK no se utiliza actualmente. Evitar compilar Android en cada cambio web.
+# La ejecución manual sigue disponible si vuelve a necesitarse.
 on:
-  pull_request:
-    branches:
-      - develop
-    paths:
-      - "app/**"
-      - ".github/workflows/construir-apk-android.yml"
-      - ".github/workflows/publicar-app.yml"
-  push:
-    branches:
-      - develop
-    paths:
-      - "app/**"
-      - ".github/workflows/construir-apk-android.yml"
   workflow_dispatch:
 
 permissions:
