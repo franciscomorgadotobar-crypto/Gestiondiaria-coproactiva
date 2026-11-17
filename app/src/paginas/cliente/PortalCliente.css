@@ -318,3 +318,16 @@
     gap: 6px;
   }
 }
+
+/* El cliente abre el PDF, sin un visor interno del levantamiento. */
+.portal-boton-pdf {
+  border: 1px solid var(--borde);
+  background: var(--tarjeta);
+  font: 700 13px/1.4 var(--fuente-cuerpo);
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 9px;
+}
+.portal-boton-pdf:disabled { opacity: .7; cursor: progress; }
+.portal-boton-pdf:focus-visible { outline: 2px solid var(--enlace); outline-offset: 2px; }
