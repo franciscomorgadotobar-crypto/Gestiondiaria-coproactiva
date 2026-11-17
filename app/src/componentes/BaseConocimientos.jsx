@@ -14,7 +14,7 @@ const INICIO = 3500;
 
 function puedePresentarse(pathname) {
   if (document.hidden || pathname === '/conocimientos') return false;
-  if (/^\/(ingreso|clave|portal|nuevo|control|plantillas\/importar)(\/|$)/.test(pathname)) return false;
+  if (/^\/(ingreso|clave|nuevo|control|plantillas\/importar)(\/|$)/.test(pathname)) return false;
   if (/^\/(propiedades\/nueva|contabilidad\/asientos|bitacora\/nueva)(\/|$)/.test(pathname)) return false;
   if (document.querySelector('[aria-modal="true"], dialog[open]')) return false;
   if (document.activeElement?.matches?.('input, textarea, select, [contenteditable="true"]')) return false;
@@ -30,7 +30,7 @@ function puedePresentarse(pathname) {
 export default function BaseConocimientos() {
   const { sesion, perfil, cargando } = useSesion();
   const usuarioId = sesion?.user?.id;
-  const activo = Boolean(usuarioId && !cargando && perfil?.activo && perfil?.rol !== 'cliente');
+  const activo = Boolean(usuarioId && !cargando && perfil?.activo);
   const { pathname } = useLocation();
   const navegar = useNavigate();
   const rutaActual = useRef(pathname);
