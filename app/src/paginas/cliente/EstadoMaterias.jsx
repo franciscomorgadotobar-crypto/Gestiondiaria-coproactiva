@@ -62,7 +62,7 @@ function FormularioMateria({form,cambiar,guardar,cancelar,guardando,nuevo}){
  * Estado de avance por materia, reproduciendo el formato del informe de Santa Clara.
  * Las gestiones contractuales anteriores se mantienen en su tabla original.
  */
-export default function EstadoMaterias({comunidadId,nombreComunidad='',administrador=false}){
+export default function EstadoMaterias({comunidadId,nombreComunidad='',administrador=false,soloLecturaCliente=false}){
   const [materias,setMaterias]=useState([]);
   const [cargando,setCargando]=useState(true);
   const [error,setError]=useState('');
@@ -73,16 +73,20 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
   async function cargar(){
     if(!comunidadId)return;
     setCargando(true);
-    const {data,error:err}=await supabase.from('estado_avance_materias')
+    // Clientes y vista previa consultan únicamente materias publicadas.
+    // Supabase aplica además la RLS por comunidad y cuenta autorizada.
+    let consulta=supabase.from('estado_avance_materias')
       .select('id,comunidad_id,orden,materia,avance,estado_detalle,a_cargo_de,fecha_informe,actualizado_en')
-      .eq('comunidad_id',comunidadId)
+      .eq('comunidad_id',comunidadId);
+    if(soloLecturaCliente)consulta=consulta.eq('publicado',true);
+    const {data,error:err}=await consulta
       .order('orden',{ascending:true})
       .order('creado_en',{ascending:true});
     if(err)setError('No fue posible cargar el estado por materia: '+err.message);
     else{setMaterias(data||[]);setError('');}
     setCargando(false);
   }
-  useEffect(()=>{setEditando(null);cargar();},[comunidadId]);
+  useEffect(()=>{setEditando(null);cargar();},[comunidadId,soloLecturaCliente]);
 
   function abrir(item){
     if(!administrador)return;
@@ -122,13 +126,12 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
   }
 
   const fecha= materias.map(x=>x.fecha_informe).filter(Boolean).sort().at(-1);
-  const esSantaClara=/santa clara/i.test(nombreComunidad||'');
-  const titulo=esSantaClara?'Estado de avance de la puesta en marcha':'Estado de avance por materia';
+  const titulo='Estado de avances y compromisos - '+(nombreComunidad||'Comunidad');
   const editarProps={form,cambiar:setForm,guardar,cancelar,guardando};
-  return <section className="estado-materias" aria-label="Estado de avance por materia">
+  return <section className="estado-materias" aria-label="Estado de avances y compromisos">
     <header className="estado-materias__cabecera">
       <div className="estado-materias__identificacion">
-        <p className="estado-materias__antetitulo">Estado de avance · {nombreComunidad||'Comunidad'}</p>
+        <p className="estado-materias__antetitulo">Seguimiento de la comunidad</p>
         <h2>{titulo}</h2>
         {fecha&&<p className="estado-materias__fecha">Al {fechaInforme(fecha)}.</p>}
       </div>
@@ -195,7 +198,7 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
     </div>
     <footer className="estado-materias__pie">
       <span>Coproactiva Administración SpA</span>
-      <span>{nombreComunidad||'Comunidad'} · Estado de avance</span>
+      <span>{nombreComunidad||'Comunidad'} · Avances y compromisos</span>
     </footer>
   </section>;
 }
