@@ -35,19 +35,19 @@ test('El registro administrativo solo se expone a cuentas con comunidad y planti
 test('Portal solo abre el PDF, sin divulgar datos de autorización interna',()=>{
  const fix=leer('../supabase/migrations/202611170004_portal_levantamiento_lectura_cliente.sql');
  const generador=leer('src/lib/pdfClienteLevantamiento.js');
- assert.doesNotMatch(portal,/supabase\\.rpc\\('checkins_administrativos_visibles'/);
+ assert.doesNotMatch(portal,/supabase\.rpc\('checkins_administrativos_visibles'/);
  assert.doesNotMatch(portal,/checkin_administrativo|autorizado_por_nombre|regularizaciones/);
  assert.doesNotMatch(portal,/DetalleLevantamientoCliente|portal-visor-grupo/);
  assert.match(portal,/Abrir informe PDF/);
  assert.match(portal,/generarPdfLevantamientoCliente/);
  assert.match(generador,/portal_levantamiento_detalle/);
  assert.match(generador,/createSignedUrls/);
- assert.match(generador,/output\\('blob'\\)/);
+ assert.match(generador,/output\('blob'\)/);
  assert.match(fix,/IF p_usuario_cliente IS NULL THEN/);
  assert.match(fix,/cliente_puede_ver_plantilla/);
  assert.match(fix,/vista_cliente_puede_ver_plantilla/);
  assert.match(fix,/RETURN; -- No se divulgan excepciones administrativas al portal cliente/);
- assert.match(css,/\\.portal-boton-pdf/);
+ assert.match(css,/\.portal-boton-pdf/);
 });
 
 test('Corrección de ambigüedad en ON CONFLICT preserva seguridad y no simula GPS',()=>{
