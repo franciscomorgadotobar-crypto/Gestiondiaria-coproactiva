@@ -569,6 +569,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 </span>
               )}
               <Campana miId={perfil?.id} />
+              {esCliente && (
+                <button type="button" className="barra-area-salir-cliente"
+                  onClick={salir} aria-label="Cerrar sesión">
+                  Cerrar sesión
+                </button>
+              )}
             </div>
           </div>
         )}
