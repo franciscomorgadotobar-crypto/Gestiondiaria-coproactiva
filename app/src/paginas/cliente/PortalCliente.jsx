@@ -794,6 +794,124 @@ function TarjetaIncidencia({ incidencia }) {
   );
 }
 
+function respuestaLegible(valor) {
+  if(valor===null||valor===undefined||valor==='') return null;
+  if(typeof valor==='string')return valor;
+  if(typeof valor==='number'||typeof valor==='boolean')return String(valor);
+  if(Array.isArray(valor))return valor.map(respuestaLegible).filter(Boolean).join(', ');
+  return JSON.stringify(valor,null,2);
+}
+
+function DetalleLevantamientoCliente({ id, clienteId = null }) {
+  const [informe,setInforme]=useState(null);
+  const [error,setError]=useState('');
+  const [evidenciasNoDisponibles,setEvidenciasNoDisponibles]=useState(false);
+
+  useEffect(()=>{
+    let vigente=true;
+    async function cargar() {
+      setInforme(null);
+      setError('');
+      setEvidenciasNoDisponibles(false);
+      try {
+        const {data,error:fallo}=await supabase.rpc('portal_levantamiento_detalle',{
+          p_control_id:id,p_usuario_cliente:clienteId||null
+        });
+        if(fallo)throw fallo;
+        if(!data?.levantamiento)throw new Error('El levantamiento no está disponible.');
+        const rutas=[...new Set((data.adjuntos||[]).map(a=>a.storage_path).filter(Boolean))];
+        const urls={};
+        let errorEvidencias=false;
+        // Lotes para evitar peticiones enormes cuando un levantamiento tiene muchas fotos.
+        for(let pos=0;pos<rutas.length;pos+=35) {
+          if(!vigente)return;
+          const {data:firmadas,error:falloFotos}=await supabase.storage.from('evidencia')
+            .createSignedUrls(rutas.slice(pos,pos+35),3600);
+          if(falloFotos)errorEvidencias=true;
+          (firmadas||[]).forEach(a=>{
+            if(a.path&&a.signedUrl)urls[a.path]=a.signedUrl;
+            else if(a.error)errorEvidencias=true;
+          });
+        }
+        if(!vigente)return;
+        setInforme({...data,urls});
+        setEvidenciasNoDisponibles(errorEvidencias);
+      }catch(e){
+        if(vigente)setError(e?.message||'No se pudo abrir el levantamiento.');
+      }
+    }
+    cargar();
+    return ()=>{vigente=false;};
+  },[id,clienteId]);
+
+  if(error)return <div id={'detalle-levantamiento-'+id} className="aviso aviso-critico"
+    role="alert">No se pudo cargar el levantamiento: {error}</div>;
+  if(!informe)return <div id={'detalle-levantamiento-'+id}
+    className="portal-visor-espera" role="status">Cargando respuestas y evidencias…</div>;
+
+  const items=informe.items||[];
+  const adjuntos=informe.adjuntos||[];
+  const grupos=items.reduce((acc,item)=>{
+    const nombre=item.grupo||'Sin categoría';
+    if(!acc.has(nombre))acc.set(nombre,[]);
+    acc.get(nombre).push(item);
+    return acc;
+  },new Map());
+  const enlazados=new Set(items.map(item=>String(item.id)));
+  const adjuntosSinPregunta=adjuntos.filter(a=>!a.control_item_id||!enlazados.has(String(a.control_item_id)));
+  const verAdjuntos=(lista)=><div className="portal-visor-evidencias">
+    {lista.map(a=>{
+      const url=informe.urls?.[a.storage_path];
+      const nombre=a.descripcion||a.nombre||'Evidencia';
+      const foto=/^image\//i.test(a.mime||'')||/\.(png|jpg|jpeg|webp|gif)$/i.test(a.nombre||'');
+      return url
+        ? <a key={a.id} href={url} target="_blank" rel="noreferrer"
+            className="portal-visor-evidencia" aria-label={'Abrir evidencia: '+nombre}>
+            {foto?<img src={url} alt={nombre} loading="lazy"/>:<span>Ver archivo</span>}
+            <small>{nombre}</small>
+          </a>
+        : <span key={a.id} className="portal-visor-sin-foto">{nombre} · Archivo no disponible</span>;
+    })}
+  </div>;
+  const etiquetas={cumple:'Cumple',observacion:'Con observación',critico:'Crítico',sin_evaluar:'Sin evaluar'};
+  return <section id={'detalle-levantamiento-'+id} className="portal-visor-levantamiento"
+    aria-label={'Detalle del levantamiento '+(informe.levantamiento?.plantilla_nombre||'')}>
+    <div className="portal-visor-cabecera">
+      <strong>Detalle del levantamiento</strong>
+      <span>{items.length} puntos · {adjuntos.length} evidencias</span>
+    </div>
+    {evidenciasNoDisponibles&&<p className="aviso aviso-critico" role="alert">
+      Algunas evidencias no pudieron cargarse. Puedes revisar las respuestas e intentar nuevamente al actualizar.
+    </p>}
+    {[...grupos].map(([grupo,lista],indice)=>
+      <details key={grupo} className="portal-visor-grupo" open={indice===0}>
+        <summary><strong>{grupo}</strong><span>{lista.length} puntos</span></summary>
+        <div className="portal-visor-preguntas">
+          {lista.map(item=>{
+            const fotos=adjuntos.filter(a=>a.control_item_id===item.id);
+            const respuesta=respuestaLegible(item.respuesta);
+            const estado=etiquetas[item.estado]||item.estado||'Sin evaluar';
+            return <article key={item.id} className="portal-visor-pregunta">
+              <div className="portal-visor-pregunta-titulo">
+                <strong>{item.texto||'Punto de control'}</strong>
+                <span>{item.estado==='sin_evaluar'&&respuesta?'Respondido':estado}</span>
+              </div>
+              {respuesta&&<p><b>Respuesta:</b> {respuesta}</p>}
+              {item.nota&&<p><b>Observación:</b> {item.nota}</p>}
+              {fotos.length>0&&verAdjuntos(fotos)}
+            </article>;
+          })}
+        </div>
+      </details>
+    )}
+    {adjuntosSinPregunta.length>0&&<div className="portal-visor-anexos">
+      <strong>Evidencias generales</strong>{verAdjuntos(adjuntosSinPregunta)}
+    </div>}
+    {items.length===0&&<p>No hay puntos registrados para este levantamiento.</p>}
+    <p className="micro apagado">Consulta de solo lectura. Los datos provienen del levantamiento registrado por Coproactiva.</p>
+  </section>;
+}
+
 function LevantamientosComunidad({ vista, clienteId = null }) {
   const [abierto,setAbierto]=useState(null);
   const docs = vista.documentosPorReferencia;
