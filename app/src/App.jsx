@@ -234,7 +234,7 @@ export default function App() {
       <Route path="/jarvis" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando Jarvis…</p>}><Jarvis /></Suspense></SoloComercial></Interna>} />
       <Route path="/compromisos" element={<Navigate to="/comunidades" replace />} />
       <Route path="/plantillas-correo" element={<Interna><PlantillasCorreo /></Interna>} />
-      <Route path="/conocimientos" element={<Interna><Suspense fallback={<p className="cargando">Cargando biblioteca…</p>}><Conocimientos /></Suspense></Interna>} />
+      <Route path="/conocimientos" element={<Privada><PanelEscritorio><Suspense fallback={<p className="cargando">Cargando biblioteca…</p>}><Conocimientos /></Suspense></PanelEscritorio></Privada>} />
       <Route path="/ayuda" element={<Interna><Ayuda /></Interna>} />
       <Route path="/ayuda/practica-levantamiento" element={<Interna><PracticaLevantamiento /></Interna>} />
       <Route path="/configuracion" element={<Interna><Configuracion /></Interna>} />
