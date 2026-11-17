@@ -103,6 +103,8 @@ try{
   await page.waitForURL(u=>u.pathname==='/comunidades/'+comunidadId,{timeout:18000});
   await page.getByRole('tab',{name:'Gestiones y avances'}).click();
   await page.waitForURL(u=>u.searchParams.get('seccion')==='compromisos',{timeout:15000});
+  // El informe por materia es la vista principal; el motor anterior se mantiene plegado.
+  await page.locator('.estado-materias__seguimiento-anterior > summary').click();
   await page.getByRole('button',{name:/Todas 24/}).click();
   await page.locator('.compromisos-item').first().waitFor({timeout:15000});
   assert.equal(await page.locator('.compromisos-item').count(),24,'24 gestiones incluidas las históricas');
