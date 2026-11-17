@@ -32,18 +32,22 @@ test('El registro administrativo solo se expone a cuentas con comunidad y planti
  assert.match(sql,/c\.estado::text<>'anulado'/);
 });
 
-test('Portal y simulador muestran motivo, fecha y responsable sin falsificar GPS',()=>{
- assert.match(portal,/supabase\.rpc\('checkins_administrativos_visibles'/);
- assert.match(portal,/p_usuario_cliente:clienteId\|\|null/);
- assert.match(portal,/checkin_administrativo:checkinsPorControl\.get\(l\.id\)\|\|null/);
- assert.match(portal,/Check-in administrativo \(sin GPS\)/);
- assert.match(portal,/l\.checkin_administrativo\.motivo/);
- assert.match(portal,/autorizado_por_nombre/);
- assert.match(portal,/Check-in con ubicación/);
- assert.match(portal,/No fue posible consultar los registros administrativos/);
- assert.match(portal,/regularizaciones\.length>0/);
- assert.match(css,/\.portal-checkin-administrativo/);
- assert.match(css,/\.portal-checkin-resumen/);
+test('Portal solo abre el PDF, sin divulgar datos de autorización interna',()=>{
+ const fix=leer('../supabase/migrations/202611170004_portal_levantamiento_lectura_cliente.sql');
+ const generador=leer('src/lib/pdfClienteLevantamiento.js');
+ assert.doesNotMatch(portal,/supabase\.rpc\('checkins_administrativos_visibles'/);
+ assert.doesNotMatch(portal,/checkin_administrativo|autorizado_por_nombre|regularizaciones/);
+ assert.doesNotMatch(portal,/DetalleLevantamientoCliente|portal-visor-grupo/);
+ assert.match(portal,/Abrir informe PDF/);
+ assert.match(portal,/generarPdfLevantamientoCliente/);
+ assert.match(generador,/portal_levantamiento_detalle/);
+ assert.match(generador,/createSignedUrls/);
+ assert.match(generador,/output\('blob'\)/);
+ assert.match(fix,/IF p_usuario_cliente IS NULL THEN/);
+ assert.match(fix,/cliente_puede_ver_plantilla/);
+ assert.match(fix,/vista_cliente_puede_ver_plantilla/);
+ assert.match(fix,/RETURN; -- No se divulgan excepciones administrativas al portal cliente/);
+ assert.match(css,/\.portal-boton-pdf/);
 });
 
 test('Corrección de ambigüedad en ON CONFLICT preserva seguridad y no simula GPS',()=>{

@@ -129,28 +129,20 @@ async function cargarDetalleComunidad(comunidadId, clienteId = null) {
   const rpc=(tipo)=>supabase.rpc(vista ? 'vista_cliente_'+tipo : 'portal_cliente_'+tipo,
     vista ? {p_comunidad_id:comunidadId,p_usuario_cliente:clienteId}
           : {p_comunidad_id:comunidadId});
-  const [rl, rm, rr, ri, rd, re] = await Promise.all([
+  const [rl, rm, rr, ri, rd] = await Promise.all([
     rpc('levantamientos'),
     rpc('mantenciones'),
     rpc('requerimientos'),
     rpc('incidencias'),
-    rpc('documentos'),
-    supabase.rpc('checkins_administrativos_visibles',{
-      p_comunidad_id:comunidadId,p_usuario_cliente:clienteId||null
-    })
+    rpc('documentos')
   ]);
 
   const fallo = [rl, rm, rr, ri, rd].find(r => r.error)?.error;
   if (fallo) throw fallo;
 
-  // Se enriquece exclusivamente el conjunto de levantamientos ya autorizado
-  // para la cuenta; no se revela información de otras plantillas ni comunidades.
-  const checkinsPorControl=new Map((re.data||[]).map(x=>[x.control_id,x]));
+  // El portal no consulta excepciones ni decisiones internas de check-in.
   return {
-    levantamientos: (rl.data??[]).map(l=>({
-      ...l,checkin_administrativo:checkinsPorControl.get(l.id)||null
-    })),
-    errorCheckins:re.error?.message||null,
+    levantamientos: rl.data??[],
     mantenciones: rm.data ?? [],
     requerimientos: rr.data ?? [],
     incidencias: ri.data ?? [],
@@ -690,7 +682,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
               nombreComunidad={vista?.comunidad?.nombre||'Comunidad'}
               administrador={false} soloLecturaCliente={true} />}
             {tab === 'incidencias' && <IncidenciasComunidad vista={vista} />}
-            {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} />}
+            {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} clienteId={clienteId} />}
             {tab === 'mantencion' && <MantencionesComunidad vista={vista} />}
             {tab === 'documentos' && <DocumentosComunidad vista={vista} vistaPrevia={esVistaPrevia} />}
           </>
@@ -702,8 +694,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
 
 function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
-  const regularizaciones= vista.levantamientos.filter(l=>Boolean(l.checkin_administrativo));
-  return (
+   return (
     <div className="portal-inicio-redisenado">
       <div className="portal-inicio-intro">
         <div>
@@ -714,12 +705,7 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
           {atencion.length ? `${atencion.length} asuntos por atender` : 'Sin asuntos vencidos'}
         </span>
       </div>
-      {regularizaciones.length>0&&<button type="button"
-        className="portal-checkin-resumen" onClick={()=>cambiarTab('levantamientos')}>
-        {regularizaciones.length} check-in administrativo{regularizaciones.length===1?'':'s'} registrado{regularizaciones.length===1?'':'s'}.
-        Ver detalle de levantamientos
-      </button>}
-      <section className="portal-resumen" aria-label="Indicadores de gestión">
+       <section className="portal-resumen" aria-label="Indicadores de gestión">
         <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'} />
         <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
         <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
@@ -807,21 +793,62 @@ function TarjetaIncidencia({ incidencia }) {
   );
 }
 
-function LevantamientosComunidad({ vista }) {
+function AbrirPdfLevantamiento({id,clienteId=null}) {
+  const [creando,setCreando]=useState(false);
+  const [error,setError]=useState('');
+  async function abrirPdf(){
+    if(creando)return;
+    setError('');
+    setCreando(true);
+    // Ventana creada durante el clic para no activar el bloqueo de pop-ups en Android.
+    const ventana=window.open('about:blank','_blank');
+    if(ventana){
+      ventana.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe Coproactiva</title></head><body><p>Preparando informe PDF…</p></body></html>');
+      ventana.document.close();
+    }
+    try {
+      const {generarPdfLevantamientoCliente}=await import('../../lib/pdfClienteLevantamiento');
+      const {blob,nombre}=await generarPdfLevantamientoCliente(id,clienteId);
+      const url=URL.createObjectURL(blob);
+      if(ventana&&!ventana.closed){
+        ventana.location.replace(url);
+      }else{
+        // En PWA, algunos navegadores prohíben una segunda pestaña.
+        const enlace=document.createElement('a');
+        enlace.href=url;
+        enlace.download=nombre;
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+      }
+      setTimeout(()=>URL.revokeObjectURL(url),120000);
+    }catch(e){
+      if(ventana&&!ventana.closed)ventana.close();
+      setError(e?.message||'No se pudo preparar el informe PDF.');
+    }finally{setCreando(false);}
+  }
+  return <>
+    <button type="button" className="portal-enlace portal-boton-pdf"
+      onClick={abrirPdf} disabled={creando}
+      aria-label={'Abrir informe PDF del levantamiento'}>
+      {creando?'Preparando PDF…':'Abrir informe PDF'}
+    </button>
+    {error&&<p role="alert" className="aviso aviso-critico">{error}</p>}
+  </>;
+}
+
+function LevantamientosComunidad({ vista, clienteId = null }) {
   const docs = vista.documentosPorReferencia;
   return (
     <section className="portal-seccion portal-seccion-sin-margen">
       <EncabezadoSeccion titulo="Levantamientos" cantidad={vista.levantamientos.length} />
-      {vista.errorCheckins && <div className="aviso aviso-critico" role="alert">
-        No fue posible consultar los registros administrativos de check-in: {vista.errorCheckins}
-      </div>}
-      {vista.levantamientos.length === 0 ? (
+       {vista.levantamientos.length === 0 ? (
         <EstadoVacio titulo="Sin levantamientos visibles" texto="No hay levantamientos habilitados para tu cuenta en esta comunidad." />
       ) : (
         <div className="portal-lista">
           {vista.levantamientos.map(l => {
             const documentos = docs.get(String(l.id)) ?? [];
-            const pdf = documentos.find(documentoEsPdf) || documentos[0] || null;
+            const pdf = documentos.find(documentoEsPdf) || null;
             const pdfUrl = urlDocumento(pdf);
             return (
               <div key={l.id} className="tarjeta portal-item">
@@ -835,24 +862,11 @@ function LevantamientosComunidad({ vista }) {
                   {l.enviado_en && <span>Realizado: {fechaCL(l.enviado_en, true)}</span>}
                   {!l.programado_para && <span>Creado: {fechaCL(l.creado_en)}</span>}
                 </div>
-                {l.checkin_administrativo ? (
-                  <div className="portal-checkin-administrativo" role="status">
-                    <strong>Check-in administrativo (sin GPS)</strong>
-                    <p>Autorizado el {fechaCL(l.checkin_administrativo.autorizado_en,true)}
-                      {' · '}Por: {l.checkin_administrativo.autorizado_por_nombre||'Administración'}</p>
-                    <p>Motivo: {l.checkin_administrativo.motivo}</p>
-                    <p>Registro administrativo; no acredita presencia geolocalizada.</p>
-                  </div>
-                ) : l.checkin_en ? (
-                  <p className="micro portal-checkin-real">
-                    Check-in con ubicación: {fechaCL(l.checkin_en,true)}
-                  </p>
-                ) : null}
-                {pdfUrl && (
-                  <div className="portal-acciones">
-                    <a className="portal-enlace" href={pdfUrl} target="_blank" rel="noreferrer">Abrir informe PDF</a>
-                  </div>
-                )}
+                <div className="portal-acciones">
+                  {pdfUrl
+                    ? <a className="portal-enlace" href={pdfUrl} target="_blank" rel="noreferrer">Abrir informe PDF</a>
+                    : <AbrirPdfLevantamiento id={l.id} clienteId={clienteId} />}
+                </div>
               </div>
             );
           })}
