@@ -1866,6 +1866,28 @@ input[type='checkbox'] { accent-color: var(--naranja); }
   align-items: center;
   gap: 10px;
 }
+
+/* En móvil el cliente puede entrar directo a su única comunidad y nunca ver
+   el dashboard, por lo que el cierre de sesión debe vivir en la barra global. */
+.barra-area-movil .barra-area-salir-cliente {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--tarjeta);
+  color: var(--critico-texto);
+  font: 700 12px/1.15 var(--fuente-cuerpo);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.barra-area-movil .barra-area-salir-cliente:focus-visible {
+  outline: 2px solid var(--enlace);
+  outline-offset: 2px;
+}
 .barra-area-tutorial {
   display: inline-flex;
   align-items: center;
