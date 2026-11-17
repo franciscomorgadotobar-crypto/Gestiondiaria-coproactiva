@@ -201,9 +201,9 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // La comunidad seleccionada es el contexto del menú cliente.
   // Los enlaces usan la misma URL de pestañas, sin crear pantallas duplicadas.
   const comunidadPortalId = pathname.startsWith('/portal/comunidades/') ? pathname.split('/')[3] : null;
-  const tabPortal = new URLSearchParams(search).get('seccion') || 'resumen';
+  const tabPortal = new URLSearchParams(search).get('seccion') || 'compromisos';
   const enlacePortal = (seccion, etiqueta) => ({
-    ruta: `/portal/comunidades/${comunidadPortalId}${seccion === 'resumen' ? '' : '?seccion=' + seccion}`,
+    ruta: `/portal/comunidades/${comunidadPortalId}${seccion === 'compromisos' ? '' : '?seccion=' + seccion}`,
     etiqueta,
     mostrar: true,
     activo: () => tabPortal === seccion
