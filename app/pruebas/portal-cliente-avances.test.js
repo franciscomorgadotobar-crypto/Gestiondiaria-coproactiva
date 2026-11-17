@@ -37,3 +37,18 @@ test('El informe abre primero; Resumen sigue navegable y tiene URL explícita',(
   assert.match(portal,/\['resumen', 'Resumen'\]/);
   assert.match(portal,/\['compromisos', 'Gestiones y avances'\]/);
 });
+
+test('El cliente con una única comunidad puede cerrar sesión sin regresar al dashboard',()=>{
+  const css=leer('src/estilos/base.css');
+  const sesion=leer('src/lib/sesion.jsx');
+  const app=leer('src/App.jsx');
+  assert.match(portal,/detalles\.length === 1[^\n]*navegar\(`\/portal\/comunidades/);
+  assert.match(panel,/className="barra-area-movil"/);
+  assert.match(panel,/esCliente && \(/);
+  assert.match(panel,/className="barra-area-salir-cliente"/);
+  assert.match(panel,/onClick=\{salir\} aria-label="Cerrar sesión"/);
+  assert.match(css,/\.barra-area-movil \.barra-area-salir-cliente/);
+  assert.match(sesion,/salir: \(\) => supabase\.auth\.signOut\(\)/);
+  assert.match(app,/if \(!sesion\) return <Navigate to="\/ingreso" replace/);
+  assert.doesNotMatch(portal,/onClick=\{salir\}>Salir/);
+});
