@@ -319,6 +319,25 @@ function DashboardCliente() {
   const [vistas, setVistas] = useState(null);
   const navegar = useNavigate();
   const [error, setError] = useState(null);
+  const [revision,setRevision]=useState(0);
+  // Ambas pantallas (cliente y vista administrativa) consultan las mismas
+  // funciones RPC. Sincronizar al recuperar foco y cada 30 s evita que un
+  // documento o avance publicado quede congelado hasta recargar la PWA.
+  useEffect(()=>{
+    if(!perfil?.id)return undefined;
+    const actualizar=()=>setRevision(v=>v+1);
+    const alVolver=()=>{if(!document.hidden)actualizar();};
+    const intervalo=window.setInterval(alVolver,30000);
+    window.addEventListener('focus',actualizar);
+    window.addEventListener('coproactiva:portal:actualizar',actualizar);
+    document.addEventListener('visibilitychange',alVolver);
+    return ()=>{
+      window.clearInterval(intervalo);
+      window.removeEventListener('focus',actualizar);
+      window.removeEventListener('coproactiva:portal:actualizar',actualizar);
+      document.removeEventListener('visibilitychange',alVolver);
+    };
+  },[perfil?.id]);
 
   useEffect(() => {
     if (!perfil?.id) return;
@@ -601,7 +620,8 @@ function DetalleCliente({ id, vistaPrevia = null }) {
     let vigente = true;
 
     async function cargar() {
-      setCargando(true);
+      // No reemplazar toda la interfaz por Cargando en actualizaciones periódicas.
+      if(!vista)setCargando(true);
       setError(null);
       let comunidad=null;
       if (esVistaPrevia) {
@@ -641,7 +661,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
 
     cargar();
     return () => { vigente = false; };
-  }, [id, perfil?.id, clienteId, esVistaPrevia]);
+  }, [id, perfil?.id, clienteId, esVistaPrevia, revision]);
 
   function cambiarTab(nuevo) {
     if (tab === nuevo || !TABS.some(([clave]) => clave === nuevo)) return;
@@ -668,28 +688,18 @@ function DetalleCliente({ id, vistaPrevia = null }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            {/* En la cuenta cliente las secciones viven únicamente en la barra
-                inferior compartida del sistema. El simulador administrativo
-                conserva controles internos para poder cambiar de sección. */}
-            {esVistaPrevia && (
-              <nav className="pestanas portal-pestanas-movil portal-pestanas-vista-previa" aria-label="Secciones de la comunidad">
-                {TABS.map(([clave, texto]) => (
-                  <button key={clave} type="button" className={tab === clave ? 'activo' : ''} aria-pressed={tab === clave}
-                          onClick={() => cambiarTab(clave)}>
-                    {texto}
-                  </button>
-                ))}
-              </nav>
-            )}
-
-            {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} vistaPrevia={esVistaPrevia} />}
-            {tab === 'compromisos' && <EstadoMaterias comunidadId={id}
+            {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab}
+              vistaPrevia={esVistaPrevia}
+              rutaBiblioteca={esVistaPrevia
+                ? '/vista-cliente/conocimientos?comunidad='+encodeURIComponent(id)+'&cliente='+encodeURIComponent(clienteId)
+                : '/portal/conocimientos'} />}
+            {tab === 'compromisos' && <EstadoMaterias key={id+':'+revision} comunidadId={id}
               nombreComunidad={vista?.comunidad?.nombre||'Comunidad'}
               administrador={false} soloLecturaCliente={true} />}
             {tab === 'incidencias' && <IncidenciasComunidad vista={vista} />}
             {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} clienteId={clienteId} />}
             {tab === 'mantencion' && <MantencionesComunidad vista={vista} />}
-            {tab === 'documentos' && <DocumentosComunidad vista={vista} vistaPrevia={esVistaPrevia} />}
+            {tab === 'documentos' && <DocumentosComunidad key={id+':'+revision} vista={vista} vistaPrevia={esVistaPrevia} />}
           </>
         )}
       </div>
@@ -697,7 +707,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   );
 }
 
-function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
+function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, rutaBiblioteca = '/portal/conocimientos' }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
    return (
     <div className="portal-inicio-redisenado">
@@ -715,7 +725,7 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
         <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
         <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
       </section>
-      <Link to="/portal/conocimientos" className="portal-acceso portal-acceso-ley" aria-label="Consultar Base de conocimientos sobre la Ley 21.442">
+      <Link to={rutaBiblioteca} className="portal-acceso portal-acceso-ley" aria-label="Consultar Base de conocimientos sobre la Ley 21.442">
         <strong>Base de conocimientos</strong>
         <span>Consulta las guías y artículos de la Ley N.º 21.442 sobre copropiedad inmobiliaria.</span>
         <b aria-hidden="true">›</b>
