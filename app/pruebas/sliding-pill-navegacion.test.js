@@ -32,7 +32,7 @@ test('El naranja mantiene contraste y respeta movimiento reducido', () => {
 });
 
 test('El cliente mantiene sus secciones y Más con etiqueta correcta', () => {
-  assert.match(panel, /cliente-resumen', 'cliente-compromisos', 'cliente-incidencias', 'cliente-documentos'/);
+  assert.match(panel, /cliente-resumen', 'cliente-compromisos', 'cliente-documentos', 'cliente-conocimientos'/);
   assert.match(panel, /masSeleccionado/);
   assert.match(panel, /esCliente \? 'Secciones de la comunidad'/);
   assert.match(panel, /perfil\?\.rol !== 'cliente'/);
