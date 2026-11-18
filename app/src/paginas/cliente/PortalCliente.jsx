@@ -4,7 +4,10 @@ import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import MapaPortalCliente from './MapaPortalCliente';
 import EstadoMaterias from './EstadoMaterias';
-import DriveArchivos from '../../componentes/DriveArchivos';
+import { CATEGORIAS_DRIVE, ORIGENES_DRIVE, descargarDeDrive, fechaHoraCL,
+  sePuedeVer, tamanoLegible, verEnDrive } from '../../lib/drive';
+import { clasificarDocumentosDrivePortal, esInformePdfDrive, excluirDuplicadosLegacy }
+  from '../../lib/documentosPortal';
 import './PortalCliente.css';
 
 const TABS = [
@@ -1132,34 +1135,98 @@ function MantencionesComunidad({ vista }) {
   );
 }
 
-function DocumentosComunidad({ vista, vistaPrevia = false, clienteId=null }) {
-  const pdfs = vista.documentos.filter(documentoEsPdf);
-  const otros = vista.documentos.filter(d => !documentoEsPdf(d));
-  return (
-    <section className="portal-seccion portal-seccion-sin-margen">
-      <EncabezadoSeccion titulo="Informes PDF" cantidad={pdfs.length} />
-      {pdfs.length === 0 ? (
-        <EstadoVacio titulo="Aún no hay PDF publicados" texto="Los informes autorizados para el cliente quedarán disponibles aquí para consulta." />
-      ) : (
-        <div className="portal-documentos-resumen">
-          {pdfs.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d}
-            contexto={{comunidadId:vista.comunidad?.comunidad_id,vistaPrevia,clienteId}} />)}
-        </div>
-      )}
-
-      {otros.length > 0 && (
-        <div className="portal-bloque-separado">
-          <EncabezadoSeccion titulo="Otros respaldos" cantidad={otros.length} />
-          <div className="portal-documentos-resumen">
-            {otros.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d}
-            contexto={{comunidadId:vista.comunidad?.comunidad_id,vistaPrevia,clienteId}} />)}
-          </div>
-        </div>
-      )}
-
-      {/* Solo documentos que la administración publicó explícitamente desde Drive. */}
-      <DriveArchivos comunidadId={vista.comunidad?.comunidad_id} origenTipo={null} permitirSubir={false}
-                     soloVistaCliente={vistaPrevia} ocultarVacio titulo="Documentos compartidos por la administración" />
-    </section>
-  );
+function ArchivoDriveCliente({archivo,comunidadId}) {
+  const [procesando,setProcesando]=useState('');
+  const [error,setError]=useState('');
+  async function ejecutar(accion,tipo){
+    if(procesando)return;
+    setProcesando(tipo);setError('');
+    try{await accion(comunidadId,archivo);}
+    catch(e){setError(e?.message||'No se pudo abrir el archivo.');}
+    finally{setProcesando('');}
+  }
+  const pdf=esInformePdfDrive(archivo)||String(archivo.mime||'').toLowerCase()==='application/pdf';
+  return <article className="portal-archivo-drive">
+    <strong className="portal-archivo-drive-nombre">{archivo.nombre}</strong>
+    <div className="portal-archivo-drive-meta micro apagado">
+      <span>{ORIGENES_DRIVE[archivo.origen_tipo]||archivo.origen_tipo||'Documento'}</span>
+      {CATEGORIAS_DRIVE[archivo.categoria]&&<span>{CATEGORIAS_DRIVE[archivo.categoria]}</span>}
+      <span>{tamanoLegible(archivo.tamano)}</span>
+      <span>{fechaHoraCL(archivo.creado_en)}</span>
+    </div>
+    <div className="portal-archivo-drive-acciones">
+      {(pdf||sePuedeVer(archivo.mime))&&
+        <button type="button" disabled={Boolean(procesando)}
+          onClick={()=>ejecutar(verEnDrive,'ver')}>{procesando==='ver'?'Abriendo…':'Ver'}</button>}
+      <button type="button" disabled={Boolean(procesando)}
+        onClick={()=>ejecutar(descargarDeDrive,'descargar')}>
+        {procesando==='descargar'?'Descargando…':'Descargar'}
+      </button>
+    </div>
+    {error&&<p role="alert" className="aviso aviso-critico">{error}</p>}
+  </article>;
 }
+
+function DocumentosComunidad({ vista, vistaPrevia = false, clienteId=null }) {
+  const comunidadId=vista.comunidad?.comunidad_id;
+  const [drive,setDrive]=useState({cargando:true,archivos:[],error:''});
+
+  useEffect(()=>{
+    if(!comunidadId){
+      setDrive({cargando:false,archivos:[],error:'Comunidad no disponible.'});
+      return undefined;
+    }
+    let vigente=true;
+    setDrive({cargando:true,archivos:[],error:''});
+    async function cargar(){
+      try{
+        const {data,error}=await supabase.rpc('drive_listar_documentos',{
+          p_comunidad_id:comunidadId,
+          p_origen_tipo:null,p_origen_id:null,p_incluir_eliminados:false
+        });
+        if(error)throw error;
+        if(vigente)setDrive({cargando:false,archivos:data||[],error:''});
+      }catch(e){
+        if(vigente)setDrive({cargando:false,archivos:[],error:e?.message||'Error al consultar Drive.'});
+      }
+    }
+    cargar();
+    return ()=>{vigente=false;};
+  },[comunidadId]);
+
+  const {informes,compartidos}=clasificarDocumentosDrivePortal(drive.archivos);
+  const pdfsAnteriores=excluirDuplicadosLegacy(vista.documentos.filter(documentoEsPdf),informes);
+  const otrosAnteriores=vista.documentos.filter(d=>!documentoEsPdf(d));
+  const totalInformes=informes.length+pdfsAnteriores.length;
+
+  return <section className="portal-seccion portal-seccion-sin-margen">
+    <EncabezadoSeccion titulo="Informes PDF" cantidad={drive.cargando?null:totalInformes}/>
+    {drive.cargando&&<p className="cargando" role="status">Consultando informes publicados…</p>}
+    {drive.error&&<p className="aviso aviso-critico" role="alert">
+      No se pudieron cargar los documentos publicados: {drive.error}
+    </p>}
+    {!drive.cargando&&!drive.error&&totalInformes===0&&
+      <EstadoVacio titulo="Aún no hay PDF publicados"
+        texto="Los informes autorizados para el cliente quedarán disponibles aquí para consulta."/>}
+    {informes.length>0&&<div className="portal-documentos-drive">
+      {informes.map(d=><ArchivoDriveCliente key={d.id} archivo={d} comunidadId={comunidadId}/>)}
+    </div>}
+    {pdfsAnteriores.length>0&&<div className="portal-documentos-resumen">
+      {pdfsAnteriores.map((d,indice)=><TarjetaDocumento key={d.id+':'+indice}
+        documento={d} contexto={{comunidadId,vistaPrevia,clienteId}}/>)}
+    </div>}
+    {(compartidos.length>0||otrosAnteriores.length>0)&&
+      <div className="portal-bloque-separado">
+        <EncabezadoSeccion titulo="Documentos compartidos por la administración"
+          cantidad={compartidos.length+otrosAnteriores.length}/>
+        {compartidos.length>0&&<div className="portal-documentos-drive">
+          {compartidos.map(d=><ArchivoDriveCliente key={d.id} archivo={d} comunidadId={comunidadId}/>)}
+        </div>}
+        {otrosAnteriores.length>0&&<div className="portal-documentos-resumen">
+          {otrosAnteriores.map((d,indice)=><TarjetaDocumento key={d.id+':'+indice}
+            documento={d} contexto={{comunidadId,vistaPrevia,clienteId}}/>)}
+        </div>}
+      </div>}
+  </section>;
+}
+
