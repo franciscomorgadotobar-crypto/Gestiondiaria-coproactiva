@@ -34,6 +34,9 @@ jobs:
       - name: Instalar dependencias
         working-directory: app
         run: npm install --no-audit --no-fund
+      - name: Verificar navegación y documentos del portal cliente
+        working-directory: app
+        run: node --test pruebas/portal-barra-documentos.test.js
       - name: Compilar aplicación
         working-directory: app
         env:
