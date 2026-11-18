@@ -28,7 +28,7 @@ test('Los avisos ¿Sabías que…? también aparecen en portal, nunca dentro de 
   assert.match(avisos,/elegirCapsula\(biblioteca\.contenidos, recientes\.current\)/);
 });
 
-test('La biblioteca figura en el menú Más y en la navegación cliente',()=>{
+test('La biblioteca aparece directamente en la barra del cliente y no en el Home',()=>{
   assert.match(panel,/id: 'cliente-conocimientos', ruta: rutaBibliotecaCliente/);
   assert.match(panel,/\/vista-cliente\/conocimientos\?comunidad=/);
   assert.match(panel,/etiqueta: 'Base de conocimientos'/);
@@ -37,5 +37,6 @@ test('La biblioteca figura en el menú Más y en la navegación cliente',()=>{
   assert.match(panel,/cliente-conocimientos.*IconoNavegacion/);
   assert.match(panel,/if \(esCliente && pathname === '\/portal\/conocimientos'\)/);
   assert.match(panel,/navegar\('\/portal'\)/);
-  assert.match(portal,/<Link to=\{rutaBiblioteca\} className="portal-acceso portal-acceso-ley"/);
+  assert.match(panel,/\['cliente-resumen', 'cliente-compromisos', 'cliente-documentos', 'cliente-conocimientos'\]/);
+  assert.doesNotMatch(portal,/portal-acceso-ley/);
 });
