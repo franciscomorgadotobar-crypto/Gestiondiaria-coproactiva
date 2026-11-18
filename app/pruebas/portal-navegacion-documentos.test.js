@@ -51,3 +51,22 @@ test('Fecha del informe corresponde al levantamiento, no al cierre administrativ
  assert.doesNotMatch(informe,/fecha\(control\.checkin_en \?\? control\.enviado_en/);
  assert.match(portal,/l\.checkin_en \|\| l\.programado_para \|\| l\.creado_en/);
 });
+
+test('Sliding Pill conserva los botones y usa animación elástica con accesibilidad',()=>{
+ const pill=leer('src/componentes/SlidingPill.jsx');
+ const cssGeneral=leer('src/estilos/base.css');
+ assert.match(nav,/import SlidingPill from '\.\/SlidingPill'/);
+ assert.match(nav,/<SlidingPill activo=\{opcionPill\} distribucion=\{distribucionPill\}/);
+ assert.match(nav,/data-pill-tab=\{item\.id\}/);
+ assert.match(nav,/data-pill-tab="mas"/);
+ assert.match(nav,/aria-current=\{itemMovilActivo\(item\) \? 'page'/);
+ assert.match(pill,/querySelectorAll\('\[data-pill-tab\]'\)/);
+ assert.match(pill,/pill\.animate\(\[/);
+ assert.match(pill,/ResizeObserver/);
+ assert.match(pill,/prefers-reduced-motion: reduce/);
+ assert.match(pill,/aria-hidden="true"/);
+ assert.match(cssGeneral,/\.nav-sliding-pill\{/);
+ assert.match(cssGeneral,/\.barra-inferior-movil\.con-sliding-pill/);
+ assert.match(cssGeneral,/background:linear-gradient\(135deg,#fac17a/);
+ assert.match(cssGeneral,/@media\(prefers-reduced-motion:reduce\)/);
+});
