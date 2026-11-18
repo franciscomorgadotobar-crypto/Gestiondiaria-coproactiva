@@ -6,7 +6,7 @@ const componente=leer('src/paginas/cliente/EstadoMaterias.jsx');
 const portal=leer('src/paginas/cliente/PortalCliente.jsx');
 const panel=leer('src/componentes/PanelEscritorio.jsx');
 const administracion=leer('src/paginas/panel/Comunidades.jsx');
-const vistaCliente=leer('src/paginas/panel/VistaCliente.jsx');
+const vistaClienteReal=leer('src/paginas/panel/VistaClienteReal.jsx');
 
 test('Una única cabecera de informe para todas las comunidades: sin puesta en marcha',()=>{
   assert.match(componente,/const titulo='Estado de avances y compromisos - '\+\(nombreComunidad\|\|'Comunidad'\)/);
@@ -24,7 +24,7 @@ test('Portal real y simulación utilizan el mismo EstadoMaterias publicado en so
   assert.match(portal,/administrador=\{false\} soloLecturaCliente=\{true\}/);
   assert.match(componente,/if\(soloLecturaCliente\)consulta=consulta\.eq\('publicado',true\)/);
   assert.match(componente,/if\(!administrador\)return/);
-  assert.match(vistaCliente,/vistaPrevia=\{\{comunidadId,clienteId\}\}/);
+  assert.match(vistaClienteReal,/<PortalCliente vistaPrevia=\{\{comunidadId,clienteId,real:true\}\}/);
   assert.match(componente,/if\(!administrador\|\|guardando\)return/);
 });
 
