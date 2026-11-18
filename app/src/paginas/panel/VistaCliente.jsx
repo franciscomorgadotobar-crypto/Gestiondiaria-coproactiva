@@ -1,10 +1,9 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useSesion } from '../../lib/sesion';
 import './VistaCliente.css';
 
-const PortalCliente = lazy(() => import('../cliente/PortalCliente'));
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Vista administrativa, no cambia la sesión ni concede un perfil cliente.
@@ -85,6 +84,9 @@ export default function VistaCliente() {
     [comunidades,comunidadId]);
   const clienteSeleccionado=(cuentas||[]).find(x=>x.cliente_id===clienteId);
   const listaConfigurada=Boolean(comunidadId&&clienteSeleccionado&&comunidadSeleccionada);
+  const rutaPortal=listaConfigurada
+    ? '/vista-cliente/portal?comunidad='+encodeURIComponent(comunidadId)+'&cliente='+encodeURIComponent(clienteId)
+    : '';
   const cambiarComunidad=(id)=>{
     setCuentas(null);
     const next=new URLSearchParams();
@@ -109,7 +111,7 @@ export default function VistaCliente() {
       <div>
         <p className="vista-cliente-sobretitulo">OPERACIONES · PORTAL CLIENTE</p>
         <h1>Vista de cliente</h1>
-        <p>Selecciona una comunidad y una cuenta cliente para revisar exactamente las secciones y los datos habilitados para esa cuenta.</p>
+        <p>Selecciona una comunidad y una cuenta para abrir el mismo portal que utiliza el cliente, con información publicada y permisos validados.</p>
       </div>
       <Link to="/" className="boton boton-secundario">‹ Home de módulos</Link>
     </header>
@@ -136,7 +138,7 @@ export default function VistaCliente() {
         </select>
       </div>
       <div className="vista-cliente-modo" aria-label="Modo lectura">
-        <span aria-hidden="true">◉</span> Vista previa · Solo lectura
+        <span aria-hidden="true">◉</span> Portal real · Solo lectura
       </div>
     </section>
 
@@ -148,7 +150,7 @@ export default function VistaCliente() {
     </div>}
     {comunidades?.length>0&&!comunidadSeleccionada&&<div className="vista-cliente-vacio">
       <h2>Elige una comunidad</h2>
-      <p>La simulación utilizará el mismo portal del cliente y mostrará únicamente su información autorizada.</p>
+      <p>El acceso abrirá la interfaz del portal cliente, sin pestañas ni navegación administrativa.</p>
     </div>}
     {comunidadSeleccionada&&cuentas!==null&&!cuentas.length&&!error&&<div className="vista-cliente-vacio">
       <h2>No hay cuentas cliente activas</h2>
@@ -156,18 +158,16 @@ export default function VistaCliente() {
       <Link to="/configuracion">Configurar usuarios y accesos</Link>
     </div>}
     {comunidadSeleccionada&&cuentas===null&&<p className="cargando">Consultando clientes de la comunidad…</p>}
-    {listaConfigurada&&<section className="vista-cliente-simulacion" aria-label="Simulación del portal">
-      <div className="vista-cliente-simulacion-cabecera">
-        <strong>Portal de {comunidadSeleccionada.nombre}</strong>
-        <span>Simulando: {clienteSeleccionado.cliente_nombre||clienteSeleccionado.cliente_email}</span>
+    {listaConfigurada&&<section className="vista-cliente-lanzador" aria-label="Abrir portal cliente real">
+      <div>
+        <strong>{comunidadSeleccionada.nombre}</strong>
+        <p>Cuenta seleccionada: {clienteSeleccionado.cliente_nombre||clienteSeleccionado.cliente_email}</p>
+        <p>Se abrirá el portal con su navegación móvil, sus secciones y los datos autorizados para esta cuenta.</p>
       </div>
-      <Suspense fallback={<p className="cargando">Cargando portal de cliente…</p>}>
-        <PortalCliente key={comunidadId+':'+clienteId}
-          vistaPrevia={{comunidadId,clienteId}} />
-      </Suspense>
+      <Link to={rutaPortal} className="boton vista-cliente-abrir">Abrir portal como cliente</Link>
     </section>}
     <p className="vista-cliente-nota">
-      Esta vista no inicia sesión como cliente, no modifica registros y no envía notificaciones. Las secciones que una cuenta no tiene publicadas no se muestran.
+      La revisión conserva tu sesión administrativa y es de solo lectura. No permite realizar acciones ni marcar notificaciones en nombre del cliente.
     </p>
   </main>;
 }
