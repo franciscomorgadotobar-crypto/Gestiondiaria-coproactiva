@@ -5,7 +5,8 @@ import { useSesion } from '../../lib/sesion';
 import { useVolverGlobal } from '../../lib/navegacion';
 import {
   AMBITOS, VISTAS, TIPOS_ASUMIDO, nombreAmbito, vistaValida, textoPlazo, fechaCorta,
-  filtrar, contar, agruparAgenda, brechasPorComunidad, proximaFechaCiclo, textoFrecuencia
+  filtrar, contar, agruparAgenda, brechasPorComunidad, proximaFechaCiclo, textoFrecuencia,
+  lecturaOperativa,fechaHoyChile
 } from '../../lib/jarvis';
 import './Jarvis.css';
 
@@ -37,8 +38,12 @@ export default function Jarvis() {
   const [comunidadId, setComunidadId] = useState('');
   const [guardando, setGuardando] = useState('');
   const [nuevo, setNuevo] = useState(ASUMIDO_VACIO);
+  const [actualizando,setActualizando]=useState(false);
+  const [consultadoEn,setConsultadoEn]=useState(null);
 
   const cargar = useCallback(async () => {
+    setActualizando(true);
+    try {
     const [a, l, c, r, cc, j] = await Promise.all([
       supabase.rpc('jarvis_agenda', { p_dias: 30 }),
       supabase.from('jarvis_analisis')
@@ -64,9 +69,34 @@ export default function Jarvis() {
     setReglas(r.data ?? []);
     setCiclo(cc.data ?? []);
     setAsumidos(j.data ?? []);
+    if(!fallo)setConsultadoEn(new Date());
+    }catch(e){
+      setError(e?.message||'No se pudo actualizar Jarvis.');
+    }finally{
+      setActualizando(false);
+    }
   }, []);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    void cargar();
+    // Los indicadores y la lectura operativa se refrescan al regresar a la
+    // pestaña y una vez por minuto; no vuelven a enviar avisos ni reescriben
+    // las lecturas editoriales guardadas.
+    const alRecuperar=()=>{if(!document.hidden)void cargar();};
+    const intervalo=window.setInterval(alRecuperar,60000);
+    window.addEventListener('focus',alRecuperar);
+    document.addEventListener('visibilitychange',alRecuperar);
+    return ()=>{
+      window.clearInterval(intervalo);
+      window.removeEventListener('focus',alRecuperar);
+      document.removeEventListener('visibilitychange',alRecuperar);
+    };
+  }, [cargar]);
+
+  async function refrescarJarvis(){
+    await cargar();
+    setAviso('Agenda y lectura operativa consultadas nuevamente.');
+  }
 
   const visibles = useMemo(
     () => filtrar(agenda, { ambito, comunidadId }), [agenda, ambito, comunidadId]);
@@ -127,6 +157,13 @@ export default function Jarvis() {
     await cargar();
   }
 
+  const lecturaActual=useMemo(()=>lecturaOperativa(agenda,consultadoEn||new Date()),[agenda,consultadoEn]);
+  const fechaOperativa=fechaHoyChile(consultadoEn||new Date());
+  const lecturaHistorica=analisis && String(analisis.fecha).slice(0,10)!==fechaOperativa;
+  const horaConsulta=consultadoEn?.toLocaleTimeString('es-CL',{
+    timeZone:'America/Santiago',hour:'2-digit',minute:'2-digit'
+  });
+
   const indicadores = [
     ['vencido', 'Con atraso', 'agenda'],
     ['hoy', 'Para hoy', 'agenda'],
@@ -143,6 +180,10 @@ export default function Jarvis() {
             Lo que viene y lo que hay que hacer en la gestión de Coproactiva.
           </p>
         </div>
+        <button type="button" className="boton boton-secundario jarvis-actualizar"
+          onClick={refrescarJarvis} disabled={actualizando}>
+          {actualizando?'Actualizando…':'Actualizar Jarvis'}
+        </button>
       </header>
 
       <div className="cuerpo modulo-contenido jarvis-cuerpo">
@@ -161,11 +202,35 @@ export default function Jarvis() {
             ))}
           </div>
 
-          {analisis && (
+          {lecturaActual && (
             <section className="tarjeta jarvis-lectura" aria-labelledby="jarvis-lectura-titulo">
               <h2 id="jarvis-lectura-titulo" className="modulo-seccion-titulo">
-                Lectura del {fechaCorta(analisis.fecha)}
+                Lectura operativa del {fechaCorta(lecturaActual.fecha)}
               </h2>
+              <p>{lecturaActual.resumen}</p>
+              {lecturaActual.urgentes.length > 0 && <ol className="jarvis-lectura-lista">
+                {lecturaActual.urgentes.map((p,i)=><li key={i}>
+                  <Link to={p.ruta}><strong>{p.titulo}</strong></Link>
+                  {p.detalle&&<span>{p.detalle}</span>}
+                </li>)}
+              </ol>}
+              <p className="jarvis-lectura-fuente">Datos actuales de la agenda ·
+                {horaConsulta ? ' Última consulta '+horaConsulta+' (Chile)' : ' Preparando actualización…'}
+              </p>
+            </section>
+          )}
+
+          {analisis && (
+            <details className="tarjeta jarvis-lectura jarvis-lectura-historica"
+              open={!lecturaHistorica}>
+              <summary className="modulo-seccion-titulo">
+                {lecturaHistorica?'Lectura analítica anterior del ':'Lectura analítica del '}
+                {fechaCorta(analisis.fecha)}
+              </summary>
+              {lecturaHistorica&&<p className="jarvis-lectura-aviso">
+                Este texto fue generado anteriormente y no corresponde a la agenda actual.
+                Para conocer las tareas pendientes utiliza la lectura operativa superior.
+              </p>}
               <p>{analisis.resumen}</p>
               {analisis.prioridades?.length > 0 && (
                 <ol className="jarvis-lectura-lista">
@@ -186,7 +251,7 @@ export default function Jarvis() {
                   ))}
                 </ul>
               )}
-            </section>
+            </details>
           )}
 
           <nav className="ui-pestanas jarvis-vistas" aria-label="Vistas de Jarvis">
