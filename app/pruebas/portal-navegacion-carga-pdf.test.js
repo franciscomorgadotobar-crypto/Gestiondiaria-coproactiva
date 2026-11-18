@@ -13,7 +13,7 @@ test('La barra navega entre secciones aunque todas compartan pathname', () => {
   assert.match(panel, /const ubicacionActual = pathname \+ search \+ hash/);
   assert.match(panel, /ubicacionActual !== item\.ruta/);
   assert.match(panel, /navegar\(item\.ruta, \{ replace: desdeMas, preventScrollReset: false \}\)/);
-  assert.match(panel, /seccion === 'compromisos' \? '' : '\?seccion=' \+ seccion/);
+  assert.match(panel, /seccion === 'compromisos' \? '' : \(vistaCliente \? '&' : '\?'\) \+ 'seccion=' \+ seccion/);
   assert.match(portal, /tabInicial = TABS\.some/);
 });
 
