@@ -5,6 +5,8 @@ import {useSesion} from '../../lib/sesion';
 import PropuestaDoc from '../../componentes/PropuestaDocumento';
 import '../../lib/propuestaDocPage';
 import './Propuestas.css';
+import { OPCIONES_PROPUESTA, etiquetaProspecto, datosDesdeProspecto,
+  propuestaDelProspecto, conflictoAsociacion } from '../../lib/propuestasProspectos';
 
 const COMUNAS_RM = ['Alhué', 'Buin', 'Calera de Tango', 'Cerrillos', 'Cerro Navia', 'Colina', 'Conchalí', 'Curacaví', 'El Bosque', 'El Monte', 'Estación Central', 'Huechuraba', 'Independencia', 'Isla de Maipo', 'La Cisterna', 'La Florida', 'La Granja', 'La Pintana', 'La Reina', 'Lampa', 'Las Condes', 'Lo Barnechea', 'Lo Espejo', 'Lo Prado', 'Macul', 'Maipú', 'María Pinto', 'Melipilla', 'Ñuñoa', 'Padre Hurtado', 'Paine', 'Pedro Aguirre Cerda', 'Peñaflor', 'Peñalolén', 'Pirque', 'Providencia', 'Pudahuel', 'Puente Alto', 'Quilicura', 'Quinta Normal', 'Recoleta', 'Renca', 'San Bernardo', 'San Joaquín', 'San José de Maipo', 'San Miguel', 'San Pedro', 'San Ramón', 'Santiago', 'Talagante', 'Tiltil', 'Vitacura'];
 
@@ -75,6 +77,11 @@ export default function Propuestas() {
   const [registros,setRegistros]=React.useState({});
   const [opts, setOpts] = React.useState({ portada: true, numeros: true, honorarios: true });
   const [sel, setSel] = React.useState('');
+  const [prospectos,setProspectos]=React.useState([]);
+  const [prospectoId,setProspectoId]=React.useState('');
+  const [cargandoProspectos,setCargandoProspectos]=React.useState(true);
+  const [revisionProspectos,setRevisionProspectos]=React.useState(0);
+  const abiertoDesdeUrl=React.useRef('');
 
   React.useEffect(()=>{
     if(!perfil?.id||!borradorListo)return;
@@ -99,26 +106,50 @@ export default function Propuestas() {
     return ()=>{vigente=false;};
   },[]);
 
+  // La lista se consulta directamente en el mismo Pipeline; no depende de
+  // que ya se haya guardado una propuesta para mostrar el nombre del prospecto.
+  React.useEffect(()=>{
+    let vigente=true;
+    setCargandoProspectos(true);
+    supabase.from('prospectos')
+      .select('id,nombre_condominio,nombre_contacto,direccion,comuna,etapa')
+      .order('nombre_condominio',{ascending:true})
+      .then(({data,error})=>{
+        if(!vigente)return;
+        setCargandoProspectos(false);
+        if(error){setAviso('No se pudieron cargar los prospectos: '+error.message);return;}
+        setProspectos(data||[]);
+      });
+    return ()=>{vigente=false;};
+  },[revisionProspectos]);
+
+  function seleccionarProspecto(id){
+    setProspectoId(id);
+    if(!id){setSel('');return;}
+    const p=prospectos.find(item=>item.id===id);
+    if(!p)return;
+    const registro=propuestaDelProspecto(registros,id);
+    if(registro){
+      setSel(registro.nombre);
+      setD({...BLANK,...registro.datos});
+      setOpts({...OPCIONES_PROPUESTA,...registro.opciones});
+      setAviso('Propuesta existente asociada a '+p.nombre_condominio+'.');
+    }else{
+      setSel('');
+      setD(datosDesdeProspecto(p,BLANK));
+      setOpts({...OPCIONES_PROPUESTA});
+      setAviso('Prospecto asociado. Completa los honorarios y guarda la propuesta.');
+    }
+  }
+
   React.useEffect(()=>{
     const id=busqueda.get('prospecto');
-    if(!id)return;
-    let vivo=true;
-    supabase.from('prospectos').select('id,nombre_condominio,direccion,comuna,nombre_contacto,email')
-      .eq('id',id).maybeSingle().then(({data})=>{
-        if(!vivo||!data)return;
-        // Un prospecto distinto nunca hereda los honorarios del borrador anterior.
-        setD({
-          ...BLANK,
-          comunidad:data.nombre_condominio||'',
-          direccion:data.direccion||'',
-          comuna:data.comuna||'',
-          destinatario:data.nombre_contacto||'',
-          email:data.email||''
-        });
-        setSel('');
-      });
-    return ()=>{vivo=false;};
-  },[busqueda]);
+    if(!id||cargandoProspectos||cargando||abiertoDesdeUrl.current===id)return;
+    const p=prospectos.find(item=>item.id===id);
+    if(!p)return;
+    abiertoDesdeUrl.current=id;
+    seleccionarProspecto(id);
+  },[busqueda,prospectos,cargandoProspectos,cargando,registros]);
 
   React.useEffect(()=>{
     let raf=0;
@@ -168,10 +199,14 @@ export default function Propuestas() {
   const guardar = async () => {
     const nombre = d.comunidad.trim();
     if (!nombre) { setAviso('Escribe el nombre de la comunidad antes de guardar.'); return; }
+    if (conflictoAsociacion(registros,nombre,prospectoId)) {
+      setAviso('Ya existe una propuesta con ese nombre asociada a otro prospecto. Cambia el nombre antes de guardar.');
+      return;
+    }
     setGuardando(true);setAviso('');
     const payload={
       nombre,datos:d,opciones:opts,
-      prospecto_id:registros[sel]?.prospecto_id||busqueda.get('prospecto')||null,
+      prospecto_id:prospectoId||null,
       actualizado_por:perfil?.id
     };
     const {data,error}=await supabase.from('propuestas_comerciales')
@@ -189,8 +224,9 @@ export default function Propuestas() {
     setSel(nombre);
     if(clientes[nombre]){
       setD({...BLANK,...clientes[nombre]});
-      setOpts({...{portada:true,numeros:true,honorarios:true},...registros[nombre]?.opciones});
-    }
+      setOpts({...OPCIONES_PROPUESTA,...registros[nombre]?.opciones});
+      setProspectoId(registros[nombre]?.prospecto_id||'');
+    }else setProspectoId('');
   };
   React.useEffect(()=>{
     const id=busqueda.get('documento');
@@ -199,7 +235,8 @@ export default function Propuestas() {
     if(!registro)return;
     setSel(registro.nombre);
     setD({...BLANK,...registro.datos});
-    setOpts({...{portada:true,numeros:true,honorarios:true},...registro.opciones});
+    setOpts({...OPCIONES_PROPUESTA,...registro.opciones});
+    setProspectoId(registro.prospecto_id||'');
   },[busqueda,registros,cargando]);
   const eliminar=async ()=>{
     if(!sel||!registros[sel]||!window.confirm('¿Eliminar esta propuesta guardada?'))return;
@@ -209,11 +246,14 @@ export default function Propuestas() {
     else{
       const siguientes={...clientes};delete siguientes[sel];setClientes(siguientes);
       const siguienteIndice={...registros};delete siguienteIndice[sel];setRegistros(siguienteIndice);
-      setSel('');setAviso('Propuesta eliminada.');
+      setSel('');setProspectoId('');setAviso('Propuesta eliminada.');
     }
     setGuardando(false);
   };
-  const nueva=()=>{setD({...BLANK});setSel('');setAviso('');};
+  const nueva=()=>{
+    setD({...BLANK});setSel('');setProspectoId('');
+    setOpts({...OPCIONES_PROPUESTA});setAviso('');
+  };
 
   const p = panelStyles;
   const pctFuera = calc.pctNum != null && (calc.pctNum < 8 || calc.pctNum > 10);
@@ -233,7 +273,28 @@ export default function Propuestas() {
         {aviso&&<p role="status" className="propuesta-aviso">{aviso}</p>}
 
         <div style={p.group}>
-          <h2 style={p.groupTitle}>Clientes guardados</h2>
+          <h2 style={p.groupTitle}>Prospectos del Pipeline</h2>
+          <Field label="Asociar propuesta a un prospecto">
+            <select style={p.input} value={prospectoId} disabled={cargandoProspectos}
+              onChange={e=>seleccionarProspecto(e.target.value)}
+              aria-label="Seleccionar prospecto de Coproactiva">
+              <option value="">{cargandoProspectos?'Cargando prospectos…':'- Selecciona un prospecto -'}</option>
+              {prospectos.map(pr=><option key={pr.id} value={pr.id}>{etiquetaProspecto(pr)}</option>)}
+            </select>
+          </Field>
+          <div className="propuesta-prospecto-acciones">
+            <span>{prospectos.length} prospectos en el Pipeline</span>
+            <button type="button" onClick={()=>setRevisionProspectos(n=>n+1)}
+              disabled={cargandoProspectos}>Actualizar lista</button>
+          </div>
+          {prospectoId&&<p className="propuesta-prospecto-asociado">
+            Vinculado al prospecto seleccionado. <Link to={'/pipeline?prospecto='+prospectoId}>
+              Ver ficha comercial
+            </Link>
+          </p>}
+        </div>
+        <div style={p.group}>
+          <h2 style={p.groupTitle}>Propuestas guardadas</h2>
           <Field label="Cargar propuesta">
             <select style={p.input} value={sel} onChange={e => cargar(e.target.value)}>
               <option value="">{cargando?'Cargando propuestas...':'- Selecciona una propuesta -'}</option>
