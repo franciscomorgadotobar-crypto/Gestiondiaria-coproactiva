@@ -88,7 +88,7 @@ export async function abrirInformeClienteLevantamiento({controlId,clienteId=null
     categorias:[...categoriasPorNombre.values()],
     firmas
   });
-  if(!imprimirInforme(html,ventana)){
+  if(!imprimirInforme(html,ventana,{pantallaCarga:true})){
     throw new Error('El navegador bloqueó la apertura del informe. Habilita ventanas emergentes.');
   }
   return true;
