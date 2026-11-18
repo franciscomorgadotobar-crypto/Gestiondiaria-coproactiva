@@ -5,7 +5,7 @@ import {informeHtml,imprimirInforme} from './informe';
  * El cliente no obtiene acceso a la pantalla de edición ni a tablas internas.
  * Las respuestas se autorizan por RPC y las fotografías por Storage RLS.
  */
-export async function abrirInformeClienteLevantamiento({controlId,clienteId=null,ventana}) {
+export async function prepararInformeClienteLevantamiento({controlId,clienteId=null}) {
   if(!controlId)throw new Error('No hay levantamiento seleccionado.');
   const {data,error}=await supabase.rpc('portal_levantamiento_detalle',{
     p_control_id:controlId,p_usuario_cliente:clienteId||null
@@ -88,6 +88,13 @@ export async function abrirInformeClienteLevantamiento({controlId,clienteId=null
     categorias:[...categoriasPorNombre.values()],
     firmas
   });
+  return html;
+}
+
+/* Compatibilidad con la apertura directa de impresión utilizada anteriormente.
+ * El visor nuevo reutiliza la preparación autorizada sin impresión automática. */
+export async function abrirInformeClienteLevantamiento({controlId,clienteId=null,ventana}) {
+  const html=await prepararInformeClienteLevantamiento({controlId,clienteId});
   if(!imprimirInforme(html,ventana,{pantallaCarga:true})){
     throw new Error('El navegador bloqueó la apertura del informe. Habilita ventanas emergentes.');
   }
