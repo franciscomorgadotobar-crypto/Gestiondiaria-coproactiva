@@ -61,7 +61,8 @@ BEGIN
       'id',a.id,'control_item_id',a.control_item_id,
       'storage_path',a.storage_path,'nombre',a.nombre_original,
       'mime',a.mime,'descripcion',a.descripcion,
-      'clase',a.clase::text,'criterio_id',a.criterio_id,'orden',a.orden
+      'clase',a.clase::text,'criterio_id',a.criterio_id,'orden',a.orden,
+      'firmante_nombre',a.firmante_nombre,'firmante_rut',a.firmante_rut
     ) ORDER BY a.orden NULLS LAST,a.creado_en,a.id
   ),'[]'::jsonb)
   INTO v_adjuntos
