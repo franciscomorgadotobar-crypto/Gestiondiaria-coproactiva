@@ -794,7 +794,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
             {tab === 'incidencias' && <IncidenciasComunidad vista={vista} />}
             {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} clienteId={clienteId} />}
             {tab === 'mantencion' && <MantencionesComunidad vista={vista} />}
-            {tab === 'documentos' && <DocumentosComunidad key={id+':'+revision} vista={vista} vistaPrevia={esVistaPrevia} />}
+            {tab === 'documentos' && <DocumentosComunidad key={id+':'+revision} vista={vista} vistaPrevia={esVistaPrevia} clienteId={clienteId} />}
           </>
         )}
       </div>
@@ -860,20 +860,26 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, clienteId=nu
   );
 }
 
-function FilaTimeline({ item }) {
+function FilaTimeline({item,contexto={},mostrarComunidad=false}){
+  const destino=rutaActividad(item,contexto);
+  const url=urlDocumento(item.documento);
   return (
     <div className="portal-timeline-item">
-      <div className="portal-timeline-marca" aria-hidden="true" />
+      <div className="portal-timeline-marca" aria-hidden="true"/>
       <div className="portal-timeline-contenido">
-        <div className="portal-etiquetas">
-          <span className="portal-tipo">{item.tipo}</span>
-          <span className="micro apagado">{fechaCL(item.fecha)}</span>
-        </div>
-        <strong className="portal-actividad-titulo">{item.titulo}</strong>
-        {item.detalle && <p className="micro apagado">{item.detalle}</p>}
-        {urlDocumento(item.documento) && (
-          <a className="portal-enlace" href={urlDocumento(item.documento)} target="_blank" rel="noreferrer">Abrir PDF</a>
-        )}
+        <Link to={destino} className="portal-timeline-enlace"
+          aria-label={'Ver movimiento: '+item.titulo}>
+          <div className="portal-etiquetas">
+            <span className="portal-tipo">{item.tipo}</span>
+            <span className="micro apagado">{fechaCL(item.fecha)}</span>
+          </div>
+          <strong className="portal-actividad-titulo">{item.titulo}</strong>
+          {mostrarComunidad&&<span className="micro portal-comunidad-ref">{item.comunidadNombre}</span>}
+          {item.detalle&&<p className="micro apagado">{item.detalle}</p>}
+          <span className="portal-enlace portal-actividad-indicacion">Ver detalle ›</span>
+        </Link>
+        {url&&<a className="portal-enlace portal-timeline-documento" href={url}
+          target="_blank" rel="noreferrer">Abrir PDF</a>}
       </div>
     </div>
   );
@@ -911,7 +917,7 @@ function IncidenciasComunidad({ vista }) {
 function TarjetaIncidencia({ incidencia }) {
   const cerrada = incidenciaCerrada(incidencia);
   return (
-    <div className={`tarjeta portal-item ${cerrada ? '' : 'portal-item-pendiente'}`}>
+    <div id={'portal-registro-inc-'+incidencia.id} className={`tarjeta portal-item ${cerrada ? '' : 'portal-item-pendiente'}`}>
       <div className="portal-etiquetas">
         <span className="portal-tipo">Incidencia</span>
         <span className={'portal-estado' + claseEstado(etiquetaEstado(incidencia.estado))}>{etiquetaEstado(incidencia.estado)}</span>
@@ -1007,7 +1013,7 @@ function LevantamientosComunidad({ vista, clienteId = null }) {
             const pdf = documentos.find(documentoEsPdf) || null;
             const pdfUrl = urlDocumento(pdf);
             return (
-              <div key={l.id} className="tarjeta portal-item">
+              <div key={l.id} id={'portal-registro-lev-'+l.id} className="tarjeta portal-item">
                 <div className="fila portal-item-cabecera">
                   <strong className="crece portal-actividad-titulo">{l.plantilla_nombre}</strong>
                   <span className={'portal-estado' + claseEstado(etiquetaEstado(l.estado))}>{etiquetaEstado(l.estado)}</span>
@@ -1034,7 +1040,7 @@ function LevantamientosComunidad({ vista, clienteId = null }) {
           <EncabezadoSeccion titulo="Pendientes de programación" cantidad={vista.requerimientos.filter(r => !r.tiene_agendamiento).length} />
           <div className="portal-lista">
             {vista.requerimientos.filter(r => !r.tiene_agendamiento).map(r => (
-              <div key={r.id} className="tarjeta portal-item portal-item-pendiente">
+              <div key={r.id} id={'portal-registro-req-'+r.id} className="tarjeta portal-item portal-item-pendiente">
                 <div className="portal-etiquetas"><span className="portal-tipo">Levantamiento</span><span className="portal-estado chip-pendiente">Sin programar</span></div>
                 <strong className="portal-actividad-titulo">{r.nombre || r.plantilla_nombre}</strong>
                 <span className="micro apagado">{r.proxima_exigible ? `Fecha límite: ${fechaCL(r.proxima_exigible)}` : 'Aún sin fecha programada'}</span>
@@ -1059,7 +1065,7 @@ function MantencionesComunidad({ vista }) {
             const vencimiento = m.vencimiento_original || m.proxima_exigible;
             const vencida = Boolean(vencimiento && vencimiento < hoyChile());
             return (
-              <div key={m.actividad_id} className={`tarjeta portal-item ${vencida ? 'portal-item-pendiente' : ''}`}>
+              <div key={m.actividad_id} id={'portal-registro-man-'+m.actividad_id} className={`tarjeta portal-item ${vencida ? 'portal-item-pendiente' : ''}`}>
                 <div className="fila portal-item-cabecera">
                   <strong className="crece portal-actividad-titulo">{m.activo_nombre}</strong>
                   {m.activo_categoria && <span className="portal-estado">{m.activo_categoria}</span>}
@@ -1087,7 +1093,7 @@ function MantencionesComunidad({ vista }) {
   );
 }
 
-function DocumentosComunidad({ vista, vistaPrevia = false }) {
+function DocumentosComunidad({ vista, vistaPrevia = false, clienteId=null }) {
   const pdfs = vista.documentos.filter(documentoEsPdf);
   const otros = vista.documentos.filter(d => !documentoEsPdf(d));
   return (
@@ -1097,7 +1103,8 @@ function DocumentosComunidad({ vista, vistaPrevia = false }) {
         <EstadoVacio titulo="Aún no hay PDF publicados" texto="Los informes autorizados para el cliente quedarán disponibles aquí para consulta." />
       ) : (
         <div className="portal-documentos-resumen">
-          {pdfs.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d} />)}
+          {pdfs.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d}
+            contexto={{comunidadId:vista.comunidad?.comunidad_id,vistaPrevia,clienteId}} />)}
         </div>
       )}
 
@@ -1105,7 +1112,8 @@ function DocumentosComunidad({ vista, vistaPrevia = false }) {
         <div className="portal-bloque-separado">
           <EncabezadoSeccion titulo="Otros respaldos" cantidad={otros.length} />
           <div className="portal-documentos-resumen">
-            {otros.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d} />)}
+            {otros.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d}
+            contexto={{comunidadId:vista.comunidad?.comunidad_id,vistaPrevia,clienteId}} />)}
           </div>
         </div>
       )}
