@@ -756,3 +756,44 @@
     color:var(--ca-cobre-oscuro,#985123);text-decoration:underline;
   }
 }
+
+/* Sliding Pill: barra inferior del sistema, también para las cuentas cliente.
+   El marcador es decorativo, no cambia los elementos de navegación ni sus hitboxes. */
+@media (max-width: 899px) {
+  .barra-inferior-movil.barra-inferior-pill {
+    isolation: isolate;
+  }
+  .barra-inferior-pill .barra-pill-indicador {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    border-radius: 999px;
+    background: linear-gradient(115deg, #c45b1b, #a44712);
+    box-shadow: 0 4px 13px rgba(152, 68, 23, .24),
+                inset 0 1px 0 rgba(255, 255, 255, .24);
+    will-change: left, width;
+  }
+  .barra-inferior-pill .nav-movil-item {
+    z-index: 1;
+    background: transparent;
+    transition: color 120ms ease;
+  }
+  .barra-inferior-pill .nav-movil-item.activo,
+  .barra-inferior-pill .nav-movil-item.activo .nav-movil-icono-wrap {
+    color: #fff;
+  }
+  .barra-inferior-pill .nav-movil-item.activo:focus-visible,
+  .barra-inferior-pill .nav-movil-item:focus-visible {
+    border-radius: 999px;
+    outline: 2px solid #a44712;
+    outline-offset: -2px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barra-inferior-pill .barra-pill-indicador,
+  .barra-inferior-pill .nav-movil-item {
+    animation: none !important;
+    transition: none !important;
+  }
+}
