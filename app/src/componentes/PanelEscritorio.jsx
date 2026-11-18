@@ -203,6 +203,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const comunidadPortalId = pathname.startsWith('/portal/comunidades/') ? pathname.split('/')[3] : null;
   const tabPortal = new URLSearchParams(search).get('seccion') || 'compromisos';
   const enlacePortal = (seccion, etiqueta) => ({
+    id: `cliente-${seccion}`,
     ruta: `/portal/comunidades/${comunidadPortalId}${seccion === 'compromisos' ? '' : '?seccion=' + seccion}`,
     etiqueta,
     mostrar: true,
@@ -216,7 +217,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         enlacePortal('levantamientos', 'Levantamientos'),
         enlacePortal('mantencion', 'Mantenciones'),
         enlacePortal('documentos', 'Documentos')
-      ] : [{ ruta: '/portal', etiqueta: 'Mis comunidades', mostrar: true }])
+      ] : [{ id: 'cliente-comunidades', ruta: '/portal', etiqueta: 'Comunidades', mostrar: true }])
     : enConfiguracion
     ? [
         { ruta: '/mi-cuenta', etiqueta: 'Mi cuenta', mostrar: true },
@@ -272,6 +273,13 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   function IconoMovil({ tipo }) {
     const comun = { width: 21, height: 21, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+    if (tipo === 'cliente-comunidades') return <IconoNavegacion tipo="comunidades" size={21} />;
+    if (tipo === 'cliente-resumen') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg>;
+    if (tipo === 'cliente-compromisos') return <svg {...comun}><path d="M5 4h14v16H5z"/><path d="m8 12 2 2 5-5M8 17h8"/></svg>;
+    if (tipo === 'cliente-incidencias') return <svg {...comun}><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg>;
+    if (tipo === 'cliente-documentos') return <svg {...comun}><path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h7M9 16h7"/></svg>;
+    if (tipo === 'cliente-levantamientos') return <IconoNavegacion tipo="levantamientos" size={21} />;
+    if (tipo === 'cliente-mantencion') return <IconoNavegacion tipo="mantenciones" size={21} />;
     if (tipo === 'conocimientos') return <IconoNavegacion tipo="conocimientos" size={21} />;
     if (tipo === 'buscar-conocimientos') return <svg {...comun}><circle cx="10.7" cy="10.7" r="7.2"/><path d="m16 16 5 5"/></svg>;
     if (tipo === 'inicio') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg>;
@@ -354,7 +362,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'clientes', etiqueta: 'Clientes', ruta: '/clientes', mostrar: esSuperadmin }
   ].filter(x => x.mostrar !== false);
 
-  const opcionesBarra = enAprendizaje ? [
+  const opcionesBarra = esCliente ? accesos
+    : enAprendizaje ? [
     { id: 'conocimientos', etiqueta: 'Aprendizaje', ruta: '/conocimientos' },
     { id: 'buscar-conocimientos', etiqueta: 'Buscar', accion: () =>
       window.dispatchEvent(new CustomEvent('coproactiva:conocimientos:buscar', { detail: { accion: 'alternar' } })) }
@@ -366,8 +375,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     : opcionesOperacion;
   // Tres rutas fijas para Operaciones: los chips y Preferencias guardadas no
   // pueden reintroducir Notificaciones ni duplicar enlaces secundarios.
-  const barraIds = enOperacion ? ['inicio', 'comunidades', 'levantamientos'] : [];
-  if (!enOperacion) for (const item of opcionesBarra) {
+  const barraIds = esCliente
+    ? (comunidadPortalId
+      ? ['cliente-resumen', 'cliente-compromisos', 'cliente-incidencias', 'cliente-documentos']
+      : ['cliente-comunidades'])
+    : enOperacion ? ['inicio', 'comunidades', 'levantamientos'] : [];
+  if (!enOperacion && !esCliente) for (const item of opcionesBarra) {
     if (barraIds.length >= 4) break;
     if (!barraIds.includes(item.id)) barraIds.push(item.id);
   }
@@ -378,10 +391,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // tarjetas/chips del Home: «Más» no debe convertirse en un tercer menú.
   const menuMasOperacion = enOperacion ? [] : opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
-  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enDocumental || enAprendizaje;
+  const mostrarBarraMovil = esCliente || enOperacion || enFinanzas || enConfiguracion || enComercial || enDocumental || enAprendizaje;
   // Operaciones se navega por cuatro accesos; Configuración contiene Mi cuenta.
   // «Más» permanece solo en áreas con navegación secundaria real.
-  const mostrarMasMovil = mostrarBarraMovil && !enOperacion && !enConfiguracion;
+  const mostrarMasMovil = esCliente ? menuMasOperacion.length > 0 : mostrarBarraMovil && !enOperacion && !enConfiguracion;
 
   function itemMovilActivo(item) {
     if (item.id === 'buscar-conocimientos') return buscarAprendizaje;
