@@ -33,3 +33,40 @@
 .portal-enlace-boton{background:transparent;border:0;cursor:pointer;padding:0;font:inherit}
 @media(max-width:900px){.vista-cliente-barra{grid-template-columns:1fr 1fr}.vista-cliente-modo{grid-column:1/-1;min-height:36px}}
 @media(max-width:600px){.vista-cliente-modulo{padding:13px;gap:12px}.vista-cliente-encabezado{align-items:flex-start;flex-direction:column;gap:10px}.vista-cliente-encabezado>.boton{width:100%}.vista-cliente-barra{grid-template-columns:1fr;gap:12px;padding:13px}.vista-cliente-modo{grid-column:auto}.vista-cliente-simulacion-cabecera{display:grid}.vista-cliente-simulacion .portal-pantalla>.encabezado{padding:17px}.vista-cliente-simulacion .portal-pantalla>.cuerpo{padding:15px}}
+
+/* Pantalla administrativa que abre el shell REAL del cliente. Ya no contiene
+   una maqueta incrustada ni crea una navegación distinta a la cuenta cliente. */
+.vista-cliente-lanzador{
+  min-width:0;display:flex;align-items:center;justify-content:space-between;
+  gap:16px;padding:22px;border:1px solid #e5d8ca;border-radius:16px;
+  background:#fff;flex-wrap:wrap;
+}
+.vista-cliente-lanzador strong{font:750 17px/1.3 var(--fuente-display,Montserrat,sans-serif);color:#293444}
+.vista-cliente-lanzador p{margin:7px 0 0;font-size:13px;line-height:1.45;color:#5a6571}
+.vista-cliente-abrir{
+  background:#a9521f;color:#fff!important;text-decoration:none!important;
+  min-height:46px;display:inline-flex;align-items:center;justify-content:center;
+  padding:12px 19px;border-radius:11px;font-weight:750;white-space:normal;text-align:center;
+}
+.vista-cliente-abrir:focus-visible{outline:2px solid #a9521f;outline-offset:3px}
+.vista-cliente-real-error{display:grid;gap:18px;padding:22px}
+.vista-cliente-real-herramientas{
+  display:flex;align-items:center;justify-content:space-between;gap:12px 20px;
+  flex-wrap:wrap;padding:14px clamp(14px,3vw,24px);background:#fff8f0;
+  border-bottom:1px solid #ead7c1;
+}
+.vista-cliente-real-identidad{display:grid;gap:4px;min-width:0}
+.vista-cliente-real-identidad strong{color:#8c4518;font-size:13px}
+.vista-cliente-real-identidad small{font-size:12px;color:#354152}
+.vista-cliente-real-identidad span{font-size:11px;line-height:1.4;color:#747476}
+.vista-cliente-real-acciones{display:flex;gap:9px;flex-wrap:wrap}
+.vista-cliente-real-acciones .boton{min-height:40px;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.vista-cliente-campana{display:inline-grid;place-items:center;width:34px;height:34px;opacity:.38;filter:grayscale(1);cursor:default}
+@media(max-width:600px){
+  .vista-cliente-lanzador{padding:17px;align-items:stretch;flex-direction:column}
+  .vista-cliente-abrir{width:100%}
+  .vista-cliente-real-herramientas{padding:11px 14px;gap:10px}
+  .vista-cliente-real-identidad span{display:none}
+  .vista-cliente-real-acciones{width:100%}
+  .vista-cliente-real-acciones .boton{flex:1 1 auto}
+}

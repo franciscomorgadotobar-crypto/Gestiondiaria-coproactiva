@@ -29,7 +29,8 @@ test('Los avisos ¿Sabías que…? también aparecen en portal, nunca dentro de 
 });
 
 test('La biblioteca figura en el menú Más y en la navegación cliente',()=>{
-  assert.match(panel,/id: 'cliente-conocimientos', ruta: '\/portal\/conocimientos'/);
+  assert.match(panel,/id: 'cliente-conocimientos', ruta: rutaBibliotecaCliente/);
+  assert.match(panel,/\/vista-cliente\/conocimientos\?comunidad=/);
   assert.match(panel,/etiqueta: 'Base de conocimientos'/);
   assert.match(panel,/enlacePortal\('documentos', 'Documentos'\),\s*accesoBibliotecaCliente/);
   assert.match(panel,/\['cliente-comunidades', 'cliente-conocimientos'\]/);

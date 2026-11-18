@@ -56,7 +56,11 @@ export default function Conocimientos() {
         setBuscarVisible(false);
         setBusqueda('');
         setMateria('Todas');
-        setParametros({}, { replace: true });
+        setParametros(prev=>{
+          const siguiente=new URLSearchParams(prev);
+          siguiente.delete('capsula');
+          return siguiente;
+        }, { replace: true });
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         setBuscarVisible(valor => !valor);
@@ -94,7 +98,12 @@ export default function Conocimientos() {
 
   function abrirTarjeta(item) {
     const siguiente = abiertoId === item.id ? '' : item.id;
-    setParametros(siguiente ? { capsula: siguiente } : {}, { replace: false });
+    setParametros(prev=>{
+      const parametros=new URLSearchParams(prev);
+      if(siguiente)parametros.set('capsula',siguiente);
+      else parametros.delete('capsula');
+      return parametros;
+    }, { replace: false });
     if (siguiente && usuarioId && !consultados.includes(item.id)) {
       const nuevos = [...consultados, item.id];
       setConsultados(nuevos);

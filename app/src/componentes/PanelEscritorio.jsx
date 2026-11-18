@@ -118,7 +118,7 @@ function usePillCorredera(opcionActiva, firmaOpciones) {
   return { barraRef, pillRef };
 }
 
-export default function PanelEscritorio({ children, anchoCompleto = false }) {
+export default function PanelEscritorio({ children, anchoCompleto = false, vistaCliente = null }) {
   const { perfil, salir } = useSesion();
   const { pathname, hash, search } = useLocation();
   const navegar = useNavigate();
@@ -152,7 +152,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     // Operaciones y Configuración no tienen menú «Más», incluso si
     // alguna pestaña histórica conserva un estado anterior.
     const grupoActual = grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion';
-    if (!masAbierto || (perfil?.rol !== 'cliente' && (grupoActual === 'operacion' || grupoActual === 'configuracion'))) return undefined;
+    if (!masAbierto || (perfil?.rol !== 'cliente' && !vistaCliente && (grupoActual === 'operacion' || grupoActual === 'configuracion'))) return undefined;
     // El menú se monta fuera de la aplicación y bloquea la interacción
     // con el mapa Leaflet, los chips y la navegación inferior.
     const raizAplicacion = document.getElementById('raiz');
@@ -191,7 +191,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       document.documentElement.style.overflow = scrollHtmlAnterior;
       botonMasRef.current?.focus({ preventScroll: true });
     };
-  }, [masAbierto, navegar, pathname, perfil?.rol]);
+  }, [masAbierto, navegar, pathname, perfil?.rol, Boolean(vistaCliente)]);
   function setMasAbierto(proximo, { alNavegar = false } = {}) {
     const abrir = typeof proximo === 'function' ? proximo(masAbierto) : proximo;
     if (abrir === masAbierto) return;
@@ -233,7 +233,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     };
   }, [perfil?.id, pathname]);
 
-  const esCliente = perfil?.rol === 'cliente';
+  const esCliente = perfil?.rol === 'cliente' || Boolean(vistaCliente);
   const puedeConfigurar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
   const puedeCambiarArea = Boolean(puedeConfigurar);
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
@@ -292,20 +292,33 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   // La comunidad seleccionada es el contexto del menú cliente.
   // Los enlaces usan la misma URL de pestañas, sin crear pantallas duplicadas.
-  const comunidadPortalId = pathname.startsWith('/portal/comunidades/') ? pathname.split('/')[3] : null;
+  const comunidadPortalId = vistaCliente?.comunidadId ||
+    (pathname.startsWith('/portal/comunidades/') ? pathname.split('/')[3] : null);
   const tabPortal = new URLSearchParams(search).get('seccion') || 'compromisos';
+  const vistaBase = vistaCliente
+    ? '/vista-cliente/portal?comunidad='+encodeURIComponent(vistaCliente.comunidadId)
+      +'&cliente='+encodeURIComponent(vistaCliente.clienteId)
+    : '/portal/comunidades/'+comunidadPortalId;
+  const urlConSeccion = seccion => vistaBase
+    + (seccion === 'compromisos' ? '' : (vistaCliente ? '&' : '?') + 'seccion=' + seccion);
   const enlacePortal = (seccion, etiqueta) => ({
     id: `cliente-${seccion}`,
-    ruta: `/portal/comunidades/${comunidadPortalId}${seccion === 'compromisos' ? '' : '?seccion=' + seccion}`,
+    ruta: urlConSeccion(seccion),
     etiqueta,
     etiquetaMovil: seccion === 'compromisos' ? 'Avances' : etiqueta,
     mostrar: true,
-    activo: () => tabPortal === seccion
+    activo: () => (vistaCliente
+      ? pathname === '/vista-cliente/portal'
+      : pathname === '/portal/comunidades/'+comunidadPortalId) && tabPortal === seccion
   });
+  const rutaBibliotecaCliente = vistaCliente
+    ? '/vista-cliente/conocimientos?comunidad='+encodeURIComponent(vistaCliente.comunidadId)
+       +'&cliente='+encodeURIComponent(vistaCliente.clienteId)
+    : '/portal/conocimientos';
   const accesoBibliotecaCliente = {
-    id: 'cliente-conocimientos', ruta: '/portal/conocimientos',
+    id: 'cliente-conocimientos', ruta: rutaBibliotecaCliente,
     etiqueta: 'Base de conocimientos', etiquetaMovil: 'Ley 21.442',
-    mostrar: true, activo: ruta => ruta === '/portal/conocimientos'
+    mostrar: true, activo: ruta => ruta === (vistaCliente ? '/vista-cliente/conocimientos' : '/portal/conocimientos')
   };
   const accesos = esCliente
     ? (comunidadPortalId ? [
@@ -364,6 +377,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
   function volverGlobal() {
     // La biblioteca está dentro del portal, no del selector interno.
+    if (vistaCliente) {
+      navegar('/vista-cliente?comunidad='+encodeURIComponent(vistaCliente.comunidadId)
+        +'&cliente='+encodeURIComponent(vistaCliente.clienteId));
+      return;
+    }
     if (esCliente && pathname === '/portal/conocimientos') {
       navegar('/portal');
       return;
@@ -630,10 +648,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         <div className="usuario-lateral">
           <div className="usuario-lateral-identidad">
             <span className="usuario-lateral-avatar" aria-hidden="true">
-              {(perfil?.nombre || 'U').trim().charAt(0).toUpperCase()}
+              {(vistaCliente?.clienteNombre || perfil?.nombre || 'U').trim().charAt(0).toUpperCase()}
             </span>
             <span className="usuario-lateral-datos">
-              <strong>{perfil?.nombre || 'Usuario'}</strong>
+              <strong>{vistaCliente?.clienteNombre || perfil?.nombre || 'Usuario'}</strong>
               <small>
                 {esCliente ? 'Cliente'
                   : perfil?.rol === 'superadmin' ? 'Superadministrador'
@@ -657,7 +675,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 Tutorial
               </button>
             )}
-            <button type="button" className="usuario-lateral-salir" onClick={salir}>Salir</button>
+            {!vistaCliente&&<button type="button" className="usuario-lateral-salir" onClick={salir}>Salir</button>}
+            {vistaCliente&&<Link to="/vista-cliente" className="usuario-lateral-salir">Volver a administración</Link>}
           </div>
         </div>
       </nav>}
@@ -665,7 +684,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       <div className={'area-escritorio' + (anchoCompleto ? ' ancho-completo' : '')}>
         {/* En escritorio con menú lateral, las alertas también están disponibles
             sin depender del Home ni de una pantalla funcional específica. */}
-        {mostrarPanelIzquierdo && (
+        {mostrarPanelIzquierdo && !vistaCliente && (
           <div className="barra-campana-escritorio" aria-label="Notificaciones globales">
             <Campana miId={perfil?.id} />
           </div>
@@ -702,8 +721,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                   {nombreArea}
                 </span>
               )}
-              <Campana miId={perfil?.id} />
-              {esCliente && (
+              {vistaCliente
+                ? <span className="vista-cliente-campana" title="Las notificaciones personales se consultan en la sesión del cliente" aria-label="Notificaciones personales disponibles solo en la cuenta cliente">🔔</span>
+                : <Campana miId={perfil?.id} />}
+              {esCliente && !vistaCliente && (
                 <button type="button" className="barra-area-salir-cliente"
                   onClick={salir} aria-label="Cerrar sesión">
                   Cerrar sesión
@@ -809,14 +830,14 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                       </div>
                     </div>
                   )}
-                  <div className="menu-mas-grupo menu-mas-grupo-cuenta" role="group" aria-label="Cuenta y navegación">
+                  {!vistaCliente&&<div className="menu-mas-grupo menu-mas-grupo-cuenta" role="group" aria-label="Cuenta y navegación">
                     <p className="menu-mas-grupo-titulo">{enOperacion ? 'Cuenta' : 'Cuenta y navegación'}</p>
                     <div className="menu-mas-enlaces">
                       <Link to="/mi-cuenta" onClick={() => setMasAbierto(false, { alNavegar: true })}>
                         Mi cuenta <span aria-hidden="true">›</span>
                       </Link>
                     </div>
-                  </div>
+                  </div>}
                 </div>
               </div>
             </div>, document.body

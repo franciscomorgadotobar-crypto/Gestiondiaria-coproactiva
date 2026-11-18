@@ -12,8 +12,8 @@ test('Las secciones del cliente usan la barra inferior compartida, sin chips dup
   assert.match(panel, /const mostrarBarraMovil = esCliente \|\|/);
   assert.match(panel, /'cliente-resumen', 'cliente-compromisos', 'cliente-incidencias', 'cliente-documentos'/);
   assert.match(panel, /menuMasOperacion\.length > 0/);
-  assert.match(portal, /\{esVistaPrevia && \(/);
-  assert.match(portal, /<nav className="pestanas portal-pestanas-movil portal-pestanas-vista-previa"/);
+  assert.doesNotMatch(portal, /<nav className="pestanas portal-pestanas-movil portal-pestanas-vista-previa"/);
+  assert.match(panel, /vistaCliente = null/);
 });
 
 test('Los respaldos se obtienen por materia y respetan la visibilidad del cliente', () => {

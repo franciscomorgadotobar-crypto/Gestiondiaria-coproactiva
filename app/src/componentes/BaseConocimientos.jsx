@@ -13,7 +13,7 @@ const DURACION = 7000;
 const INICIO = 3500;
 
 function puedePresentarse(pathname) {
-  if (document.hidden || pathname === '/conocimientos' || pathname === '/portal/conocimientos') return false;
+  if (document.hidden || pathname === '/conocimientos' || pathname === '/portal/conocimientos' || pathname === '/vista-cliente/conocimientos') return false;
   if (/^\/(ingreso|clave|nuevo|control|plantillas\/importar)(\/|$)/.test(pathname)) return false;
   if (/^\/(propiedades\/nueva|contabilidad\/asientos|bitacora\/nueva)(\/|$)/.test(pathname)) return false;
   if (document.querySelector('[aria-modal="true"], dialog[open]')) return false;
@@ -31,7 +31,7 @@ export default function BaseConocimientos() {
   const { sesion, perfil, cargando } = useSesion();
   const usuarioId = sesion?.user?.id;
   const activo = Boolean(usuarioId && !cargando && perfil?.activo);
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navegar = useNavigate();
   const rutaActual = useRef(pathname);
   const [habilitado, setHabilitado] = useState(() => leerAutomaticas(usuarioId));
@@ -118,6 +118,16 @@ export default function BaseConocimientos() {
         <div className="conocimiento-mascota__acciones">
           <button type="button" className="conocimiento-mascota__enlace" onClick={() => {
             cerrar();
+            if(pathname.startsWith('/vista-cliente/')){
+              const p=new URLSearchParams(search);
+              const comunidad=p.get('comunidad');
+              const cliente=p.get('cliente');
+              if(comunidad&&cliente){
+                navegar('/vista-cliente/conocimientos?comunidad='+encodeURIComponent(comunidad)
+                  +'&cliente='+encodeURIComponent(cliente)+'&capsula='+encodeURIComponent(capsula.id));
+                return;
+              }
+            }
             navegar((perfil?.rol === 'cliente' ? '/portal/conocimientos' : '/conocimientos') + '?capsula=' + encodeURIComponent(capsula.id));
           }}>Conoce más ↗</button>
           <button type="button" className="conocimiento-mascota__siguiente"
