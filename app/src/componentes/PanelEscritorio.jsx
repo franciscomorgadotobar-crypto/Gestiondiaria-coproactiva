@@ -150,7 +150,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     // Operaciones y Configuración no tienen menú «Más», incluso si
     // alguna pestaña histórica conserva un estado anterior.
     const grupoActual = grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion';
-    if (!masAbierto || grupoActual === 'operacion' || grupoActual === 'configuracion') return undefined;
+    if (!masAbierto || (perfil?.rol !== 'cliente' && (grupoActual === 'operacion' || grupoActual === 'configuracion'))) return undefined;
     // El menú se monta fuera de la aplicación y bloquea la interacción
     // con el mapa Leaflet, los chips y la navegación inferior.
     const raizAplicacion = document.getElementById('raiz');
@@ -189,7 +189,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       document.documentElement.style.overflow = scrollHtmlAnterior;
       botonMasRef.current?.focus({ preventScroll: true });
     };
-  }, [masAbierto, navegar, pathname]);
+  }, [masAbierto, navegar, pathname, perfil?.rol]);
   function setMasAbierto(proximo, { alNavegar = false } = {}) {
     const abrir = typeof proximo === 'function' ? proximo(masAbierto) : proximo;
     if (abrir === masAbierto) return;
@@ -745,8 +745,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 </div>
                 <div className="menu-mas-secciones">
                   {!enOperacion && menuMasOperacion.length>0 && (
-                    <div className="menu-mas-grupo" role="group" aria-label={'Opciones de '+nombreArea}>
-                      <p className="menu-mas-grupo-titulo">Opciones · {nombreArea}</p>
+                    <div className="menu-mas-grupo" role="group" aria-label={esCliente ? 'Secciones de la comunidad' : 'Opciones de '+nombreArea}>
+                      <p className="menu-mas-grupo-titulo">{esCliente ? 'Secciones de la comunidad' : 'Opciones · '+nombreArea}</p>
                       <div className="menu-mas-enlaces">
                         {menuMasOperacion.map(item=>(
                           <button key={item.id} type="button" onClick={()=>ejecutarItemMovil(item)}>
