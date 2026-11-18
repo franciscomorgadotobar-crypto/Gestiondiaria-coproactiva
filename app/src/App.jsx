@@ -220,6 +220,13 @@ export default function App() {
           <Suspense fallback={<p className="cargando">Cargando…</p>}><PortalCliente /></Suspense>
         </Cliente>
       } />
+      {/* Misma biblioteca completa de Ley 21.442 que usa el equipo, sin
+          acceso a módulos internos ni filtrado por comunidad. */}
+      <Route path="/portal/conocimientos" element={
+        <Cliente>
+          <Suspense fallback={<p className="cargando">Cargando biblioteca…</p>}><Conocimientos /></Suspense>
+        </Cliente>
+      } />
 
       {/* Operación interna. El guard evita que un cliente entre pegando URLs.
           "/inicio" es fijo, sin el redirect de área de "/": todo botón "‹
