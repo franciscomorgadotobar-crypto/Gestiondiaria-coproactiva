@@ -36,7 +36,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Verificar navegación y documentos del portal cliente
         working-directory: app
-        run: node --test pruebas/portal-barra-documentos.test.js pruebas/sliding-pill-navegacion.test.js pruebas/portal-navegacion-carga-pdf.test.js pruebas/informe-visor-movil.test.js pruebas/portal-cliente-ley21442.test.js pruebas/vista-cliente-real-sincronizada.test.js pruebas/portal-cliente-avances.test.js
+        run: node --test pruebas/portal-barra-documentos.test.js pruebas/sliding-pill-navegacion.test.js pruebas/portal-navegacion-carga-pdf.test.js pruebas/informe-visor-movil.test.js pruebas/portal-cliente-ley21442.test.js pruebas/vista-cliente-real-sincronizada.test.js pruebas/portal-cliente-avances.test.js pruebas/portal-indicadores-navegables.test.js
       - name: Compilar aplicación
         working-directory: app
         env:

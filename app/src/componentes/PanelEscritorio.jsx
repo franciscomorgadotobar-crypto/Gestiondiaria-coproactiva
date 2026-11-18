@@ -503,7 +503,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false, vista
   // pueden reintroducir Notificaciones ni duplicar enlaces secundarios.
   const barraIds = esCliente
     ? (comunidadPortalId
-      ? ['cliente-resumen', 'cliente-compromisos', 'cliente-incidencias', 'cliente-documentos']
+      ? ['cliente-resumen', 'cliente-compromisos', 'cliente-documentos', 'cliente-conocimientos']
       : ['cliente-comunidades', 'cliente-conocimientos'])
     : enOperacion ? ['inicio', 'comunidades', 'levantamientos'] : [];
   if (!enOperacion && !esCliente) for (const item of opcionesBarra) {

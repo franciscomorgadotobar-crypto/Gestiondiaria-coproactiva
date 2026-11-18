@@ -314,8 +314,82 @@ export default function PortalCliente({ vistaPrevia = null }) {
   return id ? <DetalleCliente id={id} /> : <DashboardCliente />;
 }
 
+
+/* Los indicadores y movimientos utilizan el mismo destino para la cuenta
+ * cliente y para la vista real de administración. El identificador permite
+ * localizar la ficha exacta, no solo cambiar de módulo. */
+function rutaActividad(item,{vistaPrevia=false,clienteId=null}={}){
+  const comunidadId=encodeURIComponent(item.comunidadId||'');
+  const base=vistaPrevia
+    ? '/vista-cliente/portal?comunidad='+comunidadId+'&cliente='+encodeURIComponent(clienteId||'')
+    : '/portal/comunidades/'+comunidadId;
+  const registro=String(item.id||'').replace(/^maneje-/,'man-');
+  return base+(vistaPrevia?'&':'?')+'seccion='+encodeURIComponent(item.seccion||'resumen')
+    +'&registro='+encodeURIComponent(registro);
+}
+function rutaDocumentoPortal(documento,{comunidadId=null,vistaPrevia=false,clienteId=null}={}){
+  const id=comunidadId||documento.comunidadId||'';
+  const base=vistaPrevia
+    ? '/vista-cliente/portal?comunidad='+encodeURIComponent(id)+'&cliente='+encodeURIComponent(clienteId||'')
+    : '/portal/comunidades/'+encodeURIComponent(id);
+  return base+(vistaPrevia?'&':'?')+'seccion=documentos&registro='
+    +encodeURIComponent('doc-'+documento.id);
+}
+const FILTROS_RESUMEN={
+  atencion:'Pendientes de atención',
+  proximos:'Próximas actividades',
+  realizados:'Realizados este mes',
+  movimientos:'Todos los movimientos',
+  informes:'Informes publicados'
+};
+function ListaFiltradaResumen({filtro,atencion,proximos,realizados,realizadosMes,informes=[],contexto={},mostrarComunidad=false,onCerrar}){
+  useEffect(()=>{
+    if(!FILTROS_RESUMEN[filtro])return;
+    const cuadro=window.requestAnimationFrame(()=>{
+      document.getElementById('portal-filtro-resultados')?.scrollIntoView({
+        behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
+        block:'start'
+      });
+    });
+    return ()=>window.cancelAnimationFrame(cuadro);
+  },[filtro]);
+
+  if(!FILTROS_RESUMEN[filtro])return null;
+  const actividades=filtro==='atencion'?atencion
+    :filtro==='proximos'?proximos
+    :filtro==='realizados'?realizadosMes
+    :filtro==='informes'?[]
+    :[...atencion,...proximos,...realizados].sort(compararFechaDesc);
+  const documentos=(filtro==='movimientos'||filtro==='informes')?informes:[];
+  return <section id="portal-filtro-resultados" className="portal-resultados-filtrados"
+    aria-label={FILTROS_RESUMEN[filtro]}>
+    <header className="portal-resultados-cabecera">
+      <h2 className="h4">{FILTROS_RESUMEN[filtro]} ({actividades.length+documentos.length})</h2>
+      <button type="button" onClick={onCerrar}>Cerrar filtro ×</button>
+    </header>
+    {actividades.length>0&&<div className="portal-lista">{actividades.map(item=><TarjetaActividad
+      key={item.comunidadId+':'+item.id} item={item} contexto={contexto}
+      mostrarComunidad={mostrarComunidad} fechaDestacada={filtro==='proximos'}/>)}</div>}
+    {documentos.length>0&&<div className="portal-documentos-resumen">
+      {documentos.map((documento,i)=><TarjetaDocumento key={documento.id+':'+i} documento={documento}
+        contexto={contexto} mostrarComunidad={mostrarComunidad}/>)}
+    </div>}
+    {actividades.length===0&&documentos.length===0&&
+      <EstadoVacio titulo="No hay movimientos en este grupo"
+        texto="Cuando se publique una actividad de este tipo aparecerá aquí."/>}
+  </section>;
+}
+
 function DashboardCliente() {
   const { perfil } = useSesion();
+  const [params,setParams]=useSearchParams();
+  const filtroActivo=params.get('filtro')||'';
+  function seleccionarFiltro(filtro){
+    const siguiente=new URLSearchParams(params);
+    if(filtroActivo===filtro)siguiente.delete('filtro');
+    else siguiente.set('filtro',filtro);
+    setParams(siguiente,{preventScrollReset:true});
+  }
   const [vistas, setVistas] = useState(null);
   const navegar = useNavigate();
   const [error, setError] = useState(null);
@@ -393,12 +467,19 @@ function DashboardCliente() {
         {vistas && (
           <>
             <section className="portal-resumen" aria-label="Resumen del portal">
-              <Kpi valor={resumen.atencion.length} etiqueta="Requieren atención" tono={resumen.atencion.length ? 'alerta' : 'ok'} />
-              <Kpi valor={resumen.proximos.length} etiqueta="Próximamente" tono="proximo" />
-              <Kpi valor={resumen.realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
+              <Kpi valor={resumen.atencion.length} etiqueta="Requieren atención" tono={resumen.atencion.length ? 'alerta' : 'ok'}
+                onClick={()=>seleccionarFiltro('atencion')} activo={filtroActivo==='atencion'} />
+              <Kpi valor={resumen.proximos.length} etiqueta="Próximamente" tono="proximo"
+                onClick={()=>seleccionarFiltro('proximos')} activo={filtroActivo==='proximos'} />
+              <Kpi valor={resumen.realizadosMes.length} etiqueta="Realizados este mes" tono="ok"
+                onClick={()=>seleccionarFiltro('realizados')} activo={filtroActivo==='realizados'} />
             </section>
 
-            <section className="portal-seccion portal-seccion-principal">
+            <ListaFiltradaResumen filtro={filtroActivo} atencion={resumen.atencion}
+              proximos={resumen.proximos} realizados={resumen.realizados} realizadosMes={resumen.realizadosMes}
+              informes={resumen.informes} mostrarComunidad onCerrar={()=>seleccionarFiltro(filtroActivo)}/>
+
+            <section id="portal-lista-atencion" className="portal-seccion portal-seccion-principal">
               <EncabezadoSeccion titulo="Requiere atención" cantidad={resumen.atencion.length} />
               {resumen.atencion.length === 0 ? (
                 <EstadoVacio tipo="ok" titulo="Todo al día" texto="No hay incidencias, levantamientos o mantenciones vencidas que requieran atención." />
@@ -409,7 +490,7 @@ function DashboardCliente() {
               )}
             </section>
 
-            <section className="portal-seccion">
+            <section id="portal-lista-proximos" className="portal-seccion">
               <EncabezadoSeccion titulo="Próximamente" cantidad={resumen.proximos.length} />
               {resumen.proximos.length === 0 ? (
                 <EstadoVacio titulo="Sin actividades programadas" texto="Cuando se programe un levantamiento, una intervención o una mantención aparecerá aquí." />
@@ -420,8 +501,26 @@ function DashboardCliente() {
               )}
             </section>
 
+            <section id="portal-lista-realizados" className="portal-seccion">
+              <div className="portal-seccion-titulo portal-seccion-titulo-accion">
+                <h2 className="h4">Realizados este mes</h2>
+                <button type="button" className="portal-ver-todos" onClick={()=>seleccionarFiltro('realizados')}>
+                  Ver todos ({resumen.realizadosMes.length}) ›
+                </button>
+              </div>
+              {resumen.realizadosMes.length===0
+                ? <EstadoVacio titulo="Sin actividades finalizadas este mes" texto="Las actividades realizadas aparecerán aquí."/>
+                : <div className="portal-timeline">{resumen.realizadosMes.slice(0,5).map(item=><FilaTimeline
+                  key={item.id+':'+item.comunidadId} item={item} mostrarComunidad />)}</div>}
+            </section>
+
             <section className="portal-seccion">
-              <EncabezadoSeccion titulo="Últimos informes" cantidad={resumen.informes.length} />
+              <div className="portal-seccion-titulo portal-seccion-titulo-accion">
+                <h2 className="h4">Últimos informes</h2>
+                <button type="button" className="portal-ver-todos" onClick={()=>seleccionarFiltro('informes')}>
+                  Ver todos ({resumen.informes.length}) ›
+                </button>
+              </div>
               {resumen.informes.length === 0 ? (
                 <EstadoVacio titulo="Aún no hay informes publicados" texto="Los PDF disponibles para tu cuenta quedarán reunidos en esta sección." />
               ) : (
@@ -457,13 +556,13 @@ function DashboardCliente() {
   );
 }
 
-function Kpi({ valor, etiqueta, tono = 'neutro' }) {
-  return (
-    <div className={`portal-kpi portal-kpi-${tono}`}>
-      <strong>{valor}</strong>
-      <span>{etiqueta}</span>
-    </div>
-  );
+function Kpi({ valor, etiqueta, tono = 'neutro', onClick = null, activo = false }) {
+  const clase=`portal-kpi portal-kpi-${tono}`+(onClick?' portal-kpi-clickeable':'')+(activo?' activo':'');
+  const contenido=<><strong>{valor}</strong><span>{etiqueta}</span>{onClick&&<small aria-hidden="true">Ver detalle ›</small>}</>;
+  return onClick
+    ? <button type="button" className={clase} onClick={onClick} aria-pressed={activo}
+        aria-label={`${etiqueta}: ${valor}. Ver actividades`}>{contenido}</button>
+    : <div className={clase}>{contenido}</div>;
 }
 
 function EncabezadoSeccion({ titulo, cantidad }) {
@@ -526,10 +625,9 @@ function ResumenDato({ etiqueta, valor }) {
   );
 }
 
-function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = false, alDetalle = null }) {
-  const destino = `/portal/comunidades/${item.comunidadId}?seccion=${item.seccion || 'resumen'}`;
-  const documentoUrl = urlDocumento(item.documento);
-
+function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = false, contexto={} }) {
+  const destino=rutaActividad(item,contexto);
+  const documentoUrl=urlDocumento(item.documento);
   return (
     <div className={`tarjeta portal-actividad ${item.estado === 'Vencida' || item.estado === 'Pendiente' || item.estado === 'Sin programar' || item.estado === 'Fecha vencida' ? 'portal-actividad-alerta' : ''}`}>
       {fechaDestacada && item.fecha && (
@@ -538,46 +636,57 @@ function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = fal
         </div>
       )}
       <div className="portal-actividad-contenido">
-        <div className="portal-etiquetas">
-          <span className="portal-tipo">{item.tipo}</span>
-          {item.estado && <span className={'portal-estado' + claseEstado(item.estado)}>{item.estado}</span>}
-        </div>
-        <strong className="portal-actividad-titulo">{item.titulo}</strong>
-        {mostrarComunidad && <span className="micro portal-comunidad-ref">{item.comunidadNombre}</span>}
-        {item.detalle && <p className="micro apagado portal-actividad-detalle">{item.detalle}</p>}
-        {!fechaDestacada && item.fecha && <span className="micro apagado">{fechaCL(item.fecha, true)}</span>}
-        <div className="portal-acciones">
-          {alDetalle
-            ? <button className="portal-enlace portal-enlace-boton" type="button" onClick={() => alDetalle(item.seccion||'resumen')}>Ver detalle</button>
-            : <Link className="portal-enlace" to={destino}>Ver detalle</Link>}
-          {documentoUrl && (
-            <a className="portal-enlace portal-enlace-secundario" href={documentoUrl} target="_blank" rel="noreferrer">Abrir PDF</a>
-          )}
-        </div>
+        <Link className="portal-actividad-enlace-principal" to={destino}
+          aria-label={`Ver detalle de ${item.titulo}`}>
+          <div className="portal-etiquetas">
+            <span className="portal-tipo">{item.tipo}</span>
+            {item.estado && <span className={'portal-estado' + claseEstado(item.estado)}>{item.estado}</span>}
+          </div>
+          <strong className="portal-actividad-titulo">{item.titulo}</strong>
+          {mostrarComunidad && <span className="micro portal-comunidad-ref">{item.comunidadNombre}</span>}
+          {item.detalle && <p className="micro apagado portal-actividad-detalle">{item.detalle}</p>}
+          {!fechaDestacada && item.fecha && <span className="micro apagado">{fechaCL(item.fecha, true)}</span>}
+          <span className="portal-enlace portal-actividad-indicacion">Ver detalle ›</span>
+        </Link>
+        {documentoUrl && (
+          <div className="portal-acciones portal-acciones-adjuntos">
+            <a className="portal-enlace portal-enlace-secundario" href={documentoUrl}
+              target="_blank" rel="noreferrer">Abrir PDF</a>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function TarjetaDocumento({ documento, mostrarComunidad = false }) {
-  const url = urlDocumento(documento);
-  const esPdf = documentoEsPdf(documento);
+function TarjetaDocumento({ documento, mostrarComunidad = false, contexto={} }) {
+  const url=urlDocumento(documento);
+  const esPdf=documentoEsPdf(documento);
+  const titulo=documento.titulo || documento.nombre_archivo || 'Documento';
+  const destino=url||rutaDocumentoPortal(documento,contexto);
   return (
-    <div className="tarjeta portal-documento">
+    <div id={'portal-registro-doc-'+documento.id} className="tarjeta portal-documento">
       <div className="portal-doc-icon" aria-hidden="true">{esPdf ? 'PDF' : 'DOC'}</div>
       <div className="portal-documento-contenido">
-        <strong>{documento.titulo || documento.nombre_archivo || 'Documento'}</strong>
+        {url
+          ? <a className="portal-documento-destino" href={url} target="_blank" rel="noreferrer"
+              aria-label={'Abrir '+titulo}><strong>{titulo}</strong></a>
+          : <Link className="portal-documento-destino" to={destino} aria-label={'Ver '+titulo}>
+              <strong>{titulo}</strong>
+            </Link>}
         {mostrarComunidad && documento.comunidadNombre && <span className="micro">{documento.comunidadNombre}</span>}
         <div className="micro apagado portal-meta">
           {documento.nombre_archivo && documento.nombre_archivo !== documento.titulo && <span>{documento.nombre_archivo}</span>}
           {documento.fecha && <span>{fechaCL(documento.fecha)}</span>}
           {documento.origen && <span>{documento.origen}</span>}
         </div>
-        {url ? (
-          <a className="portal-enlace" href={url} target="_blank" rel="noreferrer">{esPdf ? 'Abrir PDF' : 'Abrir documento'}</a>
-        ) : (
-          <span className="micro apagado">Documento registrado sin enlace público.</span>
-        )}
+        <div className="portal-acciones">
+          {url
+            ? <a className="portal-enlace" href={url} target="_blank" rel="noreferrer">
+                {esPdf ? 'Abrir PDF' : 'Abrir documento'}
+              </a>
+            : <Link className="portal-enlace" to={destino}>Ver en documentos ›</Link>}
+        </div>
       </div>
     </div>
   );
@@ -592,6 +701,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   // La ficha de comunidad abre el informe por materia. Resumen queda accesible desde la barra de navegación.
   const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'compromisos';
   const tab = tabInicial; // URL permite volver de Documentos a Incidencias con Atrás.
+  const registroSeleccionado=params.get('registro')||'';
   const [vista, setVista] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -664,6 +774,32 @@ function DetalleCliente({ id, vistaPrevia = null }) {
     return () => { vigente = false; };
   }, [id, perfil?.id, clienteId, esVistaPrevia, revision]);
 
+  useEffect(()=>{
+    if(!registroSeleccionado||!vista||cargando)return undefined;
+    const tiempos=[];
+    let destacado=null;
+    function localizar(){
+      if(destacado)return;
+      const elemento=document.getElementById('portal-registro-'+registroSeleccionado);
+      if(!elemento)return;
+      destacado=elemento;
+      elemento.classList.add('portal-registro-destacado');
+      elemento.setAttribute('tabindex','-1');
+      elemento.focus({preventScroll:true});
+      elemento.scrollIntoView({
+        behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
+        block:'center'
+      });
+    }
+    tiempos.push(window.setTimeout(localizar,70));
+    tiempos.push(window.setTimeout(localizar,260));
+    tiempos.push(window.setTimeout(localizar,900));
+    return ()=>{
+      tiempos.forEach(idTemporizador=>window.clearTimeout(idTemporizador));
+      destacado?.classList.remove('portal-registro-destacado');
+    };
+  },[registroSeleccionado,tab,vista,cargando]);
+
   function cambiarTab(nuevo) {
     if (tab === nuevo || !TABS.some(([clave]) => clave === nuevo)) return;
     const siguientes = new URLSearchParams(params);
@@ -689,18 +825,15 @@ function DetalleCliente({ id, vistaPrevia = null }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab}
-              vistaPrevia={esVistaPrevia}
-              rutaBiblioteca={esVistaPrevia
-                ? '/vista-cliente/conocimientos?comunidad='+encodeURIComponent(id)+'&cliente='+encodeURIComponent(clienteId)
-                : '/portal/conocimientos'} />}
+            {tab === 'resumen' && <ResumenComunidad vista={vista}
+              vistaPrevia={esVistaPrevia} clienteId={clienteId} />}
             {tab === 'compromisos' && <EstadoMaterias key={id+':'+revision} comunidadId={id}
               nombreComunidad={vista?.comunidad?.nombre||'Comunidad'}
               administrador={false} soloLecturaCliente={true} />}
             {tab === 'incidencias' && <IncidenciasComunidad vista={vista} />}
             {tab === 'levantamientos' && <LevantamientosComunidad vista={vista} clienteId={clienteId} />}
             {tab === 'mantencion' && <MantencionesComunidad vista={vista} />}
-            {tab === 'documentos' && <DocumentosComunidad key={id+':'+revision} vista={vista} vistaPrevia={esVistaPrevia} />}
+            {tab === 'documentos' && <DocumentosComunidad key={id+':'+revision} vista={vista} vistaPrevia={esVistaPrevia} clienteId={clienteId} />}
           </>
         )}
       </div>
@@ -708,8 +841,19 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   );
 }
 
-function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, rutaBiblioteca = '/portal/conocimientos' }) {
+function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, clienteId=null }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
+  const [params,setParams]=useSearchParams();
+  const filtroActivo=params.get('filtro')||'';
+  const contexto={vistaPrevia,clienteId};
+  function seleccionarFiltro(filtro){
+    const siguiente=new URLSearchParams(params);
+    siguiente.set('seccion','resumen');
+    if(filtroActivo===filtro)siguiente.delete('filtro');
+    else siguiente.set('filtro',filtro);
+    siguiente.delete('registro');
+    setParams(siguiente,{preventScrollReset:true});
+  }
    return (
     <div className="portal-inicio-redisenado">
       <div className="portal-inicio-intro">
@@ -717,27 +861,36 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, rutaBibliote
           <h2 className="h4">Gestión de tu comunidad</h2>
           <p className="chico apagado">Consulta las gestiones de administración, sus avances y respaldos.</p>
         </div>
-        <span className={atencion.length ? 'portal-estado chip-alerta' : 'portal-estado chip-cumple'}>
-          {atencion.length ? `${atencion.length} asuntos por atender` : 'Sin asuntos vencidos'}
-        </span>
+        <button type="button" onClick={()=>seleccionarFiltro('atencion')}
+          className={(atencion.length ? 'portal-estado chip-alerta' : 'portal-estado chip-cumple')+' portal-estado-enlace'}
+          aria-label="Ver asuntos que requieren atención">
+          {atencion.length ? `${atencion.length} asuntos por atender` : 'Sin asuntos vencidos'} ›
+        </button>
       </div>
        <section className="portal-resumen" aria-label="Indicadores de gestión">
-        <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'} />
-        <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
-        <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
+        <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'}
+          onClick={()=>seleccionarFiltro('atencion')} activo={filtroActivo==='atencion'} />
+        <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo"
+          onClick={()=>seleccionarFiltro('proximos')} activo={filtroActivo==='proximos'} />
+        <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok"
+          onClick={()=>seleccionarFiltro('realizados')} activo={filtroActivo==='realizados'} />
       </section>
-      <Link to={rutaBiblioteca} className="portal-acceso portal-acceso-ley" aria-label="Consultar Base de conocimientos sobre la Ley 21.442">
-        <strong>Base de conocimientos</strong>
-        <span>Consulta las guías y artículos de la Ley N.º 21.442 sobre copropiedad inmobiliaria.</span>
-        <b aria-hidden="true">›</b>
-      </Link>
+      <ListaFiltradaResumen filtro={filtroActivo} atencion={atencion}
+        proximos={proximos} realizados={realizados} realizadosMes={realizadosMes}
+        informes={informes} contexto={{...contexto,comunidadId:vista.comunidad.comunidad_id}} onCerrar={()=>seleccionarFiltro(filtroActivo)}/>
       {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
         <section className="portal-inicio-bloque">
-          <h2 className="h4">Últimos movimientos</h2>
-          {atencion.length > 0 && <div className="portal-lista">{atencion.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} alDetalle={vistaPrevia ? cambiarTab : null} />)}</div>}
-          {proximos.length > 0 && <div className="portal-lista">{proximos.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} alDetalle={vistaPrevia ? cambiarTab : null} fechaDestacada />)}</div>}
-          {realizados.length > 0 && <div className="portal-timeline">{realizados.slice(0, 3).map(item => <FilaTimeline key={item.id} item={item} />)}</div>}
-          {informes.length > 0 && <div className="portal-documentos-resumen">{informes.slice(0, 2).map((d, i) => <TarjetaDocumento key={`${d.id}-${i}`} documento={d} />)}</div>}
+          <div className="portal-seccion-titulo portal-seccion-titulo-accion">
+            <h2 className="h4">Últimos movimientos</h2>
+            <button type="button" className="portal-ver-todos" onClick={()=>seleccionarFiltro('movimientos')}>
+              Ver todos ›
+            </button>
+          </div>
+          {atencion.length > 0 && <div className="portal-lista">{atencion.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} contexto={contexto} />)}</div>}
+          {proximos.length > 0 && <div className="portal-lista">{proximos.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} contexto={contexto} fechaDestacada />)}</div>}
+          {realizados.length > 0 && <div className="portal-timeline">{realizados.slice(0, 3).map(item => <FilaTimeline key={item.id} item={item} contexto={contexto} />)}</div>}
+          {informes.length > 0 && <div className="portal-documentos-resumen">{informes.slice(0, 2).map((d, i) => <TarjetaDocumento key={`${d.id}-${i}`} documento={d}
+            contexto={{...contexto,comunidadId:vista.comunidad.comunidad_id}} />)}</div>}
         </section>
       ) : (
         <p className="portal-sin-movimientos">Todavía no hay movimientos publicados. Consulta las gestiones y documentos desde el menú de navegación.</p>
@@ -746,20 +899,26 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, rutaBibliote
   );
 }
 
-function FilaTimeline({ item }) {
+function FilaTimeline({item,contexto={},mostrarComunidad=false}){
+  const destino=rutaActividad(item,contexto);
+  const url=urlDocumento(item.documento);
   return (
     <div className="portal-timeline-item">
-      <div className="portal-timeline-marca" aria-hidden="true" />
+      <div className="portal-timeline-marca" aria-hidden="true"/>
       <div className="portal-timeline-contenido">
-        <div className="portal-etiquetas">
-          <span className="portal-tipo">{item.tipo}</span>
-          <span className="micro apagado">{fechaCL(item.fecha)}</span>
-        </div>
-        <strong className="portal-actividad-titulo">{item.titulo}</strong>
-        {item.detalle && <p className="micro apagado">{item.detalle}</p>}
-        {urlDocumento(item.documento) && (
-          <a className="portal-enlace" href={urlDocumento(item.documento)} target="_blank" rel="noreferrer">Abrir PDF</a>
-        )}
+        <Link to={destino} className="portal-timeline-enlace"
+          aria-label={'Ver movimiento: '+item.titulo}>
+          <div className="portal-etiquetas">
+            <span className="portal-tipo">{item.tipo}</span>
+            <span className="micro apagado">{fechaCL(item.fecha)}</span>
+          </div>
+          <strong className="portal-actividad-titulo">{item.titulo}</strong>
+          {mostrarComunidad&&<span className="micro portal-comunidad-ref">{item.comunidadNombre}</span>}
+          {item.detalle&&<p className="micro apagado">{item.detalle}</p>}
+          <span className="portal-enlace portal-actividad-indicacion">Ver detalle ›</span>
+        </Link>
+        {url&&<a className="portal-enlace portal-timeline-documento" href={url}
+          target="_blank" rel="noreferrer">Abrir PDF</a>}
       </div>
     </div>
   );
@@ -797,7 +956,7 @@ function IncidenciasComunidad({ vista }) {
 function TarjetaIncidencia({ incidencia }) {
   const cerrada = incidenciaCerrada(incidencia);
   return (
-    <div className={`tarjeta portal-item ${cerrada ? '' : 'portal-item-pendiente'}`}>
+    <div id={'portal-registro-inc-'+incidencia.id} className={`tarjeta portal-item ${cerrada ? '' : 'portal-item-pendiente'}`}>
       <div className="portal-etiquetas">
         <span className="portal-tipo">Incidencia</span>
         <span className={'portal-estado' + claseEstado(etiquetaEstado(incidencia.estado))}>{etiquetaEstado(incidencia.estado)}</span>
@@ -893,7 +1052,7 @@ function LevantamientosComunidad({ vista, clienteId = null }) {
             const pdf = documentos.find(documentoEsPdf) || null;
             const pdfUrl = urlDocumento(pdf);
             return (
-              <div key={l.id} className="tarjeta portal-item">
+              <div key={l.id} id={'portal-registro-lev-'+l.id} className="tarjeta portal-item">
                 <div className="fila portal-item-cabecera">
                   <strong className="crece portal-actividad-titulo">{l.plantilla_nombre}</strong>
                   <span className={'portal-estado' + claseEstado(etiquetaEstado(l.estado))}>{etiquetaEstado(l.estado)}</span>
@@ -920,7 +1079,7 @@ function LevantamientosComunidad({ vista, clienteId = null }) {
           <EncabezadoSeccion titulo="Pendientes de programación" cantidad={vista.requerimientos.filter(r => !r.tiene_agendamiento).length} />
           <div className="portal-lista">
             {vista.requerimientos.filter(r => !r.tiene_agendamiento).map(r => (
-              <div key={r.id} className="tarjeta portal-item portal-item-pendiente">
+              <div key={r.id} id={'portal-registro-req-'+r.id} className="tarjeta portal-item portal-item-pendiente">
                 <div className="portal-etiquetas"><span className="portal-tipo">Levantamiento</span><span className="portal-estado chip-pendiente">Sin programar</span></div>
                 <strong className="portal-actividad-titulo">{r.nombre || r.plantilla_nombre}</strong>
                 <span className="micro apagado">{r.proxima_exigible ? `Fecha límite: ${fechaCL(r.proxima_exigible)}` : 'Aún sin fecha programada'}</span>
@@ -945,7 +1104,7 @@ function MantencionesComunidad({ vista }) {
             const vencimiento = m.vencimiento_original || m.proxima_exigible;
             const vencida = Boolean(vencimiento && vencimiento < hoyChile());
             return (
-              <div key={m.actividad_id} className={`tarjeta portal-item ${vencida ? 'portal-item-pendiente' : ''}`}>
+              <div key={m.actividad_id} id={'portal-registro-man-'+m.actividad_id} className={`tarjeta portal-item ${vencida ? 'portal-item-pendiente' : ''}`}>
                 <div className="fila portal-item-cabecera">
                   <strong className="crece portal-actividad-titulo">{m.activo_nombre}</strong>
                   {m.activo_categoria && <span className="portal-estado">{m.activo_categoria}</span>}
@@ -973,7 +1132,7 @@ function MantencionesComunidad({ vista }) {
   );
 }
 
-function DocumentosComunidad({ vista, vistaPrevia = false }) {
+function DocumentosComunidad({ vista, vistaPrevia = false, clienteId=null }) {
   const pdfs = vista.documentos.filter(documentoEsPdf);
   const otros = vista.documentos.filter(d => !documentoEsPdf(d));
   return (
@@ -983,7 +1142,8 @@ function DocumentosComunidad({ vista, vistaPrevia = false }) {
         <EstadoVacio titulo="Aún no hay PDF publicados" texto="Los informes autorizados para el cliente quedarán disponibles aquí para consulta." />
       ) : (
         <div className="portal-documentos-resumen">
-          {pdfs.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d} />)}
+          {pdfs.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d}
+            contexto={{comunidadId:vista.comunidad?.comunidad_id,vistaPrevia,clienteId}} />)}
         </div>
       )}
 
@@ -991,7 +1151,8 @@ function DocumentosComunidad({ vista, vistaPrevia = false }) {
         <div className="portal-bloque-separado">
           <EncabezadoSeccion titulo="Otros respaldos" cantidad={otros.length} />
           <div className="portal-documentos-resumen">
-            {otros.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d} />)}
+            {otros.map((d, indice) => <TarjetaDocumento key={`${d.id}-${indice}`} documento={d}
+            contexto={{comunidadId:vista.comunidad?.comunidad_id,vistaPrevia,clienteId}} />)}
           </div>
         </div>
       )}

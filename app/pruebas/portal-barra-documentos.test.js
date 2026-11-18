@@ -10,7 +10,7 @@ const materias = leer('src/paginas/cliente/EstadoMaterias.jsx');
 test('Las secciones del cliente usan la barra inferior compartida, sin chips duplicados', () => {
   assert.match(panel, /const opcionesBarra = esCliente \? accesos/);
   assert.match(panel, /const mostrarBarraMovil = esCliente \|\|/);
-  assert.match(panel, /'cliente-resumen', 'cliente-compromisos', 'cliente-incidencias', 'cliente-documentos'/);
+  assert.match(panel, /'cliente-resumen', 'cliente-compromisos', 'cliente-documentos', 'cliente-conocimientos'/);
   assert.match(panel, /menuMasOperacion\.length > 0/);
   assert.doesNotMatch(portal, /<nav className="pestanas portal-pestanas-movil portal-pestanas-vista-previa"/);
   assert.match(panel, /vistaCliente = null/);
