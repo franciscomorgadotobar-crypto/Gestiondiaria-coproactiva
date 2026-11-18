@@ -88,3 +88,22 @@
 @media (max-width: 359px) {
   .jarvis-ciclo-campos { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+/* La lectura operativa se refresca desde la agenda y no sustituye
+   el análisis de fuentes externas almacenado en días anteriores. */
+.jarvis-actualizar{min-height:43px;white-space:nowrap;align-self:center}
+.jarvis-actualizar:disabled{opacity:.6;cursor:progress}
+.jarvis-lectura-fuente{
+  font-size:12px;line-height:1.5;margin:13px 0 0;
+  color:#687787;border-top:1px solid #e9e1d8;padding-top:10px;
+}
+.jarvis-lectura-historica{margin-top:13px}
+.jarvis-lectura-historica summary{cursor:pointer;list-style:disclosure-closed;outline-offset:3px}
+.jarvis-lectura-historica[open] summary{list-style:disclosure-open}
+.jarvis-lectura-historica summary:hover{color:#a34e22}
+.jarvis-lectura-aviso{
+  padding:10px 12px;background:#fff3e6;border:1px solid #f0ddc7;
+  color:#86582c;border-radius:8px;font-size:12px;
+}
+@media(max-width:700px){.jarvis-actualizar{width:100%;white-space:normal}}
