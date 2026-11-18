@@ -11,7 +11,8 @@
 body{margin:0;min-height:100dvh;background:#f8f5f1}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;min-height:65px;background:#fff;border-bottom:1px solid #e8e0d8}
 header .marca{display:flex;align-items:center;gap:9px;min-width:0}
-header img{height:29px;max-width:155px}
+header img{height:29px;max-width:155px;object-fit:contain}
+@media(max-width:460px){header .subtitulo{display:none}header img{max-width:142px}}
 header .subtitulo{display:block;color:#727780;font-size:11px;font-weight:600}
 button{min-height:43px;border:1px solid #c16c32;border-radius:10px;padding:9px 13px;color:#fff;background:#ad521b;font-size:13px;font-weight:750;cursor:pointer}
 button:disabled{opacity:.5;cursor:progress}
@@ -66,10 +67,25 @@ p{font-size:14px;line-height:1.5;color:#67717c;margin:0;max-width:320px}
     documentoRecibido=true;
     titulo.textContent='Cargando fotografías';
     detalle.textContent='Organizando el informe para su lectura.';
-    marco.addEventListener('load',()=>{
-      cargar.style.display='none';
-      marco.style.display='block';
-      guardar.disabled=false;
+    const limite=window.setTimeout(()=>falla('Las fotografías tardaron demasiado en cargar. Comprueba la conexión y vuelve a abrir el informe.'),60000);
+    marco.addEventListener('load',async()=>{
+      try{
+        const contenido=marco.contentDocument;
+        await (contenido?.fonts?.ready||Promise.resolve());
+        window.clearTimeout(limite);
+        const imagenes=[...(contenido?.images||[])];
+        const pendientes=imagenes.filter(imagen=>!imagen.complete||imagen.naturalWidth===0);
+        if(pendientes.length){
+          falla('No se pudieron cargar '+pendientes.length+' fotografía(s) o recursos. Comprueba la conexión y vuelve a abrir el informe.');
+          return;
+        }
+        cargar.style.display='none';
+        marco.style.display='block';
+        guardar.disabled=false;
+      }catch{
+        window.clearTimeout(limite);
+        falla('No fue posible preparar la lectura del documento.');
+      }
     },{once:true});
     marco.srcdoc=mensaje.html;
   });
