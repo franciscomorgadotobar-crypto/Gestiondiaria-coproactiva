@@ -50,3 +50,11 @@ test('Lupa está a la derecha, en la cabecera, y abre la búsqueda que ya filtra
   assert.match(estilos, /\.conocimientos-buscar-boton\{[\s\S]*?margin-left:auto/);
   assert.match(estilos, /margin-right:-8px/);
 });
+
+test('La pantalla define ambos eventos usados por sus efectos React; evita el fallo en tiempo de ejecución', () => {
+  assert.match(pagina, /export const EVENTO_BUSCAR = 'coproactiva:conocimientos:buscar'/);
+  assert.match(pagina, /export const EVENTO_ESTADO_BUSCAR = 'coproactiva:conocimientos:estado-busqueda'/);
+  assert.match(pagina, /window\.addEventListener\(EVENTO_BUSCAR, gestionar\)/);
+  assert.match(pagina, /window\.dispatchEvent\(new CustomEvent\(EVENTO_ESTADO_BUSCAR,/);
+  assert.match(pagina, /window\.removeEventListener\(EVENTO_BUSCAR, gestionar\)/);
+});
