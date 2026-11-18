@@ -76,7 +76,7 @@ test('Jarvis actualiza manualmente y al volver a la pestaña, preservando histó
   assert.match(jarvis,/window\.addEventListener\('focus',alRecuperar\)/);
   assert.match(jarvis,/Lectura operativa del/);
   assert.match(jarvis,/Lectura analítica anterior del/);
-  assert.match(jarvis,/La agenda operativa/);
+  assert.match(jarvis,/Datos actuales de la agenda/);
   assert.match(jarvis,/supabase\.rpc\('jarvis_agenda'/);
   assert.match(jarvis,/supabase\.from\('jarvis_analisis'\)/);
   assert.doesNotMatch(jarvis,/supabase\.from\('jarvis_analisis'\)\.upsert/);
