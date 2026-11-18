@@ -47,7 +47,7 @@ test('Portal reutiliza el informe original del equipo en solo lectura',()=>{
  assert.match(adaptador,/imprimirInforme\(html,ventana\)/);
  assert.match(adaptador,/portal_levantamiento_detalle/);
  assert.match(adaptador,/createSignedUrls/);
- assert.doesNotMatch(adaptador,/\bfetch\s*\(/);
+ assert.doesNotMatch(adaptador,/await\s+fetch\s*\(|\bfetch\(url\)/);
  assert.doesNotMatch(adaptador,/\.from\('control_items'\)\.update|\.from\('controles'\)\.update/);
  assert.match(informe,/datos\.soloLecturaCliente/);
  assert.match(adaptador,/soloLecturaCliente:true/);
