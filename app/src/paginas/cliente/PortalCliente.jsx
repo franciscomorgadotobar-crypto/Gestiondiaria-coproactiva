@@ -800,31 +800,22 @@ function AbrirPdfLevantamiento({id,clienteId=null}) {
     if(creando)return;
     setError('');
     setCreando(true);
-    // Ventana creada durante el clic para no activar el bloqueo de pop-ups en Android.
-    const ventana=window.open('about:blank','_blank');
-    if(ventana){
-      ventana.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe Coproactiva</title></head><body><p>Preparando informe PDF…</p></body></html>');
-      ventana.document.close();
+    // Igual que el botón del personal: abre inmediatamente la vista de
+    // impresión, antes de los RPC y las fotografías, para evitar pop-ups bloqueados.
+    const ventana=window.open('','_blank');
+    if(!ventana){
+      setError('El navegador bloqueó el informe. Permite ventanas emergentes para Coproactiva.');
+      setCreando(false);
+      return;
     }
+    ventana.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe Coproactiva</title></head><body><p>Preparando informe…</p></body></html>');
+    ventana.document.close();
     try {
-      const {generarPdfLevantamientoCliente}=await import('../../lib/pdfClienteLevantamiento');
-      const {blob,nombre}=await generarPdfLevantamientoCliente(id,clienteId);
-      const url=URL.createObjectURL(blob);
-      if(ventana&&!ventana.closed){
-        ventana.location.replace(url);
-      }else{
-        // En PWA, algunos navegadores prohíben una segunda pestaña.
-        const enlace=document.createElement('a');
-        enlace.href=url;
-        enlace.download=nombre;
-        document.body.appendChild(enlace);
-        enlace.click();
-        enlace.remove();
-      }
-      setTimeout(()=>URL.revokeObjectURL(url),120000);
+      const {abrirInformeClienteLevantamiento}=await import('../../lib/informeClienteLevantamiento');
+      await abrirInformeClienteLevantamiento({controlId:id,clienteId,ventana});
     }catch(e){
-      if(ventana&&!ventana.closed)ventana.close();
-      setError(e?.message||'No se pudo preparar el informe PDF.');
+      if(!ventana.closed)ventana.close();
+      setError(e?.message||'No se pudo abrir el informe.');
     }finally{setCreando(false);}
   }
   return <>

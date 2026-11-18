@@ -24,9 +24,12 @@ const levantamiento={id:controlId,comunidad_id:comunidadId,
  enviado_en:'2026-11-15T16:00:00Z',checkin_en:null};
 const levantamientoDetalle={
  levantamiento:{id:controlId,plantilla_nombre:'Primera visita de administración',
-   estado:'enviado',creado_en:'2026-11-14T09:00:00Z',enviado_en:'2026-11-15T16:00:00Z'},
+   estado:'enviado',creado_en:'2026-11-14T09:00:00Z',enviado_en:'2026-11-15T16:00:00Z',
+   comunidad_nombre:'Reserva Santa Clara',comunidad_direccion:'Avda. Waldo Alcalde #1855',
+   comunidad_comuna:'Coquimbo',responsable_nombre:'Equipo Coproactiva'},
  items:[{id:'01234567-89ab-4cde-8f01-234567890abc',grupo:'Accesos',
-   texto:'Puerta principal',estado:'cumple',nota:'Revisada',respuesta:'Conforme'}],
+   texto:'Puerta principal',estado:'cumple',nota:'Revisada',respuesta:{opcion:'Cumple'},
+   tipo_ingreso:'opciones',config:{opciones:[]},ayuda:'Comprobar el acceso principal'}],
  adjuntos:[]
 };
 
@@ -112,7 +115,13 @@ try {
    assert.equal(await page.getByText('No se pudo registrar GPS').count(),0);
    const botonPdf=page.getByRole('button',{name:'Abrir informe PDF del levantamiento'});
    await botonPdf.waitFor({timeout:15000});
+   const popupPromise=page.waitForEvent('popup',{timeout:15000});
    await botonPdf.click();
+   const popup=await popupPromise;
+   await popup.getByRole('heading',{name:'Reserva Santa Clara'}).waitFor({timeout:15000});
+   assert.match(await popup.locator('body').innerText(),/Puerta principal/);
+   assert.equal(await popup.getByText('Check-in',{exact:true}).count(),0);
+   assert.equal(await popup.getByText('excepción administrativa',{exact:false}).count(),0);
    await page.waitForFunction(()=>document.querySelector('.portal-boton-pdf')?.textContent?.includes('Abrir informe PDF'),{timeout:25000});
    assert.ok(llamadas.includes('portal_levantamiento_detalle'));
    assert.ok(!llamadas.includes('checkins_administrativos_visibles'));

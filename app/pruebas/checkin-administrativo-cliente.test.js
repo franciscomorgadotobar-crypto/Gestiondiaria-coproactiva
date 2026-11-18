@@ -32,21 +32,30 @@ test('El registro administrativo solo se expone a cuentas con comunidad y planti
  assert.match(sql,/c\.estado::text<>'anulado'/);
 });
 
-test('Portal solo abre el PDF, sin divulgar datos de autorización interna',()=>{
+test('Portal reutiliza el informe original del equipo en solo lectura',()=>{
  const fix=leer('../supabase/migrations/202611170004_portal_levantamiento_lectura_cliente.sql');
- const generador=leer('src/lib/pdfClienteLevantamiento.js');
+ const esquema=leer('../supabase/migrations/202611170005_portal_informe_mismo_formato_equipo.sql');
+ const informe=leer('src/lib/informe.js');
+ const adaptador=leer('src/lib/informeClienteLevantamiento.js');
  assert.doesNotMatch(portal,/supabase\.rpc\('checkins_administrativos_visibles'/);
  assert.doesNotMatch(portal,/checkin_administrativo|autorizado_por_nombre|regularizaciones/);
- assert.doesNotMatch(portal,/DetalleLevantamientoCliente|portal-visor-grupo/);
  assert.match(portal,/Abrir informe PDF/);
- assert.match(portal,/generarPdfLevantamientoCliente/);
- assert.match(generador,/portal_levantamiento_detalle/);
- assert.match(generador,/createSignedUrls/);
- assert.match(generador,/output\('blob'\)/);
+ assert.match(portal,/abrirInformeClienteLevantamiento/);
+ assert.match(adaptador,/from '\.\/informe'/);
+ assert.match(control,/imprimirInforme\(html, ventanaInforme\)/);
+ assert.match(adaptador,/informeHtml\(\{/);
+ assert.match(adaptador,/imprimirInforme\(html,ventana\)/);
+ assert.match(adaptador,/portal_levantamiento_detalle/);
+ assert.match(adaptador,/createSignedUrls/);
+ assert.doesNotMatch(adaptador,/await\s+fetch\s*\(|\bfetch\(url\)/);
+ assert.doesNotMatch(adaptador,/\.from\('control_items'\)\.update|\.from\('controles'\)\.update/);
+ assert.match(informe,/datos\.soloLecturaCliente/);
+ assert.match(adaptador,/soloLecturaCliente:true/);
  assert.match(fix,/IF p_usuario_cliente IS NULL THEN/);
  assert.match(fix,/cliente_puede_ver_plantilla/);
  assert.match(fix,/vista_cliente_puede_ver_plantilla/);
- assert.match(fix,/RETURN; -- No se divulgan excepciones administrativas al portal cliente/);
+ assert.match(esquema,/'ayuda',i\.ayuda, 'config',i\.config/);
+ assert.match(esquema,/'responsable_nombre',v_control\.responsable_nombre/);
  assert.match(css,/\.portal-boton-pdf/);
 });
 
