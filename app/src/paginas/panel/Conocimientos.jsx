@@ -3,33 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { useSesion } from '../../lib/sesion';
 import biblioteca from '../../datos/ley21442.contenidos.json';
 import { obtenerLeccion } from '../../datos/ley21442.lecciones.js';
+import { crearIndiceConocimientos, filtrarConocimientos } from '../../lib/busquedaConocimientos.js';
 import './Conocimientos.css';
 
 const contenidos = biblioteca.contenidos;
 const materias = [...new Set(contenidos.map(item => item.categoria).filter(Boolean))];
 const CLAVE_LEIDOS = 'coproactiva:conocimientos:leidos:';
 
-// Ignora tildes y mayúsculas y permite buscar palabras en apartados distintos.
-function normalizarConsulta(texto) {
-  return String(texto ?? '').normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('es').trim();
-}
-const indiceContenidos = contenidos.map(item => {
-  const leccion = obtenerLeccion(item);
-  return {
-    item,
-    texto: normalizarConsulta([
-      item.titulo, item.texto, item.explicacion, item.precaucion,
-      item.categoria, item.referencia, item.articulo,
-      leccion?.resumen, leccion?.desarrollo, leccion?.aplicacion,
-      leccion?.fundamento, ...(leccion?.detalles || []).flat(),
-      ...(leccion?.consideraciones || [])
-    ].filter(Boolean).join(' '))
-  };
-});
-export const EVENTO_BUSCAR = 'coproactiva:conocimientos:buscar';
-export const EVENTO_ESTADO_BUSCAR = 'coproactiva:conocimientos:estado-busqueda';
+const indiceContenidos = crearIndiceConocimientos(contenidos, obtenerLeccion);
 
 function leerConsultados(usuarioId) {
   if (!usuarioId) return [];
@@ -58,13 +39,10 @@ export default function Conocimientos() {
   const buscadorEscritorioRef = useRef(null);
   const listadoRef = useRef(null);
   const primeraApertura = useRef(false);
-  const resultados = useMemo(() => {
-    const palabras = normalizarConsulta(busqueda).split(/\s+/).filter(Boolean);
-    return indiceContenidos
-      .filter(({item,texto}) => (materia === 'Todas' || item.categoria === materia)
-        && palabras.every(palabra => texto.includes(palabra)))
-      .map(({item}) => item);
-  }, [busqueda, materia]);
+  const resultados = useMemo(
+    () => filtrarConocimientos(indiceContenidos, busqueda, materia),
+    [busqueda, materia]
+  );
 
   function abrirBusqueda() {
     // En escritorio el filtro ya está visible y se enfoca directamente.
