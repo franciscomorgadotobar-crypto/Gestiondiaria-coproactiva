@@ -648,10 +648,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false, vista
         <div className="usuario-lateral">
           <div className="usuario-lateral-identidad">
             <span className="usuario-lateral-avatar" aria-hidden="true">
-              {(perfil?.nombre || 'U').trim().charAt(0).toUpperCase()}
+              {(vistaCliente?.clienteNombre || perfil?.nombre || 'U').trim().charAt(0).toUpperCase()}
             </span>
             <span className="usuario-lateral-datos">
-              <strong>{perfil?.nombre || 'Usuario'}</strong>
+              <strong>{vistaCliente?.clienteNombre || perfil?.nombre || 'Usuario'}</strong>
               <small>
                 {esCliente ? 'Cliente'
                   : perfil?.rol === 'superadmin' ? 'Superadministrador'
