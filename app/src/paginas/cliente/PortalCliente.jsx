@@ -314,6 +314,65 @@ export default function PortalCliente({ vistaPrevia = null }) {
   return id ? <DetalleCliente id={id} /> : <DashboardCliente />;
 }
 
+
+/* Los indicadores y movimientos utilizan el mismo destino para la cuenta
+ * cliente y para la vista real de administración. El identificador permite
+ * localizar la ficha exacta, no solo cambiar de módulo. */
+function rutaActividad(item,{vistaPrevia=false,clienteId=null}={}){
+  const comunidadId=encodeURIComponent(item.comunidadId||'');
+  const base=vistaPrevia
+    ? '/vista-cliente/portal?comunidad='+comunidadId+'&cliente='+encodeURIComponent(clienteId||'')
+    : '/portal/comunidades/'+comunidadId;
+  const registro=String(item.id||'').replace(/^maneje-/,'man-');
+  return base+(vistaPrevia?'&':'?')+'seccion='+encodeURIComponent(item.seccion||'resumen')
+    +'&registro='+encodeURIComponent(registro);
+}
+function rutaDocumentoPortal(documento,{comunidadId=null,vistaPrevia=false,clienteId=null}={}){
+  const id=comunidadId||documento.comunidadId||'';
+  const base=vistaPrevia
+    ? '/vista-cliente/portal?comunidad='+encodeURIComponent(id)+'&cliente='+encodeURIComponent(clienteId||'')
+    : '/portal/comunidades/'+encodeURIComponent(id);
+  return base+(vistaPrevia?'&':'?')+'seccion=documentos&registro='
+    +encodeURIComponent('doc-'+documento.id);
+}
+const FILTROS_RESUMEN={
+  atencion:'Pendientes de atención',
+  proximos:'Próximas actividades',
+  realizados:'Realizados este mes',
+  movimientos:'Todos los movimientos'
+};
+function ListaFiltradaResumen({filtro,atencion,proximos,realizados,realizadosMes,contexto={},mostrarComunidad=false,onCerrar}){
+  useEffect(()=>{
+    if(!FILTROS_RESUMEN[filtro])return;
+    const cuadro=window.requestAnimationFrame(()=>{
+      document.getElementById('portal-filtro-resultados')?.scrollIntoView({
+        behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',
+        block:'start'
+      });
+    });
+    return ()=>window.cancelAnimationFrame(cuadro);
+  },[filtro]);
+
+  if(!FILTROS_RESUMEN[filtro])return null;
+  const actividades=filtro==='atencion'?atencion
+    :filtro==='proximos'?proximos
+    :filtro==='realizados'?realizadosMes
+    :[...atencion,...proximos,...realizados].sort(compararFechaDesc);
+  return <section id="portal-filtro-resultados" className="portal-resultados-filtrados"
+    aria-label={FILTROS_RESUMEN[filtro]}>
+    <header className="portal-resultados-cabecera">
+      <h2 className="h4">{FILTROS_RESUMEN[filtro]} ({actividades.length})</h2>
+      <button type="button" onClick={onCerrar}>Cerrar filtro ×</button>
+    </header>
+    {actividades.length
+      ? <div className="portal-lista">{actividades.map(item=><TarjetaActividad
+          key={item.comunidadId+':'+item.id} item={item} contexto={contexto}
+          mostrarComunidad={mostrarComunidad} fechaDestacada={filtro==='proximos'}/>)}</div>
+      : <EstadoVacio titulo="No hay movimientos en este grupo"
+          texto="Cuando se publique una actividad de este tipo aparecerá aquí."/>}
+  </section>;
+}
+
 function DashboardCliente() {
   const { perfil } = useSesion();
   const [vistas, setVistas] = useState(null);
