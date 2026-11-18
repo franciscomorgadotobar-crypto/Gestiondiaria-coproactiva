@@ -617,15 +617,15 @@ function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = fal
   const destino=rutaActividad(item,contexto);
   const documentoUrl=urlDocumento(item.documento);
   return (
-    <div className={\`tarjeta portal-actividad \${item.estado === 'Vencida' || item.estado === 'Pendiente' || item.estado === 'Sin programar' || item.estado === 'Fecha vencida' ? 'portal-actividad-alerta' : ''}\`}>
+    <div className={`tarjeta portal-actividad ${item.estado === 'Vencida' || item.estado === 'Pendiente' || item.estado === 'Sin programar' || item.estado === 'Fecha vencida' ? 'portal-actividad-alerta' : ''}`}>
       {fechaDestacada && item.fecha && (
-        <div className="portal-fecha-chip" aria-label={\`Fecha \${fechaCL(item.fecha, true)}\`}>
+        <div className="portal-fecha-chip" aria-label={`Fecha ${fechaCL(item.fecha, true)}`}>
           {fechaCorta(item.fecha)}
         </div>
       )}
       <div className="portal-actividad-contenido">
         <Link className="portal-actividad-enlace-principal" to={destino}
-          aria-label={\`Ver detalle de \${item.titulo}\`}>
+          aria-label={`Ver detalle de ${item.titulo}`}>
           <div className="portal-etiquetas">
             <span className="portal-tipo">{item.tipo}</span>
             {item.estado && <span className={'portal-estado' + claseEstado(item.estado)}>{item.estado}</span>}
