@@ -606,7 +606,7 @@ export function informeHtml(datos) {
     <h1>${escapar(comunidad.nombre)}</h1>
     ${direccion ? `<p class="direccion">${escapar(direccion)}</p>` : ''}
     <dl class="ficha">
-      <div><dt>Fecha</dt><dd>${fecha(control.checkin_en ?? control.enviado_en ?? control.creado_en)}</dd></div>
+      <div><dt>Fecha del levantamiento</dt><dd>${fecha(control.fecha_levantamiento ?? control.checkin_en ?? control.programado_para ?? control.creado_en)}</dd></div>
       <div><dt>Responsable</dt><dd>${escapar(control.responsable ?? '-')}</dd></div>
       <div><dt>Periodo</dt><dd>${escapar(control.periodo ?? '-')}</dd></div>
       ${datos.soloLecturaCliente ? '' : `<div><dt>Check-in</dt><dd>${control.checkin_en ? `${hora(control.checkin_en)}${

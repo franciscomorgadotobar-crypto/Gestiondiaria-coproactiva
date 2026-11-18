@@ -3704,3 +3704,49 @@ input[type='checkbox'] { accent-color: var(--naranja); }
 @media(max-width:899px){
  .barra-area-movil .barra-area-volver{font-weight:750}
 }
+
+
+/* Sliding Pill · navegación inferior (móvil)
+ * La cápsula es decorativa, los botones siguen siendo accesibles y clicables.
+ * Su anchura/posición se miden en tiempo real y la animación estira y rebota.
+ */
+.nav-sliding-pill{display:none}
+@media(max-width:899px){
+  .barra-inferior-movil.con-sliding-pill{isolation:isolate}
+  .barra-inferior-movil.con-sliding-pill .nav-sliding-pill{
+    position:absolute;
+    z-index:0;
+    display:block;
+    left:0;
+    top:0;
+    height:48px;
+    width:calc(100% / var(--columnas-nav-movil,5) - 8px);
+    border-radius:999px;
+    border:1px solid #db8332;
+    background:linear-gradient(135deg,#fac17a 0%,#eea046 100%);
+    box-shadow:0 3px 9px rgba(170,90,29,.19),inset 0 1px 0 rgba(255,255,255,.35);
+    opacity:0;
+    pointer-events:none;
+    transform:translate3d(0,0,0);
+    will-change:transform,width;
+  }
+  .barra-inferior-movil.con-sliding-pill .nav-movil-item{
+    z-index:1;
+    transition:color .18s ease;
+  }
+  .barra-inferior-movil.con-sliding-pill .nav-movil-item.activo{
+    color:#1b3257;
+  }
+  .barra-inferior-movil.con-sliding-pill .nav-movil-item:focus-visible{
+    outline:2px solid #1d71b8;
+    outline-offset:-2px;
+    border-radius:12px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .barra-inferior-movil.con-sliding-pill .nav-sliding-pill,
+  .barra-inferior-movil.con-sliding-pill .nav-movil-item{
+    animation:none!important;
+    transition:none!important;
+  }
+}

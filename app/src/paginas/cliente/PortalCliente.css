@@ -331,3 +331,13 @@
 }
 .portal-boton-pdf:disabled { opacity: .7; cursor: progress; }
 .portal-boton-pdf:focus-visible { outline: 2px solid var(--enlace); outline-offset: 2px; }
+
+/* Barra del cliente sustituye por completo las antiguas pestañas horizontales. */
+.portal-pantalla:not(.portal-vista-preliminar) .portal-pestanas-movil{display:none!important}
+.portal-kpi-enlace{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.portal-kpi-enlace:hover,.portal-kpi-enlace.seleccionado{border-color:var(--naranja);background:var(--tarjeta)}
+.portal-kpi-enlace.seleccionado{box-shadow:0 0 0 1px var(--naranja)}
+.portal-kpi-enlace:focus-visible{outline:2px solid var(--enlace);outline-offset:2px}
+.portal-kpi-detalle{display:grid;gap:12px;padding:14px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta)}
+.portal-kpi-detalle .portal-seccion-titulo{justify-content:space-between;margin:0}
+.portal-kpi-cerrar{min-height:34px;padding:6px 12px;border-radius:8px;border:1px solid var(--borde);background:#fff;color:var(--enlace);cursor:pointer}

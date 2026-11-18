@@ -78,6 +78,7 @@ export async function abrirInformeClienteLevantamiento({controlId,clienteId=null
     control:{
       plantilla_nombre:levantamiento.plantilla_nombre,
       periodo:levantamiento.periodo,
+      fecha_levantamiento:levantamiento.programado_para||levantamiento.creado_en,
       estado:levantamiento.estado,
       enviado_en:levantamiento.enviado_en,
       creado_en:levantamiento.creado_en,

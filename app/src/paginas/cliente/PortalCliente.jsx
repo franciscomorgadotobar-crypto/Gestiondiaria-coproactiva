@@ -235,7 +235,7 @@ function construirVista(comunidad, datos) {
     };
 
     if (finalizado) {
-      realizados.push({ ...base, fecha: l.enviado_en || l.checkin_en || l.creado_en, estado: 'Realizado' });
+      realizados.push({ ...base, fecha: l.checkin_en || l.programado_para || l.creado_en, estado: 'Realizado' });
     } else if (programado && programado > ahora) {
       proximos.push({ ...base, fecha: l.programado_para, estado: 'Programado' });
     } else if (programado && programado <= ahora) {
@@ -457,13 +457,14 @@ function DashboardCliente() {
   );
 }
 
-function Kpi({ valor, etiqueta, tono = 'neutro' }) {
-  return (
-    <div className={`portal-kpi portal-kpi-${tono}`}>
-      <strong>{valor}</strong>
-      <span>{etiqueta}</span>
-    </div>
-  );
+function Kpi({ valor, etiqueta, tono = 'neutro', onClick=null, seleccionado=false }) {
+  const Clase=onClick?'button':'div';
+  return <Clase type={onClick?'button':undefined}
+    onClick={onClick||undefined}
+    aria-pressed={onClick?seleccionado:undefined}
+    className={`portal-kpi portal-kpi-${tono}${onClick?' portal-kpi-enlace':''}${seleccionado?' seleccionado':''}`}>
+    <strong>{valor}</strong><span>{etiqueta}</span>
+  </Clase>;
 }
 
 function EncabezadoSeccion({ titulo, cantidad }) {
@@ -668,14 +669,14 @@ function DetalleCliente({ id, vistaPrevia = null }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            <nav className={`pestanas portal-pestanas-movil${esVistaPrevia ? " portal-pestanas-vista-previa" : ""}`} aria-label="Secciones de la comunidad">
+            {esVistaPrevia && <nav className="pestanas portal-pestanas-movil portal-pestanas-vista-previa" aria-label="Secciones de la comunidad">
               {TABS.map(([clave, texto]) => (
                 <button key={clave} type="button" className={tab === clave ? 'activo' : ''} aria-pressed={tab === clave}
                         onClick={() => cambiarTab(clave)}>
                   {texto}
                 </button>
               ))}
-            </nav>
+            </nav>}
 
             {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} vistaPrevia={esVistaPrevia} />}
             {tab === 'compromisos' && <EstadoMaterias comunidadId={id}
@@ -694,6 +695,10 @@ function DetalleCliente({ id, vistaPrevia = null }) {
 
 function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
+  const [filtro,setFiltro]=useState(null);
+  const agrupados={atencion,proximos,realizadosMes};
+  const titulos={atencion:'Pendientes de atención',proximos:'Próximas actividades',realizadosMes:'Realizados este mes'};
+  const detalle=filtro?agrupados[filtro]:[];
    return (
     <div className="portal-inicio-redisenado">
       <div className="portal-inicio-intro">
@@ -706,11 +711,24 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
         </span>
       </div>
        <section className="portal-resumen" aria-label="Indicadores de gestión">
-        <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'} />
-        <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
-        <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
+        <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'}
+           seleccionado={filtro==='atencion'} onClick={()=>setFiltro(v=>v==='atencion'?null:'atencion')} />
+         <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo"
+           seleccionado={filtro==='proximos'} onClick={()=>setFiltro(v=>v==='proximos'?null:'proximos')} />
+         <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok"
+           seleccionado={filtro==='realizadosMes'} onClick={()=>setFiltro(v=>v==='realizadosMes'?null:'realizadosMes')} />
       </section>
-      {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
+      {filtro&&<section className="portal-kpi-detalle" aria-live="polite" aria-label={titulos[filtro]}>
+         <div className="portal-seccion-titulo">
+           <h3 className="h4">{titulos[filtro]}</h3>
+           <button type="button" className="portal-kpi-cerrar" onClick={()=>setFiltro(null)}>Cerrar</button>
+         </div>
+         {detalle.length
+           ? <div className="portal-lista">{detalle.map(item=>
+               <TarjetaActividad key={item.id} item={item} alDetalle={cambiarTab}/>)}</div>
+           : <p className="portal-sin-movimientos">No hay registros para este indicador.</p>}
+       </section>}
+       {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
         <section className="portal-inicio-bloque">
           <h2 className="h4">Últimos movimientos</h2>
           {atencion.length > 0 && <div className="portal-lista">{atencion.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} alDetalle={vistaPrevia ? cambiarTab : null} />)}</div>}
@@ -850,7 +868,7 @@ function LevantamientosComunidad({ vista, clienteId = null }) {
                 <div className="micro apagado portal-meta">
                   {l.periodo && <span>{l.periodo}</span>}
                   {l.programado_para && <span>Programado: {fechaCL(l.programado_para, true)}</span>}
-                  {l.enviado_en && <span>Realizado: {fechaCL(l.enviado_en, true)}</span>}
+                  {(l.checkin_en||l.programado_para||l.creado_en) && <span>Visita: {fechaCL(l.checkin_en||l.programado_para||l.creado_en, true)}</span>}
                   {!l.programado_para && <span>Creado: {fechaCL(l.creado_en)}</span>}
                 </div>
                 <div className="portal-acciones">

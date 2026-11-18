@@ -83,3 +83,17 @@
 @media(max-width:720px){
  .estado-materias__seguimiento-anterior>.compromisos-wrap{padding:11px}
 }
+
+
+/* Documentos vinculados al acuerdo: misma fuente de Drive, sin duplicar archivos. */
+.estado-materias__adjuntos{display:grid;gap:6px;margin:9px 0 2px;min-width:0}
+.estado-materias__adjunto{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border:1px solid #e3ded8;border-radius:8px;background:#fff;padding:7px 8px;font-size:11.5px}
+.estado-materias__archivo-nombre{min-width:0;flex:1 1 135px;overflow-wrap:anywhere;font-weight:650;color:var(--texto-titulo)}
+.estado-materias__adjunto small{color:var(--texto-apagado)}
+.estado-materias__adjunto button,.estado-materias__vincular button{min-height:32px;padding:5px 8px;background:#fff;color:var(--enlace);border:1px solid var(--borde);border-radius:6px;font-size:11.5px;font-weight:650;cursor:pointer}
+.estado-materias__adjunto button:hover,.estado-materias__vincular button:hover{background:var(--papel)}
+.estado-materias__adjunto button:disabled,.estado-materias__vincular button:disabled{opacity:.55;cursor:default}
+.estado-materias__vincular{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:7px}
+.estado-materias__vincular label{flex-basis:100%;font-size:11px;color:var(--texto-apagado)}
+.estado-materias__vincular select{flex:1 1 135px;min-width:0;max-width:100%;min-height:34px;border:1px solid var(--borde);border-radius:7px;background:#fff;color:var(--texto-cuerpo);font-size:12px}
+.estado-materias__adjuntos :is(button,select):focus-visible{outline:2px solid var(--borde-foco);outline-offset:2px}

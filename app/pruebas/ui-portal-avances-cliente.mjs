@@ -105,11 +105,41 @@ try {
    assert.ok(llamadas.some(x=>x.endsWith('_levantamientos')));
    const pestañas=page.locator('.portal-pestanas-movil');
    async function abrirSeccion(seccion){
-     const boton=pestañas.getByRole('button',{name:seccion,exact:true});
-     if(await boton.isVisible())await boton.click();
-     else await page.getByRole('link',{name:seccion,exact:true}).click();
+     if(rol==='cliente' && ancho<900){
+       const barra=page.locator('.barra-inferior-movil');
+       const boton=barra.getByRole('button',{name:seccion,exact:true});
+       if(await boton.count()&&await boton.isVisible()){await boton.click();return;}
+       await barra.getByRole('button',{name:'Más',exact:true}).click();
+       await page.getByRole('dialog',{name:'Más opciones'})
+         .getByRole('button',{name:seccion,exact:true}).click();
+       return;
+     }
+     if(rol==='cliente'){
+       await page.locator('.barra-lateral').getByRole('link',{name:seccion,exact:true}).click();
+       return;
+     }
+     await pestañas.getByRole('button',{name:seccion,exact:true}).click();
+   }
+   let pillInicio=null;
+   if(rol==='cliente'){
+     assert.equal(await pestañas.count(),0,'Los chips superiores fueron reemplazados');
+     if(ancho<900){
+       const barra=page.locator('.barra-inferior-movil');
+       assert.equal(await barra.isVisible(),true);
+       const pill=barra.locator('.nav-sliding-pill');
+       await pill.waitFor({state:'visible',timeout:10000});
+       pillInicio=await pill.boundingBox();
+       assert.ok(pillInicio?.width>20,'Cápsula visible y dimensionada');
+     }
    }
    await abrirSeccion('Levantamientos');
+   if(pillInicio){
+     await page.waitForTimeout(600);
+     const pillFin=await page.locator('.barra-inferior-movil .nav-sliding-pill').boundingBox();
+     assert.ok(Math.abs(pillInicio.x-pillFin.x)>10,'La cápsula se desplaza a la nueva pestaña');
+     const activa=page.locator('.barra-inferior-movil .nav-movil-item[aria-current="page"]');
+     assert.match(await activa.innerText(),/Levantamientos/);
+   }
    assert.equal(await page.getByText('Check-in administrativo (sin GPS)').count(),0);
    assert.equal(await page.locator('.portal-checkin-administrativo').count(),0);
    assert.equal(await page.getByText('No se pudo registrar GPS').count(),0);
@@ -128,6 +158,11 @@ try {
    assert.equal(await page.locator('.portal-visor-levantamiento').count(),0);
    await abrirSeccion('Resumen');
    assert.equal(await page.locator('.portal-checkin-resumen').count(),0);
+   await page.locator('.portal-kpi-enlace').nth(2).click();
+   await page.locator('.portal-kpi-detalle').waitFor();
+   assert.match(await page.locator('.portal-kpi-detalle').innerText(),/Realizados este mes/);
+   await page.getByRole('button',{name:'Cerrar',exact:true}).click();
+   assert.equal(await page.locator('.portal-kpi-detalle').count(),0);
    assert.deepEqual(errores,[]);
    // El cliente con una sola comunidad no llega a ver el dashboard.
    if(rol==='cliente'){
