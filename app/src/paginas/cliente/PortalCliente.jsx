@@ -346,7 +346,7 @@ function ListaFiltradaResumen({filtro,atencion,proximos,realizados,realizadosMes
     if(!FILTROS_RESUMEN[filtro])return;
     const cuadro=window.requestAnimationFrame(()=>{
       document.getElementById('portal-filtro-resultados')?.scrollIntoView({
-        behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',
+        behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
         block:'start'
       });
     });
@@ -375,6 +375,14 @@ function ListaFiltradaResumen({filtro,atencion,proximos,realizados,realizadosMes
 
 function DashboardCliente() {
   const { perfil } = useSesion();
+  const [params,setParams]=useSearchParams();
+  const filtroActivo=params.get('filtro')||'';
+  function seleccionarFiltro(filtro){
+    const siguiente=new URLSearchParams(params);
+    if(filtroActivo===filtro)siguiente.delete('filtro');
+    else siguiente.set('filtro',filtro);
+    setParams(siguiente,{preventScrollReset:true});
+  }
   const [vistas, setVistas] = useState(null);
   const navegar = useNavigate();
   const [error, setError] = useState(null);
@@ -452,12 +460,19 @@ function DashboardCliente() {
         {vistas && (
           <>
             <section className="portal-resumen" aria-label="Resumen del portal">
-              <Kpi valor={resumen.atencion.length} etiqueta="Requieren atención" tono={resumen.atencion.length ? 'alerta' : 'ok'} />
-              <Kpi valor={resumen.proximos.length} etiqueta="Próximamente" tono="proximo" />
-              <Kpi valor={resumen.realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
+              <Kpi valor={resumen.atencion.length} etiqueta="Requieren atención" tono={resumen.atencion.length ? 'alerta' : 'ok'}
+                onClick={()=>seleccionarFiltro('atencion')} activo={filtroActivo==='atencion'} />
+              <Kpi valor={resumen.proximos.length} etiqueta="Próximamente" tono="proximo"
+                onClick={()=>seleccionarFiltro('proximos')} activo={filtroActivo==='proximos'} />
+              <Kpi valor={resumen.realizadosMes.length} etiqueta="Realizados este mes" tono="ok"
+                onClick={()=>seleccionarFiltro('realizados')} activo={filtroActivo==='realizados'} />
             </section>
 
-            <section className="portal-seccion portal-seccion-principal">
+            <ListaFiltradaResumen filtro={filtroActivo} atencion={resumen.atencion}
+              proximos={resumen.proximos} realizados={resumen.realizados} realizadosMes={resumen.realizadosMes}
+              mostrarComunidad onCerrar={()=>seleccionarFiltro(filtroActivo)}/>
+
+            <section id="portal-lista-atencion" className="portal-seccion portal-seccion-principal">
               <EncabezadoSeccion titulo="Requiere atención" cantidad={resumen.atencion.length} />
               {resumen.atencion.length === 0 ? (
                 <EstadoVacio tipo="ok" titulo="Todo al día" texto="No hay incidencias, levantamientos o mantenciones vencidas que requieran atención." />
@@ -468,7 +483,7 @@ function DashboardCliente() {
               )}
             </section>
 
-            <section className="portal-seccion">
+            <section id="portal-lista-proximos" className="portal-seccion">
               <EncabezadoSeccion titulo="Próximamente" cantidad={resumen.proximos.length} />
               {resumen.proximos.length === 0 ? (
                 <EstadoVacio titulo="Sin actividades programadas" texto="Cuando se programe un levantamiento, una intervención o una mantención aparecerá aquí." />
@@ -477,6 +492,19 @@ function DashboardCliente() {
                   {resumen.proximos.slice(0, 5).map(item => <TarjetaActividad key={item.id} item={item} mostrarComunidad fechaDestacada />)}
                 </div>
               )}
+            </section>
+
+            <section id="portal-lista-realizados" className="portal-seccion">
+              <div className="portal-seccion-titulo portal-seccion-titulo-accion">
+                <h2 className="h4">Realizados este mes</h2>
+                <button type="button" className="portal-ver-todos" onClick={()=>seleccionarFiltro('realizados')}>
+                  Ver todos ({resumen.realizadosMes.length}) ›
+                </button>
+              </div>
+              {resumen.realizadosMes.length===0
+                ? <EstadoVacio titulo="Sin actividades finalizadas este mes" texto="Las actividades realizadas aparecerán aquí."/>
+                : <div className="portal-timeline">{resumen.realizadosMes.slice(0,5).map(item=><FilaTimeline
+                  key={item.id+':'+item.comunidadId} item={item} mostrarComunidad />)}</div>}
             </section>
 
             <section className="portal-seccion">
@@ -516,13 +544,13 @@ function DashboardCliente() {
   );
 }
 
-function Kpi({ valor, etiqueta, tono = 'neutro' }) {
-  return (
-    <div className={`portal-kpi portal-kpi-${tono}`}>
-      <strong>{valor}</strong>
-      <span>{etiqueta}</span>
-    </div>
-  );
+function Kpi({ valor, etiqueta, tono = 'neutro', onClick = null, activo = false }) {
+  const clase=`portal-kpi portal-kpi-${tono}`+(onClick?' portal-kpi-clickeable':'')+(activo?' activo':'');
+  const contenido=<><strong>{valor}</strong><span>{etiqueta}</span>{onClick&&<small aria-hidden="true">Ver detalle ›</small>}</>;
+  return onClick
+    ? <button type="button" className={clase} onClick={onClick} aria-pressed={activo}
+        aria-label={`${etiqueta}: ${valor}. Ver actividades`}>{contenido}</button>
+    : <div className={clase}>{contenido}</div>;
 }
 
 function EncabezadoSeccion({ titulo, cantidad }) {
