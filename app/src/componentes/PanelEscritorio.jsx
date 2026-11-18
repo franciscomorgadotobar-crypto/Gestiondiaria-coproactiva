@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
@@ -24,6 +24,98 @@ function activa(pathname, ruta) {
  * que "Nueva propiedad": sin esto las dos entradas se marcaban a la vez. */
 function activaPropiedades(pathname) {
   return activa(pathname, '/propiedades') && !activa(pathname, '/propiedades/nueva');
+}
+
+/* La cápsula de la barra se mide en píxeles reales: funciona con 3, 4 o 5
+ * accesos, etiquetas de dos líneas y cambios de orientación. La animación
+ * elástica estira el ancho en el recorrido sin mover ni recrear los botones. */
+function usePillCorredera(opcionActiva, firmaOpciones) {
+  const barraRef = useRef(null);
+  const pillRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const barra = barraRef.current;
+    const pill = pillRef.current;
+    if (!barra || !pill) return undefined;
+
+    function posicionar(animar = true) {
+      const boton = [...barra.querySelectorAll('[data-pill-tab]')]
+        .find(elemento => elemento.getAttribute('data-pill-tab') === opcionActiva);
+      const barraRect = barra.getBoundingClientRect();
+      const botonRect = boton?.getBoundingClientRect();
+
+      if (!botonRect?.width || !barraRect.width) {
+        pill.style.opacity = '0';
+        pill.dataset.lista = '';
+        return;
+      }
+
+      // Si hay una sola pestaña, evitar una cápsula gigante de lado a lado.
+      const anchoPill = Math.min(132, Math.max(24, botonRect.width - 8));
+      const destino = {
+        left: botonRect.left - barraRect.left + (botonRect.width - anchoPill) / 2,
+        top: botonRect.top - barraRect.top + 2,
+        width: anchoPill,
+        height: Math.max(38, botonRect.height - 4)
+      };
+      const pillRect = pill.getBoundingClientRect();
+      const anterior = {
+        left: pillRect.left - barraRect.left,
+        top: pillRect.top - barraRect.top,
+        width: pillRect.width,
+        height: pillRect.height
+      };
+      const yaVisible = pill.dataset.lista === 'si';
+      pill.getAnimations().forEach(animacion => animacion.cancel());
+      for (const propiedad of ['left', 'top', 'width', 'height']) {
+        pill.style[propiedad] = destino[propiedad] + 'px';
+      }
+      pill.style.opacity = '1';
+      pill.dataset.lista = 'si';
+
+      const menosMovimiento = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const dx = destino.left - anterior.left;
+      if (!animar || !yaVisible || menosMovimiento || !pill.animate || Math.abs(dx) < 1) return;
+
+      // La punta avanza y el cuerpo se estira, luego hay un rebote corto.
+      const direccion = Math.sign(dx);
+      const estiramiento = Math.min(22, Math.max(9, Math.abs(dx) * 0.15));
+      const anchoMedio = (anterior.width + destino.width) / 2 + estiramiento;
+      const rebote = direccion * Math.min(6, Math.abs(dx) * 0.04);
+      pill.animate([
+        { left: anterior.left + 'px', top: anterior.top + 'px',
+          width: anterior.width + 'px', height: anterior.height + 'px', offset: 0 },
+        { left: (anterior.left + dx * 0.55 - (direccion < 0 ? estiramiento * 0.7 : estiramiento * 0.3)) + 'px',
+          top: destino.top + 'px', width: anchoMedio + 'px',
+          height: destino.height + 'px', offset: 0.48 },
+        { left: (destino.left + rebote) + 'px', top: destino.top + 'px',
+          width: (destino.width * 0.94) + 'px', height: destino.height + 'px', offset: 0.82 },
+        { left: destino.left + 'px', top: destino.top + 'px',
+          width: destino.width + 'px', height: destino.height + 'px', offset: 1 }
+      ], { duration: 470, easing: 'cubic-bezier(.22,.78,.24,1)' });
+    }
+
+    posicionar();
+    let ancho = barra.clientWidth;
+    let alto = barra.clientHeight;
+    const alRedimensionar = () => {
+      if (barra.clientWidth === ancho && barra.clientHeight === alto) return;
+      ancho = barra.clientWidth;
+      alto = barra.clientHeight;
+      posicionar(false);
+    };
+    const observador = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(alRedimensionar) : null;
+    observador?.observe(barra);
+    const alCambiarVentana = () => posicionar(false);
+    window.addEventListener('resize', alCambiarVentana);
+    return () => {
+      observador?.disconnect();
+      window.removeEventListener('resize', alCambiarVentana);
+    };
+  }, [opcionActiva, firmaOpciones]);
+
+  return { barraRef, pillRef };
 }
 
 export default function PanelEscritorio({ children, anchoCompleto = false }) {
@@ -60,7 +152,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     // Operaciones y Configuración no tienen menú «Más», incluso si
     // alguna pestaña histórica conserva un estado anterior.
     const grupoActual = grupoDeRuta(pathname) ?? areaGuardada() ?? 'operacion';
-    if (!masAbierto || grupoActual === 'operacion' || grupoActual === 'configuracion') return undefined;
+    if (!masAbierto || (perfil?.rol !== 'cliente' && (grupoActual === 'operacion' || grupoActual === 'configuracion'))) return undefined;
     // El menú se monta fuera de la aplicación y bloquea la interacción
     // con el mapa Leaflet, los chips y la navegación inferior.
     const raizAplicacion = document.getElementById('raiz');
@@ -99,7 +191,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       document.documentElement.style.overflow = scrollHtmlAnterior;
       botonMasRef.current?.focus({ preventScroll: true });
     };
-  }, [masAbierto, navegar, pathname]);
+  }, [masAbierto, navegar, pathname, perfil?.rol]);
   function setMasAbierto(proximo, { alNavegar = false } = {}) {
     const abrir = typeof proximo === 'function' ? proximo(masAbierto) : proximo;
     if (abrir === masAbierto) return;
@@ -396,6 +488,15 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // «Más» permanece solo en áreas con navegación secundaria real.
   const mostrarMasMovil = esCliente ? menuMasOperacion.length > 0 : mostrarBarraMovil && !enOperacion && !enConfiguracion;
 
+  // Una sección secundaria se representa en «Más» y mantiene la pastilla ahí.
+  const activoPrincipal = barraMovil.find(item => itemMovilActivo(item))?.id;
+  const masSeleccionado = mostrarMasMovil &&
+    (masAbierto || (!activoPrincipal && menuMasOperacion.some(item => itemMovilActivo(item))));
+  const activoPill = masSeleccionado ? 'mas' : activoPrincipal || null;
+  const { barraRef, pillRef } = usePillCorredera(
+    activoPill, barraIds.join('|') + '|mas:' + mostrarMasMovil
+  );
+
   function itemMovilActivo(item) {
     if (item.id === 'buscar-conocimientos') return buscarAprendizaje;
     if (item.id === 'conocimientos') return !buscarAprendizaje && activa(pathname, '/conocimientos');
@@ -596,13 +697,16 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
       {mostrarBarraMovil && (
         <>
-          <nav className={'barra-inferior-movil' + (enAprendizaje ? ' barra-inferior-aprendizaje' : '')}
+          <nav ref={barraRef}
+               className={'barra-inferior-movil barra-inferior-pill' + (enAprendizaje ? ' barra-inferior-aprendizaje' : '')}
                style={{ '--columnas-nav-movil': mostrarMasMovil ? 5 : barraMovil.length }}
                aria-label="Navegación principal">
+            <span ref={pillRef} className="barra-pill-indicador" aria-hidden="true" />
             {barraMovil.map(item => (
               <button
                 key={item.id}
                 type="button"
+                data-pill-tab={item.id}
                 className={'nav-movil-item' + (itemMovilActivo(item) ? ' activo' : '')}
                 aria-current={itemMovilActivo(item) ? 'page' : undefined}
                 onClick={() => ejecutarItemMovil(item)}
@@ -618,7 +722,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
             ))}
 
             {mostrarMasMovil && <button type="button" ref={botonMasRef}
-                    className={'nav-movil-item' + (masAbierto ? ' activo' : '')}
+                    data-pill-tab="mas"
+                    className={'nav-movil-item' + (masSeleccionado ? ' activo' : '')}
                     onClick={() => setMasAbierto(v => !v)}
                     aria-haspopup="dialog"
                     aria-expanded={masAbierto}>
@@ -642,8 +747,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 </div>
                 <div className="menu-mas-secciones">
                   {!enOperacion && menuMasOperacion.length>0 && (
-                    <div className="menu-mas-grupo" role="group" aria-label={'Opciones de '+nombreArea}>
-                      <p className="menu-mas-grupo-titulo">Opciones · {nombreArea}</p>
+                    <div className="menu-mas-grupo" role="group" aria-label={esCliente ? 'Secciones de la comunidad' : 'Opciones de '+nombreArea}>
+                      <p className="menu-mas-grupo-titulo">{esCliente ? 'Secciones de la comunidad' : 'Opciones · '+nombreArea}</p>
                       <div className="menu-mas-enlaces">
                         {menuMasOperacion.map(item=>(
                           <button key={item.id} type="button" onClick={()=>ejecutarItemMovil(item)}>
