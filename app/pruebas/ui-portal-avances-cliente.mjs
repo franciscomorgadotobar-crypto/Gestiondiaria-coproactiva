@@ -120,11 +120,26 @@ try {
      }
      await pestañas.getByRole('button',{name:seccion,exact:true}).click();
    }
+   let pillInicio=null;
    if(rol==='cliente'){
      assert.equal(await pestañas.count(),0,'Los chips superiores fueron reemplazados');
-     if(ancho<900)assert.equal(await page.locator('.barra-inferior-movil').isVisible(),true);
+     if(ancho<900){
+       const barra=page.locator('.barra-inferior-movil');
+       assert.equal(await barra.isVisible(),true);
+       const pill=barra.locator('.nav-sliding-pill');
+       await pill.waitFor({state:'visible',timeout:10000});
+       pillInicio=await pill.boundingBox();
+       assert.ok(pillInicio?.width>20,'Cápsula visible y dimensionada');
+     }
    }
    await abrirSeccion('Levantamientos');
+   if(pillInicio){
+     await page.waitForTimeout(600);
+     const pillFin=await page.locator('.barra-inferior-movil .nav-sliding-pill').boundingBox();
+     assert.ok(Math.abs(pillInicio.x-pillFin.x)>10,'La cápsula se desplaza a la nueva pestaña');
+     const activa=page.locator('.barra-inferior-movil .nav-movil-item[aria-current="page"]');
+     assert.match(await activa.innerText(),/Levantamientos/);
+   }
    assert.equal(await page.getByText('Check-in administrativo (sin GPS)').count(),0);
    assert.equal(await page.locator('.portal-checkin-administrativo').count(),0);
    assert.equal(await page.getByText('No se pudo registrar GPS').count(),0);
