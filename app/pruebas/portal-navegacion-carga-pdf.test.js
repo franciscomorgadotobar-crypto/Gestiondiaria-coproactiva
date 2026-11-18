@@ -23,12 +23,25 @@ test('Compromisos vuelve a aparecer con el nombre Avances en menú inferior', ()
   assert.match(css, /-webkit-tap-highlight-color:transparent/);
 });
 
-test('Nuevo tab del PDF tiene carga visible antes del RPC', () => {
-  assert.match(portal, /Preparando tu informe/);
-  assert.match(portal, /Estamos reuniendo los datos y las fotografías del levantamiento/);
-  assert.match(portal, /ventana\.document\.close\(\)/);
-  assert.match(portal, /await abrirInformeClienteLevantamiento\(\{controlId:id,clienteId,ventana\}\)/);
-  assert.match(portal, /prefers-reduced-motion:reduce/);
+test('El informe abre un visor real con URL propia y autorización por RPC', () => {
+  const visor=leer('public/informe-visor.html');
+  assert.match(portal, /window\.open\(import\.meta\.env\.BASE_URL\+'informe-visor\.html','_blank'\)/);
+  assert.match(portal, /await prepararInformeClienteLevantamiento\(\{controlId:id,clienteId\}\)/);
+  assert.match(portal, /window\.location\.origin/);
+  assert.match(visor, /Preparando tu informe/);
+  assert.match(visor, /Estamos reuniendo los datos y las fotografías del levantamiento/);
+  assert.match(visor, /coproactiva:visor-listo/);
+  assert.match(visor, /coproactiva:visor-html/);
+  assert.match(visor, /Guardar PDF/);
+  assert.match(visor, /marco\.contentWindow\.print\(\)/);
+});
+
+test('El informe sigue conservando el método de impresión anterior y el A4', () => {
+  assert.match(informeCliente, /imprimirInforme\(html,ventana,\{pantallaCarga:true\}\)/);
+  assert.match(informeCliente, /export async function prepararInformeClienteLevantamiento/);
+  assert.match(informe, /<meta name="viewport" content="width=device-width,initial-scale=1">/);
+  assert.match(informe, /@media screen and \(max-width: 720px\)/);
+  assert.match(informe, /@media print \{ \.hoja \{ padding: 0; \} \}/);
 });
 
 test('Pantalla de carga permanece hasta fotos y tipografías y luego imprime', () => {

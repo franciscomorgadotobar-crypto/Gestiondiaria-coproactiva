@@ -327,6 +327,7 @@ export function informeHtml(datos) {
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Levantamiento - ${escapar(comunidad.nombre)}</title>
 <style>
   @font-face { font-family: 'Montserrat'; src: url('fonts/Montserrat-VariableFont_wght.ttf') format('truetype'); font-weight: 100 900; }
@@ -593,6 +594,53 @@ export function informeHtml(datos) {
   @media screen {
     body { background: #eceae7; padding: 20px; }
     .hoja { background: #fff; max-width: 210mm; margin: 0 auto; padding: 14mm; box-shadow: 0 0 0 1px var(--niebla); }
+  }
+
+  /* Lectura móvil: el informe es un documento fluido a ancho completo.
+   * Estas reglas no afectan al A4 ni los saltos de página al imprimir. */
+  @media screen and (max-width: 720px) {
+    html { overflow-x: hidden; }
+    body { background: #fff; padding: 0; font-size: 14px; line-height: 1.55; overflow-x: hidden; }
+    .hoja { width: 100%; max-width: 100%; padding: 16px; box-shadow: none; margin: 0; }
+    .portada { margin-bottom: 19px; padding: 22px 18px 24px; border-radius: 12px; }
+    .portada .marca { height: 21px; margin-bottom: 22px; }
+    .portada .tipo { font-size: 11px; line-height: 1.55; letter-spacing: .10em; overflow-wrap: anywhere; }
+    .portada h1 { font-size: clamp(25px, 7vw, 32px); line-height: 1.16; overflow-wrap: anywhere; }
+    .portada .direccion { font-size: 14px; line-height: 1.5; margin-top: 9px; }
+    .ficha { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 22px; padding-top: 16px; }
+    .ficha dt { font-size: 10px; letter-spacing: .07em; }
+    .ficha dd { font-size: 13px; overflow-wrap: anywhere; }
+    .resumen { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
+    .resumen div { padding: 13px 12px; border-radius: 9px; }
+    .resumen .n { font-size: 25px; }
+    .resumen .r { font-size: 10px; line-height: 1.4; letter-spacing: .08em; }
+    .categoria { margin-bottom: 25px; }
+    .categoria > h2 { font-size: 12px; gap: 12px; line-height: 1.4; padding-bottom: 9px; margin-bottom: 13px; }
+    .categoria > h2 .avance { font-size: 10px; flex: none; }
+    .titulo-seccion { font-size: 12px; }
+    .item { padding: 14px 12px; margin-bottom: 12px; border-radius: 9px; }
+    .item header { gap: 9px; align-items: flex-start; }
+    .item h3 { font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+    .num { font-size: 11px; min-width: 24px; }
+    .item header + * { margin-top: 10px; }
+    .descripcion-categoria, .descripcion-punto, .resultado-criterio { border-radius: 8px; padding: 12px; }
+    .descripcion-etiqueta { font-size: 10px; }
+    .descripcion-punto li, .resultado-criterio-cab, .nota, .texto { font-size: 13px; line-height: 1.5; }
+    .descripcion-punto ul { gap: 7px; }
+    .descripcion-punto li { padding-left: 17px; }
+    .descripcion-punto li::before { left: 0; }
+    .estado, .cuenta-fotos { font-size: 10px; }
+    .fotos { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 13px; }
+    .fotos .marco { border-radius: 7px; }
+    .fotos figcaption { font-size: 11px; line-height: 1.45; margin-top: 5px; }
+    .firmas { flex-wrap: wrap; gap: 16px; }
+    .firmas figure { min-width: 130px; }
+    .marcadas { columns: 1; font-size: 13px; }
+    .escala-barra, .escala-extremos { max-width: 100%; }
+    .atencion-fila { gap: 9px; padding: 12px; border-radius: 8px; margin-bottom: 9px; }
+    .atencion-punto { font-size: 13px; }
+    .atencion-nota { font-size: 12px; }
+    .cierre { font-size: 11px; line-height: 1.5; margin-top: 25px; padding-top: 12px; }
   }
   @media print { .hoja { padding: 0; } }
 </style>
