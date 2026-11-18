@@ -33,6 +33,13 @@ export default function SlidingPill({activo=null,distribucion=''}) {
       h:alto
     };
     const anterior=destinoAnterior.current;
+    // ResizeObserver emite una primera medida justo después del cambio de ruta.
+    // Si la geometría no cambió, no interrumpir el resorte en curso.
+    if(!animar&&anterior
+      &&Math.abs(anterior.x-target.x)<.6
+      &&Math.abs(anterior.y-target.y)<.6
+      &&Math.abs(anterior.w-target.w)<.6
+      &&Math.abs(anterior.h-target.h)<.6)return;
     const reducido=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
     const animarMovimiento=animar&&!reducido&&anterior
       &&Math.abs(target.x-anterior.x)>2&&typeof pill.animate==='function';
