@@ -797,3 +797,25 @@
     transition: none !important;
   }
 }
+
+/* UX móvil del cliente: sin el rectángulo azul de pulsación de Chrome ni
+   etiquetas largas que desborden la cápsula deslizante. */
+@media(max-width:899px){
+  .barra-inferior-pill .nav-movil-item{
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    min-width:0;
+  }
+  .barra-inferior-pill .nav-movil-item > span:last-child{
+    display:block;
+    max-width:100%;
+    font-size:10.5px;
+    line-height:1.16;
+    letter-spacing:-.015em;
+    overflow-wrap:break-word;
+    text-wrap:balance;
+  }
+  .barra-inferior-pill .nav-movil-item.activo{
+    text-shadow:0 1px 1px rgba(99,42,15,.25);
+  }
+}

@@ -674,7 +674,7 @@ export function informeHtml(datos) {
 /* El navegador imprime el mismo HTML que se ve en la vista previa.
  * No enviamos un informe incompleto a PDF: con decenas de fotografías,
  * un límite fijo de espera podía iniciar la impresión antes de cargarlas. */
-export function imprimirInforme(html, ventanaExistente = null) {
+export function imprimirInforme(html, ventanaExistente = null, { pantallaCarga = false } = {}) {
   const ventana = ventanaExistente ?? window.open('', '_blank');
   if (!ventana) return false;
 
@@ -687,11 +687,35 @@ export function imprimirInforme(html, ventanaExistente = null) {
   const aviso = ventana.document.createElement('div');
   aviso.id = 'aviso-impresion-coproactiva';
   aviso.setAttribute('role', 'status');
-  aviso.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;max-width:90%;padding:12px 18px;background:#2b3138;color:#fff;font:14px sans-serif;box-shadow:0 2px 12px #0003;border-radius:6px;text-align:center';
-  aviso.textContent = 'Preparando PDF: comprobando fotografías y tipografías…';
+  if (pantallaCarga) {
+    // La vista de cliente no debe mostrar hojas a medio cargar: mantenemos la
+    // pantalla completa hasta que todas las imágenes y fuentes estén listas.
+    aviso.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;background:#f8f5f1;color:#2d3749;font:14px/1.5 system-ui,-apple-system,sans-serif;text-align:center';
+    const marca = ventana.document.createElement('strong');
+    marca.textContent = 'COPROACTIVA';
+    marca.style.cssText = 'letter-spacing:.15em;color:#a75220;font-size:13px';
+    const spinner = ventana.document.createElement('span');
+    spinner.className = 'coproactiva-carga-spinner';
+    spinner.setAttribute('aria-hidden', 'true');
+    const titulo = ventana.document.createElement('strong');
+    titulo.textContent = 'Preparando tu informe';
+    titulo.style.cssText = 'font-size:21px;line-height:1.3;color:#2d3749';
+    const detalle = ventana.document.createElement('span');
+    detalle.textContent = 'Comprobando fotografías y tipografías antes de mostrar el PDF…';
+    detalle.style.cssText = 'max-width:330px;color:#65717e';
+    aviso.append(marca, spinner, titulo, detalle);
+  } else {
+    aviso.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;max-width:90%;padding:12px 18px;background:#2b3138;color:#fff;font:14px sans-serif;box-shadow:0 2px 12px #0003;border-radius:6px;text-align:center';
+    aviso.textContent = 'Preparando PDF: comprobando fotografías y tipografías…';
+  }
   ventana.document.body.prepend(aviso);
   const reglasAviso = ventana.document.createElement('style');
-  reglasAviso.textContent = '@media print { #aviso-impresion-coproactiva { display: none !important; } }';
+  reglasAviso.textContent = `
+    @media print { #aviso-impresion-coproactiva { display: none !important; } }
+    .coproactiva-carga-spinner { width:52px;height:52px;border:4px solid #f4e1d3;border-top-color:#bf6126;border-radius:50%;animation:coproactiva-girar .85s linear infinite }
+    @keyframes coproactiva-girar { to { transform:rotate(360deg); } }
+    @media (prefers-reduced-motion:reduce) { .coproactiva-carga-spinner { animation:none; } }
+  `;
   ventana.document.head.append(reglasAviso);
 
   const imagenes = Array.from(ventana.document.images);
@@ -718,6 +742,11 @@ export function imprimirInforme(html, ventanaExistente = null) {
     const pendientes = imagenes.filter(img => !img.complete || img.naturalWidth === 0);
     if (resultado !== 'listo' || pendientes.length) {
       aviso.setAttribute('role', 'alert');
+      aviso.replaceChildren();
+      if (pantallaCarga) {
+        aviso.style.color = '#9a3224';
+        aviso.style.fontWeight = '600';
+      }
       aviso.textContent = pendientes.length
         ? `No se generó el PDF: ${pendientes.length} imagen(es) no cargaron. Verifica la conexión y vuelve a abrir el informe.`
         : 'No se generó el PDF: la carga tardó demasiado. Vuelve a abrir el informe.';
