@@ -689,6 +689,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   // La ficha de comunidad abre el informe por materia. Resumen queda accesible desde la barra de navegación.
   const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'compromisos';
   const tab = tabInicial; // URL permite volver de Documentos a Incidencias con Atrás.
+  const registroSeleccionado=params.get('registro')||'';
   const [vista, setVista] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -760,6 +761,32 @@ function DetalleCliente({ id, vistaPrevia = null }) {
     cargar();
     return () => { vigente = false; };
   }, [id, perfil?.id, clienteId, esVistaPrevia, revision]);
+
+  useEffect(()=>{
+    if(!registroSeleccionado||!vista||cargando)return undefined;
+    const tiempos=[];
+    let destacado=null;
+    function localizar(){
+      if(destacado)return;
+      const elemento=document.getElementById('portal-registro-'+registroSeleccionado);
+      if(!elemento)return;
+      destacado=elemento;
+      elemento.classList.add('portal-registro-destacado');
+      elemento.setAttribute('tabindex','-1');
+      elemento.focus({preventScroll:true});
+      elemento.scrollIntoView({
+        behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
+        block:'center'
+      });
+    }
+    tiempos.push(window.setTimeout(localizar,70));
+    tiempos.push(window.setTimeout(localizar,260));
+    tiempos.push(window.setTimeout(localizar,900));
+    return ()=>{
+      tiempos.forEach(idTemporizador=>window.clearTimeout(idTemporizador));
+      destacado?.classList.remove('portal-registro-destacado');
+    };
+  },[registroSeleccionado,tab,vista,cargando]);
 
   function cambiarTab(nuevo) {
     if (tab === nuevo || !TABS.some(([clave]) => clave === nuevo)) return;
