@@ -19,7 +19,7 @@ test('Una única cabecera de informe para todas las comunidades: sin puesta en m
 test('Portal real y simulación utilizan el mismo EstadoMaterias publicado en solo lectura',()=>{
   assert.match(portal,/import EstadoMaterias from '\.\/EstadoMaterias'/);
   assert.doesNotMatch(portal,/import Compromisos from '\.\/Compromisos'/);
-  assert.match(portal,/tab === 'compromisos' && <EstadoMaterias comunidadId=\{id\}/);
+  assert.match(portal,/tab === 'compromisos' && <EstadoMaterias key=\{id\+':'\+revision\} comunidadId=\{id\}/);
   assert.match(portal,/nombreComunidad=\{vista\?\.comunidad\?\.nombre\|\|'Comunidad'\}/);
   assert.match(portal,/administrador=\{false\} soloLecturaCliente=\{true\}/);
   assert.match(componente,/if\(soloLecturaCliente\)consulta=consulta\.eq\('publicado',true\)/);
@@ -33,7 +33,7 @@ test('El informe abre primero; Resumen sigue navegable y tiene URL explícita',(
   assert.match(portal,/if \(nuevo === 'compromisos'\) siguientes\.delete\('seccion'\)/);
   assert.match(portal,/else siguientes\.set\('seccion', nuevo\)/);
   assert.match(panel,/get\('seccion'\) \|\| 'compromisos'/);
-  assert.match(panel,/seccion === 'compromisos' \? '' : '\?seccion=' \+ seccion/);
+  assert.match(panel,/seccion === 'compromisos' \? '' : \(vistaCliente \? '&' : '\?'\) \+ 'seccion=' \+ seccion/);
   assert.match(portal,/\['resumen', 'Resumen'\]/);
   assert.match(portal,/\['compromisos', 'Gestiones y avances'\]/);
 });
