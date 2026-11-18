@@ -9,6 +9,8 @@ import './Conocimientos.css';
 const contenidos = biblioteca.contenidos;
 const materias = [...new Set(contenidos.map(item => item.categoria).filter(Boolean))];
 const CLAVE_LEIDOS = 'coproactiva:conocimientos:leidos:';
+export const EVENTO_BUSCAR = 'coproactiva:conocimientos:buscar';
+export const EVENTO_ESTADO_BUSCAR = 'coproactiva:conocimientos:estado-busqueda';
 
 const indiceContenidos = crearIndiceConocimientos(contenidos, obtenerLeccion);
 
