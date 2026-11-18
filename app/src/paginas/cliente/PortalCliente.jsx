@@ -715,6 +715,11 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false }) {
         <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
         <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
       </section>
+      <Link to="/portal/conocimientos" className="portal-acceso portal-acceso-ley" aria-label="Consultar Base de conocimientos sobre la Ley 21.442">
+        <strong>Base de conocimientos</strong>
+        <span>Consulta las guías y artículos de la Ley N.º 21.442 sobre copropiedad inmobiliaria.</span>
+        <b aria-hidden="true">›</b>
+      </Link>
       {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
         <section className="portal-inicio-bloque">
           <h2 className="h4">Últimos movimientos</h2>

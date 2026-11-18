@@ -302,6 +302,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     mostrar: true,
     activo: () => tabPortal === seccion
   });
+  const accesoBibliotecaCliente = {
+    id: 'cliente-conocimientos', ruta: '/portal/conocimientos',
+    etiqueta: 'Base de conocimientos', etiquetaMovil: 'Ley 21.442',
+    mostrar: true, activo: ruta => ruta === '/portal/conocimientos'
+  };
   const accesos = esCliente
     ? (comunidadPortalId ? [
         enlacePortal('resumen', 'Resumen'),
@@ -309,8 +314,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
         enlacePortal('incidencias', 'Incidencias'),
         enlacePortal('levantamientos', 'Levantamientos'),
         enlacePortal('mantencion', 'Mantenciones'),
-        enlacePortal('documentos', 'Documentos')
-      ] : [{ id: 'cliente-comunidades', ruta: '/portal', etiqueta: 'Comunidades', mostrar: true }])
+        enlacePortal('documentos', 'Documentos'),
+        accesoBibliotecaCliente
+      ] : [
+        { id: 'cliente-comunidades', ruta: '/portal', etiqueta: 'Comunidades', mostrar: true, activo: ruta => ruta === '/portal' },
+        accesoBibliotecaCliente
+      ])
     : enConfiguracion
     ? [
         { ruta: '/mi-cuenta', etiqueta: 'Mi cuenta', mostrar: true },
@@ -354,6 +363,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const inicio = esCliente ? '/portal' : '/';
 
   function volverGlobal() {
+    // La biblioteca está dentro del portal, no del selector interno.
+    if (esCliente && pathname === '/portal/conocimientos') {
+      navegar('/portal');
+      return;
+    }
     const evento = new CustomEvent('coproactiva:volver', { cancelable: true });
     window.dispatchEvent(evento);
     if (!evento.defaultPrevented) volverPorJerarquia(navegar, pathname, puedeCambiarArea);
@@ -373,6 +387,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     if (tipo === 'cliente-documentos') return <svg {...comun}><path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h7M9 16h7"/></svg>;
     if (tipo === 'cliente-levantamientos') return <IconoNavegacion tipo="levantamientos" size={21} />;
     if (tipo === 'cliente-mantencion') return <IconoNavegacion tipo="mantenciones" size={21} />;
+    if (tipo === 'cliente-conocimientos') return <IconoNavegacion tipo="conocimientos" size={21} />;
     if (tipo === 'conocimientos') return <IconoNavegacion tipo="conocimientos" size={21} />;
     if (tipo === 'buscar-conocimientos') return <svg {...comun}><circle cx="10.7" cy="10.7" r="7.2"/><path d="m16 16 5 5"/></svg>;
     if (tipo === 'inicio') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg>;
@@ -471,7 +486,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   const barraIds = esCliente
     ? (comunidadPortalId
       ? ['cliente-resumen', 'cliente-compromisos', 'cliente-incidencias', 'cliente-documentos']
-      : ['cliente-comunidades'])
+      : ['cliente-comunidades', 'cliente-conocimientos'])
     : enOperacion ? ['inicio', 'comunidades', 'levantamientos'] : [];
   if (!enOperacion && !esCliente) for (const item of opcionesBarra) {
     if (barraIds.length >= 4) break;
@@ -499,6 +514,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   );
 
   function itemMovilActivo(item) {
+    if (item.id === 'cliente-comunidades') return pathname === '/portal';
     if (item.id === 'buscar-conocimientos') return buscarAprendizaje;
     if (item.id === 'conocimientos') return !buscarAprendizaje && activa(pathname, '/conocimientos');
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
