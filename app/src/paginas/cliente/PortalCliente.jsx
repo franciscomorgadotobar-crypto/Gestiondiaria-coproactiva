@@ -776,11 +776,8 @@ function DetalleCliente({ id, vistaPrevia = null }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab}
-              vistaPrevia={esVistaPrevia}
-              rutaBiblioteca={esVistaPrevia
-                ? '/vista-cliente/conocimientos?comunidad='+encodeURIComponent(id)+'&cliente='+encodeURIComponent(clienteId)
-                : '/portal/conocimientos'} />}
+            {tab === 'resumen' && <ResumenComunidad vista={vista}
+              vistaPrevia={esVistaPrevia} clienteId={clienteId} />}
             {tab === 'compromisos' && <EstadoMaterias key={id+':'+revision} comunidadId={id}
               nombreComunidad={vista?.comunidad?.nombre||'Comunidad'}
               administrador={false} soloLecturaCliente={true} />}
@@ -795,8 +792,19 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   );
 }
 
-function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, rutaBiblioteca = '/portal/conocimientos' }) {
+function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, clienteId=null }) {
   const { atencion, proximos, realizadosMes, realizados, informes } = vista;
+  const [params,setParams]=useSearchParams();
+  const filtroActivo=params.get('filtro')||'';
+  const contexto={vistaPrevia,clienteId};
+  function seleccionarFiltro(filtro){
+    const siguiente=new URLSearchParams(params);
+    siguiente.set('seccion','resumen');
+    if(filtroActivo===filtro)siguiente.delete('filtro');
+    else siguiente.set('filtro',filtro);
+    siguiente.delete('registro');
+    setParams(siguiente,{preventScrollReset:true});
+  }
    return (
     <div className="portal-inicio-redisenado">
       <div className="portal-inicio-intro">
@@ -804,27 +812,36 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, rutaBibliote
           <h2 className="h4">Gestión de tu comunidad</h2>
           <p className="chico apagado">Consulta las gestiones de administración, sus avances y respaldos.</p>
         </div>
-        <span className={atencion.length ? 'portal-estado chip-alerta' : 'portal-estado chip-cumple'}>
-          {atencion.length ? `${atencion.length} asuntos por atender` : 'Sin asuntos vencidos'}
-        </span>
+        <button type="button" onClick={()=>seleccionarFiltro('atencion')}
+          className={(atencion.length ? 'portal-estado chip-alerta' : 'portal-estado chip-cumple')+' portal-estado-enlace'}
+          aria-label="Ver asuntos que requieren atención">
+          {atencion.length ? `${atencion.length} asuntos por atender` : 'Sin asuntos vencidos'} ›
+        </button>
       </div>
        <section className="portal-resumen" aria-label="Indicadores de gestión">
-        <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'} />
-        <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo" />
-        <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok" />
+        <Kpi valor={atencion.length} etiqueta="Pendientes de atención" tono={atencion.length ? 'alerta' : 'ok'}
+          onClick={()=>seleccionarFiltro('atencion')} activo={filtroActivo==='atencion'} />
+        <Kpi valor={proximos.length} etiqueta="Próximas actividades" tono="proximo"
+          onClick={()=>seleccionarFiltro('proximos')} activo={filtroActivo==='proximos'} />
+        <Kpi valor={realizadosMes.length} etiqueta="Realizados este mes" tono="ok"
+          onClick={()=>seleccionarFiltro('realizados')} activo={filtroActivo==='realizados'} />
       </section>
-      <Link to={rutaBiblioteca} className="portal-acceso portal-acceso-ley" aria-label="Consultar Base de conocimientos sobre la Ley 21.442">
-        <strong>Base de conocimientos</strong>
-        <span>Consulta las guías y artículos de la Ley N.º 21.442 sobre copropiedad inmobiliaria.</span>
-        <b aria-hidden="true">›</b>
-      </Link>
+      <ListaFiltradaResumen filtro={filtroActivo} atencion={atencion}
+        proximos={proximos} realizados={realizados} realizadosMes={realizadosMes}
+        contexto={contexto} onCerrar={()=>seleccionarFiltro(filtroActivo)}/>
       {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
         <section className="portal-inicio-bloque">
-          <h2 className="h4">Últimos movimientos</h2>
-          {atencion.length > 0 && <div className="portal-lista">{atencion.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} alDetalle={vistaPrevia ? cambiarTab : null} />)}</div>}
-          {proximos.length > 0 && <div className="portal-lista">{proximos.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} alDetalle={vistaPrevia ? cambiarTab : null} fechaDestacada />)}</div>}
-          {realizados.length > 0 && <div className="portal-timeline">{realizados.slice(0, 3).map(item => <FilaTimeline key={item.id} item={item} />)}</div>}
-          {informes.length > 0 && <div className="portal-documentos-resumen">{informes.slice(0, 2).map((d, i) => <TarjetaDocumento key={`${d.id}-${i}`} documento={d} />)}</div>}
+          <div className="portal-seccion-titulo portal-seccion-titulo-accion">
+            <h2 className="h4">Últimos movimientos</h2>
+            <button type="button" className="portal-ver-todos" onClick={()=>seleccionarFiltro('movimientos')}>
+              Ver todos ›
+            </button>
+          </div>
+          {atencion.length > 0 && <div className="portal-lista">{atencion.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} contexto={contexto} />)}</div>}
+          {proximos.length > 0 && <div className="portal-lista">{proximos.slice(0, 3).map(item => <TarjetaActividad key={item.id} item={item} contexto={contexto} fechaDestacada />)}</div>}
+          {realizados.length > 0 && <div className="portal-timeline">{realizados.slice(0, 3).map(item => <FilaTimeline key={item.id} item={item} contexto={contexto} />)}</div>}
+          {informes.length > 0 && <div className="portal-documentos-resumen">{informes.slice(0, 2).map((d, i) => <TarjetaDocumento key={`${d.id}-${i}`} documento={d}
+            contexto={{...contexto,comunidadId:vista.comunidad.comunidad_id}} />)}</div>}
         </section>
       ) : (
         <p className="portal-sin-movimientos">Todavía no hay movimientos publicados. Consulta las gestiones y documentos desde el menú de navegación.</p>
