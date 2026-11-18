@@ -813,7 +813,33 @@ function AbrirPdfLevantamiento({id,clienteId=null}) {
       setCreando(false);
       return;
     }
-    ventana.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe Coproactiva</title></head><body><p>Preparando informe…</p></body></html>');
+    // Pantalla visible desde el primer instante en la pestaña nueva;
+    // evita el blanco de about:blank durante el RPC y la firma de fotografías.
+    ventana.document.write(`<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Preparando informe · Coproactiva</title>
+<style>
+  :root{color-scheme:light}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;
+    background:#f8f5f1;color:#2d3749;font-family:system-ui,-apple-system,sans-serif}
+  main{text-align:center;max-width:400px;width:100%;padding:38px 24px;
+    border-radius:20px;background:#fff;box-shadow:0 12px 35px #443a3014}
+  .logo{color:#a75220;font-weight:800;letter-spacing:.13em;text-transform:uppercase;font-size:13px}
+  .spinner{width:52px;height:52px;border:4px solid #f4e1d3;border-top-color:#bf6126;
+    border-radius:50%;margin:26px auto;animation:girar .85s linear infinite}
+  h1{font-size:21px;line-height:1.3;margin:0 0 10px}
+  p{color:#65717e;font-size:14px;line-height:1.55;margin:0}
+  small{display:block;color:#8a9299;margin-top:18px;font-size:12px}
+  @keyframes girar{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+</style></head><body><main role="status" aria-live="polite">
+<div class="logo">Coproactiva</div><div class="spinner" aria-hidden="true"></div>
+<h1>Preparando tu informe</h1>
+<p>Estamos reuniendo los datos y las fotografías del levantamiento.</p>
+<small>El documento se mostrará aquí cuando esté listo.</small>
+</main></body></html>`);
     ventana.document.close();
     try {
       const {abrirInformeClienteLevantamiento}=await import('../../lib/informeClienteLevantamiento');
