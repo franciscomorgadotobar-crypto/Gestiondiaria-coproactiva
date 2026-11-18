@@ -13,6 +13,7 @@ import { leerAutomaticas, guardarAutomaticas } from '../lib/conocimientos';
 import { usePestanaHistorial } from '../lib/pestanasHistorial';
 import IconoNavegacion, { iconoRutaCoproactiva } from './IconoNavegacion';
 import Campana from './Campana';
+import SlidingPill from './SlidingPill';
 
 const ESTADOS_MENU = ['cerrado', 'mas'];
 
@@ -408,6 +409,12 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     return item.ruta ? activa(pathname, item.ruta) : false;
   }
 
+  // La cápsula también resalta «Más» cuando la sección activa está allí.
+  const opcionEnMas=mostrarMasMovil && menuMasOperacion.some(itemMovilActivo);
+  const opcionPill=mostrarMasMovil && (masAbierto||opcionEnMas)
+    ? 'mas' : barraMovil.find(itemMovilActivo)?.id||null;
+  const distribucionPill=barraMovil.map(item=>item.id).join('|')+(mostrarMasMovil?'|mas':'');
+
   function ejecutarItemMovil(item) {
     // En la barra principal, navegar crea historial (Atrás recupera el módulo
     // anterior). Desde «Más» se sustituye solo la entrada temporal del diálogo.
@@ -599,13 +606,15 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
 
       {mostrarBarraMovil && (
         <>
-          <nav className={'barra-inferior-movil' + (enAprendizaje ? ' barra-inferior-aprendizaje' : '')}
+          <nav className={'barra-inferior-movil con-sliding-pill' + (enAprendizaje ? ' barra-inferior-aprendizaje' : '')}
                style={{ '--columnas-nav-movil': mostrarMasMovil ? 5 : barraMovil.length }}
                aria-label="Navegación principal">
+            <SlidingPill activo={opcionPill} distribucion={distribucionPill}/>
             {barraMovil.map(item => (
               <button
                 key={item.id}
                 type="button"
+                data-pill-tab={item.id}
                 className={'nav-movil-item' + (itemMovilActivo(item) ? ' activo' : '')}
                 aria-current={itemMovilActivo(item) ? 'page' : undefined}
                 onClick={() => ejecutarItemMovil(item)}
@@ -620,8 +629,8 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
               </button>
             ))}
 
-            {mostrarMasMovil && <button type="button" ref={botonMasRef}
-                    className={'nav-movil-item' + (masAbierto ? ' activo' : '')}
+            {mostrarMasMovil && <button type="button" ref={botonMasRef} data-pill-tab="mas"
+                    className={'nav-movil-item' + (opcionPill==='mas' ? ' activo' : '')}
                     onClick={() => setMasAbierto(v => !v)}
                     aria-haspopup="dialog"
                     aria-expanded={masAbierto}>
