@@ -40,6 +40,32 @@
   font-weight: 750;
 }
 .conocimientos-insignia svg { color: var(--kb-cobre); flex: 0 0 auto; }
+/* Lupa de la biblioteca: la fila empuja el botón hasta el extremo derecho
+   sin tapar la insignia de contenidos y sin reutilizar el menú inferior. */
+.conocimientos-cabecera-acciones{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  width:100%;min-width:0;
+}
+.conocimientos-cabecera-acciones .conocimientos-insignia{
+  min-width:0;flex:0 1 auto;
+}
+.conocimientos-buscar-boton{
+  display:grid;place-items:center;flex:0 0 44px;
+  height:44px;width:44px;margin-left:auto;
+  border-radius:12px;border:1px solid #ead0bb;
+  background:#fff3e9;color:var(--kb-ink);
+  cursor:pointer;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .15s ease,border-color .15s ease;
+}
+.conocimientos-buscar-boton:hover,
+.conocimientos-buscar-boton[aria-expanded="true"]{
+  background:#ffe9d7;border-color:#ba7a4d;
+}
+.conocimientos-buscar-boton:focus-visible{
+  outline:2px solid var(--kb-cobre);outline-offset:3px;
+}
+
 .conocimientos-cuerpo {
   padding: 0 clamp(16px, 3vw, 34px);
   display: block;
@@ -235,6 +261,13 @@
   .conocimientos-cabecera h1 { font-size: 23px; margin-bottom: 9px; }
   .conocimientos-cabecera p { font-size: 14px; line-height: 1.48; margin-bottom: 12px; }
   .conocimientos-insignia { padding: 10px 13px; font-size: 12px; }
+  .conocimientos-cabecera-acciones{gap:8px}
+  .conocimientos-cabecera-acciones .conocimientos-insignia{padding:10px 12px;font-size:12px}
+  .conocimientos-buscar-boton{
+    margin-right:-8px; /* casi hasta el borde derecho de la pantalla */
+    flex-basis:44px;width:44px;height:44px;
+  }
+
   .conocimientos-cuerpo { padding: 13px 12px 26px; }
   .conocimientos-filtros-escritorio { display: none; }
   .conocimientos-tarjetas { gap: 11px; }
@@ -283,6 +316,7 @@
 }
 @media (prefers-reduced-motion:reduce) {
   .conocimientos-chevron { transition: none; }
+  .conocimientos-buscar-boton { transition: none; }
   .conocimientos-tarjeta-desarrollo { animation: none; }
 }
 

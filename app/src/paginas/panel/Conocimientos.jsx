@@ -3,13 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { useSesion } from '../../lib/sesion';
 import biblioteca from '../../datos/ley21442.contenidos.json';
 import { obtenerLeccion } from '../../datos/ley21442.lecciones.js';
+import { crearIndiceConocimientos, filtrarConocimientos } from '../../lib/busquedaConocimientos.js';
 import './Conocimientos.css';
 
 const contenidos = biblioteca.contenidos;
 const materias = [...new Set(contenidos.map(item => item.categoria).filter(Boolean))];
 const CLAVE_LEIDOS = 'coproactiva:conocimientos:leidos:';
-export const EVENTO_BUSCAR = 'coproactiva:conocimientos:buscar';
-export const EVENTO_ESTADO_BUSCAR = 'coproactiva:conocimientos:estado-busqueda';
+
+const indiceContenidos = crearIndiceConocimientos(contenidos, obtenerLeccion);
 
 function leerConsultados(usuarioId) {
   if (!usuarioId) return [];
@@ -35,16 +36,24 @@ export default function Conocimientos() {
   const [consultados, setConsultados] = useState(() => leerConsultados(usuarioId));
   const tarjetasRef = useRef(new Map());
   const buscadorRef = useRef(null);
+  const buscadorEscritorioRef = useRef(null);
   const listadoRef = useRef(null);
   const primeraApertura = useRef(false);
-  const resultados = useMemo(() => {
-    const palabra = busqueda.trim().toLocaleLowerCase('es');
-    return contenidos.filter(item =>
-      (materia === 'Todas' || item.categoria === materia) &&
-      (!palabra || [item.titulo, item.texto, item.explicacion, item.precaucion, item.categoria, item.referencia, obtenerLeccion(item)?.desarrollo, obtenerLeccion(item)?.aplicacion, ...((obtenerLeccion(item)?.detalles || []).flat())]
-        .some(valor => (valor || '').toLocaleLowerCase('es').includes(palabra)))
-    );
-  }, [busqueda, materia]);
+  const resultados = useMemo(
+    () => filtrarConocimientos(indiceContenidos, busqueda, materia),
+    [busqueda, materia]
+  );
+
+  function abrirBusqueda() {
+    // En escritorio el filtro ya está visible y se enfoca directamente.
+    // En móvil se despliega el buscador táctil del mismo componente.
+    if (window.matchMedia?.('(min-width: 900px)').matches) {
+      buscadorEscritorioRef.current?.focus();
+      buscadorEscritorioRef.current?.scrollIntoView({block:'center',behavior:'smooth'});
+      return;
+    }
+    setBuscarVisible(true);
+  }
 
   useEffect(() => {
     setConsultados(leerConsultados(usuarioId));
@@ -111,11 +120,11 @@ export default function Conocimientos() {
     }
   }
 
-  const filtros = (
+  const filtros = (refInput) => (
     <>
       <label className="conocimientos-campo">
         <span>Buscar contenido</span>
-        <input ref={buscadorRef} type="search" value={busqueda}
+        <input ref={refInput} type="search" value={busqueda}
           onChange={evento => setBusqueda(evento.target.value)}
           placeholder="Busca por concepto, tema o artículo…" autoComplete="off" />
       </label>
@@ -134,18 +143,29 @@ export default function Conocimientos() {
       <header className="conocimientos-cabecera">
         <h1>Base de conocimientos</h1>
         <p>Aprende sobre administración de comunidades y la Ley N° 21.442, artículo por artículo.</p>
-        <div className="conocimientos-insignia">
-          <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 6C9 4 6 4 3 5v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1zM12 6v14"/>
-          </svg>
-          {contenidos.length} contenidos · Ley 21.442
+        <div className="conocimientos-cabecera-acciones">
+          <div className="conocimientos-insignia">
+            <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 6C9 4 6 4 3 5v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1zM12 6v14"/>
+            </svg>
+            {contenidos.length} contenidos · Ley 21.442
+          </div>
+          <button type="button" className="conocimientos-buscar-boton"
+            onClick={abrirBusqueda} aria-label="Buscar dentro de los contenidos de la Ley 21.442"
+            aria-expanded={buscarVisible} title="Buscar contenidos">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="10.8" cy="10.8" r="7.1" />
+              <path d="m16 16 5 5" />
+            </svg>
+          </button>
         </div>
       </header>
 
       <div className="conocimientos-cuerpo">
         <section className="conocimientos-filtros-escritorio" aria-label="Filtros de la biblioteca">
-          {filtros}
+          {filtros(buscadorEscritorioRef)}
           <span className="conocimientos-resultado-cantidad">{resultados.length} contenidos encontrados</span>
         </section>
 
@@ -301,7 +321,10 @@ export default function Conocimientos() {
               <button type="button" onClick={() => setBuscarVisible(false)}
                 aria-label="Cerrar búsqueda">×</button>
             </div>
-            {filtros}
+            {filtros(buscadorRef)}
+            <span className="conocimientos-resultado-cantidad" role="status" aria-live="polite">
+              {resultados.length} de {contenidos.length} contenidos encontrados
+            </span>
             <div className="conocimientos-buscador-acciones">
               <button type="button" onClick={() => { setBusqueda(''); setMateria('Todas'); }}>
                 Limpiar
