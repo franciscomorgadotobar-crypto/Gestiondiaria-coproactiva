@@ -37,5 +37,5 @@ test('La biblioteca figura en el menú Más y en la navegación cliente',()=>{
   assert.match(panel,/cliente-conocimientos.*IconoNavegacion/);
   assert.match(panel,/if \(esCliente && pathname === '\/portal\/conocimientos'\)/);
   assert.match(panel,/navegar\('\/portal'\)/);
-  assert.match(portal,/<Link to="\/portal\/conocimientos" className="portal-acceso portal-acceso-ley"/);
+  assert.match(portal,/<Link to=\{rutaBiblioteca\} className="portal-acceso portal-acceso-ley"/);
 });
