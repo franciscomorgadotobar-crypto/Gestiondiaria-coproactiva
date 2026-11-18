@@ -142,6 +142,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   }, [perfil?.id, pathname]);
 
   const esCliente = perfil?.rol === 'cliente';
+  const enPortalCliente = esCliente && (pathname === '/portal' || pathname.startsWith('/portal/'));
   const puedeConfigurar = perfil && ['superadmin', 'admin', 'jefatura'].includes(perfil.rol);
   const puedeCambiarArea = Boolean(puedeConfigurar);
   const esAdministracion = perfil && ['superadmin', 'admin'].includes(perfil.rol);
@@ -274,6 +275,11 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     const comun = { width: 21, height: 21, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
     if (tipo === 'conocimientos') return <IconoNavegacion tipo="conocimientos" size={21} />;
     if (tipo === 'buscar-conocimientos') return <svg {...comun}><circle cx="10.7" cy="10.7" r="7.2"/><path d="m16 16 5 5"/></svg>;
+    if (tipo === 'resumen') return <svg {...comun}><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>;
+    if (tipo === 'compromisos') return <svg {...comun}><path d="M8 4h8M9 3h6v3H9z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="m8 12 2 2 4-4M8 18h8"/></svg>;
+    if (tipo === 'documentos') return <svg {...comun}><path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h7M9 16h7"/></svg>;
+    if (tipo === 'incidencias') return <svg {...comun}><path d="M12 3 2 21h20zM12 9v5M12 18h.01"/></svg>;
+    if (tipo === 'mantencion') return <svg {...comun}><path d="m14 6 4-4 4 4-4 4M18 2v6a6 6 0 0 1-6 6H6m4 4-4 4-4-4 4-4M6 22v-6"/></svg>;
     if (tipo === 'inicio') return <svg {...comun}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg>;
     if (tipo === 'comunidades') return <svg {...comun}><path d="M4 20h16"/><path d="M6 20V7h12v13"/><path d="M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>;
     if (tipo === 'levantamientos') return <svg {...comun}><path d="M8 4h8"/><path d="M9 3h6v3H9z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="m8 11 1.5 1.5L12 10M14 11h2M8 16l1.5 1.5L12 15M14 16h2"/></svg>;
@@ -354,7 +360,17 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     { id: 'clientes', etiqueta: 'Clientes', ruta: '/clientes', mostrar: esSuperadmin }
   ].filter(x => x.mostrar !== false);
 
-  const opcionesBarra = enAprendizaje ? [
+  // Barra nativa de cliente: sustituye las pestañas horizontales de la ficha.
+  // Las opciones secundarias quedan en «Más», sin perder ninguna sección.
+  const opcionesPortalCliente = comunidadPortalId ? [
+    {id:'resumen',etiqueta:'Resumen',ruta:enlacePortal('resumen','Resumen').ruta,activo:()=>tabPortal==='resumen'},
+    {id:'compromisos',etiqueta:'Acuerdos',ruta:enlacePortal('compromisos','Acuerdos').ruta,activo:()=>tabPortal==='compromisos'},
+    {id:'levantamientos',etiqueta:'Levantamientos',ruta:enlacePortal('levantamientos','Levantamientos').ruta,activo:()=>tabPortal==='levantamientos'},
+    {id:'documentos',etiqueta:'Documentos',ruta:enlacePortal('documentos','Documentos').ruta,activo:()=>tabPortal==='documentos'},
+    {id:'incidencias',etiqueta:'Incidencias',ruta:enlacePortal('incidencias','Incidencias').ruta,activo:()=>tabPortal==='incidencias'},
+    {id:'mantencion',etiqueta:'Mantenciones',ruta:enlacePortal('mantencion','Mantenciones').ruta,activo:()=>tabPortal==='mantencion'}
+  ] : [{id:'comunidades',etiqueta:'Comunidades',ruta:'/portal',activo:()=>pathname==='/portal'}];
+  const opcionesBarra = enPortalCliente ? opcionesPortalCliente : enAprendizaje ? [
     { id: 'conocimientos', etiqueta: 'Aprendizaje', ruta: '/conocimientos' },
     { id: 'buscar-conocimientos', etiqueta: 'Buscar', accion: () =>
       window.dispatchEvent(new CustomEvent('coproactiva:conocimientos:buscar', { detail: { accion: 'alternar' } })) }
@@ -378,16 +394,16 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // tarjetas/chips del Home: «Más» no debe convertirse en un tercer menú.
   const menuMasOperacion = enOperacion ? [] : opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
-  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enDocumental || enAprendizaje;
+  const mostrarBarraMovil = enPortalCliente || enOperacion || enFinanzas || enConfiguracion || enComercial || enDocumental || enAprendizaje;
   // Operaciones se navega por cuatro accesos; Configuración contiene Mi cuenta.
   // «Más» permanece solo en áreas con navegación secundaria real.
-  const mostrarMasMovil = mostrarBarraMovil && !enOperacion && !enConfiguracion;
+  const mostrarMasMovil = mostrarBarraMovil && !enOperacion && !enConfiguracion && menuMasOperacion.length>0;
 
   function itemMovilActivo(item) {
     if (item.id === 'buscar-conocimientos') return buscarAprendizaje;
     if (item.id === 'conocimientos') return !buscarAprendizaje && activa(pathname, '/conocimientos');
     if (item.id === 'inicio') return pathname === '/inicio' && hash !== '#por-hacer';
-    if (item.id === 'levantamientos') return levantamientosActivo;
+    if (item.id === 'levantamientos' && !enPortalCliente) return levantamientosActivo;
     if (item.activo) return item.activo(pathname);
     return item.ruta ? activa(pathname, item.ruta) : false;
   }
