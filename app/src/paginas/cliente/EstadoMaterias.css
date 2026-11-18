@@ -83,3 +83,26 @@
 @media(max-width:720px){
  .estado-materias__seguimiento-anterior>.compromisos-wrap{padding:11px}
 }
+
+/* Respaldos de cada acuerdo: misma interacción Ver/Descargar del Gestor
+   Documental, en formato compacto dentro de la tarjeta o tabla. */
+.estado-materias__documentos{display:grid;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid #e8e1d9;min-width:0}
+.estado-materias__documentos-titulo{font:750 11px/1.35 var(--fuente-display);color:#536071}
+.estado-materias__documentos-titulo span{color:#818991}
+.estado-materias__documento{display:grid;gap:4px;padding:8px 10px;border:1px solid #e6e0d9;border-radius:8px;background:#fff;min-width:0}
+.estado-materias__documento-nombre{font-size:12px;line-height:1.4;font-weight:650;color:#354355;overflow-wrap:anywhere}
+.estado-materias__documento-acciones{display:flex;gap:8px 13px;flex-wrap:wrap;align-items:center}
+.estado-materias__documento-acciones button{border:0;background:transparent;color:var(--enlace);padding:5px 0;min-height:30px;text-align:left;font:750 10px/1.25 var(--fuente-display);text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.estado-materias__documento-acciones button:hover{text-decoration:underline}
+.estado-materias__documento-acciones button:focus-visible{outline:2px solid var(--borde-foco);outline-offset:2px}
+.estado-materias__documento-acciones button:disabled{opacity:.5;cursor:wait}
+.estado-materias__documento-privado{color:#aa6535;font-size:11px}
+.estado-materias__vinculacion{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;min-width:0}
+.estado-materias__vinculacion label{display:grid;gap:4px;flex:1 1 200px;min-width:0;font-size:11px;font-weight:650;color:#536071}
+.estado-materias__vinculacion select{width:100%;min-width:0;min-height:42px;border:1px solid #d8d2cb;border-radius:8px;background:#fff;padding:8px;color:#354355;font-size:12px}
+.estado-materias__vinculacion .boton{min-height:42px}
+@media(max-width:720px){
+ .estado-materias__documentos{margin-top:3px;padding-top:8px}
+ .estado-materias__documento{padding:9px}
+ .estado-materias__documento-acciones button{min-height:36px}
+}
