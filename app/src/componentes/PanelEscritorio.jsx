@@ -707,7 +707,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                 key={item.id}
                 type="button"
                 data-pill-tab={item.id}
-                className={'nav-movil-item' + (itemMovilActivo(item) ? ' activo' : '')}
+                className={'nav-movil-item' + (activoPill === item.id ? ' activo' : '')}
                 aria-current={itemMovilActivo(item) ? 'page' : undefined}
                 onClick={() => ejecutarItemMovil(item)}
               >
