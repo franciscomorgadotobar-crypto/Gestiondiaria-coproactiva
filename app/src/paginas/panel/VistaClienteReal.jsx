@@ -55,7 +55,7 @@ export default function VistaClienteReal(){
   </main>;
   if(estado.cargando)return <p className="cargando">Verificando permisos de la cuenta cliente…</p>;
 
-  return <PanelEscritorio vistaCliente={{comunidadId,clienteId}}>
+  return <PanelEscritorio vistaCliente={{comunidadId,clienteId,clienteNombre:estado.cuenta.cliente_nombre||estado.cuenta.cliente_email||'Cliente'}}>
     <div className="vista-cliente-real-herramientas" role="region" aria-label="Herramientas del administrador">
       <div className="vista-cliente-real-identidad">
         <strong>Vista real del portal · Solo lectura</strong>
