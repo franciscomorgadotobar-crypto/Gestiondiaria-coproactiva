@@ -394,10 +394,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
   // tarjetas/chips del Home: «Más» no debe convertirse en un tercer menú.
   const menuMasOperacion = enOperacion ? [] : opcionesBarra.filter(x => !barraIds.slice(0, 4).includes(x.id));
   const alertasEnMas = menuMasOperacion.reduce((total, item) => total + Number(item.badge || 0), 0);
-  const mostrarBarraMovil = enPortalCliente || enOperacion || enFinanzas || enConfiguracion || enComercial || enDocumental || enAprendizaje;
+  const mostrarBarraMovil = enOperacion || enFinanzas || enConfiguracion || enComercial || enDocumental || enAprendizaje || enPortalCliente;
   // Operaciones se navega por cuatro accesos; Configuración contiene Mi cuenta.
   // «Más» permanece solo en áreas con navegación secundaria real.
-  const mostrarMasMovil = mostrarBarraMovil && !enOperacion && !enConfiguracion && menuMasOperacion.length>0;
+  const mostrarMasMovil = mostrarBarraMovil && !enOperacion && !enConfiguracion && (!enPortalCliente || menuMasOperacion.length>0);
 
   function itemMovilActivo(item) {
     if (item.id === 'buscar-conocimientos') return buscarAprendizaje;
