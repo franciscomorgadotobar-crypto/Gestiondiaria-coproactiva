@@ -15,7 +15,7 @@ test('Barra móvil del cliente reemplaza por completo chips horizontales',()=>{
    assert.match(nav,new RegExp("id:'"+id+"'"));
  }
  assert.match(nav,/const opcionesBarra = enPortalCliente \? opcionesPortalCliente/);
- assert.match(nav,/const mostrarBarraMovil = enPortalCliente \|\|/);
+ assert.match(nav,/const mostrarBarraMovil = enOperacion \|\|[\s\S]*?\|\| enPortalCliente/);
  assert.match(nav,/menuMasOperacion\.length>0/);
  assert.match(portal,/esVistaPrevia && <nav className="pestanas portal-pestanas-movil/);
  assert.doesNotMatch(portal,/\bDetalleCliente\b[\s\S]*?return \([^]*?<nav className=\{\x60pestanas portal-pestanas-movil/);
