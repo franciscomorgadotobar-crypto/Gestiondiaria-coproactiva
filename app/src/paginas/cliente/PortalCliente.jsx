@@ -235,7 +235,7 @@ function construirVista(comunidad, datos) {
     };
 
     if (finalizado) {
-      realizados.push({ ...base, fecha: l.enviado_en || l.checkin_en || l.creado_en, estado: 'Realizado' });
+      realizados.push({ ...base, fecha: l.checkin_en || l.programado_para || l.creado_en, estado: 'Realizado' });
     } else if (programado && programado > ahora) {
       proximos.push({ ...base, fecha: l.programado_para, estado: 'Programado' });
     } else if (programado && programado <= ahora) {
@@ -868,7 +868,7 @@ function LevantamientosComunidad({ vista, clienteId = null }) {
                 <div className="micro apagado portal-meta">
                   {l.periodo && <span>{l.periodo}</span>}
                   {l.programado_para && <span>Programado: {fechaCL(l.programado_para, true)}</span>}
-                  {l.enviado_en && <span>Realizado: {fechaCL(l.enviado_en, true)}</span>}
+                  {(l.checkin_en||l.programado_para||l.creado_en) && <span>Visita: {fechaCL(l.checkin_en||l.programado_para||l.creado_en, true)}</span>}
                   {!l.programado_para && <span>Creado: {fechaCL(l.creado_en)}</span>}
                 </div>
                 <div className="portal-acciones">
