@@ -339,9 +339,10 @@ const FILTROS_RESUMEN={
   atencion:'Pendientes de atención',
   proximos:'Próximas actividades',
   realizados:'Realizados este mes',
-  movimientos:'Todos los movimientos'
+  movimientos:'Todos los movimientos',
+  informes:'Informes publicados'
 };
-function ListaFiltradaResumen({filtro,atencion,proximos,realizados,realizadosMes,contexto={},mostrarComunidad=false,onCerrar}){
+function ListaFiltradaResumen({filtro,atencion,proximos,realizados,realizadosMes,informes=[],contexto={},mostrarComunidad=false,onCerrar}){
   useEffect(()=>{
     if(!FILTROS_RESUMEN[filtro])return;
     const cuadro=window.requestAnimationFrame(()=>{
@@ -357,19 +358,25 @@ function ListaFiltradaResumen({filtro,atencion,proximos,realizados,realizadosMes
   const actividades=filtro==='atencion'?atencion
     :filtro==='proximos'?proximos
     :filtro==='realizados'?realizadosMes
+    :filtro==='informes'?[]
     :[...atencion,...proximos,...realizados].sort(compararFechaDesc);
+  const documentos=(filtro==='movimientos'||filtro==='informes')?informes:[];
   return <section id="portal-filtro-resultados" className="portal-resultados-filtrados"
     aria-label={FILTROS_RESUMEN[filtro]}>
     <header className="portal-resultados-cabecera">
-      <h2 className="h4">{FILTROS_RESUMEN[filtro]} ({actividades.length})</h2>
+      <h2 className="h4">{FILTROS_RESUMEN[filtro]} ({actividades.length+documentos.length})</h2>
       <button type="button" onClick={onCerrar}>Cerrar filtro ×</button>
     </header>
-    {actividades.length
-      ? <div className="portal-lista">{actividades.map(item=><TarjetaActividad
-          key={item.comunidadId+':'+item.id} item={item} contexto={contexto}
-          mostrarComunidad={mostrarComunidad} fechaDestacada={filtro==='proximos'}/>)}</div>
-      : <EstadoVacio titulo="No hay movimientos en este grupo"
-          texto="Cuando se publique una actividad de este tipo aparecerá aquí."/>}
+    {actividades.length>0&&<div className="portal-lista">{actividades.map(item=><TarjetaActividad
+      key={item.comunidadId+':'+item.id} item={item} contexto={contexto}
+      mostrarComunidad={mostrarComunidad} fechaDestacada={filtro==='proximos'}/>)}</div>}
+    {documentos.length>0&&<div className="portal-documentos-resumen">
+      {documentos.map((documento,i)=><TarjetaDocumento key={documento.id+':'+i} documento={documento}
+        contexto={contexto} mostrarComunidad={mostrarComunidad}/>)}
+    </div>}
+    {actividades.length===0&&documentos.length===0&&
+      <EstadoVacio titulo="No hay movimientos en este grupo"
+        texto="Cuando se publique una actividad de este tipo aparecerá aquí."/>}
   </section>;
 }
 
@@ -470,7 +477,7 @@ function DashboardCliente() {
 
             <ListaFiltradaResumen filtro={filtroActivo} atencion={resumen.atencion}
               proximos={resumen.proximos} realizados={resumen.realizados} realizadosMes={resumen.realizadosMes}
-              mostrarComunidad onCerrar={()=>seleccionarFiltro(filtroActivo)}/>
+              informes={resumen.informes} mostrarComunidad onCerrar={()=>seleccionarFiltro(filtroActivo)}/>
 
             <section id="portal-lista-atencion" className="portal-seccion portal-seccion-principal">
               <EncabezadoSeccion titulo="Requiere atención" cantidad={resumen.atencion.length} />
@@ -508,7 +515,12 @@ function DashboardCliente() {
             </section>
 
             <section className="portal-seccion">
-              <EncabezadoSeccion titulo="Últimos informes" cantidad={resumen.informes.length} />
+              <div className="portal-seccion-titulo portal-seccion-titulo-accion">
+                <h2 className="h4">Últimos informes</h2>
+                <button type="button" className="portal-ver-todos" onClick={()=>seleccionarFiltro('informes')}>
+                  Ver todos ({resumen.informes.length}) ›
+                </button>
+              </div>
               {resumen.informes.length === 0 ? (
                 <EstadoVacio titulo="Aún no hay informes publicados" texto="Los PDF disponibles para tu cuenta quedarán reunidos en esta sección." />
               ) : (
@@ -865,7 +877,7 @@ function ResumenComunidad({ vista, cambiarTab, vistaPrevia = false, clienteId=nu
       </section>
       <ListaFiltradaResumen filtro={filtroActivo} atencion={atencion}
         proximos={proximos} realizados={realizados} realizadosMes={realizadosMes}
-        contexto={contexto} onCerrar={()=>seleccionarFiltro(filtroActivo)}/>
+        informes={informes} contexto={{...contexto,comunidadId:vista.comunidad.comunidad_id}} onCerrar={()=>seleccionarFiltro(filtroActivo)}/>
       {(atencion.length > 0 || proximos.length > 0 || realizados.length > 0 || informes.length > 0) ? (
         <section className="portal-inicio-bloque">
           <div className="portal-seccion-titulo portal-seccion-titulo-accion">
