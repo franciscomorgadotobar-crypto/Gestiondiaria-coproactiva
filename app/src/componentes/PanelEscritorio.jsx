@@ -50,10 +50,12 @@ function usePillCorredera(opcionActiva, firmaOpciones) {
         return;
       }
 
+      // Si hay una sola pestaña, evitar una cápsula gigante de lado a lado.
+      const anchoPill = Math.min(132, Math.max(24, botonRect.width - 8));
       const destino = {
-        left: botonRect.left - barraRect.left + 4,
+        left: botonRect.left - barraRect.left + (botonRect.width - anchoPill) / 2,
         top: botonRect.top - barraRect.top + 2,
-        width: Math.max(24, botonRect.width - 8),
+        width: anchoPill,
         height: Math.max(38, botonRect.height - 4)
       };
       const pillRect = pill.getBoundingClientRect();
