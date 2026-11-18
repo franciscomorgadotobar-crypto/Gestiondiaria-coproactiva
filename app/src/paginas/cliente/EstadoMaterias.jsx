@@ -1,5 +1,6 @@
 import {Fragment,useEffect,useState} from 'react';
 import {supabase} from '../../lib/supabase';
+import {descargarDeDrive,verEnDrive} from '../../lib/drive';
 import './EstadoMaterias.css';
 
 export const ESTADOS_MATERIAS={
@@ -69,6 +70,89 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
   const [editando,setEditando]=useState(null);
   const [form,setForm]=useState(VACIO);
   const [guardando,setGuardando]=useState(false);
+  const [archivos,setArchivos]=useState([]);
+  const [vinculos,setVinculos]=useState([]);
+  const [seleccion,setSeleccion]=useState({});
+  const [errorArchivo,setErrorArchivo]=useState('');
+  const [ocupadoArchivo,setOcupadoArchivo]=useState(false);
+  const idsMateria=materias.map(x=>x.id).join('|');
+  useEffect(()=>{
+    let activo=true;
+    if(!comunidadId||!idsMateria){setArchivos([]);setVinculos([]);return;}
+    async function cargarVinculos(){
+      const [docs,links]=await Promise.all([
+        supabase.rpc('drive_listar_documentos',{
+          p_comunidad_id:comunidadId,p_origen_tipo:null,p_origen_id:null,p_incluir_eliminados:false
+        }),
+        supabase.from('estado_materia_documentos')
+          .select('materia_id,documento_id').in('materia_id',idsMateria.split('|'))
+      ]);
+      if(!activo)return;
+      if(docs.error||links.error){
+        setErrorArchivo('No se pudieron consultar los adjuntos asociados: '+(docs.error||links.error).message);
+        return;
+      }
+      setErrorArchivo('');
+      setArchivos((docs.data||[]).filter(d=>!d.eliminado_en&&(!soloLecturaCliente||d.visible_cliente)));
+      setVinculos(links.data||[]);
+    }
+    cargarVinculos();
+    return ()=>{activo=false;};
+  },[comunidadId,idsMateria,soloLecturaCliente]);
+
+  async function asociarArchivo(materia){
+    const idDoc=seleccion[materia.id];if(!administrador||!idDoc||ocupadoArchivo)return;
+    setOcupadoArchivo(true);setErrorArchivo('');
+    const {error:fallo}=await supabase.from('estado_materia_documentos')
+      .insert({materia_id:materia.id,documento_id:idDoc});
+    if(fallo)setErrorArchivo(fallo.message);
+    else setVinculos(v=>[...v,{materia_id:materia.id,documento_id:idDoc}]);
+    setSeleccion(v=>({...v,[materia.id]:''}));
+    setOcupadoArchivo(false);
+  }
+  async function quitarArchivo(materia,idDoc){
+    if(!administrador||ocupadoArchivo)return;
+    setOcupadoArchivo(true);setErrorArchivo('');
+    const {error:fallo}=await supabase.from('estado_materia_documentos').delete()
+      .eq('materia_id',materia.id).eq('documento_id',idDoc);
+    if(fallo)setErrorArchivo(fallo.message);
+    else setVinculos(v=>v.filter(l=>l.materia_id!==materia.id||l.documento_id!==idDoc));
+    setOcupadoArchivo(false);
+  }
+  async function abrirArchivo(doc,descargar=false){
+    try{
+      if(descargar)await descargarDeDrive(comunidadId,doc);
+      else await verEnDrive(comunidadId,doc);
+    }catch(e){setErrorArchivo('No se pudo abrir el documento: '+(e.message||'Error desconocido'));}
+  }
+  function documentosMateria(item){
+    const asociados=vinculos.filter(l=>l.materia_id===item.id)
+      .map(l=>archivos.find(d=>d.id===l.documento_id)).filter(Boolean);
+    const disponibles=archivos.filter(d=>!vinculos.some(l=>l.materia_id===item.id&&l.documento_id===d.id));
+    if(!asociados.length&&!administrador)return null;
+    return <div className="estado-materias__adjuntos">
+      {asociados.map(d=><div key={d.id} className="estado-materias__adjunto">
+        <span aria-hidden="true">📎</span><span className="estado-materias__archivo-nombre">{d.nombre}</span>
+        {!d.visible_cliente&&<small>Interno</small>}
+        <button type="button" onClick={()=>abrirArchivo(d)}>Ver</button>
+        <button type="button" onClick={()=>abrirArchivo(d,true)}>Descargar</button>
+        {administrador&&<button type="button" disabled={ocupadoArchivo}
+          onClick={()=>quitarArchivo(item,d.id)} aria-label={'Desvincular '+d.nombre}>Desvincular</button>}
+      </div>)}
+      {administrador&&disponibles.length>0&&<div className="estado-materias__vincular">
+        <label htmlFor={'materia-documento-'+item.id}>Vincular documento existente</label>
+        <select id={'materia-documento-'+item.id} value={seleccion[item.id]||''}
+          onChange={e=>setSeleccion(v=>({...v,[item.id]:e.target.value}))}>
+          <option value="">Elegir archivo del Drive…</option>
+          {disponibles.map(d=><option key={d.id} value={d.id}>
+            {d.nombre}{d.visible_cliente?'':' (no publicado al cliente)'}
+          </option>)}
+        </select>
+        <button type="button" disabled={!seleccion[item.id]||ocupadoArchivo}
+          onClick={()=>asociarArchivo(item)}>Vincular</button>
+      </div>}
+    </div>;
+  }
 
   async function cargar(){
     if(!comunidadId)return;
@@ -139,6 +223,7 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
         onClick={()=>abrir(null)}>+ Nueva materia</button>}
     </header>
     <h3 className="estado-materias__subtitulo"><span>01</span> Estado por materia</h3>
+    {errorArchivo&&<div className="aviso aviso-critico" role="alert">{errorArchivo}</div>}
     {error&&<div className="aviso aviso-critico" role="alert">{error}</div>}
     <datalist id="estado-materias-responsables">
       <option value="Coproactiva"/><option value="Inmobiliaria"/><option value="Ambas partes"/>
@@ -164,7 +249,8 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
                     aria-label={'Editar materia: '+item.materia}>
                   {item.materia}<span className="estado-materias__lapiz" aria-hidden="true">✎</span>
                 </button>
-                :<span>{item.materia}</span>}</td>
+                :<span>{item.materia}</span>}
+                {documentosMateria(item)}</td>
               <td><EtiquetaAvance valor={item.avance}/></td>
               <td className="estado-materias__detalle">{item.estado_detalle||'Sin información'}</td>
               <td>{item.a_cargo_de||'Sin información'}</td>
@@ -188,6 +274,7 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
           </div>
           <p className="estado-materias__movil-estado">{item.estado_detalle||'Sin información'}</p>
           <p className="estado-materias__movil-responsable"><strong>A cargo de:</strong> {item.a_cargo_de||'Sin información'}</p>
+          {documentosMateria(item)}
           {editando===item.id&&<FormularioMateria {...editarProps}/>}
         </div>)}
       </div>
