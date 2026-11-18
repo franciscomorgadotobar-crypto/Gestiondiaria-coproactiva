@@ -407,3 +407,21 @@
 @media(prefers-reduced-motion:reduce){
  .portal-kpi-clickeable{transition:none}
 }
+
+/* Informes publicados desde Drive se presentan en una sola lista:
+   no es necesario volver a cargar un archivo al finalizar el informe. */
+.portal-documentos-drive{display:grid;gap:12px;margin-top:12px;min-width:0}
+.portal-archivo-drive{min-width:0;padding:16px 17px;border:1px solid var(--borde-suave,#e7dfd8);
+  border-radius:13px;background:var(--tarjeta,#fff);display:grid;gap:8px}
+.portal-archivo-drive-nombre{color:var(--texto-titulo,#293344);font-size:15px;line-height:1.45;
+  overflow-wrap:anywhere;font-weight:750}
+.portal-archivo-drive-meta{display:flex;gap:5px 13px;flex-wrap:wrap;line-height:1.5}
+.portal-archivo-drive-acciones{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.portal-archivo-drive-acciones button{appearance:none;background:none;border:0;padding:8px 0;
+  min-height:42px;cursor:pointer;color:var(--naranja,#9a4d1c);
+  font-size:12px;font-weight:750;letter-spacing:.07em;text-transform:uppercase}
+.portal-archivo-drive-acciones button:disabled{opacity:.55;cursor:wait}
+.portal-archivo-drive-acciones button:focus-visible{outline:2px solid var(--naranja,#9a4d1c);
+  outline-offset:3px;border-radius:4px}
+.portal-archivo-drive-acciones button:hover:not(:disabled){text-decoration:underline}
+@media(max-width:600px){.portal-archivo-drive{padding:15px 13px}}
