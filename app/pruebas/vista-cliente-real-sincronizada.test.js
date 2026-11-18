@@ -9,6 +9,7 @@ const portal=leer('src/paginas/cliente/PortalCliente.jsx');
 const panel=leer('src/componentes/PanelEscritorio.jsx');
 const app=leer('src/App.jsx');
 const capsulas=leer('src/componentes/BaseConocimientos.jsx');
+const conocimientos=leer('src/paginas/panel/Conocimientos.jsx');
 
 test('Vista de cliente ya no incrusta una maqueta con navegación administrativa',()=>{
   assert.doesNotMatch(selector,/<PortalCliente/);
@@ -51,4 +52,7 @@ test('Portal real y visor consultan los datos actualizados y la misma biblioteca
   assert.match(visor,/coproactiva:portal:actualizar/);
   assert.match(visor,/<Conocimientos\/>/);
   assert.match(capsulas,/\/vista-cliente\/conocimientos\?comunidad=/);
+  assert.match(conocimientos,/const siguiente=new URLSearchParams\(prev\)/);
+  assert.match(conocimientos,/parametros\.set\('capsula',siguiente\)/);
+  assert.match(conocimientos,/parametros\.delete\('capsula'\)/);
 });
