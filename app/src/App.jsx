@@ -36,6 +36,7 @@ const Conocimientos = lazy(() => import('./paginas/panel/Conocimientos'));
 // sin usarlo nunca.
 const PortalCliente = lazy(() => import('./paginas/cliente/PortalCliente'));
 const VistaCliente = lazy(() => import('./paginas/panel/VistaCliente'));
+const VistaClienteReal = lazy(() => import('./paginas/panel/VistaClienteReal'));
 // Propiedades es de administración: quien va a terreno con el teléfono no
 // tiene por qué descargarla.
 const Propiedades = lazy(() => import('./paginas/propiedades/Propiedades'));
@@ -238,6 +239,15 @@ export default function App() {
           <VistaCliente/>
         </Suspense></Interna>
       } />
+      {/* La vista de comprobación usa exactamente el shell de navegación
+          cliente, con sesión administrativa y RPC de lectura autorizada. */}
+      {['/vista-cliente/portal','/vista-cliente/conocimientos'].map(ruta=>(
+        <Route key={ruta} path={ruta} element={
+          <Privada><SoloInterno><Suspense fallback={<p className="cargando">Preparando portal cliente…</p>}>
+            <VistaClienteReal/>
+          </Suspense></SoloInterno></Privada>
+        }/>
+      ))}
       <Route path="/jarvis" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando Jarvis…</p>}><Jarvis /></Suspense></SoloComercial></Interna>} />
       <Route path="/compromisos" element={<Navigate to="/comunidades" replace />} />
       <Route path="/plantillas-correo" element={<Interna><PlantillasCorreo /></Interna>} />
