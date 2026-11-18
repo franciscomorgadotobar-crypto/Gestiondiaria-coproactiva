@@ -319,25 +319,6 @@ function DashboardCliente() {
   const [vistas, setVistas] = useState(null);
   const navegar = useNavigate();
   const [error, setError] = useState(null);
-  const [revision,setRevision]=useState(0);
-  // Ambas pantallas (cliente y vista administrativa) consultan las mismas
-  // funciones RPC. Sincronizar al recuperar foco y cada 30 s evita que un
-  // documento o avance publicado quede congelado hasta recargar la PWA.
-  useEffect(()=>{
-    if(!perfil?.id)return undefined;
-    const actualizar=()=>setRevision(v=>v+1);
-    const alVolver=()=>{if(!document.hidden)actualizar();};
-    const intervalo=window.setInterval(alVolver,30000);
-    window.addEventListener('focus',actualizar);
-    window.addEventListener('coproactiva:portal:actualizar',actualizar);
-    document.addEventListener('visibilitychange',alVolver);
-    return ()=>{
-      window.clearInterval(intervalo);
-      window.removeEventListener('focus',actualizar);
-      window.removeEventListener('coproactiva:portal:actualizar',actualizar);
-      document.removeEventListener('visibilitychange',alVolver);
-    };
-  },[perfil?.id]);
 
   useEffect(() => {
     if (!perfil?.id) return;
@@ -614,6 +595,26 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   const [vista, setVista] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [revision,setRevision]=useState(0);
+  // Ambas pantallas (cliente y vista administrativa) consultan las mismas
+  // funciones RPC. Sincronizar al recuperar foco y cada 30 s evita que un
+  // documento o avance publicado quede congelado hasta recargar la PWA.
+  useEffect(()=>{
+    if(!perfil?.id)return undefined;
+    const actualizar=()=>setRevision(v=>v+1);
+    const alVolver=()=>{if(!document.hidden)actualizar();};
+    const intervalo=window.setInterval(alVolver,30000);
+    window.addEventListener('focus',actualizar);
+    window.addEventListener('coproactiva:portal:actualizar',actualizar);
+    document.addEventListener('visibilitychange',alVolver);
+    return ()=>{
+      window.clearInterval(intervalo);
+      window.removeEventListener('focus',actualizar);
+      window.removeEventListener('coproactiva:portal:actualizar',actualizar);
+      document.removeEventListener('visibilitychange',alVolver);
+    };
+  },[perfil?.id]);
+
 
   useEffect(() => {
     if (!perfil?.id) return;
