@@ -609,11 +609,11 @@ export function informeHtml(datos) {
       <div><dt>Fecha</dt><dd>${fecha(control.checkin_en ?? control.enviado_en ?? control.creado_en)}</dd></div>
       <div><dt>Responsable</dt><dd>${escapar(control.responsable ?? '-')}</dd></div>
       <div><dt>Periodo</dt><dd>${escapar(control.periodo ?? '-')}</dd></div>
-      <div><dt>Check-in</dt><dd>${control.checkin_en ? `${hora(control.checkin_en)}${
+      ${datos.soloLecturaCliente ? '' : `<div><dt>Check-in</dt><dd>${control.checkin_en ? `${hora(control.checkin_en)}${
         control.checkin_precision != null ? `<small>Precisión ${Math.round(control.checkin_precision)} m</small>` : ''}`
         : control.checkin_excepcion
           ? `Sin GPS · excepción administrativa autorizada ${fecha(control.checkin_excepcion.autorizado_en, true)}`
-          : 'Sin registro'}</dd></div>
+          : 'Sin registro'}</dd></div>`}
     </dl>
   </header>
 
@@ -652,14 +652,16 @@ export function informeHtml(datos) {
   </div>` : ''}
 
   <p class="cierre">
-    ${control.checkin_en
+    ${datos.soloLecturaCliente ? '' : (
+      control.checkin_en
       ? oracion(`Check-in registrado el ${fecha(control.checkin_en, true)}${
           control.checkin_precision != null
             ? `, con precisión de ${Math.round(control.checkin_precision)} metros`
             : ''}`)
       : control.checkin_excepcion
         ? `No se registró un check-in geolocalizado. La finalización sin GPS fue autorizada por un superadministrador el ${fecha(control.checkin_excepcion.autorizado_en, true)}. Motivo: ${escapar(control.checkin_excepcion.motivo)}.`
-        : 'Sin check-in geolocalizado.'}
+        : 'Sin check-in geolocalizado.'
+    )}
     ${control.estado && ESTADO_CONTROL[control.estado] ? `Estado del levantamiento: ${ESTADO_CONTROL[control.estado].toLowerCase()}.` : ''}
     ${oracion(`Documento generado por CoproActiva el ${fecha(new Date().toISOString(), true)}`)}
   </p>
