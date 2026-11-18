@@ -106,3 +106,36 @@ export function textoFrecuencia(meses) {
   if (meses === 12) return 'Anual';
   return 'Cada ' + meses + ' meses';
 }
+
+/** Fecha del negocio; evita interpretar UTC como la fecha chilena. */
+export function fechaHoyChile(ahora = new Date()) {
+  const partes=new Intl.DateTimeFormat('es-CL',{
+    timeZone:'America/Santiago',year:'numeric',month:'2-digit',day:'2-digit'
+  }).formatToParts(ahora);
+  const campo=id=>partes.find(p=>p.type===id)?.value||'';
+  return campo('year')+'-'+campo('month')+'-'+campo('day');
+}
+
+/** Lectura operativa factual. No suplanta el análisis editorial de fuentes
+ * externas guardado en jarvis_analisis: usa solamente la agenda RLS actual. */
+export function lecturaOperativa(agenda,ahora=new Date()) {
+  if(!Array.isArray(agenda))return null;
+  const fecha=fechaHoyChile(ahora);
+  const n=contar(agenda);
+  const resumen='Al '+fechaCorta(fecha)+': '+n.vencido+' gestiones con atraso, '
+    +n.hoy+' para hoy, '+n.semana+' en los próximos siete días y '
+    +n.brecha+' datos por completar. Los valores reflejan la agenda operativa '
+    +'del sistema al momento de la consulta.';
+  const urgentes=agenda.filter(a=>['vencido','hoy','semana'].includes(a.urgencia))
+    .sort((a,b)=>{
+      const orden={vencido:0,hoy:1,semana:2};
+      return orden[a.urgencia]-orden[b.urgencia]
+        || (a.dias??9999)-(b.dias??9999)
+        || String(a.titulo||'').localeCompare(String(b.titulo||''),'es');
+    })
+    .slice(0,5).map(a=>({
+      titulo:a.titulo,detalle:a.accion||a.detalle||'',
+      ruta:a.ruta||'/jarvis',urgencia:a.urgencia
+    }));
+  return {fecha,resumen,urgentes,totales:n};
+}
