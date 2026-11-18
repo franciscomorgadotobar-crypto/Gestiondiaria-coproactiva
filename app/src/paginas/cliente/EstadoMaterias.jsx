@@ -1,5 +1,6 @@
 import {Fragment,useEffect,useState} from 'react';
 import {supabase} from '../../lib/supabase';
+import {descargarDeDrive,sePuedeVer,verEnDrive} from '../../lib/drive';
 import './EstadoMaterias.css';
 
 export const ESTADOS_MATERIAS={
@@ -58,6 +59,58 @@ function FormularioMateria({form,cambiar,guardar,cancelar,guardando,nuevo}){
   </form>;
 }
 
+
+/* Una materia puede tener varios respaldos existentes en Drive. El vínculo no
+ * mueve, copia ni elimina el archivo, y la API aplica permisos por comunidad. */
+function DocumentosMateria({comunidadId,materia,documentos,disponibles,administrador,onVincular,onDesvincular}){
+  const [seleccion,setSeleccion]=useState('');
+  const [ocupado,setOcupado]=useState(false);
+  const [error,setError]=useState('');
+  const candidatos=disponibles.filter(d=>!documentos.some(v=>v.id===d.id));
+  if(!administrador&&!documentos.length)return null;
+
+  async function ejecutar(accion){
+    if(ocupado)return;
+    setError('');setOcupado(true);
+    try{await accion();}
+    catch(e){setError(e?.message||'No se pudo completar la acción con el documento.');}
+    finally{setOcupado(false);}
+  }
+
+  return <section className="estado-materias__documentos" aria-label={'Respaldos de '+materia.materia}>
+    <strong className="estado-materias__documentos-titulo">
+      Adjuntos {documentos.length>0&&<span>({documentos.length})</span>}
+    </strong>
+    {documentos.map(doc=><div className="estado-materias__documento" key={doc.id}>
+      <span className="estado-materias__documento-nombre">{doc.nombre}</span>
+      {administrador&&!doc.visible_cliente&&<small className="estado-materias__documento-privado">No visible al cliente</small>}
+      <div className="estado-materias__documento-acciones">
+        {sePuedeVer(doc.mime)&&<button type="button" disabled={ocupado}
+          onClick={()=>ejecutar(()=>verEnDrive(comunidadId,doc))}>Ver</button>}
+        <button type="button" disabled={ocupado}
+          onClick={()=>ejecutar(()=>descargarDeDrive(comunidadId,doc))}>Descargar</button>
+        {administrador&&<button type="button" disabled={ocupado}
+          onClick={()=>ejecutar(()=>onDesvincular(materia.id,doc.id))}>Desvincular</button>}
+      </div>
+    </div>)}
+    {administrador&&<div className="estado-materias__vinculacion">
+      {candidatos.length>0?<><label>
+        Asociar archivo existente
+        <select value={seleccion} disabled={ocupado}
+          onChange={e=>setSeleccion(e.target.value)}>
+          <option value="">Selecciona un documento de Drive</option>
+          {candidatos.map(doc=><option key={doc.id} value={doc.id}>{doc.nombre}</option>)}
+        </select>
+      </label>
+      <button className="boton boton-secundario" type="button" disabled={!seleccion||ocupado}
+        onClick={()=>ejecutar(async()=>{await onVincular(materia.id,seleccion);setSeleccion('');})}>
+        {ocupado?'Procesando…':'Vincular'}
+      </button></>:<span className="micro apagado">No hay otros documentos disponibles en Drive.</span>}
+    </div>}
+    {error&&<p className="aviso aviso-critico" role="alert">{error}</p>}
+  </section>;
+}
+
 /**
  * Estado de avance por materia, reproduciendo el formato del informe de Santa Clara.
  * Las gestiones contractuales anteriores se mantienen en su tabla original.
@@ -69,6 +122,52 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
   const [editando,setEditando]=useState(null);
   const [form,setForm]=useState(VACIO);
   const [guardando,setGuardando]=useState(false);
+  const [documentosPorMateria,setDocumentosPorMateria]=useState({});
+  const [documentosDisponibles,setDocumentosDisponibles]=useState([]);
+
+  async function cargarDocumentos(listaMaterias){
+    const ids=listaMaterias.map(x=>x.id);
+    if(!ids.length){setDocumentosPorMateria({});setDocumentosDisponibles([]);return;}
+    try{
+      const [archivos,vinculos]=await Promise.all([
+        supabase.rpc('drive_listar_documentos',{
+          p_comunidad_id:comunidadId,p_origen_tipo:null,p_origen_id:null,p_incluir_eliminados:false
+        }),
+        supabase.from('estado_materia_documentos').select('materia_id,documento_id').in('materia_id',ids)
+      ]);
+      if(archivos.error)throw archivos.error;
+      if(vinculos.error)throw vinculos.error;
+      const docs=(archivos.data||[]).filter(d=>!d.eliminado_en&&(!soloLecturaCliente||d.visible_cliente===true));
+      const indice=new Map(docs.map(d=>[d.id,d]));
+      const porMateria={};
+      for(const relacion of vinculos.data||[]){
+        const doc=indice.get(relacion.documento_id);
+        if(!doc)continue;
+        (porMateria[relacion.materia_id]??=[]).push(doc);
+      }
+      setDocumentosDisponibles(docs);
+      setDocumentosPorMateria(porMateria);
+    }catch(e){
+      setError('No se pudieron cargar los documentos vinculados: '+(e?.message||'Error desconocido'));
+    }
+  }
+
+  async function vincularDocumento(materiaId,documentoId){
+    if(!administrador)throw new Error('Esta vista es de solo lectura.');
+    const {error:err}=await supabase.from('estado_materia_documentos')
+      .insert({materia_id:materiaId,documento_id:documentoId});
+    if(err)throw err;
+    await cargarDocumentos(materias);
+  }
+
+  async function desvincularDocumento(materiaId,documentoId){
+    if(!administrador)throw new Error('Esta vista es de solo lectura.');
+    if(!window.confirm('¿Desvincular el archivo de esta materia? El documento se conserva en Google Drive.'))return;
+    const {error:err}=await supabase.from('estado_materia_documentos').delete()
+      .eq('materia_id',materiaId).eq('documento_id',documentoId);
+    if(err)throw err;
+    await cargarDocumentos(materias);
+  }
 
   async function cargar(){
     if(!comunidadId)return;
@@ -83,7 +182,7 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
       .order('orden',{ascending:true})
       .order('creado_en',{ascending:true});
     if(err)setError('No fue posible cargar el estado por materia: '+err.message);
-    else{setMaterias(data||[]);setError('');}
+    else{setMaterias(data||[]);setError('');await cargarDocumentos(data||[]);}
     setCargando(false);
   }
   useEffect(()=>{setEditando(null);cargar();},[comunidadId,soloLecturaCliente]);
@@ -128,6 +227,8 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
   const fecha= materias.map(x=>x.fecha_informe).filter(Boolean).sort().at(-1);
   const titulo='Estado de avances y compromisos - '+(nombreComunidad||'Comunidad');
   const editarProps={form,cambiar:setForm,guardar,cancelar,guardando};
+  const documentoProps={comunidadId,disponibles:documentosDisponibles,administrador,
+    onVincular:vincularDocumento,onDesvincular:desvincularDocumento};
   return <section className="estado-materias" aria-label="Estado de avances y compromisos">
     <header className="estado-materias__cabecera">
       <div className="estado-materias__identificacion">
@@ -166,7 +267,11 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
                 </button>
                 :<span>{item.materia}</span>}</td>
               <td><EtiquetaAvance valor={item.avance}/></td>
-              <td className="estado-materias__detalle">{item.estado_detalle||'Sin información'}</td>
+              <td className="estado-materias__detalle">
+                <div>{item.estado_detalle||'Sin información'}</div>
+                <DocumentosMateria {...documentoProps} materia={item}
+                  documentos={documentosPorMateria[item.id]||[]}/>
+              </td>
               <td>{item.a_cargo_de||'Sin información'}</td>
             </tr>
             {editando===item.id&&<tr key={'editar-'+item.id} className="estado-materias__edicion-fila">
@@ -187,6 +292,8 @@ export default function EstadoMaterias({comunidadId,nombreComunidad='',administr
             <EtiquetaAvance valor={item.avance}/>
           </div>
           <p className="estado-materias__movil-estado">{item.estado_detalle||'Sin información'}</p>
+          <DocumentosMateria {...documentoProps} materia={item}
+            documentos={documentosPorMateria[item.id]||[]}/>
           <p className="estado-materias__movil-responsable"><strong>A cargo de:</strong> {item.a_cargo_de||'Sin información'}</p>
           {editando===item.id&&<FormularioMateria {...editarProps}/>}
         </div>)}

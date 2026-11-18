@@ -589,7 +589,7 @@ function DetalleCliente({ id, vistaPrevia = null }) {
   const esVistaPrevia = Boolean(vistaPrevia);
   const clienteId = vistaPrevia?.clienteId || null;
   const [params, setParams] = useSearchParams();
-  // La ficha de comunidad abre el informe por materia. Resumen sigue accesible como pestaña.
+  // La ficha de comunidad abre el informe por materia. Resumen queda accesible desde la barra de navegación.
   const tabInicial = TABS.some(([x]) => x === params.get('seccion')) ? params.get('seccion') : 'compromisos';
   const tab = tabInicial; // URL permite volver de Documentos a Incidencias con Atrás.
   const [vista, setVista] = useState(null);
@@ -668,14 +668,19 @@ function DetalleCliente({ id, vistaPrevia = null }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            <nav className={`pestanas portal-pestanas-movil${esVistaPrevia ? " portal-pestanas-vista-previa" : ""}`} aria-label="Secciones de la comunidad">
-              {TABS.map(([clave, texto]) => (
-                <button key={clave} type="button" className={tab === clave ? 'activo' : ''} aria-pressed={tab === clave}
-                        onClick={() => cambiarTab(clave)}>
-                  {texto}
-                </button>
-              ))}
-            </nav>
+            {/* En la cuenta cliente las secciones viven únicamente en la barra
+                inferior compartida del sistema. El simulador administrativo
+                conserva controles internos para poder cambiar de sección. */}
+            {esVistaPrevia && (
+              <nav className="pestanas portal-pestanas-movil portal-pestanas-vista-previa" aria-label="Secciones de la comunidad">
+                {TABS.map(([clave, texto]) => (
+                  <button key={clave} type="button" className={tab === clave ? 'activo' : ''} aria-pressed={tab === clave}
+                          onClick={() => cambiarTab(clave)}>
+                    {texto}
+                  </button>
+                ))}
+              </nav>
+            )}
 
             {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} vistaPrevia={esVistaPrevia} />}
             {tab === 'compromisos' && <EstadoMaterias comunidadId={id}
