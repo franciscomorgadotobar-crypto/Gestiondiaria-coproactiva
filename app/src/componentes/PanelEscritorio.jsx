@@ -298,6 +298,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
     id: `cliente-${seccion}`,
     ruta: `/portal/comunidades/${comunidadPortalId}${seccion === 'compromisos' ? '' : '?seccion=' + seccion}`,
     etiqueta,
+    etiquetaMovil: seccion === 'compromisos' ? 'Avances' : etiqueta,
     mostrar: true,
     activo: () => tabPortal === seccion
   });
@@ -516,7 +517,10 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
       return;
     }
     if (item.accion) return item.accion();
-    if (item.ruta && pathname !== item.ruta) navegar(item.ruta, { replace: desdeMas });
+    // El portal usa la misma ruta para cada pestaña, cambiando ?seccion=.
+    // Comparar solo pathname impedía volver a Avances/Resumen/Documentos.
+    const ubicacionActual = pathname + search + hash;
+    if (item.ruta && ubicacionActual !== item.ruta) navegar(item.ruta, { replace: desdeMas, preventScrollReset: false });
   }
 
   function enlacesDelGrupo() {
@@ -717,7 +721,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false }) {
                     <span className="nav-movil-badge">{item.badge > 99 ? '99+' : item.badge}</span>
                   )}
                 </span>
-                <span>{item.etiqueta}</span>
+                <span>{item.etiquetaMovil || item.etiqueta}</span>
               </button>
             ))}
 
