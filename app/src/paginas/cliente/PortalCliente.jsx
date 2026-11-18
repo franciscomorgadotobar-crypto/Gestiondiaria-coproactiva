@@ -668,14 +668,14 @@ function DetalleCliente({ id, vistaPrevia = null }) {
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }}>{error}</div>}
         {!vista ? null : (
           <>
-            <nav className={`pestanas portal-pestanas-movil${esVistaPrevia ? " portal-pestanas-vista-previa" : ""}`} aria-label="Secciones de la comunidad">
+            {esVistaPrevia && <nav className="pestanas portal-pestanas-movil portal-pestanas-vista-previa" aria-label="Secciones de la comunidad">
               {TABS.map(([clave, texto]) => (
                 <button key={clave} type="button" className={tab === clave ? 'activo' : ''} aria-pressed={tab === clave}
                         onClick={() => cambiarTab(clave)}>
                   {texto}
                 </button>
               ))}
-            </nav>
+            </nav>}
 
             {tab === 'resumen' && <ResumenComunidad vista={vista} cambiarTab={cambiarTab} vistaPrevia={esVistaPrevia} />}
             {tab === 'compromisos' && <EstadoMaterias comunidadId={id}
