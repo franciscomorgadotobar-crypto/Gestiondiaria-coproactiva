@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Informe de levantamiento · Coproactiva</title>
+<style>
+:root{color-scheme:light;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#2d3749}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:#f8f5f1}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;min-height:65px;background:#fff;border-bottom:1px solid #e8e0d8}
+header .marca{display:flex;align-items:center;gap:9px;min-width:0}
+header img{height:29px;max-width:155px}
+header .subtitulo{display:block;color:#727780;font-size:11px;font-weight:600}
+button{min-height:43px;border:1px solid #c16c32;border-radius:10px;padding:9px 13px;color:#fff;background:#ad521b;font-size:13px;font-weight:750;cursor:pointer}
+button:disabled{opacity:.5;cursor:progress}
+button:focus-visible{outline:3px solid #efb988;outline-offset:2px}
+#cargando{min-height:calc(100dvh - 65px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:28px}
+h1{font-size:22px;line-height:1.2;margin:0}
+p{font-size:14px;line-height:1.5;color:#67717c;margin:0;max-width:320px}
+#cargando .logo{font-size:14px;letter-spacing:.14em;color:#a75220;font-weight:800;text-transform:uppercase}
+.spinner{height:50px;width:50px;border-radius:50%;border:4px solid #f2e1d4;border-top-color:#b55b22;animation:girar .8s linear infinite}
+@keyframes girar{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+#error{display:none;color:#9a3429;font-weight:650;white-space:pre-wrap}
+#informe{display:none;width:100%;height:calc(100dvh - 65px);border:0;background:#fff}
+</style>
+</head>
+<body>
+<header>
+  <div class="marca"><img src="brand/imagologo-horizontal-naranja.svg" alt="Coproactiva"><span class="subtitulo">Informe de levantamiento</span></div>
+  <button type="button" id="guardar" disabled>Guardar PDF</button>
+</header>
+<main id="cargando" role="status" aria-live="polite">
+  <div class="logo">Coproactiva</div>
+  <div class="spinner" aria-hidden="true"></div>
+  <h1 id="titulo">Preparando tu informe</h1>
+  <p id="detalle">Estamos reuniendo los datos y las fotografías del levantamiento.</p>
+  <p id="error" role="alert"></p>
+</main>
+<iframe id="informe" title="Informe de levantamiento" referrerpolicy="same-origin"></iframe>
+<script>
+(() => {
+  const origen=window.location.origin;
+  const marco=document.getElementById('informe');
+  const cargar=document.getElementById('cargando');
+  const guardar=document.getElementById('guardar');
+  const error=document.getElementById('error');
+  const titulo=document.getElementById('titulo');
+  const detalle=document.getElementById('detalle');
+  let documentoRecibido=false;
+  function falla(texto){
+    cargar.style.display='flex';marco.style.display='none';guardar.disabled=true;
+    cargar.querySelector('.spinner').style.display='none';
+    titulo.textContent='No se pudo abrir el informe';
+    detalle.textContent='Puedes cerrar esta pestaña y volver a intentar desde Coproactiva.';
+    error.textContent=texto||'Error al cargar el documento.';
+    error.style.display='block';
+  }
+  window.addEventListener('message',evento=>{
+    if(evento.origin!==origen||evento.source!==window.opener)return;
+    const mensaje=evento.data;
+    if(mensaje?.tipo==='coproactiva:visor-error'){falla(mensaje.error);return;}
+    if(mensaje?.tipo!=='coproactiva:visor-html'||typeof mensaje.html!=='string'||documentoRecibido)return;
+    documentoRecibido=true;
+    titulo.textContent='Cargando fotografías';
+    detalle.textContent='Organizando el informe para su lectura.';
+    marco.addEventListener('load',()=>{
+      cargar.style.display='none';
+      marco.style.display='block';
+      guardar.disabled=false;
+    },{once:true});
+    marco.srcdoc=mensaje.html;
+  });
+  guardar.addEventListener('click',()=>{
+    if(!marco.contentWindow)return;
+    try{marco.contentWindow.focus();marco.contentWindow.print();}
+    catch{falla('No se pudo abrir el diálogo de impresión del dispositivo.');}
+  });
+  // El mensaje se repite hasta que el portal envía el documento; evita
+  // pérdidas por el orden de carga del navegador móvil.
+  const anuncio=window.setInterval(()=>{
+    if(documentoRecibido){window.clearInterval(anuncio);return;}
+    window.opener?.postMessage({tipo:'coproactiva:visor-listo'},origen);
+  },350);
+  window.opener?.postMessage({tipo:'coproactiva:visor-listo'},origen);
+  window.setTimeout(()=>{
+    if(!documentoRecibido)falla('No llegó el documento. Vuelve a abrirlo desde la comunidad.');
+    window.clearInterval(anuncio);
+  },90000);
+})();
+</script>
+</body>
+</html>
