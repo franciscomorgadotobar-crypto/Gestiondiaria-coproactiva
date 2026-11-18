@@ -613,58 +613,68 @@ function ResumenDato({ etiqueta, valor }) {
   );
 }
 
-function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = false, alDetalle = null }) {
-  const destino = `/portal/comunidades/${item.comunidadId}?seccion=${item.seccion || 'resumen'}`;
-  const documentoUrl = urlDocumento(item.documento);
-
+function TarjetaActividad({ item, mostrarComunidad = false, fechaDestacada = false, contexto={} }) {
+  const destino=rutaActividad(item,contexto);
+  const documentoUrl=urlDocumento(item.documento);
   return (
-    <div className={`tarjeta portal-actividad ${item.estado === 'Vencida' || item.estado === 'Pendiente' || item.estado === 'Sin programar' || item.estado === 'Fecha vencida' ? 'portal-actividad-alerta' : ''}`}>
+    <div className={\`tarjeta portal-actividad \${item.estado === 'Vencida' || item.estado === 'Pendiente' || item.estado === 'Sin programar' || item.estado === 'Fecha vencida' ? 'portal-actividad-alerta' : ''}\`}>
       {fechaDestacada && item.fecha && (
-        <div className="portal-fecha-chip" aria-label={`Fecha ${fechaCL(item.fecha, true)}`}>
+        <div className="portal-fecha-chip" aria-label={\`Fecha \${fechaCL(item.fecha, true)}\`}>
           {fechaCorta(item.fecha)}
         </div>
       )}
       <div className="portal-actividad-contenido">
-        <div className="portal-etiquetas">
-          <span className="portal-tipo">{item.tipo}</span>
-          {item.estado && <span className={'portal-estado' + claseEstado(item.estado)}>{item.estado}</span>}
-        </div>
-        <strong className="portal-actividad-titulo">{item.titulo}</strong>
-        {mostrarComunidad && <span className="micro portal-comunidad-ref">{item.comunidadNombre}</span>}
-        {item.detalle && <p className="micro apagado portal-actividad-detalle">{item.detalle}</p>}
-        {!fechaDestacada && item.fecha && <span className="micro apagado">{fechaCL(item.fecha, true)}</span>}
-        <div className="portal-acciones">
-          {alDetalle
-            ? <button className="portal-enlace portal-enlace-boton" type="button" onClick={() => alDetalle(item.seccion||'resumen')}>Ver detalle</button>
-            : <Link className="portal-enlace" to={destino}>Ver detalle</Link>}
-          {documentoUrl && (
-            <a className="portal-enlace portal-enlace-secundario" href={documentoUrl} target="_blank" rel="noreferrer">Abrir PDF</a>
-          )}
-        </div>
+        <Link className="portal-actividad-enlace-principal" to={destino}
+          aria-label={\`Ver detalle de \${item.titulo}\`}>
+          <div className="portal-etiquetas">
+            <span className="portal-tipo">{item.tipo}</span>
+            {item.estado && <span className={'portal-estado' + claseEstado(item.estado)}>{item.estado}</span>}
+          </div>
+          <strong className="portal-actividad-titulo">{item.titulo}</strong>
+          {mostrarComunidad && <span className="micro portal-comunidad-ref">{item.comunidadNombre}</span>}
+          {item.detalle && <p className="micro apagado portal-actividad-detalle">{item.detalle}</p>}
+          {!fechaDestacada && item.fecha && <span className="micro apagado">{fechaCL(item.fecha, true)}</span>}
+          <span className="portal-enlace portal-actividad-indicacion">Ver detalle ›</span>
+        </Link>
+        {documentoUrl && (
+          <div className="portal-acciones portal-acciones-adjuntos">
+            <a className="portal-enlace portal-enlace-secundario" href={documentoUrl}
+              target="_blank" rel="noreferrer">Abrir PDF</a>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function TarjetaDocumento({ documento, mostrarComunidad = false }) {
-  const url = urlDocumento(documento);
-  const esPdf = documentoEsPdf(documento);
+function TarjetaDocumento({ documento, mostrarComunidad = false, contexto={} }) {
+  const url=urlDocumento(documento);
+  const esPdf=documentoEsPdf(documento);
+  const titulo=documento.titulo || documento.nombre_archivo || 'Documento';
+  const destino=url||rutaDocumentoPortal(documento,contexto);
   return (
-    <div className="tarjeta portal-documento">
+    <div id={'portal-registro-doc-'+documento.id} className="tarjeta portal-documento">
       <div className="portal-doc-icon" aria-hidden="true">{esPdf ? 'PDF' : 'DOC'}</div>
       <div className="portal-documento-contenido">
-        <strong>{documento.titulo || documento.nombre_archivo || 'Documento'}</strong>
+        {url
+          ? <a className="portal-documento-destino" href={url} target="_blank" rel="noreferrer"
+              aria-label={'Abrir '+titulo}><strong>{titulo}</strong></a>
+          : <Link className="portal-documento-destino" to={destino} aria-label={'Ver '+titulo}>
+              <strong>{titulo}</strong>
+            </Link>}
         {mostrarComunidad && documento.comunidadNombre && <span className="micro">{documento.comunidadNombre}</span>}
         <div className="micro apagado portal-meta">
           {documento.nombre_archivo && documento.nombre_archivo !== documento.titulo && <span>{documento.nombre_archivo}</span>}
           {documento.fecha && <span>{fechaCL(documento.fecha)}</span>}
           {documento.origen && <span>{documento.origen}</span>}
         </div>
-        {url ? (
-          <a className="portal-enlace" href={url} target="_blank" rel="noreferrer">{esPdf ? 'Abrir PDF' : 'Abrir documento'}</a>
-        ) : (
-          <span className="micro apagado">Documento registrado sin enlace público.</span>
-        )}
+        <div className="portal-acciones">
+          {url
+            ? <a className="portal-enlace" href={url} target="_blank" rel="noreferrer">
+                {esPdf ? 'Abrir PDF' : 'Abrir documento'}
+              </a>
+            : <Link className="portal-enlace" to={destino}>Ver en documentos ›</Link>}
+        </div>
       </div>
     </div>
   );
