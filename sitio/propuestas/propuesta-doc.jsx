@@ -91,11 +91,15 @@ function PropuestaDoc({ d, calc, opts }) {
   const s = propDocStyles;
   const comunidad = d.comunidad.trim();
   const nombreEnTexto = comunidad || '[NOMBRE DEL EDIFICIO O CONDOMINIO]';
-  const reglas = [
-        'La base de referencia corresponde al monto total mensual de gastos comunes ordinarios del condominio, antes de incorporar el honorario de administración, para evitar que el propio honorario forme parte de su base de cálculo.',
-        'El honorario base se expresa en pesos (sin decimales) y permanece fijo, por lo que no cambia por las variaciones mensuales del gasto común. Este monto base solo se actualizará una vez al año según la inflación (IPC), manteniéndose así a menos que ambas partes acuerden por escrito una nueva tarifa de referencia.',
-        'Los honorarios detallados en esta propuesta se presentan de manera referencial y quedarán sujetos a confirmación definitiva tras el diagnóstico de la situación operativa, administrativa y financiera actual del condominio.'
-      ];
+  const reglas = calc.tipoHonorarios === 'fijo' ? [
+    'El honorario corresponde a un monto fijo mensual acordado para la administración de la comunidad y no depende del valor de los gastos comunes.',
+    'El valor comercial se presenta con su honorario neto, IVA (19%) y total mensual con impuestos incluidos. El valor final será el que se pacte por escrito.',
+    'Los honorarios detallados en esta propuesta son referenciales y quedan sujetos a confirmación definitiva tras el diagnóstico de la situación operativa, administrativa y financiera del condominio.'
+  ] : [
+    'La base de referencia corresponde al monto mensual de gastos comunes ordinarios del condominio, antes de incorporar el honorario de administración, para evitar que el propio honorario forme parte de su base de cálculo.',
+    'El honorario se obtiene aplicando el porcentaje ofrecido sobre la base de gastos comunes indicada y luego agregando el IVA correspondiente.',
+    'Los honorarios detallados en esta propuesta son referenciales y quedan sujetos a confirmación definitiva tras el diagnóstico de la situación operativa, administrativa y financiera del condominio.'
+  ];
     const condiciones = [
           `Pago dentro de los primeros ${d.diasPago || '5'} días corridos de cada mes, mediante transferencia electrónica.`,
           `Contrato de ${d.mesesContrato || '12'} meses, renovable automáticamente salvo aviso escrito con 60 días corridos de anticipación.`
@@ -281,14 +285,23 @@ function PropuestaDoc({ d, calc, opts }) {
           <SecHead n="07" title="Honorarios y condiciones económicas" showNum={opts.numeros} />
           <table style={{ ...s.table, breakInside: 'avoid' }}>
             <tbody>
-              <tr>
-                <td style={s.feeLabel}>Base de referencia mensual de gastos comunes ordinarios</td>
-                <td style={{ ...s.feeVal, width: '30%' }}><Ph value={calc.base} hint="$[VALOR]" /></td>
-              </tr>
-              <tr>
-                <td style={s.feeLabel}>Porcentaje de honorario aplicado</td>
-                <td style={s.feeVal}><Ph value={calc.pct} hint="[8% – 10%]" /></td>
-              </tr>
+              {calc.tipoHonorarios === 'porcentaje' ? (
+                <>
+                  <tr>
+                    <td style={s.feeLabel}>Base de referencia mensual de gastos comunes ordinarios</td>
+                    <td style={{ ...s.feeVal, width: '30%' }}><Ph value={calc.base} hint="$[VALOR]" /></td>
+                  </tr>
+                  <tr>
+                    <td style={s.feeLabel}>Porcentaje de honorario aplicado</td>
+                    <td style={s.feeVal}><Ph value={calc.pct} hint="[PORCENTAJE]" /></td>
+                  </tr>
+                </>
+              ) : (
+                <tr>
+                  <td style={s.feeLabel}>Modalidad de honorarios</td>
+                  <td style={{ ...s.feeVal, width: '30%' }}>Monto fijo mensual</td>
+                </tr>
+              )}
               <tr>
                 <td style={s.feeLabel}>Honorario mensual neto</td>
                 <td style={s.feeVal}><Ph value={calc.neto} hint="$[VALOR]" /></td>
