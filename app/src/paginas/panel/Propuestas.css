@@ -79,3 +79,21 @@
   background:#fff9f4;color:#314257;font-size:12px;line-height:1.5;
 }
 .propuesta-prospecto-asociado a{color:#a44c18;font-weight:700}
+
+/* Modalidades y asociación del prospecto: lectura compacta en móvil y escritorio. */
+.propuesta-modalidades{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.propuesta-panel .propuesta-modalidades button{
+ min-width:0;border:1px solid #ded8d1;background:#fff;padding:10px 8px;
+ font:600 12px/1.35 var(--font-display);color:#465160;cursor:pointer;
+}
+.propuesta-panel .propuesta-modalidades button.activo{
+ color:#9d4a1e;background:#fff4eb;border-color:#ed7130;
+}
+.propuesta-panel .propuesta-modalidades button:focus-visible{outline:2px solid #ed7130;outline-offset:2px}
+.propuesta-prospecto-acciones{justify-content:flex-end;margin-top:-8px}
+.propuesta-prospecto-asociado{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+ background:#f7f9f7;border-color:#d4e3d6;margin:5px 0 0;padding:9px 10px;
+}
+.propuesta-prospecto-asociado strong{font-size:12px;font-weight:700;flex:1;min-width:130px}
+.propuesta-prospecto-asociado a{white-space:nowrap}

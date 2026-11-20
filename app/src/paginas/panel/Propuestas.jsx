@@ -3,6 +3,7 @@ import {Link,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {useSesion} from '../../lib/sesion';
 import PropuestaDoc from '../../componentes/PropuestaDocumento';
+import {calcularHonorarios} from '../../lib/calculoHonorarios';
 import '../../lib/propuestaDocPage';
 import './Propuestas.css';
 import { OPCIONES_PROPUESTA, etiquetaProspecto, datosDesdeProspecto,
@@ -10,28 +11,31 @@ import { OPCIONES_PROPUESTA, etiquetaProspecto, datosDesdeProspecto,
 
 const COMUNAS_RM = ['Alhué', 'Buin', 'Calera de Tango', 'Cerrillos', 'Cerro Navia', 'Colina', 'Conchalí', 'Curacaví', 'El Bosque', 'El Monte', 'Estación Central', 'Huechuraba', 'Independencia', 'Isla de Maipo', 'La Cisterna', 'La Florida', 'La Granja', 'La Pintana', 'La Reina', 'Lampa', 'Las Condes', 'Lo Barnechea', 'Lo Espejo', 'Lo Prado', 'Macul', 'Maipú', 'María Pinto', 'Melipilla', 'Ñuñoa', 'Padre Hurtado', 'Paine', 'Pedro Aguirre Cerda', 'Peñaflor', 'Peñalolén', 'Pirque', 'Providencia', 'Pudahuel', 'Puente Alto', 'Quilicura', 'Quinta Normal', 'Recoleta', 'Renca', 'San Bernardo', 'San Joaquín', 'San José de Maipo', 'San Miguel', 'San Pedro', 'San Ramón', 'Santiago', 'Talagante', 'Tiltil', 'Vitacura'];
 
-const BLANK = { comunidad: '', direccion: '', comuna: '', destinatario: '', fecha: '', vigencia: '30', base: '', pct: '9', urgencia: '', diasPago: '5', mesesContrato: '12', email: '', firmante: '', cargo: '' };
+const BLANK = { comunidad: '', direccion: '', comuna: '', destinatario: '', fecha: '', vigencia: '30', tipoHonorarios: 'porcentaje', base: '', pct: '9', montoFijo: '', montoFijoTipo: 'neto', diasPago: '5', mesesContrato: '12', email: '', firmante: '', cargo: '' };
 const KEY_ACTUAL = 'coproactiva.propuesta.actual.v1';
 
 const clp = n => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
-const numOf = v => { const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.')); return isFinite(n) ? n : null; };
+const datosPropuesta = valor => {
+  const {urgencia, ...datos} = valor || {};
+  return {...BLANK, ...datos};
+};
 
 function computeAll(d) {
-  const base = numOf(d.base), pct = numOf(d.pct), urg = numOf(d.urgencia);
-  const neto = base != null && pct != null ? Math.round(base * pct / 100) : null;
-  const iva = neto != null ? Math.round(neto * 0.19) : null;
-  const total = neto != null && iva != null ? neto + iva : null;
+  const valores = calcularHonorarios(d);
   let fechaTexto = '';
   if (d.fecha) {
     const [y, m, day] = d.fecha.split('-').map(Number);
     fechaTexto = new Date(y, m - 1, day).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
   }
-  const pctTxt = pct != null ? String(pct).replace('.', ',') + '%' : '';
   return {
-    base: base != null ? clp(base) : '', pct: pctTxt,
-    neto: neto != null ? clp(neto) : '', iva: iva != null ? clp(iva) : '',
-    total: total != null ? clp(total) : '', urgencia: urg != null ? clp(urg) : '',
-    fechaTexto, pctNum: pct
+    ...valores,
+    base: valores.base !== null ? clp(valores.base) : '',
+    pct: valores.pct !== null ? String(valores.pct).replace('.', ',')+'%' : '',
+    neto: valores.neto !== null ? clp(valores.neto) : '',
+    iva: valores.iva !== null ? clp(valores.iva) : '',
+    total: valores.total !== null ? clp(valores.total) : '',
+    pctNum: valores.pct,
+    fechaTexto
   };
 }
 
@@ -67,7 +71,7 @@ export default function Propuestas() {
   const [borradorListo,setBorradorListo]=React.useState(false);
   React.useEffect(()=>{
     if(!perfil?.id)return;
-    try{setD({...BLANK,...JSON.parse(localStorage.getItem(KEY_ACTUAL+':'+perfil.id)||'{}')});}
+    try{setD(datosPropuesta(JSON.parse(localStorage.getItem(KEY_ACTUAL+':'+perfil.id)||'{}')));}
     catch{setD({...BLANK});}
     setBorradorListo(true);
   },[perfil?.id]);
@@ -131,14 +135,14 @@ export default function Propuestas() {
     const registro=propuestaDelProspecto(registros,id);
     if(registro){
       setSel(registro.nombre);
-      setD({...BLANK,...registro.datos});
+      setD(datosPropuesta(registro.datos));
       setOpts({...OPCIONES_PROPUESTA,...registro.opciones});
-      setAviso('Propuesta existente asociada a '+p.nombre_condominio+'.');
+      setAviso('');
     }else{
       setSel('');
       setD(datosDesdeProspecto(p,BLANK));
       setOpts({...OPCIONES_PROPUESTA});
-      setAviso('Prospecto asociado. Completa los honorarios y guarda la propuesta.');
+      setAviso('');
     }
   }
 
@@ -205,7 +209,7 @@ export default function Propuestas() {
     }
     setGuardando(true);setAviso('');
     const payload={
-      nombre,datos:d,opciones:opts,
+      nombre,datos:datosPropuesta(d),opciones:opts,
       prospecto_id:prospectoId||null,
       actualizado_por:perfil?.id
     };
@@ -223,7 +227,7 @@ export default function Propuestas() {
   const cargar=nombre=>{
     setSel(nombre);
     if(clientes[nombre]){
-      setD({...BLANK,...clientes[nombre]});
+      setD(datosPropuesta(clientes[nombre]));
       setOpts({...OPCIONES_PROPUESTA,...registros[nombre]?.opciones});
       setProspectoId(registros[nombre]?.prospecto_id||'');
     }else setProspectoId('');
@@ -234,7 +238,7 @@ export default function Propuestas() {
     const registro=Object.values(registros).find(r=>r.id===id);
     if(!registro)return;
     setSel(registro.nombre);
-    setD({...BLANK,...registro.datos});
+    setD(datosPropuesta(registro.datos));
     setOpts({...OPCIONES_PROPUESTA,...registro.opciones});
     setProspectoId(registro.prospecto_id||'');
   },[busqueda,registros,cargando]);
@@ -256,7 +260,7 @@ export default function Propuestas() {
   };
 
   const p = panelStyles;
-  const pctFuera = calc.pctNum != null && (calc.pctNum < 8 || calc.pctNum > 10);
+  const pctFuera = calc.tipoHonorarios === 'porcentaje' && calc.pctNum != null && (calc.pctNum < 8 || calc.pctNum > 10);
 
   return (
     <div className={'propuesta-app'+(vistaMovil==='doc'?' show-doc':'')}>
@@ -268,13 +272,12 @@ export default function Propuestas() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <img src={import.meta.env.BASE_URL+'brand/imagologo-horizontal-naranja.svg'} alt="Coproactiva" style={{height:28,width:'auto'}} />
         </div>
-        <p style={{margin:'10px 0 14px',fontSize:13,lineHeight:1.5,color:'#6b7480'}}>Generador de propuestas comerciales integrado con Gestión Diaria.</p>
-        <div className="propuesta-toolbar"><Link to="/documentos">Volver al gestor documental</Link><span>Documentos / Propuestas</span></div>
+        <div className="propuesta-toolbar"><Link to="/documentos">← Gestor documental</Link></div>
         {aviso&&<p role="status" className="propuesta-aviso">{aviso}</p>}
 
         <div style={p.group}>
-          <h2 style={p.groupTitle}>Prospectos del Pipeline</h2>
-          <Field label="Asociar propuesta a un prospecto">
+          <h2 style={p.groupTitle}>Prospecto</h2>
+          <Field label="Seleccionar prospecto del Pipeline">
             <select style={p.input} value={prospectoId} disabled={cargandoProspectos}
               onChange={e=>seleccionarProspecto(e.target.value)}
               aria-label="Seleccionar prospecto de Coproactiva">
@@ -283,14 +286,14 @@ export default function Propuestas() {
             </select>
           </Field>
           <div className="propuesta-prospecto-acciones">
-            <span>{prospectos.length} prospectos en el Pipeline</span>
+            <span>{cargandoProspectos ? 'Consultando Pipeline…' : ''}</span>
             <button type="button" onClick={()=>setRevisionProspectos(n=>n+1)}
               disabled={cargandoProspectos}>Actualizar lista</button>
           </div>
           {prospectoId&&<p className="propuesta-prospecto-asociado">
-            Vinculado al prospecto seleccionado. <Link to={'/pipeline?prospecto='+prospectoId}>
-              Ver ficha comercial
-            </Link>
+            <span aria-hidden="true">✓</span>
+            <strong>{prospectos.find(pr=>pr.id===prospectoId)?.nombre_condominio||'Prospecto'}</strong>
+            <Link to={'/pipeline?prospecto='+prospectoId}>Ver ficha</Link>
           </p>}
         </div>
         <div style={p.group}>
@@ -339,25 +342,49 @@ export default function Propuestas() {
 
         <div style={p.group}>
           <h2 style={p.groupTitle}>Honorarios</h2>
-          {pctFuera ? <p style={p.warn}>El modelo fija el porcentaje entre 8% y 10%.</p> : null}
-          <div className="row" style={p.row}>
-            <div>
-              <label style={p.label}>Base mensual GG.CC. ($)</label>
-              <input type="number" min="0" step="1000" style={p.input} value={d.base} onChange={e => set('base', e.target.value)} placeholder="4500000" />
+          <Field label="Modalidad de cobro">
+            <div className="propuesta-modalidades" role="group" aria-label="Modalidad de honorarios">
+              <button type="button" aria-pressed={calc.tipoHonorarios==='porcentaje'}
+                className={calc.tipoHonorarios==='porcentaje'?'activo':''}
+                onClick={()=>set('tipoHonorarios','porcentaje')}>% gastos comunes</button>
+              <button type="button" aria-pressed={calc.tipoHonorarios==='fijo'}
+                className={calc.tipoHonorarios==='fijo'?'activo':''}
+                onClick={()=>set('tipoHonorarios','fijo')}>Monto fijo</button>
             </div>
-            <div>
-              <label style={p.label}>Porcentaje (%)</label>
-              <input type="number" min="8" max="10" step="0.1" style={p.input} value={d.pct} onChange={e => set('pct', e.target.value)} />
-            </div>
-          </div>
+          </Field>
+          {calc.tipoHonorarios==='porcentaje'?(
+            <>
+              {pctFuera ? <p style={p.warn}>Porcentaje de referencia: entre 8% y 10%.</p> : null}
+              <div className="row" style={p.row}>
+                <div>
+                  <label style={p.label}>Base mensual GG.CC. ($)</label>
+                  <input type="number" min="0" step="1000" style={p.input} value={d.base} onChange={e => set('base', e.target.value)} placeholder="4500000" />
+                </div>
+                <div>
+                  <label style={p.label}>Porcentaje (%)</label>
+                  <input type="number" min="8" max="10" step="0.1" style={p.input} value={d.pct} onChange={e => set('pct', e.target.value)} />
+                </div>
+              </div>
+            </>
+          ):(
+            <>
+              <Field label="Ingresar honorario como">
+                <select style={p.input} value={d.montoFijoTipo||'neto'} onChange={e=>set('montoFijoTipo',e.target.value)}>
+                  <option value="neto">Neto (sin IVA)</option>
+                  <option value="bruto">Bruto (IVA incluido)</option>
+                </select>
+              </Field>
+              <Field label={d.montoFijoTipo==='bruto'?'Monto mensual bruto ($)':'Monto mensual neto ($)'}>
+                <input type="number" min="0" step="1" style={p.input} value={d.montoFijo||''}
+                  onChange={e=>set('montoFijo',e.target.value)} placeholder="450000" />
+              </Field>
+            </>
+          )}
           <div style={{ margin: '4px 0 14px' }}>
             <div style={p.computed}><span>Honorario neto</span><strong>{calc.neto || '-'}</strong></div>
             <div style={p.computed}><span>IVA (19%)</span><strong>{calc.iva || '-'}</strong></div>
             <div style={{ ...p.computed, borderBottom: 'none', fontFamily: 'var(--font-display)', fontWeight: 600, color: '#2b3138' }}><span>Total mensual</span><strong>{calc.total || '-'}</strong></div>
           </div>
-          <Field label="Gasto autónomo urgencias ($)">
-            <input type="number" min="0" step="10000" style={p.input} value={d.urgencia} onChange={e => set('urgencia', e.target.value)} placeholder="300000" />
-          </Field>
           <div className="row" style={p.row}>
             <div>
               <label style={p.label}>Días de pago</label>
