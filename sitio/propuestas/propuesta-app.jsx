@@ -1,6 +1,6 @@
 const COMUNAS_RM = ['Alhué', 'Buin', 'Calera de Tango', 'Cerrillos', 'Cerro Navia', 'Colina', 'Conchalí', 'Curacaví', 'El Bosque', 'El Monte', 'Estación Central', 'Huechuraba', 'Independencia', 'Isla de Maipo', 'La Cisterna', 'La Florida', 'La Granja', 'La Pintana', 'La Reina', 'Lampa', 'Las Condes', 'Lo Barnechea', 'Lo Espejo', 'Lo Prado', 'Macul', 'Maipú', 'María Pinto', 'Melipilla', 'Ñuñoa', 'Padre Hurtado', 'Paine', 'Pedro Aguirre Cerda', 'Peñaflor', 'Peñalolén', 'Pirque', 'Providencia', 'Pudahuel', 'Puente Alto', 'Quilicura', 'Quinta Normal', 'Recoleta', 'Renca', 'San Bernardo', 'San Joaquín', 'San José de Maipo', 'San Miguel', 'San Pedro', 'San Ramón', 'Santiago', 'Talagante', 'Tiltil', 'Vitacura'];
 
-const BLANK = { comunidad: '', direccion: '', comuna: '', destinatario: '', fecha: '', vigencia: '30', base: '', pct: '9', urgencia: '', diasPago: '5', mesesContrato: '12', email: '', firmante: '', cargo: '' };
+const BLANK = { comunidad: '', direccion: '', comuna: '', destinatario: '', fecha: '', vigencia: '30', tipoHonorarios: 'porcentaje', base: '', pct: '9', montoFijo: '', montoFijoTipo: 'neto', diasPago: '5', mesesContrato: '12', email: '', firmante: '', cargo: '' };
 const KEY_ACTUAL = 'coproactiva.propuesta.actual.v1';
 const KEY_CLIENTES = 'coproactiva.propuesta.clientes.v1';
 const API_CLIENTES = '/api/propuestas';
@@ -9,10 +9,28 @@ const clp = n => new Intl.NumberFormat('es-CL', { style: 'currency', currency: '
 const numOf = v => { const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.')); return isFinite(n) ? n : null; };
 
 function computeAll(d) {
-  const base = numOf(d.base), pct = numOf(d.pct), urg = numOf(d.urgencia);
-  const neto = base != null && pct != null ? Math.round(base * pct / 100) : null;
-  const iva = neto != null ? Math.round(neto * 0.19) : null;
-  const total = neto != null && iva != null ? neto + iva : null;
+  const base = numOf(d.base), pct = numOf(d.pct);
+  const tipoHonorarios = d.tipoHonorarios === 'fijo' ? 'fijo' : 'porcentaje';
+  const montoFijo = numOf(d.montoFijo);
+  const montoFijoTipo = d.montoFijoTipo === 'bruto' ? 'bruto' : 'neto';
+
+  let neto = null, iva = null, total = null;
+  if (tipoHonorarios === 'porcentaje' && base != null && base >= 0 && pct != null && pct >= 0) {
+    neto = Math.round(base * pct / 100);
+  } else if (tipoHonorarios === 'fijo' && montoFijo != null && montoFijo >= 0) {
+    if (montoFijoTipo === 'bruto') {
+      total = Math.round(montoFijo);
+      neto = Math.round(total / 1.19);
+      iva = total - neto;
+    } else {
+      neto = Math.round(montoFijo);
+    }
+  }
+  if (neto != null && total == null) {
+    iva = Math.round(neto * 0.19);
+    total = neto + iva;
+  }
+
   let fechaTexto = '';
   if (d.fecha) {
     const [y, m, day] = d.fecha.split('-').map(Number);
@@ -20,9 +38,10 @@ function computeAll(d) {
   }
   const pctTxt = pct != null ? String(pct).replace('.', ',') + '%' : '';
   return {
+    tipoHonorarios, montoFijoTipo,
     base: base != null ? clp(base) : '', pct: pctTxt,
     neto: neto != null ? clp(neto) : '', iva: iva != null ? clp(iva) : '',
-    total: total != null ? clp(total) : '', urgencia: urg != null ? clp(urg) : '',
+    total: total != null ? clp(total) : '',
     fechaTexto, pctNum: pct
   };
 }
@@ -50,7 +69,7 @@ const Field = ({ label, children }) => (
 
 function App() {
   const [d, setD] = React.useState(() => {
-    try { return { ...BLANK, ...JSON.parse(localStorage.getItem(KEY_ACTUAL) || '{}') }; } catch (e) { return { ...BLANK }; }
+    try { const previous = JSON.parse(localStorage.getItem(KEY_ACTUAL) || '{}'); delete previous.urgencia; return { ...BLANK, ...previous }; } catch (e) { return { ...BLANK }; }
   });
   const [clientes, setClientes] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem(KEY_CLIENTES) || '{}'); } catch (e) { return {}; }
@@ -75,14 +94,15 @@ function App() {
   const guardar = () => {
     const nombre = d.comunidad.trim();
     if (!nombre) { alert('Escribe el nombre de la comunidad antes de guardar.'); return; }
-    const next = { ...clientes, [nombre]: d };
+    const { urgencia, ...datosPropuesta } = d;
+    const next = { ...clientes, [nombre]: datosPropuesta };
     setClientes(next); localStorage.setItem(KEY_CLIENTES, JSON.stringify(next)); setSel(nombre);
     fetch(API_CLIENTES, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, data: d })
+      body: JSON.stringify({ nombre, data: datosPropuesta })
     }).catch(() => {});
   };
-  const cargar = nombre => { setSel(nombre); if (clientes[nombre]) setD({ ...BLANK, ...clientes[nombre] }); };
+  const cargar = nombre => { setSel(nombre); if (clientes[nombre]) { const { urgencia, ...datosPropuesta } = clientes[nombre]; setD({ ...BLANK, ...datosPropuesta }); } };
   const eliminar = () => {
     if (!sel || !clientes[sel]) return;
     const next = { ...clientes }; delete next[sel];
@@ -95,7 +115,7 @@ function App() {
   const nueva = () => { setD({ ...BLANK }); setSel(''); };
 
   const p = panelStyles;
-  const pctFuera = calc.pctNum != null && (calc.pctNum < 8 || calc.pctNum > 10);
+  const pctFuera = calc.tipoHonorarios === 'porcentaje' && calc.pctNum != null && (calc.pctNum < 8 || calc.pctNum > 10);
 
   return (
     <div className="app">
@@ -151,25 +171,65 @@ function App() {
 
         <div style={p.group}>
           <h2 style={p.groupTitle}>Honorarios</h2>
-          {pctFuera ? <p style={p.warn}>El modelo fija el porcentaje entre 8% y 10%.</p> : null}
-          <div className="row" style={p.row}>
-            <div>
-              <label style={p.label}>Base mensual GG.CC. ($)</label>
-              <input type="number" min="0" step="1000" style={p.input} value={d.base} onChange={e => set('base', e.target.value)} placeholder="4500000" />
+          <Field label="Modalidad del honorario">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                ['porcentaje', '% de gastos comunes'],
+                ['fijo', 'Monto fijo']
+              ].map(([valor, texto]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  aria-pressed={calc.tipoHonorarios === valor}
+                  onClick={() => set('tipoHonorarios', valor)}
+                  style={{
+                    ...p.btnGhost, flex: 'auto', textTransform: 'none',
+                    letterSpacing: 0, fontSize: 13, lineHeight: 1.4,
+                    background: calc.tipoHonorarios === valor ? '#fcf1e7' : '#fff',
+                    color: calc.tipoHonorarios === valor ? '#9a551c' : '#4a5a68',
+                    borderColor: calc.tipoHonorarios === valor ? '#d5863b' : '#ddd7cf'
+                  }}
+                >{texto}</button>
+              ))}
             </div>
-            <div>
-              <label style={p.label}>Porcentaje (%)</label>
-              <input type="number" min="8" max="10" step="0.1" style={p.input} value={d.pct} onChange={e => set('pct', e.target.value)} />
-            </div>
-          </div>
+          </Field>
+          {calc.tipoHonorarios === 'porcentaje' ? (
+            <>
+              {pctFuera ? <p style={p.warn}>El porcentaje de referencia debe estar entre 8% y 10%.</p> : null}
+              <div className="row" style={p.row}>
+                <div>
+                  <label style={p.label}>Base mensual de gastos comunes ($)</label>
+                  <input type="number" min="0" step="1000" style={p.input}
+                    value={d.base} onChange={e => set('base', e.target.value)} placeholder="4500000" />
+                </div>
+                <div>
+                  <label style={p.label}>Porcentaje (%)</label>
+                  <input type="number" min="8" max="10" step="0.1" style={p.input}
+                    value={d.pct} onChange={e => set('pct', e.target.value)} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <Field label="Valor que ingresarás">
+                <select style={p.input} value={d.montoFijoTipo || 'neto'}
+                  onChange={e => set('montoFijoTipo', e.target.value)}>
+                  <option value="neto">Monto neto (sin IVA)</option>
+                  <option value="bruto">Monto bruto (IVA incluido)</option>
+                </select>
+              </Field>
+              <Field label={d.montoFijoTipo === 'bruto' ? 'Honorario mensual bruto ($)' : 'Honorario mensual neto ($)'}>
+                <input type="number" min="0" step="1000" style={p.input}
+                  value={d.montoFijo || ''} onChange={e => set('montoFijo', e.target.value)}
+                  placeholder="450000" />
+              </Field>
+            </>
+          )}
           <div style={{ margin: '4px 0 14px' }}>
             <div style={p.computed}><span>Honorario neto</span><strong>{calc.neto || '—'}</strong></div>
             <div style={p.computed}><span>IVA (19%)</span><strong>{calc.iva || '—'}</strong></div>
             <div style={{ ...p.computed, borderBottom: 'none', fontFamily: 'var(--font-display)', fontWeight: 600, color: '#2b3138' }}><span>Total mensual</span><strong>{calc.total || '—'}</strong></div>
           </div>
-          <Field label="Gasto autónomo urgencias ($)">
-            <input type="number" min="0" step="10000" style={p.input} value={d.urgencia} onChange={e => set('urgencia', e.target.value)} placeholder="300000" />
-          </Field>
           <div className="row" style={p.row}>
             <div>
               <label style={p.label}>Días de pago</label>
