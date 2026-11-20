@@ -293,7 +293,7 @@ export default function Propuestas() {
           {prospectoId&&<p className="propuesta-prospecto-asociado">
             <span aria-hidden="true">✓</span>
             <strong>{prospectos.find(pr=>pr.id===prospectoId)?.nombre_condominio||'Prospecto'}</strong>
-            <Link to={'/pipeline?prospecto='+prospectoId}>Ver ficha</Link>
+            <Link to={'/pipeline?prospecto='+prospectoId}>Ver ficha comercial</Link>
           </p>}
         </div>
         <div style={p.group}>
