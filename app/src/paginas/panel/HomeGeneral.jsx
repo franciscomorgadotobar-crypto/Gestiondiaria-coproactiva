@@ -96,7 +96,7 @@ export default function HomeGeneral() {
         ['Bitácora','/bitacora','Incidencias y observaciones'],
         ['Mapa','/mapa','Ubicaciones y visitas'],
         ...(administracion ? [
-          ['Red de proveedores','/proveedores','Directorio y comunicaciones'],
+          ['Agenda','/proveedores','Empresas, contactos y proveedores contables'],
           ['Recepción y atención','/whatsapp','Conversaciones y solicitudes']
         ] : []),
         ...(comercial ? [['Plantillas de levantamientos','/plantillas','Formularios operativos']] : [])

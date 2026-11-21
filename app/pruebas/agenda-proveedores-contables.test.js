@@ -1,3 +1,4 @@
+import {modulosDisponibles,areasDisponibles} from '../src/lib/selectorModulos.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -64,4 +65,22 @@ test('Asiento selecciona solo los marcados y registra contacto independiente',()
  assert.match(migrations,/contabilidad_registrar_asiento_agenda/);
  assert.match(migrations,/agenda_marcar_proveedor/);
  assert.match(migrations,/es_proveedor boolean NOT NULL DEFAULT false/);
+});
+
+test('Todos los accesos al antiguo directorio se muestran como Agenda',()=>{
+ const perfil={id:'admin-test',rol:'admin',activo:true};
+ const modulos=modulosDisponibles(perfil);
+ const registro=modulos.find(m=>m.ruta==='/proveedores');
+ assert.ok(registro,'El catálogo modular debe conservar la ruta anterior');
+ assert.equal(registro.titulo,'Agenda');
+ assert.equal(registro.etiqueta,'AGENDA');
+ const areas=areasDisponibles(perfil);
+ const operaciones=areas.find(a=>a.id==='operacion');
+ assert.equal(operaciones.enlaces.find(a=>a.ruta==='/proveedores')?.etiqueta,'Agenda');
+ const home=read('src/paginas/panel/HomeGeneral.jsx');
+ const selector=read('src/lib/selectorModulos.js');
+ assert.doesNotMatch(home,/Red de proveedores/i);
+ assert.doesNotMatch(selector,/Red de proveedores/i);
+ assert.match(home,/\['Agenda','\/proveedores'/);
+ assert.match(selector,/titulo:'Agenda', etiqueta:'AGENDA'/);
 });

@@ -44,8 +44,8 @@ export function modulosDisponibles(perfil) {
     { id:'propiedades', titulo:'Arriendos y ventas', etiqueta:'PROPIEDADES',
       descripcion:'Lo que se publica en coproactiva.cl/propiedades.',
       ruta:'/propiedades', area:'comercial', visible:comercial },
-    { id:'proveedores', titulo:'Red de proveedores', etiqueta:'PROVEEDORES',
-      descripcion:'Buscar, contactar y administrar proveedores para las comunidades.',
+    { id:'proveedores', titulo:'Agenda', etiqueta:'AGENDA',
+      descripcion:'Directorio de empresas y contactos, con marcación de proveedores para contabilidad.',
       ruta:'/proveedores', area:'operacion', visible:administracion },
     { id:'contabilidad', titulo:'Gestión contable', etiqueta:'CONTABILIDAD',
       descripcion:'Asientos, libros, estados financieros e informes por entidad.',
@@ -116,7 +116,7 @@ export function areasDisponibles(perfil) {
         {ruta:'/nuevo',etiqueta:'Nuevo levantamiento',visible:configurar},
         {ruta:'/plantillas',etiqueta:'Plantillas de levantamiento',visible:configurar},
         {ruta:'/mapa',etiqueta:'Mapa de visitas',visible:true},
-        {ruta:'/proveedores',etiqueta:'Red de proveedores',visible:administracion}
+        {ruta:'/proveedores',etiqueta:'Agenda',visible:administracion}
       ]
     },
     {
