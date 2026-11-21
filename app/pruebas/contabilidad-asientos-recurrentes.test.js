@@ -26,7 +26,7 @@ test('Marcador conserva concepto de asiento recurrente y no ejecuta pagos autom√
  assert.match(ui,/aria-pressed=\{recurrente\}/);
  assert.match(ui,/No se contabiliza autom√°ticamente/);
  assert.match(ui,/p_recurrente: Boolean\(datos.recurrente\)/);
- assert.match(ui,/contabilidad_registrar_asiento_con_recurrencia/);
+ assert.match(ui,/contabilidad_registrar_asiento_agenda/);
  assert.match(migration,/recurrente boolean NOT NULL DEFAULT false/);
  assert.match(migration,/contabilidad_registrar_asiento\(/);
  assert.match(migration,/UPDATE public.contabilidad_asientos/);

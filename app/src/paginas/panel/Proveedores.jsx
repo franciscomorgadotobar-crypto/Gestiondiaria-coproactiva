@@ -10,6 +10,7 @@ import AdjuntosCorreo from '../../componentes/AdjuntosCorreo';
 import Confirmar from '../../componentes/Confirmar';
 import ProveedoresNavegacion from '../../componentes/ProveedoresNavegacion';
 import { consultarBaseCompletaProveedores, generarCsvProveedores, nombreArchivoProveedores } from '../../lib/exportarProveedores';
+import {esProveedorMarcado} from '../../lib/agendaProveedoresContables';
 import './WhatsApp.css';
 
 const MOTIVOS_LISTA_NEGRA = [
@@ -75,6 +76,8 @@ export default function Proveedores() {
   const [comuna, setComuna] = useState('');
   const [origen, setOrigen] = useState('');
   const [mostrarListaNegra, setMostrarListaNegra] = useState(false);
+  const [soloProveedores, setSoloProveedores] = useState(false);
+  const [marcandoProveedor, setMarcandoProveedor] = useState(false);
   const [orden, setOrden] = useState('reciente');
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [formulario, setFormulario] = useState(null);
@@ -219,8 +222,8 @@ export default function Proveedores() {
       }
     }
     return {
-      proveedores: lista.length,
-      especialidades: especialidades.size,
+      registros: lista.length,
+      habilitados: lista.filter(esProveedorMarcado).length,
       listaNegra: lista.filter(p => p.lista_negra).length
     };
   }, [proveedores]);
@@ -230,6 +233,7 @@ export default function Proveedores() {
 
     let lista = (proveedores ?? []).filter(p => {
       if (!mostrarListaNegra && p.lista_negra) return false;
+      if (soloProveedores && !esProveedorMarcado(p)) return false;
       if (rubro && p.rubro !== rubro) return false;
       if (origen && p.origen !== origen) return false;
       if (comuna && !normalizar([p.comunas, ...(p.regiones ?? [])].filter(Boolean).join(' ')).includes(normalizar(comuna))) return false;
@@ -252,7 +256,7 @@ export default function Proveedores() {
       return new Date(b.editado_en ?? b.creado_en ?? 0) - new Date(a.editado_en ?? a.creado_en ?? 0);
     });
     return lista;
-  }, [proveedores, busqueda, rubro, comuna, origen, mostrarListaNegra, orden]);
+  }, [proveedores, busqueda, rubro, comuna, origen, mostrarListaNegra, soloProveedores, orden]);
 
   const seleccionados = useMemo(() => new Set(seleccionIds), [seleccionIds]);
   const seleccionablesFiltrados = useMemo(
@@ -312,6 +316,7 @@ export default function Proveedores() {
     setComuna('');
     setOrigen('');
     setMostrarListaNegra(false);
+    setSoloProveedores(false);
   }
 
   async function guardarProveedor(datos) {
@@ -319,10 +324,20 @@ export default function Proveedores() {
     const ahora = new Date().toISOString();
     const payload = {
       empresa: datos.empresa.trim(),
+      tipo_registro: datos.tipo_registro === 'contacto' ? 'contacto' : 'empresa',
+      es_proveedor: Boolean(datos.es_proveedor),
+      contacto_es_proveedor: datos.tipo_registro === 'contacto' ? false : Boolean(datos.contacto_es_proveedor),
+      // No reescribir el JSON si solo se editaron otros campos: Gmail puede
+      // incorporar nuevos contactos mientras la ficha permanece abierta.
+      ...((datos.tipo_registro==='empresa'&&(datos.contactosEditados||!datos.id))
+        ? {contactos:(datos.contactos||[])
+          .filter(c=>String(c.nombre||c.email||c.telefono||'').trim())
+          .map(c=>({...c,id:c.id||crypto.randomUUID(),es_proveedor:Boolean(c.es_proveedor)}))}
+        : {}),
       rut: datos.rut.trim() || null,
       rubro: datos.rubro.trim(),
       servicios: datos.servicios.trim() || null,
-      contacto_nombre: datos.contacto_nombre.trim() || null,
+      contacto_nombre: datos.tipo_registro==='contacto' ? null : datos.contacto_nombre.trim() || null,
       contacto_cargo: datos.contacto_cargo.trim() || null,
       telefono: datos.telefono.trim() || null,
       email: datos.email.trim() || null,
@@ -351,9 +366,22 @@ export default function Proveedores() {
 
     setFormulario(null);
     await cargar();
-    setAviso(datos.id ? 'Proveedor actualizado.' : 'Proveedor agregado.');
+    setAviso(datos.id ? 'Registro de Agenda actualizado.' : 'Registro agregado a Agenda.');
     if (!datos.id) navegar('/proveedores/' + respuesta.data.id);
     return true;
+  }
+
+  async function marcarComoProveedor(p,contactoId,marcar) {
+    if(marcandoProveedor)return;
+    setError(null);
+    setMarcandoProveedor(true);
+    const {error:e}=await supabase.rpc('agenda_marcar_proveedor',{
+      p_registro_id:p.id,p_contacto_id:contactoId||null,p_marcar:marcar
+    });
+    setMarcandoProveedor(false);
+    if(e){setError(e.message);return;}
+    setAviso(marcar?'Marcado como proveedor. Disponible en asientos contables.':'Marca retirada. Los asientos anteriores se conservan.');
+    await cargar();
   }
 
   async function cambiarListaNegra(p, datos = null) {
@@ -503,8 +531,8 @@ export default function Proveedores() {
     return (
       <div className="pantalla">
         <div className="cuerpo">
-          <div className="aviso aviso-critico">Este proveedor no existe o ya fue eliminado.</div>
-          <button className="boton boton-secundario" onClick={() => navegar('/proveedores')}>Volver a proveedores</button>
+          <div className="aviso aviso-critico">Este registro de Agenda no existe o ya fue eliminado.</div>
+          <button className="boton boton-secundario" onClick={() => navegar('/proveedores')}>Volver a Agenda</button>
         </div>
       </div>
     );
@@ -542,6 +570,8 @@ export default function Proveedores() {
         puedeEliminar={puedeEliminar}
         onVolver={() => navegar('/proveedores')}
         onEditar={() => setFormulario({ ...seleccionado })}
+        onMarcarProveedor={(contactoId,marcar)=>marcarComoProveedor(seleccionado,contactoId,marcar)}
+        marcandoProveedor={marcandoProveedor}
         onBlacklist={() => seleccionado.lista_negra ? cambiarListaNegra(seleccionado) : setBlacklist(seleccionado)}
         onEliminar={() => setPorEliminar(seleccionado)}
         onContacto={canal => abrirContacto(seleccionado, canal)}
@@ -563,7 +593,7 @@ export default function Proveedores() {
         )}
         {porEliminar && (
           <Confirmar
-            titulo="Eliminar proveedor"
+            titulo="Eliminar registro de Agenda"
             mensaje={`“${porEliminar.empresa}” y su información asociada se eliminarán definitivamente. Esta acción está reservada al superadministrador.`}
             textoConfirmar="Eliminar"
             textoCancelar="Cancelar"
@@ -579,9 +609,9 @@ export default function Proveedores() {
     <div className="pantalla proveedores-pantalla modulo-unificado">
       <header className="encabezado modulo-cabecera">
         <div className="proveedores-intro">
-          <h1 className="h3">Proveedores</h1>
+          <h1 className="h3">Agenda</h1>
           <p className="chico apagado proveedores-descripcion">
-            Proveedores registrados por administración a partir de presentaciones de servicios y contactos.
+            Directorio de empresas y contactos. Marca como proveedor solamente a quienes deban aparecer en los asientos contables.
           </p>
         </div>
         <div className="acciones-proveedores-cabecera ui-acciones">
@@ -589,7 +619,7 @@ export default function Proveedores() {
             Nueva comunicación
           </button>
           <button type="button" className="boton boton-secundario" onClick={() => setFormulario({})}>
-            + Agregar proveedor
+            + Empresa o contacto
           </button>
           <button type="button" className="boton boton-secundario"
                   disabled={sincronizando} onClick={() => cargar({ mostrarResultado: true })}>
@@ -630,12 +660,12 @@ export default function Proveedores() {
         {proveedores && (
           <div className="tablero proveedores-resumen proveedores-resumen-tres">
             <div>
-              <p className="n">{resumen.proveedores}</p>
-              <p className="r">Proveedores</p>
+              <p className="n">{resumen.registros}</p>
+              <p className="r">Registros en Agenda</p>
             </div>
             <div>
-              <p className="n">{resumen.especialidades}</p>
-              <p className="r">Especialidades</p>
+              <p className="n">{resumen.habilitados}</p>
+              <p className="r">Fichas con proveedores</p>
             </div>
             <div className={resumen.listaNegra ? 'critico' : ''}>
               <p className="n">{resumen.listaNegra}</p>
@@ -680,6 +710,11 @@ export default function Proveedores() {
               </select>
             </div>
             <label className="marca proveedor-filtro-lista-negra">
+              <input type="checkbox" checked={soloProveedores}
+                     onChange={e => setSoloProveedores(e.target.checked)}/>
+              <span>Solo proveedores habilitados</span>
+            </label>
+            <label className="marca proveedor-filtro-lista-negra">
               <input type="checkbox" checked={mostrarListaNegra}
                      onChange={e => setMostrarListaNegra(e.target.checked)} />
               <span>Incluir proveedores en lista negra</span>
@@ -692,7 +727,7 @@ export default function Proveedores() {
 
         <div className="fila proveedores-resultado-cabecera">
           <div className="proveedores-seleccion-resumen crece">
-            <span className="micro">{listaFiltrada.length} proveedor{listaFiltrada.length === 1 ? '' : 'es'}</span>
+            <span className="micro">{listaFiltrada.length} registro{listaFiltrada.length === 1 ? '' : 's'}</span>
             <span className="micro apagado">{seleccionIds.length} seleccionado{seleccionIds.length === 1 ? '' : 's'}</span>
           </div>
           <div className="proveedores-seleccion-acciones">
@@ -721,9 +756,9 @@ export default function Proveedores() {
           </label>
         </div>
 
-        {proveedores === null && <p className="cargando">Cargando proveedores…</p>}
+        {proveedores === null && <p className="cargando">Cargando Agenda…</p>}
         {proveedores && listaFiltrada.length === 0 && (
-          <p className="vacio">No hay proveedores que coincidan con la búsqueda y filtros.</p>
+          <p className="vacio">No hay registros de Agenda que coincidan con la búsqueda y filtros.</p>
         )}
 
         <div className="proveedores-lista-movil">
@@ -732,7 +767,9 @@ export default function Proveedores() {
               seleccionado={seleccionados.has(p.id)}
               onSeleccionar={() => alternarSeleccion(p.id)}
               onAbrir={() => navegar('/proveedores/' + p.id)}
-              onContacto={canal => abrirContacto(p, canal)} />
+              onContacto={canal => abrirContacto(p, canal)}
+              onMarcar={marcar=>marcarComoProveedor(p,null,marcar)}
+              marcando={marcandoProveedor} />
           ))}
         </div>
 
@@ -742,12 +779,13 @@ export default function Proveedores() {
               <tr>
                 <th className="proveedores-check-col">
                   <input type="checkbox"
-                    aria-label="Seleccionar proveedores filtrados"
+                    aria-label="Seleccionar registros filtrados para comunicación"
                     checked={seleccionablesFiltrados.length > 0 && seleccionablesFiltrados.every(p => seleccionados.has(p.id))}
                     onChange={e => e.target.checked ? seleccionarFiltrados() : setSeleccionIds([])} />
                 </th>
                 <th>Empresa / Contacto</th>
                 <th>Especialidad / Servicios</th>
+                <th>Proveedor contable</th>
                 <th>Cobertura</th>
                 <th>Origen</th>
                 <th aria-label="Acciones" />
@@ -759,17 +797,26 @@ export default function Proveedores() {
                     onClick={() => navegar('/proveedores/' + p.id)}>
                   <td className="proveedores-check-col" onClick={e => e.stopPropagation()}>
                     <input type="checkbox"
-                      aria-label={`Seleccionar ${p.empresa}`}
+                      aria-label={`Seleccionar ${p.empresa} para comunicación`}
                       disabled={p.lista_negra}
                       checked={seleccionados.has(p.id)}
                       onChange={() => alternarSeleccion(p.id)} />
                   </td>
                   <td>
                     <strong>{p.empresa}</strong>
-                    <span>{p.contacto_nombre || 'Sin contacto'}</span>
+                    <span>{p.tipo_registro==='contacto'?'Persona':(p.contacto_nombre || 'Empresa sin contacto principal')}</span>
+                    {esProveedorMarcado(p)&&<span className="agenda-marcador">✓ Tiene proveedores habilitados</span>}
                     <span>{p.email || p.telefono || 'Sin datos de contacto'}</span>
                   </td>
                   <td><strong>{p.rubro || p.especialidades?.[0] || 'Sin especialidad'}</strong><span>{p.servicios || 'Sin servicios informados'}</span></td>
+                  <td onClick={e=>e.stopPropagation()}>
+                    <label className="agenda-marcacion-lista">
+                      <input type="checkbox" checked={Boolean(p.es_proveedor)}
+                        disabled={p.lista_negra||marcandoProveedor}
+                        onChange={e=>marcarComoProveedor(p,null,e.target.checked)}/>
+                      <span>{p.es_proveedor?'Sí':'No'}</span>
+                    </label>
+                  </td>
                   <td>{[p.comunas, ...(p.regiones ?? [])].filter(Boolean).join(', ') || 'Sin cobertura informada'}</td>
                   <td>
                     <span>{p.origen === 'correo' ? 'Gmail' : 'Manual'}</span>
@@ -822,7 +869,7 @@ export default function Proveedores() {
   );
 }
 
-function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto }) {
+function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto, onMarcar, marcando }) {
   return (
     <article className={'tarjeta proveedor-tarjeta' + (seleccionado ? ' seleccionado' : '')}>
       <label className="proveedor-tarjeta-seleccion" onClick={e => e.stopPropagation()}>
@@ -833,6 +880,7 @@ function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto 
       <button type="button" className="proveedor-tarjeta-principal" onClick={onAbrir}>
         <span className="crece proveedor-tarjeta-contenido">
           <strong>{p.empresa}</strong>
+          {esProveedorMarcado(p)&&<small className="agenda-marcador">✓ Tiene proveedores habilitados</small>}
           <span className="proveedor-servicios-resumen">
             {p.servicios || p.notas || 'Sin descripción de servicios'}
           </span>
@@ -850,6 +898,13 @@ function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto 
         {p.lista_negra && <span className="chip chip-critico">Lista negra</span>}
         <span className="flecha">›</span>
       </button>
+      <div className="agenda-marcacion-rapida" onClick={e=>e.stopPropagation()}>
+        <label>
+          <input type="checkbox" checked={Boolean(p.es_proveedor)}
+             disabled={p.lista_negra||marcando} onChange={e=>onMarcar(e.target.checked)}/>
+          <span>Proveedor contable</span>
+        </label>
+      </div>
       <div className="proveedor-contactos">
         <button disabled={!p.telefono} onClick={() => onContacto('llamada')}>☎ Llamar</button>
         <button disabled={!p.telefono} onClick={() => onContacto('whatsapp')}>WhatsApp</button>
@@ -859,7 +914,7 @@ function TarjetaProveedor({ p, seleccionado, onSeleccionar, onAbrir, onContacto 
   );
 }
 
-function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeEliminar, onVolver, onEditar, onBlacklist, onEliminar, onContacto, aviso, error, onCerrarAviso, children }) {
+function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeEliminar, onVolver, onEditar, onMarcarProveedor, marcandoProveedor, onBlacklist, onEliminar, onContacto, aviso, error, onCerrarAviso, children }) {
   return (
     <div className="pantalla proveedor-ficha modulo-unificado">
       <header className="encabezado modulo-cabecera">
@@ -870,7 +925,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
               {p.lista_negra && <span className="chip chip-critico">Lista negra</span>}
             </div>
             <p className="chico apagado" style={{ margin: '4px 0 0' }}>
-              {[p.rut, p.rubro].filter(Boolean).join(' · ') || 'Proveedor'}
+              {[p.tipo_registro==='contacto'?'Contacto':'Empresa', p.rut,p.rubro].filter(Boolean).join(' · ')}
             </p>
           </div>
           <button type="button" className="boton boton-secundario" onClick={onEditar}>Editar</button>
@@ -897,14 +952,35 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
         )}
 
         <div className="proveedor-ficha-grid">
-          <Seccion titulo="Contacto">
+          <Seccion titulo="Clasificación de Agenda" ancho>
+            <div className="agenda-roles">
+              <label className={'agenda-rol'+(p.es_proveedor?' activo':'')}>
+                <input type="checkbox" checked={Boolean(p.es_proveedor)}
+                   disabled={marcandoProveedor||p.lista_negra}
+                   onChange={e=>onMarcarProveedor(null,e.target.checked)}/>
+                <span><strong>{p.tipo_registro==='contacto'?'Esta persona es proveedora':'Esta empresa es proveedora'}</strong>
+                  <small>Disponible para asociar a asientos contables.</small></span>
+              </label>
+              {p.tipo_registro!=='contacto'&&Boolean(p.contacto_nombre?.trim())&&(
+                <label className={'agenda-rol'+(p.contacto_es_proveedor?' activo':'')}>
+                  <input type="checkbox" checked={Boolean(p.contacto_es_proveedor)}
+                     disabled={marcandoProveedor||p.lista_negra}
+                     onChange={e=>onMarcarProveedor(p.contacto_id,e.target.checked)}/>
+                  <span><strong>{p.contacto_nombre} · Proveedor individual</strong>
+                    <small>Se habilita independientemente de la empresa.</small></span>
+                </label>
+              )}
+              {!p.es_proveedor && !p.contacto_es_proveedor && !(p.contactos||[]).some(c=>c.es_proveedor)&&
+                <p className="micro apagado">Este registro está en Agenda, pero no aparecerá en contabilidad hasta marcar un proveedor.</p>}
+            </div>
+          </Seccion>
+          {p.tipo_registro!=='contacto'&&<Seccion titulo="Contacto principal">
             <Dato etiqueta="Nombre" valor={p.contacto_nombre} />
             <Dato etiqueta="Cargo" valor={p.contacto_cargo} />
             <Dato etiqueta="Teléfono" valor={p.telefono} />
             <Dato etiqueta="Correo" valor={p.email} />
-          </Seccion>
-
-          <Seccion titulo="Datos del proveedor">
+          </Seccion>}
+          <Seccion titulo={p.tipo_registro==='contacto'?'Datos del contacto':'Datos de la empresa'}>
             <Dato etiqueta="RUT" valor={p.rut} />
             <Dato etiqueta="Especialidad" valor={p.rubro || p.especialidades?.[0]} />
             <Dato etiqueta="Origen" valor={p.origen === 'correo' ? 'Gmail' : 'Manual'} />
@@ -933,10 +1009,18 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
             <Seccion titulo="Contactos adicionales" ancho>
               <div className="proveedor-historial">
                 {p.contactos.map((contacto, i) => (
-                  <div key={(contacto.email || contacto.telefono || contacto.nombre || '') + i}>
-                    <strong>{contacto.nombre || contacto.email || contacto.telefono || 'Contacto'}</strong>
-                    {contacto.cargo && <p>{contacto.cargo}</p>}
-                    <p>{[contacto.email, contacto.telefono].filter(Boolean).join(' · ')}</p>
+                  <div key={contacto.id||(contacto.email || contacto.telefono || contacto.nombre || '') + i} className="agenda-contacto-detalle">
+                    <div className="agenda-contacto-descripcion">
+                      <strong>{contacto.nombre || contacto.email || contacto.telefono || 'Contacto'}</strong>
+                      {contacto.cargo && <p>{contacto.cargo}</p>}
+                      <p>{[contacto.email, contacto.telefono].filter(Boolean).join(' · ')}</p>
+                    </div>
+                    <label className={'agenda-rol agenda-rol-compacto'+(contacto.es_proveedor?' activo':'')}>
+                      <input type="checkbox" checked={Boolean(contacto.es_proveedor)}
+                        disabled={marcandoProveedor||p.lista_negra||!contacto.id}
+                        onChange={e=>onMarcarProveedor(contacto.id,e.target.checked)}/>
+                      <span><strong>Proveedor</strong></span>
+                    </label>
                   </div>
                 ))}
               </div>
@@ -1033,7 +1117,7 @@ function FichaProveedor({ p, correos, cargandoCorreos, onAbrirArchivo, puedeElim
           </button>
           {puedeEliminar && (
             <button type="button" className="boton boton-texto peligro" onClick={onEliminar}>
-              Eliminar proveedor
+              Eliminar registro
             </button>
           )}
         </div>
@@ -1065,6 +1149,12 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
   const [datos, setDatos] = useState({
     id: inicial.id,
     empresa: inicial.empresa ?? '',
+    tipo_registro: inicial.tipo_registro === 'contacto' ? 'contacto':'empresa',
+    es_proveedor: Boolean(inicial.es_proveedor),
+    contacto_es_proveedor: Boolean(inicial.contacto_es_proveedor),
+    contactos: Array.isArray(inicial.contactos)?inicial.contactos:[],
+    contactosEditados:false,
+    lista_negra:Boolean(inicial.lista_negra),
     rut: inicial.rut ?? '',
     rubro: inicial.rubro ?? '',
     servicios: inicial.servicios ?? '',
@@ -1080,7 +1170,18 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
   const [guardando, setGuardando] = useState(false);
 
   const cambiar = (campo, valor) => setDatos(d => ({ ...d, [campo]: valor }));
-  const valido = datos.empresa.trim() && datos.rut.trim() && datos.rubro.trim();
+  const cambiarContacto=(indice,campo,valor)=>setDatos(d=>({
+    ...d,contactosEditados:true,contactos:d.contactos.map((c,i)=>i===indice?{...c,[campo]:valor}:c)
+  }));
+  const agregarContacto=()=>setDatos(d=>({
+    ...d,contactosEditados:true,contactos:[...d.contactos,{
+      id:crypto.randomUUID(),nombre:'',cargo:'',email:'',telefono:'',es_proveedor:false,origen:'manual'
+    }]
+  }));
+  const quitarContacto=indice=>setDatos(d=>({
+    ...d,contactosEditados:true,contactos:d.contactos.filter((_,i)=>i!==indice)
+  }));
+  const valido = Boolean(datos.empresa.trim());
 
   async function guardar() {
     if (!valido || guardando) return;
@@ -1092,32 +1193,57 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
   return (
     <div className="proveedor-modal proveedor-formulario">
       <button className="modal-cerrar" onClick={onCancelar} aria-label="Cerrar">×</button>
-      <h2 className="h3">{datos.id ? 'Editar proveedor' : 'Agregar proveedor'}</h2>
+      <h2 className="h3">{datos.id ? 'Editar registro de Agenda' : 'Nuevo registro de Agenda'}</h2>
       <div className="formulario-grid ui-formulario">
+        <label className="campo ancho-total">
+          <span className="etiqueta-campo">Tipo de registro</span>
+          <select value={datos.tipo_registro}
+            onChange={e=>cambiar('tipo_registro',e.target.value)}>
+            <option value="empresa">Empresa</option>
+            <option value="contacto">Contacto o persona</option>
+          </select>
+        </label>
         <div className="campo ancho-total">
-          <label className="etiqueta-campo">Empresa *</label>
-          <input value={datos.empresa} onChange={e => cambiar('empresa', e.target.value)} placeholder="Nombre de la empresa" />
+          <label className="etiqueta-campo">{datos.tipo_registro==='contacto'?'Nombre del contacto *':'Nombre de la empresa *'}</label>
+          <input value={datos.empresa} onChange={e => cambiar('empresa', e.target.value)}
+            placeholder={datos.tipo_registro==='contacto'?'Nombre completo':'Razón social o nombre de empresa'} />
         </div>
+        <label className="agenda-rol agenda-rol-formulario ancho-total">
+          <input type="checkbox" checked={datos.es_proveedor}
+            disabled={datos.lista_negra}
+            onChange={e=>cambiar('es_proveedor',e.target.checked)}/>
+          <span><strong>{datos.tipo_registro==='contacto'?'Marcar esta persona como proveedor':'Marcar esta empresa como proveedor'}</strong>
+            <small>Solo los registros marcados aparecerán en asientos contables.</small></span>
+        </label>
         <div className="campo">
-          <label className="etiqueta-campo">RUT *</label>
+          <label className="etiqueta-campo">RUT (opcional)</label>
           <input value={datos.rut} onChange={e => cambiar('rut', e.target.value)} placeholder="12.345.678-9" />
         </div>
         <div className="campo">
-          <label className="etiqueta-campo">Rubro *</label>
+          <label className="etiqueta-campo">Rubro (opcional)</label>
           <input value={datos.rubro} onChange={e => cambiar('rubro', e.target.value)} placeholder="Mantención, aseo, ascensores…" />
         </div>
         <div className="campo ancho-total">
           <label className="etiqueta-campo">Servicios</label>
           <textarea value={datos.servicios} onChange={e => cambiar('servicios', e.target.value)} placeholder="Describe los servicios que ofrece" />
         </div>
+        {datos.tipo_registro==='empresa'&&<>
         <div className="campo">
-          <label className="etiqueta-campo">Contacto</label>
+          <label className="etiqueta-campo">Contacto principal</label>
           <input value={datos.contacto_nombre} onChange={e => cambiar('contacto_nombre', e.target.value)} placeholder="Nombre del contacto" />
         </div>
         <div className="campo">
           <label className="etiqueta-campo">Cargo</label>
           <input value={datos.contacto_cargo} onChange={e => cambiar('contacto_cargo', e.target.value)} placeholder="Cargo" />
         </div>
+        <label className="agenda-rol agenda-rol-formulario ancho-total">
+          <input type="checkbox" checked={datos.contacto_es_proveedor}
+            disabled={!datos.contacto_nombre.trim()||datos.lista_negra}
+            onChange={e=>cambiar('contacto_es_proveedor',e.target.checked)}/>
+          <span><strong>Marcar el contacto principal como proveedor individual</strong>
+            <small>Puede ser proveedor aunque la empresa no esté marcada.</small></span>
+        </label>
+        </>}
         <div className="campo">
           <label className="etiqueta-campo">Teléfono</label>
           <input value={datos.telefono} onChange={e => cambiar('telefono', e.target.value)} placeholder="+56 9 1234 5678" />
@@ -1134,6 +1260,31 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
           <label className="etiqueta-campo">Cobertura</label>
           <input value={datos.comunas} onChange={e => cambiar('comunas', e.target.value)} placeholder="Santiago, Ñuñoa, Providencia…" />
         </div>
+        {datos.tipo_registro==='empresa'&&<section className="agenda-contactos-editar ancho-total">
+          <div className="agenda-contactos-editar-cabecera">
+            <div><strong>Contactos adicionales</strong>
+              <p className="micro apagado">Cada contacto se puede habilitar como proveedor independientemente de la empresa.</p>
+            </div>
+            <button type="button" className="boton boton-secundario" onClick={agregarContacto}>+ Contacto</button>
+          </div>
+          {datos.contactos.map((contacto,i)=><div key={contacto.id||i} className="agenda-contacto-editar-fila">
+            <label className="campo"><span className="etiqueta-campo">Nombre</span>
+              <input value={contacto.nombre||''} onChange={e=>cambiarContacto(i,'nombre',e.target.value)}/></label>
+            <label className="campo"><span className="etiqueta-campo">Correo</span>
+              <input type="email" value={contacto.email||''} onChange={e=>cambiarContacto(i,'email',e.target.value)}/></label>
+            <label className="campo"><span className="etiqueta-campo">Teléfono</span>
+              <input value={contacto.telefono||''} onChange={e=>cambiarContacto(i,'telefono',e.target.value)}/></label>
+            <label className="campo"><span className="etiqueta-campo">Cargo</span>
+              <input value={contacto.cargo||''} onChange={e=>cambiarContacto(i,'cargo',e.target.value)}/></label>
+            <label className="agenda-rol agenda-rol-compacto">
+              <input type="checkbox" checked={Boolean(contacto.es_proveedor)} disabled={datos.lista_negra}
+                onChange={e=>cambiarContacto(i,'es_proveedor',e.target.checked)}/>
+              <span><strong>Proveedor</strong></span>
+            </label>
+            <button type="button" className="boton boton-texto" onClick={()=>quitarContacto(i)}
+              aria-label={'Quitar contacto '+(contacto.nombre||String(i+1))}>Quitar</button>
+          </div>)}
+        </section>}
         <div className="campo ancho-total">
           <label className="etiqueta-campo">Notas</label>
           <textarea value={datos.notas} onChange={e => cambiar('notas', e.target.value)} placeholder="Información adicional…" />
@@ -1142,7 +1293,7 @@ function FormularioProveedor({ inicial, onCancelar, onGuardar }) {
       <div className="fila-botones">
         <button type="button" className="boton boton-secundario" onClick={onCancelar}>Cancelar</button>
         <button type="button" className="boton" disabled={!valido || guardando} onClick={guardar}>
-          {guardando ? 'Guardando…' : 'Guardar proveedor'}
+          {guardando ? 'Guardando…' : 'Guardar en Agenda'}
         </button>
       </div>
     </div>

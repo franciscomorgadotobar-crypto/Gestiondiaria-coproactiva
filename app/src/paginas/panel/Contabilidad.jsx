@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { borradorDesdeAsientoRecurrente } from '../../lib/asientosRecurrentes';
+import {opcionesProveedoresContables,opcionAnteriorContable} from '../../lib/agendaProveedoresContables';
 import { useSesion } from '../../lib/sesion';
 import { limpiarArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
@@ -212,13 +213,14 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
   const [glosa, setGlosa] = useState(borrador?.glosa || '');
   // Factura, número contable y fecha nunca se copian de un asiento anterior.
   const [referencia, setReferencia] = useState('');
-  const [proveedorId, setProveedorId] = useState(borrador?.proveedor_id || '');
+  const [proveedorId, setProveedorId] = useState(opcionAnteriorContable(asientoOrigen));
   const [recurrente, setRecurrente] = useState(Boolean(borrador?.recurrente));
   const [lineas, setLineas] = useState(() => borrador?.lineas?.length
     ? borrador.lineas.map(x=>({...x,key:crypto.randomUUID()}))
     : [lineaVacia(),lineaVacia()]);
   const [montoOperacion, setMontoOperacion] = useState('');
   const grupos = useMemo(() => gruposCuentas(cuentas), [cuentas]);
+  const proveedorSeleccionado=proveedores.find(p=>p.clave===proveedorId)||null;
 
   const cuentaPorCodigos = codigos => {
     for (const codigo of codigos) {
@@ -300,7 +302,7 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
     return !(cuenta?.requiere_centro_costo && ['4','5'].includes(String(cuenta.codigo || '')[0]))
       || Boolean(x.centro_costo_id);
   });
-  const valido = fecha && completas.length >= 2 && totalDebe > 0 && Math.abs(diferencia) < 0.005 && centrosCompletos;
+  const valido = fecha && completas.length >= 2 && totalDebe > 0 && Math.abs(diferencia) < 0.005 && centrosCompletos && (!proveedorId || proveedorSeleccionado);
 
   function cambiarLinea(key, campo, valor) {
     setLineas(xs => xs.map(x => {
@@ -336,7 +338,8 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
       fecha,
       glosa: glosa.trim(),
       referencia: referencia.trim(),
-      proveedor_id: proveedorId || null,
+      proveedor_id: proveedorSeleccionado?.proveedor_id || null,
+      proveedor_contacto_id: proveedorSeleccionado?.contacto_id || null,
       recurrente,
       lineas: completas.map(x => ({
         cuenta_id: x.cuenta_id,
@@ -394,8 +397,11 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
             <span className="etiqueta-campo">Proveedor</span>
             <select value={proveedorId} onChange={e => setProveedorId(e.target.value)}>
               <option value="">Sin proveedor asociado</option>
-              {proveedores.map(p => <option key={p.id} value={p.id}>{p.empresa}</option>)}
+              {proveedores.map(p => <option key={p.clave} value={p.clave}>{p.nombre}</option>)}
             </select>
+            {proveedorId&&!proveedorSeleccionado&&<small className="contabilidad-proveedor-aviso">
+              Este proveedor dejó de estar habilitado en Agenda. Selecciona otro antes de contabilizar.
+            </small>}
           </label>
         </div>
 
@@ -908,7 +914,7 @@ export default function Contabilidad() {
 
     Promise.all([
       supabase.from('contabilidad_entidades').select('*').eq('activa', true).order('nombre'),
-      supabase.from('proveedores').select('id,empresa').eq('lista_negra', false).order('empresa')
+      supabase.from('proveedores').select('id,empresa,tipo_registro,es_proveedor,contacto_id,contacto_nombre,contacto_es_proveedor,contactos,lista_negra').eq('lista_negra', false).order('empresa')
     ]).then(([re, rp]) => {
       if (!vigente) return;
       if (re.error) {
@@ -967,7 +973,7 @@ export default function Contabilidad() {
       supabase.from('contabilidad_cuentas')
         .select('*').eq('entidad_id', id).order('codigo'),
       supabase.from('contabilidad_asientos')
-        .select('id,numero,fecha,glosa,estado,origen,recurrente,referencia,proveedor_id,creado_en,motivo_anulacion,contabilidad_asiento_lineas(id,orden,debe,haber,glosa,cuenta_id,centro_costo_id,contabilidad_cuentas(codigo,cuenta),contabilidad_centros_costo(codigo,nombre))')
+        .select('id,numero,fecha,glosa,estado,origen,recurrente,referencia,proveedor_id,proveedor_contacto_id,proveedor_etiqueta,creado_en,motivo_anulacion,contabilidad_asiento_lineas(id,orden,debe,haber,glosa,cuenta_id,centro_costo_id,contabilidad_cuentas(codigo,cuenta),contabilidad_centros_costo(codigo,nombre))')
         .eq('entidad_id', id)
         .order('fecha', { ascending: false })
         .order('numero', { ascending: false })
@@ -1032,13 +1038,14 @@ export default function Contabilidad() {
   async function guardarAsiento(datos) {
     setGuardando(true);
     setError(null);
-    const { data, error } = await supabase.rpc('contabilidad_registrar_asiento_con_recurrencia', {
+    const { data, error } = await supabase.rpc('contabilidad_registrar_asiento_agenda', {
       p_entidad_id: entidadId,
       p_fecha: datos.fecha,
       p_glosa: datos.glosa || null,
       p_lineas: datos.lineas,
       p_referencia: datos.referencia || null,
       p_proveedor_id: datos.proveedor_id,
+      p_contacto_id: datos.proveedor_contacto_id,
       p_numero: datos.numero,
       p_recurrente: Boolean(datos.recurrente)
     });
@@ -1273,6 +1280,7 @@ export default function Contabilidad() {
   const pasivoPatrimonio = tb.pasivo + eerr.utilidad;
   const diferenciaBalance = tb.activo - pasivoPatrimonio;
   const balanceCuadrado = Math.abs(diferenciaBalance) < 0.005;
+  const proveedoresContables=opcionesProveedoresContables(proveedores);
   const asientosVisibles = asientos.filter(a => {
     if (soloRecurrentes && (!a.recurrente || a.estado === 'anulado')) return false;
     const q = normalizar(busquedaAsiento);
@@ -1300,7 +1308,7 @@ export default function Contabilidad() {
       {editorAbierto && entidad?.plan_origen !== 'pendiente' && (
         <EditorAsiento
           cuentas={cuentas.filter(x => x.activa && x.clase === 'movimiento' && x.imputable !== false)}
-          proveedores={proveedores}
+          proveedores={proveedoresContables}
           centros={centrosCosto}
           usaCentrosCosto={Boolean(entidad?.usa_centros_costo)}
           guardando={guardando}
@@ -1649,6 +1657,9 @@ export default function Contabilidad() {
                         <p className="micro apagado" style={{ margin: 0 }}>{fechaCL(a.fecha)}</p>
                         <h2 className="h3" style={{ marginTop: 3 }}>Asiento N° {a.numero}</h2>
                         <p className="chico" style={{ margin: '5px 0 0' }}>{a.glosa || 'Sin glosa'}</p>
+                        {a.proveedor_etiqueta&&<p className="micro apagado contabilidad-proveedor-referencia">
+                          Agenda: {a.proveedor_etiqueta}
+                        </p>}
                       </div>
                       <div className="contabilidad-asiento-total">
                         <strong>{moneda(debe)}</strong>

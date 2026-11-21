@@ -8,3 +8,30 @@
 .comunicacion-firma-horizontal{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .comunicacion-firma-horizontal>img{flex:none}
 .comunicacion-editor .pipeline-correo-error{color:#a23628;font-size:12px}
+
+
+/* Agenda: empresa, personas y contactos habilitables de forma independiente. */
+.agenda-marcador{display:inline-block;font-size:11px;font-weight:700;color:#1e753e;background:#eef8f0;padding:3px 7px;border-radius:5px;margin-top:4px}
+.agenda-roles{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.agenda-rol{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--borde-suave,#ded8d0);border-radius:8px;background:#fff;cursor:pointer;min-width:200px;flex:1;box-sizing:border-box}
+.agenda-rol.activo{border-color:#9fcfaf;background:#f2faf4}
+.agenda-rol input{accent-color:#1b7533;flex:0 0 auto;width:17px;height:17px}
+.agenda-rol>span{display:grid;gap:3px;min-width:0}
+.agenda-rol strong{font-size:13px;line-height:1.4}
+.agenda-rol small{color:var(--texto-apagado,#6b7280);font-size:11px;line-height:1.45}
+.agenda-rol-compacto{flex:none;min-width:0;padding:7px 10px}
+.agenda-rol-compacto strong{font-size:12px}
+.agenda-contacto-detalle{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--borde-suave,#eee)}
+.agenda-contacto-descripcion{min-width:170px;flex:1}
+.agenda-contacto-descripcion p{margin:3px 0;color:var(--texto-apagado,#6b7280);font-size:12px}
+.agenda-contactos-editar{border:1px solid var(--borde-suave,#ded8d0);border-radius:10px;padding:13px;display:grid;gap:10px}
+.agenda-contactos-editar-cabecera{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.agenda-contactos-editar-cabecera strong{font-size:14px}
+.agenda-contactos-editar-cabecera p{margin:3px 0}
+.agenda-contacto-editar-fila{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:9px;align-items:end;border-top:1px solid var(--borde-suave,#ded8d0);padding-top:10px}
+.agenda-contacto-editar-fila .campo{margin:0}
+.agenda-contacto-editar-fila>.boton{text-align:center}
+.agenda-marcacion-lista,.agenda-marcacion-rapida label{display:flex;gap:7px;align-items:center;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap}
+.agenda-marcacion-lista input,.agenda-marcacion-rapida input{accent-color:#1b7533;width:16px;height:16px}
+.agenda-marcacion-rapida{padding:8px 12px;border-top:1px solid var(--borde-suave,#eee)}
+@media(max-width:760px){.agenda-roles{display:grid}.agenda-contacto-editar-fila{grid-template-columns:1fr}.agenda-contactos-editar{padding:10px}}

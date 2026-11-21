@@ -367,7 +367,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false, vista
         { ruta: '/mantenciones', etiqueta: alertasMantencion > 0 ? `Mantenciones (${alertasMantencion})` : 'Mantenciones', mostrar: true },
         { ruta: '/mapa', etiqueta: 'Mapa', mostrar: true },
         // Herramientas de Proveedores, sólo cuando se utiliza esa pantalla.
-        { ruta: '/proveedores', etiqueta: 'Proveedores', mostrar: esAdministracion, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
+        { ruta: '/proveedores', etiqueta: 'Agenda', mostrar: esAdministracion, activo: p => p === '/proveedores' || (/^\/proveedores\/[0-9a-f-]{20,}$/i.test(p)) },
         { ruta: '/proveedores/postulantes', etiqueta: 'Postulantes', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
         { ruta: '/proveedores/correos', etiqueta: 'Correos', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
         { ruta: '/proveedores/comunicaciones', etiqueta: 'Comunicaciones', mostrar: esAdministracion && activa(pathname, '/proveedores'), hijo: true },
@@ -449,7 +449,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false, vista
     { id: 'bitacora', etiqueta: 'Bitácora', ruta: '/bitacora' },
     { id: 'mantenciones', etiqueta: 'Mantenciones', ruta: '/mantenciones' },
     { id: 'mapa', etiqueta: 'Mapa', ruta: '/mapa' },
-    { id: 'proveedores', etiqueta: 'Proveedores', ruta: '/proveedores', mostrar: esAdministracion },
+    { id: 'proveedores', etiqueta: 'Agenda', ruta: '/proveedores', mostrar: esAdministracion },
   ].filter(x => x.mostrar !== false);
 
   // Comercial conserva el mismo menú principal también al entrar en SEO.

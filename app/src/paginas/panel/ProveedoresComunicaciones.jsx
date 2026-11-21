@@ -94,7 +94,7 @@ export default function ProveedoresComunicaciones() {
       <header className="encabezado modulo-cabecera">
         <div className="proveedores-intro">
           <div className="fila navegacion-interna" style={{ marginBottom: 6 }}>
-            <button type="button" className="boton boton-texto" onClick={() => navegar('/proveedores')}>‹ Proveedores</button>
+            <button type="button" className="boton boton-texto" onClick={() => navegar('/proveedores')}>‹ Agenda</button>
           </div>
           <h1 className="h3">Comunicaciones</h1>
           <p className="chico apagado proveedores-descripcion">

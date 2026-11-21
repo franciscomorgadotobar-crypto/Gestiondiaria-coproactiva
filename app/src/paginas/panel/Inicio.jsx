@@ -121,7 +121,7 @@ export default function Inicio() {
     ...(puedeConfigurar ? [{ ruta: '/plantillas', titulo: 'Plantillas' }] : []),
     ...(esAdministracion ? [
       { ruta: '/vista-cliente', titulo: 'Vista de cliente' },
-      { ruta: '/proveedores', titulo: 'Red de proveedores' },
+      { ruta: '/proveedores', titulo: 'Agenda' },
       { ruta: '/whatsapp', titulo: 'Recepción y atención' }
     ] : []),
     { ruta: '/mapa', titulo: 'Mapa de visitas' }

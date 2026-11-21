@@ -1675,3 +1675,7 @@
  .contabilidad-recurrentes-filtro small{flex-basis:100%;padding-left:25px}
  .contabilidad-recurrente-acciones{justify-content:flex-end}
 }
+
+
+.contabilidad-proveedor-aviso{display:block;color:#a05f21;font-size:11px;line-height:1.4;margin-top:5px}
+.contabilidad-proveedor-referencia{margin:5px 0 0;font-size:12px}
