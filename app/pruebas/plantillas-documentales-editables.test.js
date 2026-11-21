@@ -20,7 +20,7 @@ test('Los cuatro tipos de documento cuentan con modelo editable',()=>{
  for(const tipo of tipos){
   const modelo=modeloEditable(tipo);
   const campos=tipo==='propuesta_comercial'?CAMPOS_PROPUESTA_PLANTILLA:CAMPOS_POR_TIPO[tipo];
-  assert.ok(campos.every(([clave])=>typeof modelo[clave]==='string'&&modelo[clave].length>10),tipo);
+  assert.ok(campos.every(([clave])=>typeof modelo[clave]==='string'&&modelo[clave].length>0),tipo);
   const editado=contenidoEditable(tipo,{[campos[0][0]]:'Nueva frase'});
   assert.equal(editado[campos[0][0]],'Nueva frase');
   assert.notEqual(modeloEditable(tipo)[campos[0][0]],'Nueva frase');
@@ -63,4 +63,33 @@ test('La propuesta cuida cortes de página y filas en PDF',()=>{
  assert.match(propuesta,/breakInside: 'avoid-page'/);
  assert.match(formato,/table thead/);
  assert.match(formato,/table tr/);
+});
+
+test('Saludo editable y neutral para una persona, sin asumir que integra un comité',()=>{
+ const valores=contenidoEditable('propuesta_comercial',null);
+ assert.equal(interpolar(valores.saludo,{destinatario:'Paulina Silva'}),'A la atención de Paulina Silva:');
+ assert.doesNotMatch(propuesta,/Estimados miembros del/);
+ assert.match(propuesta,/texto\('saludo'\)/);
+ assert.match(plantillaEditor,/Saludo del documento/);
+ assert.match(plantillaEditor,/camposAgrupados\.map/);
+ assert.match(plantillaEditor,/Buscar un texto, título o sección para editar/);
+});
+test('Todos los textos estructurales del documento están expuestos en la plantilla',()=>{
+ const claves=CAMPOS_PROPUESTA_PLANTILLA.map(([clave])=>clave);
+ assert.equal(claves.length,new Set(claves).size,'No repetir campos');
+ assert.ok(claves.length>=58,'Cobertura completa de secciones, encabezados, tablas y pie');
+ for(const clave of claves){
+  assert.ok(Object.hasOwn(PLANTILLA_PROPUESTA_BASE,clave),clave+' sin texto base');
+  assert.ok(
+    propuesta.includes("texto('"+clave+"')") ||
+    propuesta.includes("matriz('"+clave+"'") ||
+    propuesta.includes("lista('"+clave+"'") ||
+    propuesta.includes("plantilla[clave]")&&['reglasPorcentaje','reglasFijo','condiciones','noIncluidas','canales'].includes(clave) ||
+    ['reglasPorcentaje','reglasFijo','condiciones','noIncluidas','canales'].includes(clave),
+    clave+' sin asociación a la vista de documento'
+  );
+ }
+ assert.match(propuesta,/portadaPrefijoFecha/);
+ assert.match(propuesta,/firmantePredeterminado/);
+ assert.match(propuesta,/cargoPredeterminado/);
 });

@@ -13,3 +13,38 @@
 .plantilla-documental-editor-pie{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;line-height:1.5;color:#6b7280}
 .plantilla-documental-editor-pie a{color:#b75d20;font-weight:700}
 @media(max-width:700px){.plantilla-documental-editor-contenido{padding:13px}.plantilla-documental-editor-acciones{width:100%}.plantilla-documental-editor-acciones .boton{flex:1;min-width:135px}.plantilla-documental-editor-campo textarea{font-size:16px}}
+
+/* Editor de plantilla completa, organizado por secciones del documento */
+.plantilla-documental-editor-saludo{
+ display:grid;gap:8px;padding:16px;border:1px solid #dfc0a8;
+ border-radius:10px;background:#fff8f2;
+}
+.plantilla-documental-editor-saludo p{margin:0;font-size:14px;line-height:1.5;color:#414a55}
+.plantilla-documental-editor-saludo small{color:#696f78;font-size:12px;line-height:1.5}
+.plantilla-documental-editor-saludo textarea{min-height:66px}
+.plantilla-documental-editor-buscar{display:grid;gap:8px;font-size:13px;font-weight:700;color:#303942}
+.plantilla-documental-editor-buscar input{width:100%;min-width:0;box-sizing:border-box;padding:12px;border:1px solid #cbc7c3;border-radius:8px;background:#fff;font:400 15px/1.4 'Source Sans Pro',Arial,sans-serif}
+.plantilla-documental-editor-buscar input:focus-visible{outline:2px solid #ed7130;outline-offset:1px}
+.plantilla-documental-editor-grupos{display:grid;gap:11px;min-width:0}
+.plantilla-documental-editor-grupo{border:1px solid #e4ddd6;border-radius:10px;overflow:hidden;background:#fff}
+.plantilla-documental-editor-grupo summary{
+ display:flex;align-items:center;justify-content:space-between;gap:8px;
+ cursor:pointer;padding:14px 16px;font-size:15px;font-weight:750;color:#2b3138;
+ background:#f9f6f2;list-style:none;
+}
+.plantilla-documental-editor-grupo summary::-webkit-details-marker{display:none}
+.plantilla-documental-editor-grupo summary span{color:#697481;font-weight:450;font-size:12px}
+.plantilla-documental-editor-grupo[open] summary{border-bottom:1px solid #e4ddd6;color:#9a4f1e}
+.plantilla-documental-editor-grupo-campos{padding:18px 15px;display:grid;gap:19px}
+.plantilla-documental-editor-grupo-campos textarea{min-height:75px}
+@media(max-width:700px){
+ .plantilla-documental-editor-grupo-campos{padding:12px}
+ .plantilla-documental-editor-grupo summary{padding:13px}
+ .plantilla-documental-editor-saludo{padding:12px}
+}
+
+.plantilla-documental-editor-preview{background:#eeeae4;border:1px solid #e0d5ca;border-radius:12px;padding:16px;min-width:0;overflow-x:auto}
+.plantilla-documental-editor-preview h2{font-size:19px;margin:0 0 7px;color:#2b3138}
+.plantilla-documental-editor-preview>p{font-size:13px;line-height:1.5;color:#64707a;margin:0 0 13px}
+.plantilla-documental-editor-preview doc-page{display:block;max-width:100%;overflow:auto}
+@media print{.plantilla-documental-editor-preview{display:none!important}}

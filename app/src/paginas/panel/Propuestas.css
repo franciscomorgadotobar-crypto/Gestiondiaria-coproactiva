@@ -108,3 +108,9 @@
  .propuesta-docwrap doc-page table tr{break-inside:avoid-page!important;page-break-inside:avoid!important}
  .propuesta-docwrap doc-page ul li{break-inside:avoid-page!important;page-break-inside:avoid!important}
 }
+
+/* La actualización de plantillas se vincula a cada propuesta existente. */
+.propuesta-plantilla-acciones{display:grid;gap:8px;margin-top:14px;border-top:1px solid #eee3da;padding-top:12px}
+.propuesta-plantilla-acciones a{color:#a7531f;font-weight:750;font-size:13px;line-height:1.5}
+.propuesta-plantilla-acciones button{width:100%;font-size:11px!important;line-height:1.3;letter-spacing:.05em!important}
+.propuesta-plantilla-acciones small{display:block;color:#637081;font-size:11px;line-height:1.5}

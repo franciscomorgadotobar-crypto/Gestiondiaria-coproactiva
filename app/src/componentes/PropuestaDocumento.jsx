@@ -6,7 +6,7 @@ const propDocStyles = {
   h2: { margin: 0, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 25, letterSpacing: '-.015em', color: '#2b3138' },
   h3: { margin: '22px 0 10px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, letterSpacing: '.2em', textTransform: 'uppercase', color: '#8b939b', breakAfter: 'avoid-page', pageBreakAfter: 'avoid' },
   sec: { marginTop: 34, breakInside: 'auto' },
-  p: { margin: '0 0 13px', fontSize: 16, lineHeight: 1.62, color: '#3a4149', orphans: 3, widows: 3 },
+  p: { margin: '0 0 13px', fontSize: 16, lineHeight: 1.62, color: '#3a4149', orphans: 3, widows: 3, whiteSpace: 'pre-line' },
   note: { margin: '16px 0 0', fontSize: 14, lineHeight: 1.55, color: '#6b7480' },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: { background: '#2b3138', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', textAlign: 'left', padding: '10px 14px' },
@@ -97,12 +97,12 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
     destinatario:d.destinatario||'Comité de Administración',
     email:d.email||'contacto@coproactiva.cl',
     diasPago:d.diasPago||'5',
-    mesesContrato:d.mesesContrato||'12'
+    mesesContrato:d.mesesContrato||'12',
+    vigencia:d.vigencia||'30'
   };
-  const matriz=(clave,original,columnas)=>plantillaContenido?.[clave]
-    ?filas(plantilla[clave],columnas):original;
-  const lista=(clave,original)=>plantillaContenido?.[clave]
-    ?puntos(plantilla[clave]).map(t=>interpolar(t,variables)):original;
+  const texto=clave=>interpolar(plantilla[clave],variables);
+  const matriz=(clave,original,columnas)=>filas(plantilla[clave],columnas);
+  const lista=(clave,original)=>puntos(plantilla[clave]).map(t=>interpolar(t,variables));
   const comunidad = d.comunidad.trim();
   const nombreEnTexto = comunidad || '[NOMBRE DEL EDIFICIO O CONDOMINIO]';
   const reglasBase = calc.tipoHonorarios === 'fijo' ? [
@@ -135,65 +135,65 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
   return (
     <doc-page margin="0.72in" style={{ fontFamily: 'var(--font-body)' }}>
       <div slot="footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 10, letterSpacing: '.16em', textTransform: 'uppercase', color: '#9aa1a8', borderTop: '1px solid #e9e6e2', paddingTop: 9 }}>
-        <span>CoproActiva Administración SpA</span>
-        <span>{comunidad ? comunidad + ' · ' : ''}Propuesta comercial · Confidencial</span>
+        <span>{texto('pieEmpresa')}</span>
+        <span>{comunidad ? comunidad + ' · ' : ''}{texto('pieDocumento')}</span>
       </div>
 
       {opts.portada ? (
         <div style={{ breakAfter: 'page' }}>
           <img src={import.meta.env.BASE_URL+"brand/imagologo-horizontal-naranja.svg"} alt="CoproActiva" style={{ display: 'block', height: 31, width: 'auto' }} />
           <div style={{ height: 1.5, background: '#2b3138', marginTop: 28 }}></div>
-          <div style={{ marginTop: 26, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, letterSpacing: '.36em', textTransform: 'uppercase', color: '#d5863b' }}>Propuesta comercial</div>
-          <h1 style={{ margin: '16px 0 0', fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 43, lineHeight: 1.12, letterSpacing: '-.02em', color: '#2b3138' }}>Administración integral de condominios y comunidades</h1>
-          <p style={{ margin: '22px 0 0', fontSize: 16.5, lineHeight: 1.6, color: '#5a636c', maxWidth: '32em' }}>{plantillaContenido?.portadaSubtitulo||'Gestión profesional estructurada sobre la Ley N°21.442.'}</p>
+          <div style={{ marginTop: 26, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, letterSpacing: '.36em', textTransform: 'uppercase', color: '#d5863b' }}>{texto('portadaEtiqueta')}</div>
+          <h1 style={{ margin: '16px 0 0', fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 43, lineHeight: 1.12, letterSpacing: '-.02em', color: '#2b3138' }}>{texto('portadaTitulo')}</h1>
+          <p style={{ margin: '22px 0 0', fontSize: 16.5, lineHeight: 1.6, color: '#5a636c', maxWidth: '32em' }}>{texto('portadaSubtitulo')}</p>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 56 }}>
             <tbody>
               <tr style={s.plain}>
-                <td style={{ ...s.metaLabel, width: '34%' }}>Comunidad</td>
+                <td style={{ ...s.metaLabel, width: '34%' }}>{texto('portadaEtiquetaComunidad')}</td>
                 <td style={s.metaValStrong}><Ph value={comunidad} hint="[NOMBRE DEL EDIFICIO O CONDOMINIO]" /></td>
               </tr>
               <tr style={s.plain}>
-                <td style={s.metaLabel}>Ubicación</td>
+                <td style={s.metaLabel}>{texto('portadaEtiquetaUbicacion')}</td>
                 <td style={s.metaVal}>
-                  <Ph value={d.direccion} hint="[DIRECCIÓN]" />, <Ph value={d.comuna} hint="[COMUNA]" />, Región Metropolitana
+                  <Ph value={d.direccion} hint="[DIRECCIÓN]" />, <Ph value={d.comuna} hint="[COMUNA]" />, {texto('portadaRegion')}
                 </td>
               </tr>
               <tr style={s.plain}>
-                <td style={s.metaLabel}>Preparada para</td>
+                <td style={s.metaLabel}>{texto('portadaEtiquetaDestinatario')}</td>
                 <td style={s.metaVal}>{d.destinatario || 'Comité de Administración'}</td>
               </tr>
               <tr style={s.plain}>
-                <td style={s.metaLabel}>Fecha</td>
-                <td style={s.metaVal}>Santiago, <Ph value={calc.fechaTexto} hint="[FECHA]" /></td>
+                <td style={s.metaLabel}>{texto('portadaEtiquetaFecha')}</td>
+                <td style={s.metaVal}>{texto('portadaPrefijoFecha').trimEnd()} <Ph value={calc.fechaTexto} hint="[FECHA]" /></td>
               </tr>
               <tr style={s.plain}>
-                <td style={s.metaLabel}>Vigencia de la oferta</td>
-                <td style={s.metaVal}>{d.vigencia || '30'} días corridos desde la fecha de emisión</td>
+                <td style={s.metaLabel}>{texto('portadaEtiquetaVigencia')}</td>
+                <td style={s.metaVal}>{texto('portadaTextoVigencia')}</td>
               </tr>
             </tbody>
           </table>
           <div style={{ marginTop: 44, display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 14, color: '#6b7480' }}>
             <span style={{ color: '#d5863b', fontWeight: 700 }}>·</span>
-            <span>CoproActiva Administración SpA · {d.email || 'contacto@coproactiva.cl'}</span>
+            <span>{texto('pieEmpresa')} · {d.email || 'contacto@coproactiva.cl'}</span>
           </div>
         </div>
       ) : null}
 
       <section style={{ breakInside: 'auto' }}>
-        <SecHead n="01" title="Presentación" showNum={opts.numeros} />
-        <p style={s.p}>Estimados miembros del {d.destinatario || 'Comité de Administración'}:</p>
-        <p style={s.p}>{plantillaContenido?.presentacion?interpolar(plantilla.presentacion,variables):<>Agradecemos la oportunidad de presentar esta propuesta para la administración de {comunidad ? comunidad : <span style={s.ph}>{nombreEnTexto}</span>}. CoproActiva Administración SpA es una empresa de administración profesional de condominios, cuyo trabajo se estructura íntegramente sobre la Ley N°21.442 sobre Copropiedad Inmobiliaria y su Reglamento, aprobado por el Decreto Supremo N°7 del Ministerio de Vivienda y Urbanismo.</>}</p>
-        <p style={s.p}>{plantillaContenido?.compromiso||'Nuestro compromiso es simple: una comunidad administrada con orden legal, información financiera verificable y respuesta oportuna. No entendemos la administración como un servicio de trámites, sino como la gestión responsable de un patrimonio común y de las obligaciones que la ley impone a quien lo administra.'}</p>
-        <p style={{ ...s.p, margin: 0 }}>{plantillaContenido?.cierre||'Esta propuesta describe el alcance del servicio, los entregables comprometidos, los tiempos de respuesta y las condiciones económicas. Quedamos a disposición del Comité para presentarla en reunión y resolver cualquier consulta.'}</p>
+        <SecHead n="01" title={texto('tituloPresentacion')} showNum={opts.numeros} />
+        <p style={s.p}>{texto('saludo')}</p>
+        <p style={s.p}>{texto('presentacion')}</p>
+        <p style={s.p}>{texto('compromiso')}</p>
+        <p style={{ ...s.p, margin: 0 }}>{texto('cierre')}</p>
         <div style={{ marginTop: 30, paddingTop: 20, borderTop: '1px solid #e9e6e2', breakInside: 'avoid' }}>
-          <div style={{ fontFamily: 'var(--font-script)', fontSize: 39, lineHeight: 1, color: '#2b3138' }}>{d.firmante || 'Osmar André Meza Aguilar'}</div>
-          <div style={{ marginTop: 10, fontSize: 14, lineHeight: 1.5, color: '#6b7480' }}>{d.cargo || 'Contador Auditor · Administrador Inscrito · Representante Legal'}</div>
-          <div style={{ fontSize: 14, lineHeight: 1.5, color: '#6b7480' }}>CoproActiva Administración SpA</div>
+          <div style={{ fontFamily: 'var(--font-script)', fontSize: 39, lineHeight: 1, color: '#2b3138' }}>{d.firmante || texto('firmantePredeterminado')}</div>
+          <div style={{ marginTop: 10, fontSize: 14, lineHeight: 1.5, color: '#6b7480' }}>{d.cargo || texto('cargoPredeterminado')}</div>
+          <div style={{ fontSize: 14, lineHeight: 1.5, color: '#6b7480' }}>{texto('pieEmpresa')}</div>
         </div>
       </section>
 
       <section style={s.sec}>
-        <SecHead n="02" title="Nuestro enfoque" showNum={opts.numeros} />
+        <SecHead n="02" title={texto('tituloEnfoque')} showNum={opts.numeros} />
         <table style={s.table}>
           <tbody>
             {matriz('enfoques',ENFOQUE,2).map(([k, v]) => (
@@ -207,13 +207,13 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
       </section>
 
       <section style={s.sec}>
-        <SecHead n="03" title="Servicio: administración integral" showNum={opts.numeros} />
-        <p style={{ ...s.p, margin: '0 0 20px' }}>{plantillaContenido?.servicioIntro||'Modalidad aplicable a comunidades con historial y operación en marcha. CoproActiva asume la totalidad de las funciones que la Ley N°21.442 y su Reglamento asignan al administrador, organizadas en cuatro áreas de gestión:'}</p>
+        <SecHead n="03" title={texto('tituloServicio')} showNum={opts.numeros} />
+        <p style={{ ...s.p, margin: '0 0 20px' }}>{texto('servicioIntro')}</p>
         <table style={s.table}>
           <thead>
             <tr>
-              <th style={{ ...s.th, width: '31%' }}>Área de gestión</th>
-              <th style={s.th}>Comprende</th>
+              <th style={{ ...s.th, width: '31%' }}>{texto('tablaServicioArea')}</th>
+              <th style={s.th}>{texto('tablaServicioComprende')}</th>
             </tr>
           </thead>
           <tbody>
@@ -228,12 +228,12 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
       </section>
 
       <section style={s.sec}>
-        <SecHead n="04" title="Plan de trabajo" showNum={opts.numeros} />
+        <SecHead n="04" title={texto('tituloPlan')} showNum={opts.numeros} />
         <table style={s.table}>
           <thead>
             <tr>
-              <th style={{ ...s.th, width: '22%' }}>Plazo</th>
-              <th style={s.th}>Hito</th>
+              <th style={{ ...s.th, width: '22%' }}>{texto('tablaPlanPlazo')}</th>
+              <th style={s.th}>{texto('tablaPlanHito')}</th>
             </tr>
           </thead>
           <tbody>
@@ -245,16 +245,16 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
             ))}
           </tbody>
         </table>
-        <p style={s.note}>Los plazos se cuentan desde la firma del contrato y se ajustan en función de los antecedentes efectivamente recibidos de la administración saliente.</p>
+        <p style={s.note}>{texto('notaPlan')}</p>
       </section>
 
       <section style={s.sec}>
-        <SecHead n="05" title="Entregables comprometidos" showNum={opts.numeros} />
+        <SecHead n="05" title={texto('tituloEntregables')} showNum={opts.numeros} />
         <table style={s.table}>
           <thead>
             <tr>
-              <th style={s.th}>Entregable</th>
-              <th style={{ ...s.th, width: '31%' }}>Periodicidad</th>
+              <th style={s.th}>{texto('tablaEntregable')}</th>
+              <th style={{ ...s.th, width: '31%' }}>{texto('tablaPeriodicidad')}</th>
             </tr>
           </thead>
           <tbody>
@@ -269,14 +269,14 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
       </section>
 
       <section style={s.sec}>
-        <SecHead n="06" title="Atención y tiempos de respuesta" showNum={opts.numeros} />
+        <SecHead n="06" title={texto('tituloAtencion')} showNum={opts.numeros} />
         <table style={s.table}>
           <thead>
             <tr>
-              <th style={{ ...s.thSm, width: '17%' }}>Categoría</th>
-              <th style={s.thSm}>Definición</th>
-              <th style={{ ...s.thSm, width: '15%' }}>Acuse</th>
-              <th style={{ ...s.thSm, width: '20%' }}>Plan de acción</th>
+              <th style={{ ...s.thSm, width: '17%' }}>{texto('tablaAtencionCategoria')}</th>
+              <th style={s.thSm}>{texto('tablaAtencionDefinicion')}</th>
+              <th style={{ ...s.thSm, width: '15%' }}>{texto('tablaAtencionAcuse')}</th>
+              <th style={{ ...s.thSm, width: '20%' }}>{texto('tablaAtencionPlan')}</th>
             </tr>
           </thead>
           <tbody>
@@ -290,57 +290,57 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
             ))}
           </tbody>
         </table>
-        <h3 style={{ ...s.h3, marginTop: 26 }}>Canales oficiales</h3>
+        <h3 style={{ ...s.h3, marginTop: 26 }}>{texto('tituloCanales')}</h3>
         <Bullets items={canales} />
-        <p style={{ ...s.note, marginTop: 18 }}>Los tiempos comprometidos miden la respuesta y gestión de CoproActiva, no el plazo de resolución definitiva cuando ésta depende de proveedores externos o de la aprobación del Comité.</p>
+        <p style={{ ...s.note, marginTop: 18 }}>{texto('notaCanales')}</p>
       </section>
 
       {opts.honorarios ? (
         <section style={s.sec}>
-          <SecHead n="07" title="Honorarios y condiciones económicas" showNum={opts.numeros} />
+          <SecHead n="07" title={texto('tituloHonorarios')} showNum={opts.numeros} />
           <table style={{ ...s.table, breakInside: 'avoid' }}>
             <tbody>
               {calc.tipoHonorarios==='porcentaje' ? (
                 <>
                   <tr>
-                    <td style={s.feeLabel}>Base de referencia mensual de gastos comunes ordinarios</td>
+                    <td style={s.feeLabel}>{texto('conceptoBase')}</td>
                     <td style={{ ...s.feeVal, width: '30%' }}><Ph value={calc.base} hint="$[VALOR]" /></td>
                   </tr>
                   <tr>
-                    <td style={s.feeLabel}>Porcentaje de honorario aplicado</td>
+                    <td style={s.feeLabel}>{texto('conceptoPorcentaje')}</td>
                     <td style={s.feeVal}><Ph value={calc.pct} hint="[PORCENTAJE]" /></td>
                   </tr>
                 </>
               ) : (
                 <tr>
-                  <td style={s.feeLabel}>Modalidad de honorarios</td>
-                  <td style={{ ...s.feeVal, width: '30%' }}>Monto fijo mensual</td>
+                  <td style={s.feeLabel}>{texto('conceptoFijo')}</td>
+                  <td style={{ ...s.feeVal, width: '30%' }}>{texto('conceptoFijoValor')}</td>
                 </tr>
               )}
               <tr>
-                <td style={s.feeLabel}>Honorario mensual neto</td>
+                <td style={s.feeLabel}>{texto('conceptoNeto')}</td>
                 <td style={s.feeVal}><Ph value={calc.neto} hint="$[VALOR]" /></td>
               </tr>
               <tr>
-                <td style={s.feeLabel}>IVA (19%)</td>
+                <td style={s.feeLabel}>{texto('conceptoIVA')}</td>
                 <td style={s.feeVal}><Ph value={calc.iva} hint="$[VALOR]" /></td>
               </tr>
               <tr>
-                <td style={s.totLabel}>Total mensual</td>
+                <td style={s.totLabel}>{texto('conceptoTotal')}</td>
                 <td style={s.totVal}><Ph value={calc.total} hint="$[VALOR]" /></td>
               </tr>
             </tbody>
           </table>
-          <h3 style={s.h3}>Reglas de aplicación</h3>
+          <h3 style={s.h3}>{texto('tituloReglas')}</h3>
           <Bullets items={reglas} />
-          <h3 style={s.h3}>Condiciones y reajuste anual</h3>
+          <h3 style={s.h3}>{texto('tituloCondiciones')}</h3>
           <Bullets items={condiciones} />
         </section>
       ) : null}
 
       <section style={s.sec}>
-        <SecHead n={opts.honorarios ? '08' : '07'} title="Prestaciones no incluidas" showNum={opts.numeros} />
-        <p style={{ ...s.p, margin: '0 0 18px' }}>Las siguientes materias requieren presupuestación y acuerdo escrito por separado:</p>
+        <SecHead n={opts.honorarios ? '08' : '07'} title={texto('tituloNoIncluidas')} showNum={opts.numeros} />
+        <p style={{ ...s.p, margin: '0 0 18px' }}>{texto('introduccionNoIncluidas')}</p>
         <Bullets items={noIncluidas} />
       </section>
     </doc-page>

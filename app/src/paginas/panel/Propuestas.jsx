@@ -321,6 +321,14 @@ export default function Propuestas() {
             <button style={p.btnGhost} onClick={nueva}>Nueva</button>
             <button style={p.btnGhost} onClick={eliminar} disabled={!sel||guardando}>Borrar</button>
           </div>
+          <div className="propuesta-plantilla-acciones">
+            <Link to="/documentos/plantillas/propuesta_comercial">Editar todos los textos de la plantilla</Link>
+            {sel&&<button type="button" style={p.btnGhost} disabled={!plantillaGlobal||guardando}
+              onClick={()=>{setD(actual=>({...actual,plantillaContenido:plantillaGlobal}));setAviso('Plantilla actual aplicada a esta propuesta. Guarda para conservar los cambios.');}}>
+              Aplicar plantilla actual a esta propuesta
+            </button>}
+            {sel&&<small>Después de editar la plantilla, aplícala aquí y guarda la propuesta para actualizar su contenido.</small>}
+          </div>
         </div>
 
         <div style={p.group}>
@@ -424,13 +432,7 @@ export default function Propuestas() {
 
         <div style={p.group}>
           <h2 style={p.groupTitle}>Documento</h2>
-          <div style={{marginBottom:14,fontSize:12,lineHeight:1.5}}>
-            <Link to="/documentos/plantillas/propuesta_comercial" style={{fontWeight:700,color:'#a45120'}}>Editar plantilla comercial</Link>
-            {sel&&<button type="button" style={{...p.btnGhost,display:'block',marginTop:9,width:'100%'}}
-              onClick={()=>{setD(actual=>({...actual,plantillaContenido:plantillaGlobal}));setAviso('Plantilla actual aplicada al borrador. Guarda la propuesta para conservarla.');}}>
-              Aplicar plantilla vigente
-            </button>}
-          </div>
+
           {[['portada', 'Incluir portada'], ['numeros', 'Numerar secciones'], ['honorarios', 'Incluir honorarios']].map(([k, t]) => (
             <label key={k} style={p.toggleRow}>
               <input type="checkbox" checked={opts[k]} onChange={e => setOpts(o => ({ ...o, [k]: e.target.checked }))} />
