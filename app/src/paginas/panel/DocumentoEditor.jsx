@@ -2,7 +2,8 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import {Link,useLocation,useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO,EJEMPLOS_TITULO_DOCUMENTO,fechaLocalInput} from '../../lib/plantillasDocumentales';
-import {descargarPdfDocumento,generarPdfDocumento,nombrePdfDocumento} from '../../lib/documentosPdf';
+import {descargarPdfDocumento,generarPdfDocumento} from '../../lib/documentosPdf';
+import {nombreDocumentoDePlantilla,nombreArchivoDePlantilla,prepararTituloImpresion} from '../../lib/nombresDocumentales';
 import {guardarPdfDocumentoDrive} from '../../lib/drive';
 import CarpetaDriveComercial from '../../componentes/CarpetaDriveComercial';
 import {crearContenidoBaseDocumental,REFERENCIAS_MODELO,tieneDatosPorConfirmar,personalizarModeloConEntidad} from '../../lib/contenidoBaseDocumental';
@@ -24,6 +25,7 @@ export default function DocumentoEditor(){
  const esNuevo=!id;
  const [tipo,setTipo]=useState(esNuevo?params.get('tipo')||'seguimiento_documental':'');
  const [titulo,setTitulo]=useState('');
+ const restaurarNombreImpresion=useRef(null);
  const [estado,setEstado]=useState('borrador');
  const [contenido,setContenido]=useState(()=>esNuevo?crearContenidoBaseDocumental(params.get('tipo')||'seguimiento_documental'):{...vacio});
  const [plantillaGuardada,setPlantillaGuardada]=useState(null);
@@ -47,7 +49,7 @@ export default function DocumentoEditor(){
    setContexto({tipo:'prospecto',id:valor});
    setEntidad(registro.nombre_condominio||'');
    if(esNuevo){
-    setTitulo(t=>t||plantilla?.titulo+' - '+registro.nombre_condominio);
+    setTitulo(nombreDocumentoDePlantilla(tipo,registro.nombre_condominio));
     setContenido(c=>personalizarModeloConEntidad(c,registro.nombre_condominio));
    }
   }else if(!comunidadId){setEntidad('');setContexto({tipo:'',id:''});}
@@ -58,7 +60,7 @@ export default function DocumentoEditor(){
    setContexto({tipo:'comunidad',id:valor});
    setEntidad(registro.nombre||'');
    if(esNuevo){
-    setTitulo(t=>t||plantilla?.titulo+' - '+registro.nombre);
+    setTitulo(nombreDocumentoDePlantilla(tipo,registro.nombre));
     setContenido(c=>personalizarModeloConEntidad(c,registro.nombre));
    }
   }else if(!prospectoId){setEntidad('');setContexto({tipo:'',id:''});}
@@ -76,7 +78,9 @@ export default function DocumentoEditor(){
  const [subiendoDrive,setSubiendoDrive]=useState(false);
  async function archivarEnDrive(docId,docVersion){
   const blob=generarPdfDocumento({tipo,titulo:titulo.trim(),contenido,estado});
-  const archivo=new File([blob],nombrePdfDocumento(titulo.trim()),{type:'application/pdf'});
+  const archivo=new File([blob],entidad
+    ? nombreArchivoDePlantilla(tipo,entidad)
+    : (titulo.trim().replace(/[\\/<>:"|?*]/g,' ')||'Documento')+'.pdf',{type:'application/pdf'});
   return guardarPdfDocumentoDrive({documentoId:docId,version:docVersion,
    comunidadId:comunidadId||null,carpetaId:driveCarpeta||null,archivo});
  }
@@ -160,14 +164,33 @@ export default function DocumentoEditor(){
    if(!activo)return;
    setEntidad(data?.[campo]||contexto.id);
    if(esNuevo&&data?.[campo]){
-    setTitulo(v=>v||plantilla?.titulo+' - '+data[campo]);
+    setTitulo(nombreDocumentoDePlantilla(tipo,data[campo]));
     setContenido(actual=>personalizarModeloConEntidad(actual,data[campo]));
    }
   });
   return ()=>{activo=false;};
- },[contexto.tipo,contexto.id,esNuevo,plantilla?.titulo]);
+ },[contexto.tipo,contexto.id,esNuevo,tipo]);
  const datosVista=vistaVersion?.contenido||contenido;
  const tituloVista=vistaVersion?.titulo||titulo;
+ const nombreArchivoExportacion=entidad
+  ?nombreArchivoDePlantilla(tipo,entidad)
+  :(tituloVista.trim().replace(/[\\/<>:"|?*]/g,' ')||'Documento')+'.pdf';
+ const imprimirDocumento=()=>{
+  restaurarNombreImpresion.current?.();
+  restaurarNombreImpresion.current=entidad?prepararTituloImpresion(tipo,entidad):(()=>{
+   const previo=document.title;document.title=tituloVista||'Documento';
+   return ()=>{document.title=previo;};
+  })();
+  window.print();
+ };
+ useEffect(()=>{
+  const terminar=()=>{
+   restaurarNombreImpresion.current?.();
+   restaurarNombreImpresion.current=null;
+  };
+  window.addEventListener('afterprint',terminar);
+  return()=>{window.removeEventListener('afterprint',terminar);terminar();};
+ },[]);
  const estadoVista=vistaVersion?.estado||estado;
  const totalLetras=useMemo(()=>Object.values(contenido).reduce((sum,x)=>sum+String(x||'').length,0),[contenido]);
 
@@ -178,7 +201,7 @@ export default function DocumentoEditor(){
   if(['aprobado','emitido'].includes(estado)&&pendientesModelo)return setError('Para aprobar o emitir, reemplaza o elimina los datos [por confirmar] del modelo. Puedes guardar el borrador mientras tanto.');
   setGuardando(true);setError('');setAviso('');setDriveError('');
   const {data,error:e}=await supabase.rpc('guardar_documento_con_relaciones',{
-   p_id:esNuevo?null:id,p_tipo:tipo,p_titulo:titulo.trim(),
+   p_id:esNuevo?null:id,p_tipo:tipo,p_titulo:entidad?nombreDocumentoDePlantilla(tipo,entidad):titulo.trim(),
    p_estado:estado,p_prospecto_id:prospectoId||null,p_comunidad_id:comunidadId||null,
    p_contenido:contenido,p_version_esperada:version
   });
@@ -214,10 +237,10 @@ export default function DocumentoEditor(){
    </div>
    <div className="doc-editor-acciones">
     <button type="button" className="boton boton-secundario"
-     onClick={()=>descargarPdfDocumento({tipo,titulo:tituloVista,contenido:datosVista,estado:estadoVista})}>
+     onClick={()=>descargarPdfDocumento({tipo,titulo:tituloVista,contenido:datosVista,estado:estadoVista,nombreArchivo:nombreArchivoExportacion})}>
       Descargar PDF
     </button>
-    <button type="button" className="boton boton-secundario" onClick={()=>window.print()}>Imprimir</button>
+    <button type="button" className="boton boton-secundario" onClick={imprimirDocumento}>Imprimir</button>
     <button type="button" className="boton" onClick={guardar} disabled={guardando||Boolean(vistaVersion)}>
       {guardando?'Guardando...':esNuevo?'Guardar documento':'Guardar nueva versión'}
     </button>
@@ -260,8 +283,12 @@ export default function DocumentoEditor(){
      <input disabled readOnly value={plantilla.titulo}/>
     </label>
     <label>Título del documento
-     <input required maxLength={180} value={titulo} disabled={Boolean(vistaVersion)}
-      onChange={e=>setTitulo(e.target.value)} placeholder={EJEMPLOS_TITULO_DOCUMENTO[tipo]||"Ej.: Documento de la comunidad"}/>
+     <input required maxLength={180}
+      value={entidad?nombreDocumentoDePlantilla(tipo,entidad):titulo}
+      disabled={Boolean(vistaVersion)} readOnly={Boolean(entidad)}
+      onChange={e=>setTitulo(e.target.value)}
+      placeholder={EJEMPLOS_TITULO_DOCUMENTO[tipo]||"Ej.: Documento de la comunidad"}/>
+     {entidad&&<small>Nombre automático: título de la plantilla + nombre del cliente.</small>}
     </label>
     <label>Estado
      <select disabled={Boolean(vistaVersion)} value={estado} onChange={e=>setEstado(e.target.value)}>

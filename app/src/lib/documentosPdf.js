@@ -55,28 +55,44 @@ export function generarPdfDocumento(documento){
   const proporciones=n===2?[.43,.57]:n===3?[.33,.47,.20]:n===4?[.14,.32,.38,.16]:[.12,.24,.27,.22,.15];
   const anchos=proporciones.map(v=>max*v);
   const limite=filas.slice(0,80);
-  for(const [index,fila] of limite.entries()){
-   const fuente=index===0?8:8.4;
-   doc.setFont('helvetica',index===0?'bold':'normal');doc.setFontSize(fuente);
+  const dibujar=(fila,cabecera)=>{
+   const fuente=cabecera?8:8.4;
+   doc.setFont('helvetica',cabecera?'bold':'normal');doc.setFontSize(fuente);
    const lineas=anchos.map((w,j)=>doc.splitTextToSize(String(fila[j]||''),Math.max(w-4,9)));
    const altoFila=Math.max(9,...lineas.map(x=>x.length*4.2+3));
-   asegurar(altoFila+2);
    let x=margen;
    for(let j=0;j<n;j++){
-    doc.setFillColor(index===0?245:255,index===0?241:255,index===0?236:255);
+    doc.setFillColor(cabecera?245:255,cabecera?241:255,cabecera?236:255);
     doc.setDrawColor(221,215,209);doc.setLineWidth(.16);
     doc.rect(x,y-3,anchos[j],altoFila,'FD');
     doc.setTextColor(43,49,56);
-    doc.setFont('helvetica',index===0?'bold':'normal');doc.setFontSize(fuente);
+    doc.setFont('helvetica',cabecera?'bold':'normal');doc.setFontSize(fuente);
     doc.text(lineas[j],x+2,y+1);
     x+=anchos[j];
    }
    y+=altoFila;
+  };
+  const medir=(fila,cabecera)=>{
+   doc.setFontSize(cabecera?8:8.4);
+   return Math.max(9,...anchos.map((w,j)=>
+     doc.splitTextToSize(String(fila[j]||''),Math.max(w-4,9)).length*4.2+3));
+  };
+  for(const [index,fila] of limite.entries()){
+   const esPrimera=index===0;
+   const altoFila=medir(fila,esPrimera);
+   const siguiente=esPrimera&&limite.length>1?medir(limite[1],false):0;
+   // Nunca dejar la cabecera aislada: reservar espacio para primera fila.
+   if(y+altoFila+siguiente+2>alto-26){
+    nuevaPagina();
+    // En tablas largas, repetir encabezados para dar contexto a la continuación.
+    if(!esPrimera)dibujar(limite[0],true);
+   }
+   dibujar(fila,esPrimera);
   }
   y+=5;
  };
  for(const [i,[clave,nombre]] of CAMPOS_POR_TIPO[documento.tipo].entries()){
-  asegurar(21);
+  asegurar(39);
   doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(237,113,48);
   doc.text(String(i+1).padStart(2,'0'),margen,y);
   doc.setFontSize(11);doc.setTextColor(43,49,56);
@@ -125,7 +141,7 @@ export function nombrePdfDocumento(titulo){
 }
 export function descargarPdfDocumento(documento){
  const blob=generarPdfDocumento(documento),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=nombrePdfDocumento(documento.titulo);
+ a.href=url;a.download=documento.nombreArchivo||nombrePdfDocumento(documento.titulo);
  document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),10000);
  return blob;

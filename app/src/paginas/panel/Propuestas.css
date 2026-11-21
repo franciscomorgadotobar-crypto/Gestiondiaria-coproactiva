@@ -114,3 +114,47 @@
 .propuesta-plantilla-acciones a{color:#a7531f;font-weight:750;font-size:13px;line-height:1.5}
 .propuesta-plantilla-acciones button{width:100%;font-size:11px!important;line-height:1.3;letter-spacing:.05em!important}
 .propuesta-plantilla-acciones small{display:block;color:#637081;font-size:11px;line-height:1.5}
+
+
+/* Paginación editorial de la propuesta. Cada sección y tabla se traslada
+   entera a la hoja siguiente si no cabe, en vez de dejar una fila huérfana.
+   Si una sección personalizada supera una hoja, el navegador puede partirla
+   sin recortar texto y repetirá el encabezado de las tablas largas. */
+@media print{
+  .propuesta-docwrap .propuesta-seccion{
+    page-break-inside:avoid!important;
+    break-inside:avoid-page!important;
+  }
+  .propuesta-docwrap .propuesta-bloque-tabla{
+    page-break-inside:avoid!important;
+    break-inside:avoid-page!important;
+  }
+  .propuesta-docwrap .propuesta-seccion table{
+    page-break-inside:avoid!important;
+    break-inside:avoid-page!important;
+  }
+  .propuesta-docwrap .propuesta-seccion table tr,
+  .propuesta-docwrap .propuesta-seccion table td,
+  .propuesta-docwrap .propuesta-seccion table th{
+    page-break-inside:avoid!important;
+    break-inside:avoid-page!important;
+  }
+  .propuesta-docwrap .propuesta-seccion table thead{
+    display:table-header-group!important;
+  }
+  .propuesta-docwrap .propuesta-seccion h2,
+  .propuesta-docwrap .propuesta-seccion h3{
+    break-after:avoid-page!important;
+    page-break-after:avoid!important;
+  }
+  .propuesta-docwrap .propuesta-seccion li{
+    break-inside:avoid-page!important;
+    page-break-inside:avoid!important;
+  }
+}
+.propuesta-nombre-previo{
+  margin:0 0 12px;border:1px solid #e3ded7;background:#f9f7f4;
+  color:#354154;font:400 12px/1.5 var(--font-body);
+  padding:9px 11px;overflow-wrap:anywhere;
+}
+.propuesta-nombre-previo strong{font-weight:700}

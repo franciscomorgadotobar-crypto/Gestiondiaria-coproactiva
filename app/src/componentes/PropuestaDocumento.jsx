@@ -3,25 +3,25 @@ import {contenidoEditable,interpolar,filas,puntos} from '../lib/plantillasDocume
 const propDocStyles = {
   head: { display: 'flex', alignItems: 'baseline', gap: 16, paddingBottom: 10, borderBottom: '1.5px solid #2b3138', marginBottom: 16, breakAfter: 'avoid-page', pageBreakAfter: 'avoid', breakInside: 'avoid' },
   num: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, letterSpacing: '.14em', color: '#d5863b' },
-  h2: { margin: 0, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 25, letterSpacing: '-.015em', color: '#2b3138' },
+  h2: { margin: 0, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 23.5, letterSpacing: '-.015em', color: '#2b3138' },
   h3: { margin: '22px 0 10px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, letterSpacing: '.2em', textTransform: 'uppercase', color: '#8b939b', breakAfter: 'avoid-page', pageBreakAfter: 'avoid' },
-  sec: { marginTop: 34, breakInside: 'auto' },
-  p: { margin: '0 0 13px', fontSize: 16, lineHeight: 1.62, color: '#3a4149', orphans: 3, widows: 3, whiteSpace: 'pre-line' },
+  sec: { marginTop: 26, breakInside: 'auto' },
+  p: { margin: '0 0 12px', fontSize: 15.5, lineHeight: 1.53, color: '#3a4149', orphans: 3, widows: 3, whiteSpace: 'pre-line' },
   note: { margin: '16px 0 0', fontSize: 14, lineHeight: 1.55, color: '#6b7480' },
-  table: { width: '100%', borderCollapse: 'collapse' },
+  table: { width: '100%', borderCollapse: 'collapse', breakInside:'avoid-page', pageBreakInside:'avoid' },
   th: { background: '#2b3138', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', textAlign: 'left', padding: '10px 14px' },
   thSm: { background: '#2b3138', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 9.5, letterSpacing: '.14em', textTransform: 'uppercase', textAlign: 'left', padding: '10px 12px' },
-  td: { padding: '13px 14px', borderBottom: '1px solid #e9e6e2', fontSize: 15, lineHeight: 1.55, color: '#3a4149', verticalAlign: 'top' },
-  tdLabel: { padding: '13px 14px', borderBottom: '1px solid #e9e6e2', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15, color: '#2b3138', verticalAlign: 'top' },
-  tdSm: { padding: '13px 12px', borderBottom: '1px solid #e9e6e2', fontSize: 15, lineHeight: 1.5, color: '#3a4149', verticalAlign: 'top' },
-  tdSmInk: { padding: '13px 12px', borderBottom: '1px solid #e9e6e2', fontSize: 15, color: '#2b3138', verticalAlign: 'top' },
-  tdCat: { padding: '13px 12px', borderBottom: '1px solid #e9e6e2', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: '#d5863b', verticalAlign: 'top' },
+  td: { padding: '11px 14px', borderBottom: '1px solid #e9e6e2', fontSize: 15, lineHeight: 1.55, color: '#3a4149', verticalAlign: 'top' },
+  tdLabel: { padding: '11px 14px', borderBottom: '1px solid #e9e6e2', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15, color: '#2b3138', verticalAlign: 'top' },
+  tdSm: { padding: '11px 12px', borderBottom: '1px solid #e9e6e2', fontSize: 15, lineHeight: 1.5, color: '#3a4149', verticalAlign: 'top' },
+  tdSmInk: { padding: '11px 12px', borderBottom: '1px solid #e9e6e2', fontSize: 15, color: '#2b3138', verticalAlign: 'top' },
+  tdCat: { padding: '11px 12px', borderBottom: '1px solid #e9e6e2', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: '#d5863b', verticalAlign: 'top' },
   tdDeliv: { padding: '12px 14px', borderBottom: '1px solid #e9e6e2', fontSize: 15, lineHeight: 1.5, color: '#3a4149' },
   tdPeriod: { padding: '12px 14px', borderBottom: '1px solid #e9e6e2', fontSize: 15, lineHeight: 1.5, color: '#2b3138' },
   zebra: { background: '#faf8f5', breakInside: 'avoid-page', pageBreakInside: 'avoid' },
   plain: { breakInside: 'avoid-page', pageBreakInside: 'avoid' },
-  ul: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 11 },
-  li: { display: 'flex', gap: 12, fontSize: 15.5, lineHeight: 1.55, color: '#3a4149', breakInside: 'avoid-page', pageBreakInside: 'avoid' },
+  ul: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 },
+  li: { display: 'flex', gap: 12, fontSize: 15, lineHeight: 1.5, color: '#3a4149', breakInside: 'avoid-page', pageBreakInside: 'avoid' },
   dash: { flex: 'none', color: '#d5863b', fontWeight: 700 },
   metaLabel: { padding: '12px 14px 12px 0', borderBottom: '1px solid #e9e6e2', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', color: '#8b939b', verticalAlign: 'baseline' },
   metaVal: { padding: '12px 0', borderBottom: '1px solid #e9e6e2', fontSize: 16, color: '#3a4149', verticalAlign: 'baseline' },
@@ -31,8 +31,8 @@ const propDocStyles = {
   totLabel: { padding: 16, background: '#2b3138', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, letterSpacing: '.2em', textTransform: 'uppercase', color: '#fff' },
   totVal: { padding: 16, background: '#2b3138', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19, color: '#fff', textAlign: 'right' },
   ph: { color: '#c9a97f' },
-  approachLabel: { width: '29%', padding: '14px 18px 14px 0', borderBottom: '1px solid #e9e6e2', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15.5, lineHeight: 1.3, color: '#2b3138', verticalAlign: 'top' },
-  approachText: { padding: '14px 0', borderBottom: '1px solid #e9e6e2', fontSize: 15.5, lineHeight: 1.55, color: '#3a4149', verticalAlign: 'top' }
+  approachLabel: { width: '29%', padding: '11px 18px 11px 0', borderBottom: '1px solid #e9e6e2', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15.5, lineHeight: 1.3, color: '#2b3138', verticalAlign: 'top' },
+  approachText: { padding: '11px 0', borderBottom: '1px solid #e9e6e2', fontSize: 15.5, lineHeight: 1.55, color: '#3a4149', verticalAlign: 'top' }
 };
 
 const Ph = ({ value, hint }) => value ? <>{value}</> : <span style={propDocStyles.ph}>{hint}</span>;
@@ -179,7 +179,7 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         </div>
       ) : null}
 
-      <section style={{ breakInside: 'auto' }}>
+      <section className="propuesta-seccion propuesta-presentacion" style={{ breakInside: 'auto' }}>
         <SecHead n="01" title={texto('tituloPresentacion')} showNum={opts.numeros} />
         <p style={s.p}>{texto('saludo')}</p>
         <p style={s.p}>{texto('presentacion')}</p>
@@ -192,7 +192,7 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         </div>
       </section>
 
-      <section style={s.sec}>
+      <section className="propuesta-seccion propuesta-enfoque" style={s.sec}>
         <SecHead n="02" title={texto('tituloEnfoque')} showNum={opts.numeros} />
         <table style={s.table}>
           <tbody>
@@ -206,7 +206,7 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         </table>
       </section>
 
-      <section style={s.sec}>
+      <section className="propuesta-seccion propuesta-servicio" style={s.sec}>
         <SecHead n="03" title={texto('tituloServicio')} showNum={opts.numeros} />
         <p style={{ ...s.p, margin: '0 0 20px' }}>{texto('servicioIntro')}</p>
         <table style={s.table}>
@@ -227,7 +227,7 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         </table>
       </section>
 
-      <section style={s.sec}>
+      <section className="propuesta-seccion propuesta-plan" style={s.sec}>
         <SecHead n="04" title={texto('tituloPlan')} showNum={opts.numeros} />
         <table style={s.table}>
           <thead>
@@ -248,7 +248,7 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         <p style={s.note}>{texto('notaPlan')}</p>
       </section>
 
-      <section style={s.sec}>
+      <section className="propuesta-seccion propuesta-entregables" style={s.sec}>
         <SecHead n="05" title={texto('tituloEntregables')} showNum={opts.numeros} />
         <table style={s.table}>
           <thead>
@@ -268,9 +268,10 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         </table>
       </section>
 
-      <section style={s.sec}>
-        <SecHead n="06" title={texto('tituloAtencion')} showNum={opts.numeros} />
-        <table style={s.table}>
+      <section className="propuesta-seccion propuesta-atencion" style={s.sec}>
+        <div className="propuesta-bloque-tabla">
+          <SecHead n="06" title={texto('tituloAtencion')} showNum={opts.numeros} />
+          <table style={s.table}>
           <thead>
             <tr>
               <th style={{ ...s.thSm, width: '17%' }}>{texto('tablaAtencionCategoria')}</th>
@@ -289,16 +290,18 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
         <h3 style={{ ...s.h3, marginTop: 26 }}>{texto('tituloCanales')}</h3>
         <Bullets items={canales} />
         <p style={{ ...s.note, marginTop: 18 }}>{texto('notaCanales')}</p>
       </section>
 
       {opts.honorarios ? (
-        <section style={s.sec}>
-          <SecHead n="07" title={texto('tituloHonorarios')} showNum={opts.numeros} />
-          <table style={{ ...s.table, breakInside: 'avoid' }}>
+        <section className="propuesta-seccion propuesta-honorarios" style={s.sec}>
+          <div className="propuesta-bloque-tabla">
+            <SecHead n="07" title={texto('tituloHonorarios')} showNum={opts.numeros} />
+            <table style={{ ...s.table, breakInside: 'avoid-page' }}>
             <tbody>
               {calc.tipoHonorarios==='porcentaje' ? (
                 <>
@@ -330,7 +333,8 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
                 <td style={s.totVal}><Ph value={calc.total} hint="$[VALOR]" /></td>
               </tr>
             </tbody>
-          </table>
+            </table>
+          </div>
           <h3 style={s.h3}>{texto('tituloReglas')}</h3>
           <Bullets items={reglas} />
           <h3 style={s.h3}>{texto('tituloCondiciones')}</h3>
@@ -338,7 +342,7 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         </section>
       ) : null}
 
-      <section style={s.sec}>
+      <section className="propuesta-seccion propuesta-exclusiones" style={s.sec}>
         <SecHead n={opts.honorarios ? '08' : '07'} title={texto('tituloNoIncluidas')} showNum={opts.numeros} />
         <p style={{ ...s.p, margin: '0 0 18px' }}>{texto('introduccionNoIncluidas')}</p>
         <Bullets items={noIncluidas} />

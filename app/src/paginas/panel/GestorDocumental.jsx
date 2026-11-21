@@ -2,6 +2,7 @@ import {Fragment,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react'
 import {Link,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from '../../lib/plantillasDocumentales';
+import {nombreDocumentoDePlantilla} from '../../lib/nombresDocumentales';
 import EnlacesSegurosDocumento from '../../componentes/EnlacesSegurosDocumento';
 import './GestorDocumental.css';
 
@@ -46,7 +47,7 @@ export default function GestorDocumental(){
    setCargando(true);setError('');
    const [propuestas,documentosGenericos,biblioteca]=await Promise.all([
     supabase.from('propuestas_comerciales')
-      .select('id,nombre,actualizado_en,prospecto_id').order('actualizado_en',{ascending:false}).limit(250),
+      .select('id,nombre,datos,actualizado_en,prospecto_id').order('actualizado_en',{ascending:false}).limit(250),
     supabase.from('documentos_gestion')
       .select('id,tipo,titulo,estado,version,contexto_tipo,contexto_id,prospecto_id,comunidad_id,actualizado_en')
       .order('actualizado_en',{ascending:false}).limit(250),
@@ -56,7 +57,9 @@ export default function GestorDocumental(){
    const errs=[propuestas.error,documentosGenericos.error].filter(Boolean);
    if(errs.length)setError('No se pudo consultar toda la información: '+errs.map(e=>e.message).join(' / '));
    const a=(propuestas.data||[]).map(d=>({
-    id:d.id,tipo:'propuesta_comercial',titulo:d.nombre,estado:'borrador',
+    id:d.id,tipo:'propuesta_comercial',
+    titulo:nombreDocumentoDePlantilla('propuesta_comercial',d.datos?.comunidad||d.nombre.replace(/^Propuesta comercial - /i,'')),
+    estado:'borrador',
     contexto_tipo:d.prospecto_id?'prospecto':null,contexto_id:d.prospecto_id,
     version:1,actualizado_en:d.actualizado_en,ruta:'/propuestas?documento='+d.id
    }));

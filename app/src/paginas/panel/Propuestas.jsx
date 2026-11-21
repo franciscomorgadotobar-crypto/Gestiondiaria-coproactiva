@@ -4,6 +4,7 @@ import {supabase} from '../../lib/supabase';
 import {useSesion} from '../../lib/sesion';
 import PropuestaDoc from '../../componentes/PropuestaDocumento';
 import {calcularHonorarios} from '../../lib/calculoHonorarios';
+import {nombreDocumentoDePlantilla,prepararTituloImpresion} from '../../lib/nombresDocumentales';
 import '../../lib/propuestaDocPage';
 import './Propuestas.css';
 import { OPCIONES_PROPUESTA, etiquetaProspecto, datosDesdeProspecto,
@@ -96,6 +97,7 @@ export default function Propuestas() {
   const [cargandoProspectos,setCargandoProspectos]=React.useState(true);
   const [revisionProspectos,setRevisionProspectos]=React.useState(0);
   const abiertoDesdeUrl=React.useRef('');
+  const restaurarNombreImpresion=React.useRef(null);
 
   React.useEffect(()=>{
     if(!perfil?.id||!borradorListo)return;
@@ -209,12 +211,38 @@ export default function Propuestas() {
 
   const set = (k, v) => setD(p => ({ ...p, [k]: v }));
   const calc = computeAll(d);
+  const nombreDocumento=nombreDocumentoDePlantilla('propuesta_comercial',d.comunidad);
+  const imprimirPdf=()=>{
+    if(!d.comunidad?.trim()){
+      setAviso('Selecciona o ingresa el nombre del cliente antes de generar el PDF.');
+      return;
+    }
+    restaurarNombreImpresion.current?.();
+    restaurarNombreImpresion.current=prepararTituloImpresion('propuesta_comercial',d.comunidad);
+    window.print();
+  };
+  React.useEffect(()=>{
+    const finalizar=()=>{
+      restaurarNombreImpresion.current?.();
+      restaurarNombreImpresion.current=null;
+    };
+    window.addEventListener('afterprint',finalizar);
+    return()=>{window.removeEventListener('afterprint',finalizar);finalizar();};
+  },[]);
 
   const guardar = async () => {
-    const nombre = d.comunidad.trim();
-    if (!nombre) { setAviso('Escribe el nombre de la comunidad antes de guardar.'); return; }
-    if (conflictoAsociacion(registros,nombre,prospectoId)) {
-      setAviso('Ya existe una propuesta con ese nombre asociada a otro prospecto. Cambia el nombre antes de guardar.');
+    const cliente=d.comunidad.trim();
+    if (!cliente) { setAviso('Escribe el nombre del cliente o comunidad antes de guardar.'); return; }
+    const nombre=nombreDocumentoDePlantilla('propuesta_comercial',cliente);
+    const guardadaActual=sel?registros[sel]:null;
+    const conMismoNombre=registros[nombre];
+    if (conMismoNombre&&conMismoNombre.id!==guardadaActual?.id) {
+      setAviso('Ya hay una propuesta guardada con este título y cliente. Selecciónala para editarla.');
+      return;
+    }
+    if (conflictoAsociacion(registros,nombre,prospectoId) &&
+        conMismoNombre?.id!==guardadaActual?.id) {
+      setAviso('Este documento pertenece a otro prospecto.');
       return;
     }
     setGuardando(true);setAviso('');
@@ -224,13 +252,26 @@ export default function Propuestas() {
       prospecto_id:prospectoId||null,
       actualizado_por:perfil?.id
     };
-    const {data,error}=await supabase.from('propuestas_comerciales')
-      .upsert(payload,{onConflict:'nombre'})
-      .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single();
+    const consulta=supabase.from('propuestas_comerciales');
+    const {data,error}=(guardadaActual?.id
+      ? await consulta.update(payload).eq('id',guardadaActual.id)
+          .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single()
+      : await consulta.upsert(payload,{onConflict:'nombre'})
+          .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single());
     if(error){setAviso('No se pudo guardar: '+error.message);}
     else{
-      setClientes(actual=>({...actual,[nombre]:data.datos}));
-      setRegistros(actual=>({...actual,[nombre]:data}));
+      setClientes(actual=>{
+        const siguiente={...actual};
+        if(sel&&sel!==nombre)delete siguiente[sel];
+        siguiente[nombre]=data.datos;
+        return siguiente;
+      });
+      setRegistros(actual=>{
+        const siguiente={...actual};
+        if(sel&&sel!==nombre)delete siguiente[sel];
+        siguiente[nombre]=data;
+        return siguiente;
+      });
       setSel(nombre);setD(actual=>({...actual,plantillaContenido:plantillaVigente}));
       setAviso('Propuesta guardada en Gestión Diaria.');
     }
@@ -310,6 +351,7 @@ export default function Propuestas() {
         </div>
         <div style={p.group}>
           <h2 style={p.groupTitle}>Propuestas guardadas</h2>
+          <p className="propuesta-nombre-previo"><strong>Nombre del documento:</strong> {nombreDocumento}</p>
           <Field label="Cargar propuesta">
             <select style={p.input} value={sel} onChange={e => cargar(e.target.value)}>
               <option value="">{cargando?'Cargando propuestas...':'- Selecciona una propuesta -'}</option>
@@ -439,7 +481,7 @@ export default function Propuestas() {
               <span>{t}</span>
             </label>
           ))}
-          <button style={{ ...p.btn, width: '100%', marginTop: 12 }} onClick={() => window.print()}>Imprimir / PDF</button>
+          <button style={{ ...p.btn, width: '100%', marginTop: 12 }} onClick={imprimirPdf}>Imprimir / PDF</button>
         </div>
       </aside>
       <main className="propuesta-docwrap">
