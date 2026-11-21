@@ -1639,3 +1639,39 @@
 @media (max-width: 899px) {
   .contabilidad-nav.ui-pestanas { display: none; }
 }
+
+/* Asientos recurrentes: acción explícita, nunca contabilización automática. */
+.contabilidad-recurrente-marcador{
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+  padding:13px 16px;margin:14px 0 3px;border:1px solid var(--borde-suave);
+  background:var(--tarjeta);
+}
+.contabilidad-recurrente-boton{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:1px solid #d5c5b6;background:#fff;border-radius:var(--radio-control);
+  color:var(--texto-titulo);font:700 12px var(--fuente-display);
+  cursor:pointer;padding:11px 14px;min-height:40px;transition:background .16s,border-color .16s;
+}
+.contabilidad-recurrente-boton:hover{border-color:var(--naranja)}
+.contabilidad-recurrente-boton.activo{background:#eaf6ed;color:#1b7533;border-color:#a6d3b1}
+.contabilidad-recurrente-boton:focus-visible{outline:2px solid var(--naranja);outline-offset:2px}
+.contabilidad-recurrente-icono{font-size:17px;line-height:1}
+.contabilidad-recurrente-marcador>p{margin:0;flex:1;min-width:210px;color:var(--texto-apagado);font-size:12px;line-height:1.5}
+.contabilidad-recurrente-origen{margin:7px 0 0!important;max-width:650px}
+.contabilidad-recurrentes-filtro{
+ display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+ padding:10px 12px;margin:-3px 0 4px;border:1px solid var(--borde-suave);
+ color:var(--texto-titulo);font-size:13px;font-weight:700;cursor:pointer;
+}
+.contabilidad-recurrentes-filtro input{accent-color:var(--naranja);width:16px;height:16px}
+.contabilidad-recurrentes-filtro small{color:var(--texto-apagado);font-size:11px;font-weight:400}
+.contabilidad-recurrente-chip{display:inline-block;margin-top:5px;margin-left:6px;border:1px solid #b4d3bf;color:#21703e;background:#edf7ef;padding:4px 8px;font-size:10px;font-weight:700;border-radius:20px}
+.contabilidad-recurrente-acciones{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.contabilidad-recurrente-acciones .boton-secundario{padding:8px 12px;font-size:11px}
+@media(max-width:700px){
+ .contabilidad-recurrente-marcador{align-items:stretch;padding:12px}
+ .contabilidad-recurrente-boton{width:100%}
+ .contabilidad-recurrente-marcador>p{min-width:0}
+ .contabilidad-recurrentes-filtro small{flex-basis:100%;padding-left:25px}
+ .contabilidad-recurrente-acciones{justify-content:flex-end}
+}

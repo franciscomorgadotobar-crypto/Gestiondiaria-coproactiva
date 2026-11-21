@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { borradorDesdeAsientoRecurrente } from '../../lib/asientosRecurrentes';
 import { useSesion } from '../../lib/sesion';
 import { limpiarArea } from '../../lib/area';
 import { useVolverGlobal } from '../../lib/navegacion';
@@ -204,13 +205,18 @@ function lineaVacia() {
   };
 }
 
-function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = false, guardando, onGuardar, onCancelar }) {
+function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = false, guardando, onGuardar, onCancelar, asientoOrigen = null }) {
   const [numeroAsiento, setNumeroAsiento] = useState('');
   const [fecha, setFecha] = useState(hoyChile());
-  const [glosa, setGlosa] = useState('');
+  const borrador=borradorDesdeAsientoRecurrente(asientoOrigen,cuentas,centros);
+  const [glosa, setGlosa] = useState(borrador?.glosa || '');
+  // Factura, número contable y fecha nunca se copian de un asiento anterior.
   const [referencia, setReferencia] = useState('');
-  const [proveedorId, setProveedorId] = useState('');
-  const [lineas, setLineas] = useState([lineaVacia(), lineaVacia()]);
+  const [proveedorId, setProveedorId] = useState(borrador?.proveedor_id || '');
+  const [recurrente, setRecurrente] = useState(Boolean(borrador?.recurrente));
+  const [lineas, setLineas] = useState(() => borrador?.lineas?.length
+    ? borrador.lineas.map(x=>({...x,key:crypto.randomUUID()}))
+    : [lineaVacia(),lineaVacia()]);
   const [montoOperacion, setMontoOperacion] = useState('');
   const grupos = useMemo(() => gruposCuentas(cuentas), [cuentas]);
 
@@ -331,6 +337,7 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
       glosa: glosa.trim(),
       referencia: referencia.trim(),
       proveedor_id: proveedorId || null,
+      recurrente,
       lineas: completas.map(x => ({
         cuenta_id: x.cuenta_id,
         debe: monto(x.debe),
@@ -354,7 +361,10 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
         <div className="contabilidad-editor-cabecera">
           <div>
             <p className="micro apagado" style={{ margin: 0 }}>Puedes dejar el número vacío para asignarlo automáticamente.</p>
-            <h2 id="nuevo-asiento-titulo" className="h2">Nuevo asiento contable</h2>
+            <h2 id="nuevo-asiento-titulo" className="h2">{asientoOrigen ? 'Reutilizar asiento recurrente' : 'Nuevo asiento contable'}</h2>
+            {asientoOrigen&&<p className="micro apagado contabilidad-recurrente-origen">
+              Basado en asiento N° {asientoOrigen.numero}. Se asignará un número nuevo, con fecha actual y referencia vacía.
+            </p>}
           </div>
           <button type="button" className="boton boton-texto" onClick={onCancelar}>Cerrar</button>
         </div>
@@ -387,6 +397,16 @@ function EditorAsiento({ cuentas, proveedores, centros = [], usaCentrosCosto = f
               {proveedores.map(p => <option key={p.id} value={p.id}>{p.empresa}</option>)}
             </select>
           </label>
+        </div>
+
+        <div className="contabilidad-recurrente-marcador">
+          <button type="button" className={'contabilidad-recurrente-boton'+(recurrente?' activo':'')}
+                  aria-pressed={recurrente} onClick={()=>setRecurrente(actual=>!actual)}
+                  disabled={guardando}>
+            <span className="contabilidad-recurrente-icono" aria-hidden="true">{recurrente?'✓':'↻'}</span>
+            <span>{recurrente?'Asiento marcado como recurrente':'Marcar como asiento recurrente'}</span>
+          </button>
+          <p>Permite reutilizar sus cuentas y montos al registrar otro asiento. No se contabiliza automáticamente.</p>
         </div>
 
         <div className="contabilidad-operaciones">
@@ -860,6 +880,8 @@ export default function Contabilidad() {
   const [busquedaCuenta, setBusquedaCuenta] = useState('');
 
   const [editorAbierto, setEditorAbierto] = useState(false);
+  const [asientoOrigen, setAsientoOrigen] = useState(null);
+  const [soloRecurrentes, setSoloRecurrentes] = useState(false);
   const [asientoPorAnular, setAsientoPorAnular] = useState(null);
   const [cuentaEditando, setCuentaEditando] = useState(null);
   const [cuentaDesactivar, setCuentaDesactivar] = useState(null);
@@ -922,6 +944,7 @@ export default function Contabilidad() {
 
   useEffect(() => {
     if (vista === 'asientos' && new URLSearchParams(location.search).get('nuevo') === '1') {
+      setAsientoOrigen(null);
       setEditorAbierto(true);
     }
   }, [vista, location.search]);
@@ -944,7 +967,7 @@ export default function Contabilidad() {
       supabase.from('contabilidad_cuentas')
         .select('*').eq('entidad_id', id).order('codigo'),
       supabase.from('contabilidad_asientos')
-        .select('id,numero,fecha,glosa,estado,origen,referencia,proveedor_id,creado_en,motivo_anulacion,contabilidad_asiento_lineas(id,orden,debe,haber,glosa,cuenta_id,centro_costo_id,contabilidad_cuentas(codigo,cuenta),contabilidad_centros_costo(codigo,nombre))')
+        .select('id,numero,fecha,glosa,estado,origen,recurrente,referencia,proveedor_id,creado_en,motivo_anulacion,contabilidad_asiento_lineas(id,orden,debe,haber,glosa,cuenta_id,centro_costo_id,contabilidad_cuentas(codigo,cuenta),contabilidad_centros_costo(codigo,nombre))')
         .eq('entidad_id', id)
         .order('fecha', { ascending: false })
         .order('numero', { ascending: false })
@@ -1000,6 +1023,7 @@ export default function Contabilidad() {
 
   function cerrarEditor() {
     setEditorAbierto(false);
+    setAsientoOrigen(null);
     if (new URLSearchParams(location.search).get('nuevo') === '1') {
       navegar('/contabilidad/asientos', { replace: true });
     }
@@ -1008,23 +1032,22 @@ export default function Contabilidad() {
   async function guardarAsiento(datos) {
     setGuardando(true);
     setError(null);
-    const { data, error } = await supabase.rpc('contabilidad_registrar_asiento', {
+    const { data, error } = await supabase.rpc('contabilidad_registrar_asiento_con_recurrencia', {
       p_entidad_id: entidadId,
       p_fecha: datos.fecha,
       p_glosa: datos.glosa || null,
       p_lineas: datos.lineas,
-      p_origen: 'manual',
       p_referencia: datos.referencia || null,
       p_proveedor_id: datos.proveedor_id,
-      p_origen_id: null,
-      p_numero: datos.numero
+      p_numero: datos.numero,
+      p_recurrente: Boolean(datos.recurrente)
     });
     setGuardando(false);
 
     if (error) return setError(error.message);
 
     cerrarEditor();
-    setAviso(`Asiento N° ${data?.numero ?? ''} contabilizado correctamente.`);
+    setAviso(`Asiento N° ${data?.numero ?? ''} contabilizado correctamente.${data?.recurrente?' Marcado como recurrente para reutilizarlo.':''}`);
     await Promise.all([cargarEntidad(entidadId), cargarReportes(entidadId, desde, hasta)]);
   }
 
@@ -1251,6 +1274,7 @@ export default function Contabilidad() {
   const diferenciaBalance = tb.activo - pasivoPatrimonio;
   const balanceCuadrado = Math.abs(diferenciaBalance) < 0.005;
   const asientosVisibles = asientos.filter(a => {
+    if (soloRecurrentes && (!a.recurrente || a.estado === 'anulado')) return false;
     const q = normalizar(busquedaAsiento);
     if (!q) return true;
     const bolsa = [
@@ -1280,6 +1304,8 @@ export default function Contabilidad() {
           centros={centrosCosto}
           usaCentrosCosto={Boolean(entidad?.usa_centros_costo)}
           guardando={guardando}
+          asientoOrigen={asientoOrigen}
+          key={asientoOrigen?.id||'nuevo'}
           onGuardar={guardarAsiento}
           onCancelar={cerrarEditor}
         />
@@ -1601,11 +1627,17 @@ export default function Contabilidad() {
                   Configurar plan
                 </Link>
               ) : (
-                <button type="button" className="boton boton-movil" onClick={() => setEditorAbierto(true)}>
+                <button type="button" className="boton boton-movil" onClick={() => { setAsientoOrigen(null); setEditorAbierto(true); }}>
                   + Nuevo asiento
                 </button>
               )}
             </div>
+            <label className="contabilidad-recurrentes-filtro">
+              <input type="checkbox" checked={soloRecurrentes}
+                     onChange={e=>setSoloRecurrentes(e.target.checked)}/>
+              <span>Mostrar solo asientos recurrentes</span>
+              <small>Los puedes reutilizar sin duplicar el asiento original.</small>
+            </label>
 
             <div className="contabilidad-asientos-lista">
               {asientosVisibles.map(a => {
@@ -1623,6 +1655,7 @@ export default function Contabilidad() {
                         <span className={'chip ' + (a.estado === 'anulado' ? 'chip-critico' : 'chip-cumple')}>
                           {a.estado === 'anulado' ? 'Anulado' : 'Contabilizado'}
                         </span>
+                        {a.recurrente&&<span className="contabilidad-recurrente-chip">↻ Recurrente</span>}
                       </div>
                     </div>
 
@@ -1641,11 +1674,19 @@ export default function Contabilidad() {
                       <span className="micro apagado">
                         {[a.referencia, a.origen === 'importacion_excel' ? 'Importado desde Excel' : null].filter(Boolean).join(' · ')}
                       </span>
-                      {a.estado !== 'anulado' && (
-                        <button type="button" className="boton boton-texto" onClick={() => setAsientoPorAnular(a)}>
-                          Anular
-                        </button>
-                      )}
+                      <div className="contabilidad-recurrente-acciones">
+                        {a.recurrente&&a.estado!=='anulado'&&(
+                          <button type="button" className="boton boton-secundario"
+                            onClick={()=>{setAsientoOrigen(a);setEditorAbierto(true);}}>
+                            ↻ Reutilizar
+                          </button>
+                        )}
+                        {a.estado !== 'anulado' && (
+                          <button type="button" className="boton boton-texto" onClick={() => setAsientoPorAnular(a)}>
+                            Anular
+                          </button>
+                        )}
+                      </div>
                       {a.estado === 'anulado' && a.motivo_anulacion && (
                         <span className="micro apagado">Motivo: {a.motivo_anulacion}</span>
                       )}
