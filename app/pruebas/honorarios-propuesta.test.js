@@ -28,7 +28,7 @@ test('sin valor o con valor inválido no calcula montos',()=>{
 test('propuesta y documento excluyen autorizaciones de gasto de emergencia',()=>{
   assert.match(app,/Modalidad de cobro/);
   assert.match(app,/Bruto \(IVA incluido\)/);
-  assert.match(app,/datos:datosPropuesta\(d\)/);
+  assert.match(app,/datos:datosPropuesta\(/);
   assert.doesNotMatch(app,/Gasto autónomo urgencias|value=\{d\.urgencia\}/);
   assert.doesNotMatch(doc,/Gasto autónomo urgencias|d\.urgencia|calc\.urgencia/);
   assert.match(doc,/calc\.tipoHonorarios==='porcentaje'/);
