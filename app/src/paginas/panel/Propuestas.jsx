@@ -77,6 +77,16 @@ export default function Propuestas() {
   },[perfil?.id]);
   // La fuente de verdad es Supabase: la antigua API Netlify sigue operativa
   // únicamente durante la migración de las propuestas históricas.
+  const [plantillaGlobal,setPlantillaGlobal]=React.useState(null);
+  React.useEffect(()=>{
+    let vigente=true;
+    const leer=()=>supabase.from('plantillas_documentales_app').select('contenido').eq('tipo','propuesta_comercial')
+     .maybeSingle().then(({data,error})=>{if(vigente&&!error)setPlantillaGlobal(data?.contenido||null);});
+    leer();
+    const actualizar=()=>{if(document.visibilityState==='visible')leer();};
+    window.addEventListener('focus',actualizar);
+    return()=>{vigente=false;window.removeEventListener('focus',actualizar);};
+  },[]);
   const [clientes,setClientes]=React.useState({});
   const [registros,setRegistros]=React.useState({});
   const [opts, setOpts] = React.useState({ portada: true, numeros: true, honorarios: true });
@@ -208,8 +218,9 @@ export default function Propuestas() {
       return;
     }
     setGuardando(true);setAviso('');
+    const plantillaVigente=d.plantillaContenido??(sel?null:plantillaGlobal);
     const payload={
-      nombre,datos:datosPropuesta(d),opciones:opts,
+      nombre,datos:datosPropuesta({...d,plantillaContenido:plantillaVigente}),opciones:opts,
       prospecto_id:prospectoId||null,
       actualizado_por:perfil?.id
     };
@@ -220,7 +231,8 @@ export default function Propuestas() {
     else{
       setClientes(actual=>({...actual,[nombre]:data.datos}));
       setRegistros(actual=>({...actual,[nombre]:data}));
-      setSel(nombre);setAviso('Propuesta guardada en Gestión Diaria.');
+      setSel(nombre);setD(actual=>({...actual,plantillaContenido:plantillaVigente}));
+      setAviso('Propuesta guardada en Gestión Diaria.');
     }
     setGuardando(false);
   };
@@ -412,6 +424,13 @@ export default function Propuestas() {
 
         <div style={p.group}>
           <h2 style={p.groupTitle}>Documento</h2>
+          <div style={{marginBottom:14,fontSize:12,lineHeight:1.5}}>
+            <Link to="/documentos/plantillas/propuesta_comercial" style={{fontWeight:700,color:'#a45120'}}>Editar plantilla comercial</Link>
+            {sel&&<button type="button" style={{...p.btnGhost,display:'block',marginTop:9,width:'100%'}}
+              onClick={()=>{setD(actual=>({...actual,plantillaContenido:plantillaGlobal}));setAviso('Plantilla actual aplicada al borrador. Guarda la propuesta para conservarla.');}}>
+              Aplicar plantilla vigente
+            </button>}
+          </div>
           {[['portada', 'Incluir portada'], ['numeros', 'Numerar secciones'], ['honorarios', 'Incluir honorarios']].map(([k, t]) => (
             <label key={k} style={p.toggleRow}>
               <input type="checkbox" checked={opts[k]} onChange={e => setOpts(o => ({ ...o, [k]: e.target.checked }))} />
@@ -422,7 +441,8 @@ export default function Propuestas() {
         </div>
       </aside>
       <main className="propuesta-docwrap">
-        <PropuestaDoc d={d} calc={calc} opts={opts} />
+        <PropuestaDoc d={d} calc={calc} opts={opts}
+          plantillaContenido={d.plantillaContenido??(sel?null:plantillaGlobal)} />
       </main>
     </div>
   );

@@ -97,3 +97,14 @@
 }
 .propuesta-prospecto-asociado strong{font-size:12px;font-weight:700;flex:1;min-width:130px}
 .propuesta-prospecto-asociado a{white-space:nowrap}
+
+/* Impresión multipágina: no separar subtítulos de su contenido ni cortar filas. */
+@media print{
+ .propuesta-docwrap doc-page section>div:first-child{break-after:avoid-page!important;page-break-after:avoid!important}
+ .propuesta-docwrap doc-page section h3{break-after:avoid-page!important;page-break-after:avoid!important}
+ .propuesta-docwrap doc-page section p{orphans:3;widows:3}
+ .propuesta-docwrap doc-page table thead{display:table-header-group!important}
+ .propuesta-docwrap doc-page table tfoot{display:table-footer-group!important}
+ .propuesta-docwrap doc-page table tr{break-inside:avoid-page!important;page-break-inside:avoid!important}
+ .propuesta-docwrap doc-page ul li{break-inside:avoid-page!important;page-break-inside:avoid!important}
+}

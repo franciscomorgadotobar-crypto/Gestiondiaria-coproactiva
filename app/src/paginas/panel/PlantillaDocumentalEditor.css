@@ -1,0 +1,15 @@
+.plantilla-documental-editor{display:grid;gap:16px;max-width:1160px;margin:0 auto;padding:8px 4px 40px}
+.plantilla-documental-editor-cabecera{display:flex;gap:18px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.plantilla-documental-editor-cabecera a{font-size:13px;font-weight:700;color:#bb6027;text-decoration:none}
+.plantilla-documental-editor-cabecera h1{font-size:clamp(20px,3vw,29px);line-height:1.25;margin:12px 0 8px}
+.plantilla-documental-editor-cabecera p{font-size:14px;color:#66717c;max-width:700px;line-height:1.55;margin:0}
+.plantilla-documental-editor-acciones{display:flex;gap:8px;flex-wrap:wrap}
+.plantilla-documental-editor-contenido{background:#fff;border:1px solid #e6ded5;border-radius:12px;padding:20px;display:grid;gap:19px}
+.plantilla-documental-editor-info{display:flex;justify-content:space-between;gap:15px;color:#617080;font-size:13px;flex-wrap:wrap}
+.plantilla-documental-editor-campo{display:grid;gap:8px}
+.plantilla-documental-editor-campo strong{font-size:13px;color:#303942;line-height:1.35}
+.plantilla-documental-editor-campo textarea{width:100%;min-height:110px;box-sizing:border-box;padding:12px;border:1px solid #cdc9c4;border-radius:8px;resize:vertical;font:400 15px/1.55 'Source Sans Pro',Arial,sans-serif;color:#303942}
+.plantilla-documental-editor-campo textarea:focus-visible{outline:2px solid #ed7130;outline-offset:1px}
+.plantilla-documental-editor-pie{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;line-height:1.5;color:#6b7280}
+.plantilla-documental-editor-pie a{color:#b75d20;font-weight:700}
+@media(max-width:700px){.plantilla-documental-editor-contenido{padding:13px}.plantilla-documental-editor-acciones{width:100%}.plantilla-documental-editor-acciones .boton{flex:1;min-width:135px}.plantilla-documental-editor-campo textarea{font-size:16px}}

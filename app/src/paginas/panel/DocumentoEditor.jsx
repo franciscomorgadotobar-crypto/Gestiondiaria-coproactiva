@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {Link,useLocation,useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {supabase} from '../../lib/supabase';
 import {CAMPOS_POR_TIPO,TIPOS_DOCUMENTO,ETIQUETAS_ESTADO,EJEMPLOS_TITULO_DOCUMENTO,fechaLocalInput} from '../../lib/plantillasDocumentales';
@@ -6,6 +6,7 @@ import {descargarPdfDocumento,generarPdfDocumento,nombrePdfDocumento} from '../.
 import {guardarPdfDocumentoDrive} from '../../lib/drive';
 import CarpetaDriveComercial from '../../componentes/CarpetaDriveComercial';
 import {crearContenidoBaseDocumental,REFERENCIAS_MODELO,tieneDatosPorConfirmar,personalizarModeloConEntidad} from '../../lib/contenidoBaseDocumental';
+import {modeloEditable} from '../../lib/plantillasDocumentalesEditables';
 import BloquesDocumento from '../../componentes/BloquesDocumento';
 import SeccionChecklist from '../../componentes/SeccionChecklist';
 import VinculacionDocumento from '../../componentes/VinculacionDocumento';
@@ -25,6 +26,9 @@ export default function DocumentoEditor(){
  const [titulo,setTitulo]=useState('');
  const [estado,setEstado]=useState('borrador');
  const [contenido,setContenido]=useState(()=>esNuevo?crearContenidoBaseDocumental(params.get('tipo')||'seguimiento_documental'):{...vacio});
+ const [plantillaGuardada,setPlantillaGuardada]=useState(null);
+ const contenidoEditado=useRef(false);
+ const actualizarContenido=cambio=>{contenidoEditado.current=true;setContenido(cambio);};
  const [contexto,setContexto]=useState(()=>{
   const t=params.get('contexto')||(params.get('prospecto')?'prospecto':params.get('comunidad')?'comunidad':params.get('proveedor')?'proveedor':'');
   const clave=t==='prospecto'?'prospecto':t==='comunidad'?'comunidad':'proveedor';
@@ -92,16 +96,36 @@ export default function DocumentoEditor(){
   if(!esNuevo)return;
   const solicitado=params.get('tipo')||'seguimiento_documental';
   if(solicitado!==tipo&&CAMPOS_POR_TIPO[solicitado]){
+   contenidoEditado.current=false;setPlantillaGuardada(null);
    setTipo(solicitado);
    setTitulo('');
    setContenido(crearContenidoBaseDocumental(solicitado));
   }
  },[esNuevo,params,tipo]);
+ // Los documentos nuevos copian el contenido de la plantilla corporativa vigente;
+ // al abrir una versión histórica nunca se modifica el texto guardado.
+ useEffect(()=>{
+  if(!esNuevo||!CAMPOS_POR_TIPO[tipo])return;
+  let activo=true;
+  supabase.from('plantillas_documentales_app').select('contenido').eq('tipo',tipo)
+   .maybeSingle().then(({data,error:plantillaError})=>{
+    if(!activo)return;
+    if(plantillaError){setError('No se pudo cargar la plantilla editable: '+plantillaError.message);return;}
+    setPlantillaGuardada(data?.contenido||null);
+    if(data?.contenido&&!contenidoEditado.current){
+     setContenido(actual=>({...actual,...Object.fromEntries(
+      (CAMPOS_POR_TIPO[tipo]||[]).map(([clave])=>[clave,String(data.contenido[clave]??actual[clave]??'')])
+     )}));
+    }
+   });
+  return()=>{activo=false;};
+ },[esNuevo,tipo]);
  const pendientesModelo=tieneDatosPorConfirmar(contenido);
  function restaurarTextoBase(){
   if(!window.confirm('Se reemplazará el contenido de todas las secciones por el modelo base. ¿Continuar?'))return;
-  setContenido(actual=>({...crearContenidoBaseDocumental(tipo),fecha:actual.fecha||fechaLocalInput(),responsable:actual.responsable||'Coproactiva Administración SpA'}));
-  setAviso('Modelo redactado restaurado. Revisa los datos entre corchetes antes de emitir.');
+  setContenido(actual=>({...crearContenidoBaseDocumental(tipo),...modeloEditable(tipo),...(plantillaGuardada||{}),fecha:actual.fecha||fechaLocalInput(),responsable:actual.responsable||'Coproactiva Administración SpA'}));
+  contenidoEditado.current=true;
+  setAviso('Plantilla vigente restaurada. Revisa los datos entre corchetes antes de emitir.');
   setError('');
  }
 
@@ -227,9 +251,10 @@ export default function DocumentoEditor(){
     </div>
     {!vistaVersion&&<div className="doc-editor-modelo" role="note">
       <strong><span aria-hidden="true">✓</span> Plantilla redactada y precargada</strong>
-      <span>Basada en {REFERENCIAS_MODELO[tipo]}. Requisitos y acciones marcables; textos editables de forma opcional.</span>
+      <span>Basada en {plantillaGuardada?'la plantilla corporativa personalizada':REFERENCIAS_MODELO[tipo]}. Cada documento conserva su propio contenido.</span>
       {pendientesModelo&&<small>Los datos entre [corchetes] requieren confirmación antes de aprobar o emitir.</small>}
-      <button type="button" className="boton boton-secundario" onClick={restaurarTextoBase}>Restaurar texto base</button>
+      <button type="button" className="boton boton-secundario" onClick={restaurarTextoBase}>Restaurar plantilla vigente</button>
+      <Link className="boton boton-secundario" to={'/documentos/plantillas/'+tipo}>Editar plantilla base</Link>
     </div>}
     <label>Tipo de documento
      <input disabled readOnly value={plantilla.titulo}/>
@@ -259,15 +284,15 @@ export default function DocumentoEditor(){
     </div>
     <label>Fecha del documento
      <input type="date" value={contenido.fecha||''} disabled={Boolean(vistaVersion)}
-      onChange={e=>setContenido(x=>({...x,fecha:e.target.value}))}/>
+      onChange={e=>actualizarContenido(x=>({...x,fecha:e.target.value}))}/>
     </label>
     <label>Elaborado por / Responsable
      <input maxLength={150} value={contenido.responsable||''} disabled={Boolean(vistaVersion)}
-      onChange={e=>setContenido(x=>({...x,responsable:e.target.value}))}/>
+      onChange={e=>actualizarContenido(x=>({...x,responsable:e.target.value}))}/>
     </label>
     {campos.map(([clave,nombre])=><SeccionChecklist key={clave} clave={clave} nombre={nombre}
        contenido={contenido} disabled={Boolean(vistaVersion)}
-       onChange={setContenido}/>)}
+       onChange={actualizarContenido}/>)}
     {!!versiones.length&&<div className="doc-editor-versiones">
       <h2>Historial de versiones</h2>
       <button type="button" onClick={()=>setVistaVersion(null)}>Ver versión actual</button>

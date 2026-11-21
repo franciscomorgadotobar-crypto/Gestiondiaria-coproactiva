@@ -139,14 +139,17 @@ export default function GestorDocumental(){
    <div className="documentos-principal">
     <section id="documentos-plantillas" className="documentos-seccion" aria-label="Seleccionar tipo de documento">
      <h2 className="documentos-plantillas-encabezado">¿Qué documento quieres crear?</h2>
-     <p className="documentos-plantillas-ayuda">Selecciona una plantilla; mantendremos el lead o comunidad de origen.</p>
+     <p className="documentos-plantillas-ayuda">Selecciona una plantilla para crear un documento, o edita su contenido base para reutilizarlo. Los documentos previos no cambiarán.</p>
      <div className="documentos-plantillas">
       {TIPOS_DOCUMENTO.map((t,i)=><article key={t.id} className="documentos-plantilla">
        <div className="documentos-plantilla-icono" aria-hidden="true">{iconos[t.id]}</div>
        <h2>{t.titulo}</h2>
        <p>{t.descripcion}</p>
-       <Link className={'boton '+(i?'boton-secundario':'')}
-        to={t.id==='propuesta_comercial'?rutaNueva:rutaPlantilla(t.id)}>Crear +</Link>
+       <div className="documentos-plantilla-acciones">
+        <Link className={'boton '+(i?'boton-secundario':'')}
+         to={t.id==='propuesta_comercial'?rutaNueva:rutaPlantilla(t.id)}>Crear +</Link>
+        <Link className="boton boton-secundario" to={'/documentos/plantillas/'+t.id}>Editar plantilla</Link>
+       </div>
       </article>)}
      </div>
     </section>

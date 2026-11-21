@@ -96,3 +96,8 @@
   outline-offset:-2px;
  }
 }
+
+/* Acciones independientes: crear documento o actualizar la plantilla base. */
+.documentos-plantilla-acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-top:auto}
+.documentos-plantilla-acciones .boton{flex:1;min-width:120px;text-align:center;justify-content:center}
+@media(max-width:520px){.documentos-plantilla-acciones{flex-direction:column}.documentos-plantilla-acciones .boton{width:100%;box-sizing:border-box}}

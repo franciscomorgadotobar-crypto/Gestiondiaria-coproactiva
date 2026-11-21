@@ -48,6 +48,7 @@ const SEO = lazy(() => import('./paginas/panel/SEO'));
 const Propuestas = lazy(() => import('./paginas/panel/Propuestas'));
 const GestorDocumental = lazy(() => import('./paginas/panel/GestorDocumental'));
 const DocumentoEditor = lazy(() => import('./paginas/panel/DocumentoEditor'));
+const PlantillaDocumentalEditor = lazy(() => import('./paginas/panel/PlantillaDocumentalEditor'));
 // Jarvis cruza todas las áreas: se descarga al entrar, no en el arranque.
 const Jarvis = lazy(() => import('./paginas/panel/Jarvis'));
 // Importar plantillas desde Excel es de oficina; el lector de Excel, además,
@@ -272,6 +273,7 @@ export default function App() {
       <Route path="/pipeline" element={<Interna><Pipeline /></Interna>} />
       <Route path="/documentos" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando gestor documental...</p>}><GestorDocumental/></Suspense></SoloComercial></Interna>} />
       <Route path="/documentos/nuevo" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando editor...</p>}><DocumentoEditor/></Suspense></SoloComercial></Interna>} />
+      <Route path="/documentos/plantillas/:tipo" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando plantilla...</p>}><PlantillaDocumentalEditor/></Suspense></SoloComercial></Interna>} />
       <Route path="/documentos/:id" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando documento...</p>}><DocumentoEditor/></Suspense></SoloComercial></Interna>} />
       <Route path="/propuestas" element={<Interna><SoloComercial><Suspense fallback={<p className="cargando">Cargando propuestas comerciales…</p>}><Propuestas/></Suspense></SoloComercial></Interna>} />
       <Route path="/comunidades" element={<Interna><Comunidades /></Interna>} />
