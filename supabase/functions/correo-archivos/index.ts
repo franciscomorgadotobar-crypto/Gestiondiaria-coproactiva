@@ -1,7 +1,7 @@
 // Biblioteca corporativa privada. Drive guarda los bytes, la aplicación solo IDs internos.
 // El navegador nunca recibe acceso a Google ni enlaces públicos.
 import {
- admin, aPapelera, buscarCarpeta, crearCarpeta, cors, leerConfig, nombreSeguro,
+ admin, aPapelera, buscarCarpeta, crearCarpeta, cors, driveFetch, leerConfig, nombreSeguro,
  subirArchivo, validarArchivo, mensajeSeguro, estadoHttp
 } from '../_compartido/google-drive.ts';
 import { navegarCarpetas, agregarCarpeta, carpetaAutorizada, raizComercial } from '../_compartido/drive-correo.ts';
@@ -99,6 +99,24 @@ Deno.serve(async req=>{
     throw error;
    }
    return json(req,{ok:true,archivo:data});
+  }
+  if(accion==='descargar'){
+   const id=String(get('id')||'');
+   if(!UUID.test(id))return json(req,{error:'ID inválido'},400);
+   const {data:archivo,error}=await db.from(DB).select('drive_file_id,nombre,mime,tamano')
+    .eq('id',id).is('eliminado_en',null).maybeSingle();
+   if(error)throw error;
+   if(!archivo||archivo.mime!=='application/pdf'||!archivo.drive_file_id||
+      Number(archivo.tamano)<=0||Number(archivo.tamano)>MAX)
+    return json(req,{error:'PDF no disponible'},404);
+   const respuesta=await driveFetch(db,'/drive/v3/files/'+encodeURIComponent(archivo.drive_file_id)+'?alt=media&supportsAllDrives=true');
+   if(!respuesta.ok)return json(req,{error:'No se pudo obtener el PDF'},502);
+   const bytes=new Uint8Array(await respuesta.arrayBuffer());
+   if(bytes.length!==Number(archivo.tamano)||bytes.length>MAX||
+      new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-')
+    return json(req,{error:'PDF inválido'},502);
+   return new Response(bytes,{headers:{...cors(req),'content-type':'application/pdf',
+    'cache-control':'private, no-store','x-content-type-options':'nosniff'}});
   }
   if(accion==='delete'){
    const id=String(get('id')||'');
