@@ -34,7 +34,9 @@ test('Se conserva el generador comercial y su documento',()=>{
 });
 test('Las propuestas se guardan en la base y no se depende de la API antigua de Netlify',()=>{
   assert.match(propuestas,/supabase\.from\('propuestas_comerciales'\)/);
-  assert.match(propuestas,/upsert\(payload,\{onConflict:'nombre'\}\)/);
+  assert.match(propuestas,/\.insert\(payload\)/);
+  assert.match(propuestas,/\.update\(payload\)\.eq\('id',guardadaActual\.id\)/);
+  assert.doesNotMatch(propuestas,/upsert\(payload/);
   assert.match(propuestas,/\.delete\(\)\.eq\('id',registros\[sel\]\.id\)/);
   assert.doesNotMatch(propuestas,/fetch\(API_CLIENTES|\/api\/propuestas/);
   assert.match(propuestas,/localStorage\.getItem\(KEY_ACTUAL\+':'\+perfil\.id\)/);
@@ -113,4 +115,30 @@ test('Accesos contextuales desde CRM, Correo, Comunidades, Proveedores y Operaci
  assert.match(inicio,/<Link key=\{h\.ruta\} to=\{h\.ruta\}/);
  assert.match(pipeline,/to=\{'\/documentos\?prospecto='\+prospectoSeleccionado\.id\}/);
  assert.match(adjuntos,/Abrir gestor documental para crear un documento/);
+});
+
+const pdfPropuesta=leer('src/lib/propuestaPdf.js');
+const drive=leer('src/lib/drive.js');
+const vinculados=leer('src/componentes/DocumentosVinculados.jsx');
+const correoArchivos=leer('../supabase/functions/correo-archivos/index.ts');
+test('Guardar propuesta archiva el PDF real y solo confirma cuando el vínculo persistió',()=>{
+ assert.match(propuestas,/archivarPdfPropuesta\(await generarPdfPropuesta\(vista,cliente\)\)/);
+ assert.match(propuestas,/pdfArchivado:\{id:archivo\.id/);
+ assert.match(propuestas,/\.eq\('actualizado_en',data\.actualizado_en\)/);
+ assert.match(propuestas,/PDF no quedó vinculado/);
+ assert.match(propuestas,/bloqueoGuardado\.current/);
+ assert.match(pdfPropuesta,/doc\.output\('blob'\)/);
+ assert.match(pdfPropuesta,/nombreArchivoDePlantilla\('propuesta_comercial',cliente\)/);
+ assert.match(pdfPropuesta,/while\(offset<r\.lines\)/);
+ assert.match(drive,/destino\.raiz\?\.id/);
+ assert.match(drive,/fd\.append\('archivo',archivo\)/);
+});
+test('El PDF archivado se descarga en la ficha del CRM sin crear enlace público',()=>{
+ assert.match(vinculados,/p\.datos\?\.pdfArchivado/);
+ assert.match(vinculados,/descargarPdfPropuestaArchivado\(d\.pdfArchivado\)/);
+ assert.match(correoArchivos,/accion==='descargar'/);
+ assert.match(correoArchivos,/PERSONAL\.has\(perfil\.rol\)/);
+ assert.match(correoArchivos,/\.is\('eliminado_en',null\)/);
+ assert.match(correoArchivos,/private, no-store/);
+ assert.match(drive,/action:'descargar',id:archivo\.id/);
 });
