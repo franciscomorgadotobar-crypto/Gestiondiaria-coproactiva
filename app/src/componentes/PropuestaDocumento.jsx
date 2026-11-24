@@ -179,14 +179,15 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         </div>
       ) : null}
 
-      <section className="propuesta-seccion propuesta-presentacion" style={{ breakInside: 'auto' }}>
+      {/* La hoja de presentación termina con la firma: el enfoque parte en la siguiente. */}
+      <section className="propuesta-seccion propuesta-presentacion" style={{ breakInside: 'auto', breakAfter: 'page', pageBreakAfter: 'always' }}>
         <SecHead n="01" title={texto('tituloPresentacion')} showNum={opts.numeros} />
         <p style={s.p}>{texto('saludo')}</p>
         <p style={s.p}>{texto('presentacion')}</p>
         <p style={s.p}>{texto('compromiso')}</p>
         <p style={{ ...s.p, margin: 0 }}>{texto('cierre')}</p>
         <div style={{ marginTop: 30, paddingTop: 20, borderTop: '1px solid #e9e6e2', breakInside: 'avoid' }}>
-          <div style={{ fontFamily: 'var(--font-script)', fontSize: 39, lineHeight: 1, color: '#2b3138' }}>{d.firmante || texto('firmantePredeterminado')}</div>
+          <div className="propuesta-firma" style={{ fontFamily: "var(--font-script, 'Retro Signature', cursive)", fontSize: 39, lineHeight: 1, color: '#2b3138' }}>{d.firmante || texto('firmantePredeterminado')}</div>
           <div style={{ marginTop: 10, fontSize: 14, lineHeight: 1.5, color: '#6b7480' }}>{d.cargo || texto('cargoPredeterminado')}</div>
           <div style={{ fontSize: 14, lineHeight: 1.5, color: '#6b7480' }}>{texto('pieEmpresa')}</div>
         </div>

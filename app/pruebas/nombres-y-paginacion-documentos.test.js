@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,existsSync} from 'node:fs';
 import {
   tituloDePlantilla,nombreDocumentoDePlantilla,nombreArchivoDePlantilla
 } from '../src/lib/nombresDocumentales.js';
@@ -58,6 +58,15 @@ test('Impresión comercial mantiene tablas, filas, títulos y secciones completa
   assert.match(css,/table thead\{/);
   assert.match(css,/display:table-header-group!important/);
   assert.match(css,/\.propuesta-docwrap \.propuesta-bloque-tabla\{/);
+});
+
+test('La hoja de presentación termina con la firma manuscrita de Coproactiva',()=>{
+  assert.match(plantilla,/propuesta-presentacion" style=\{\{ breakInside: 'auto', breakAfter: 'page', pageBreakAfter: 'always' \}\}/);
+  assert.match(plantilla,/className="propuesta-firma" style=\{\{ fontFamily: "var\(--font-script, 'Retro Signature', cursive\)"/);
+  assert.match(css,/--font-script:'Retro Signature',cursive/);
+  const tokens=leer('src/estilos/tokens.css');
+  assert.match(tokens,/font-family: 'Retro Signature';\s*src: url\('\/fonts\/RetroSignature\.otf'\)/);
+  assert.ok(existsSync(new URL('../public/fonts/RetroSignature.otf',import.meta.url)),'falta la fuente de la firma en public/fonts');
 });
 
 test('PDF genérico mantiene cabeceras al reanudar tablas multipágina',()=>{

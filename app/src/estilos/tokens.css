@@ -25,6 +25,14 @@
   font-weight: 700;
   font-display: swap;
 }
+/* Firma manuscrita de las propuestas comerciales, la misma de sitio/styles.css. */
+@font-face {
+  font-family: 'Retro Signature';
+  src: url('/fonts/RetroSignature.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --fuente-display: 'Montserrat', system-ui, sans-serif;

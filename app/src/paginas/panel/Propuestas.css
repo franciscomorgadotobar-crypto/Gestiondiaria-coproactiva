@@ -1,5 +1,5 @@
 /* Integración del generador original en la navegación de Gestión Diaria. */
-.propuesta-app{--font-display:'Montserrat',sans-serif;--font-body:'Source Sans Pro',Arial,sans-serif;display:grid;grid-template-columns:minmax(290px,355px) minmax(0,1fr);background:#eeeae4;min-width:0;border-radius:12px;border:1px solid #ded6ce;overflow:hidden;align-items:start}
+.propuesta-app{--font-display:'Montserrat',sans-serif;--font-body:'Source Sans Pro',Arial,sans-serif;--font-script:'Retro Signature',cursive;display:grid;grid-template-columns:minmax(290px,355px) minmax(0,1fr);background:#eeeae4;min-width:0;border-radius:12px;border:1px solid #ded6ce;overflow:hidden;align-items:start}
 .propuesta-panel{background:#fff;padding:22px;min-width:0;max-height:calc(100dvh - 80px);overflow:auto;border-right:1px solid #ded6ce;box-sizing:border-box}
 .propuesta-docwrap{min-width:0;height:calc(100dvh - 80px);overflow:auto;padding:14px 0 24px;box-sizing:border-box}
 .propuesta-docwrap doc-page{display:block;max-width:100%;overflow-x:auto}
