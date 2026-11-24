@@ -30,7 +30,10 @@
  body:has(.propuesta-app) .propuesta-panel,
  body:has(.propuesta-app) .propuesta-mobile-tabs{display:none!important}
  body:has(.propuesta-app) .propuesta-app{display:block!important;border:0!important;overflow:visible!important;background:white!important}
- body:has(.propuesta-app) .propuesta-docwrap{display:block!important;height:auto!important;overflow:visible!important;padding:0!important}
+ body:has(.propuesta-app) .propuesta-docwrap{display:block!important;height:auto!important;overflow:visible!important;padding:0!important;background:none!important}
+ /* El relleno que reserva la barra inferior móvil no se imprime: al final del
+    documento sumaba una franja beige que abría una hoja en blanco. */
+ body:has(.propuesta-app) .area-escritorio{padding-bottom:0!important;background:none!important}
  body:has(.propuesta-app) .propuesta-docwrap doc-page{overflow:visible!important}
 }
 

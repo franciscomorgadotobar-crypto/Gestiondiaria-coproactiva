@@ -348,6 +348,15 @@ function PropuestaDoc({ d, calc, opts, plantillaContenido=null }) {
         <p style={{ ...s.p, margin: '0 0 18px' }}>{texto('introduccionNoIncluidas')}</p>
         <Bullets items={noIncluidas} />
       </section>
+
+      {/* Hoja de cierre: solo el logo, centrado. La altura deja holgura bajo el
+          espacio útil de la hoja (página menos márgenes y pie) para no abrir
+          otra hoja en blanco. */}
+      <section className="propuesta-cierre" aria-label="Cierre"
+        style={{ breakBefore: 'page', pageBreakBefore: 'always', breakInside: 'avoid', pageBreakInside: 'avoid',
+          height: 'calc(var(--doc-page-h, 11in) - 1.94in)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img src={import.meta.env.BASE_URL+"brand/imagologo-vertical.svg"} alt="CoproActiva" style={{ display: 'block', width: '2.8in', height: 'auto' }} />
+      </section>
     </doc-page>
   );
 }

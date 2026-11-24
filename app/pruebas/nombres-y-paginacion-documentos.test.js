@@ -69,6 +69,20 @@ test('La hoja de presentación termina con la firma manuscrita de Coproactiva',(
   assert.ok(existsSync(new URL('../public/fonts/RetroSignature.otf',import.meta.url)),'falta la fuente de la firma en public/fonts');
 });
 
+test('La firma se carga antes de imprimir y el PDF cierra con el logo sin hoja en blanco',()=>{
+  // En el teléfono el documento está oculto tras el formulario: sin precarga la
+  // firma se imprimía con la letra cursiva genérica del sistema.
+  assert.match(propuestas,/const FUENTE_FIRMA = "400 39px 'Retro Signature'"/);
+  assert.match(propuestas,/React\.useEffect\(\(\)=>\{cargarFuenteFirma\(\);\},\[\]\)/);
+  assert.match(propuestas,/await cargarFuenteFirma\(\);\s*restaurarNombreImpresion/);
+  // Hoja final con el logo centrado, siempre en una hoja propia.
+  assert.match(plantilla,/className="propuesta-cierre"/);
+  assert.match(plantilla,/breakBefore: 'page', pageBreakBefore: 'always'/);
+  assert.match(plantilla,/brand\/imagologo-vertical\.svg/);
+  // El relleno de la barra inferior móvil abría una hoja en blanco al final.
+  assert.match(css,/body:has\(\.propuesta-app\) \.area-escritorio\{padding-bottom:0!important;background:none!important\}/);
+});
+
 test('PDF genérico mantiene cabeceras al reanudar tablas multipágina',()=>{
   assert.match(pdf,/dibujar\(limite\[0\],true\)/);
   assert.match(pdf,/const siguiente=esPrimera&&limite\.length>1/);

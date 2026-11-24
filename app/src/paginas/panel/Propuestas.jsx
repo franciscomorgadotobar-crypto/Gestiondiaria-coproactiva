@@ -14,6 +14,15 @@ const COMUNAS_RM = ['Alhué', 'Buin', 'Calera de Tango', 'Cerrillos', 'Cerro Nav
 
 const BLANK = { comunidad: '', direccion: '', comuna: '', destinatario: '', fecha: '', vigencia: '30', tipoHonorarios: 'porcentaje', base: '', pct: '9', montoFijo: '', montoFijoTipo: 'neto', diasPago: '5', mesesContrato: '12', email: '', firmante: '', cargo: '' };
 const KEY_ACTUAL = 'coproactiva.propuesta.actual.v1';
+// La firma usa la letra manuscrita de marca, que solo aparece dentro del
+// documento. En el teléfono el documento queda oculto tras el formulario y el
+// navegador no descarga la letra hasta imprimir, cuando ya es tarde: se pide al
+// abrir la pantalla y se espera (con tope) antes de abrir el diálogo.
+const FUENTE_FIRMA = "400 39px 'Retro Signature'";
+const cargarFuenteFirma = () => Promise.race([
+  document.fonts?.load?.(FUENTE_FIRMA) ?? Promise.resolve(),
+  new Promise(resolver => setTimeout(resolver, 3000))
+]).catch(() => {});
 
 const clp = n => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
 const datosPropuesta = valor => {
@@ -212,11 +221,13 @@ export default function Propuestas() {
   const set = (k, v) => setD(p => ({ ...p, [k]: v }));
   const calc = computeAll(d);
   const nombreDocumento=nombreDocumentoDePlantilla('propuesta_comercial',d.comunidad);
-  const imprimirPdf=()=>{
+  React.useEffect(()=>{cargarFuenteFirma();},[]);
+  const imprimirPdf=async()=>{
     if(!d.comunidad?.trim()){
       setAviso('Selecciona o ingresa el nombre del cliente antes de generar el PDF.');
       return;
     }
+    await cargarFuenteFirma();
     restaurarNombreImpresion.current?.();
     restaurarNombreImpresion.current=prepararTituloImpresion('propuesta_comercial',d.comunidad);
     window.print();
