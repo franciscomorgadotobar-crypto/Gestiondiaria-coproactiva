@@ -6,7 +6,7 @@ import PropuestaDoc from '../../componentes/PropuestaDocumento';
 import {calcularHonorarios} from '../../lib/calculoHonorarios';
 import {fechaLocalInput} from '../../lib/plantillasDocumentales';
 import {modeloEditable} from '../../lib/plantillasDocumentalesEditables';
-import {archivarPdfPropuesta,descargarPdfPropuestaArchivado} from '../../lib/drive';
+import {archivarPdfPropuesta,descargarPdfPropuestaArchivado,sincronizarCarpetaProspecto} from '../../lib/drive';
 import {nombreDocumentoDePlantilla,prepararTituloImpresion} from '../../lib/nombresDocumentales';
 import '../../lib/propuestaDocPage';
 import './Propuestas.css';
@@ -284,8 +284,11 @@ export default function Propuestas() {
       guardadaActual.prospecto_id===(prospectoId||null)&&
       canonico(datosPropuesta({...guardadaActual.datos,pdfArchivado:null}))===canonico(payload.datos)&&
       canonico({...OPCIONES_PROPUESTA,...guardadaActual.opciones})===canonico(opts)){
+      if(prospectoId)await sincronizarCarpetaProspecto(prospectoId);
       setAviso('La propuesta y su PDF ya están guardados en el CRM.');return;
     }
+    // Reubica el PDF previo antes de sustituir su referencia por una versión nueva.
+    if(prospectoId&&guardadaActual?.datos?.pdfArchivado?.id)await sincronizarCarpetaProspecto(prospectoId);
     const consulta=supabase.from('propuestas_comerciales');
     const {data,error}=(guardadaActual?.id
       ? await consulta.update(payload).eq('id',guardadaActual.id).eq('actualizado_en',guardadaActual.actualizado_en)
@@ -309,8 +312,9 @@ export default function Propuestas() {
       setSel(nombre);setD(datosPropuesta(data.datos));
       setAviso('Propuesta guardada. Generando y archivando PDF…');
       try{
+        if(prospectoId)await sincronizarCarpetaProspecto(prospectoId);
         const {generarPdfPropuesta}=await import('../../lib/propuestaPdf');
-        const archivo=await archivarPdfPropuesta(await generarPdfPropuesta(vista,cliente));
+        const archivo=await archivarPdfPropuesta(await generarPdfPropuesta(vista,cliente),data.id);
         const datos={...data.datos,pdfArchivado:{id:archivo.id,nombre:archivo.nombre,mime:archivo.mime||'application/pdf',fecha:new Date().toISOString()}};
         const {data:final,error:errorVinculo}=await supabase.from('propuestas_comerciales').update({datos,actualizado_en:new Date().toISOString()})
           .eq('id',data.id).eq('actualizado_en',data.actualizado_en)
@@ -319,7 +323,7 @@ export default function Propuestas() {
         setClientes(actual=>({...actual,[nombre]:final.datos}));
         setRegistros(actual=>({...actual,[nombre]:final}));
         setD(datosPropuesta(final.datos));
-        setAviso('Documento guardado, PDF archivado en Drive y disponible en el CRM.');
+        setAviso('Documento guardado, PDF archivado en la carpeta comercial y disponible en el CRM.');
       }catch(e){setAviso('Propuesta guardada en el CRM, pero el PDF no quedó vinculado. Guarda de nuevo para reintentar. '+(e?.message||''));}
     }
     }catch(e){setAviso('No se pudo completar el guardado: '+(e?.message||''));}
