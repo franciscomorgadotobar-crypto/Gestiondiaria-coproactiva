@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import {Link,useLocation} from 'react-router-dom';
 import {supabase} from '../lib/supabase';
+import {descargarPdfPropuestaArchivado} from '../lib/drive';
 import {TIPOS_DOCUMENTO,ETIQUETAS_ESTADO} from '../lib/plantillasDocumentales';
 import './VinculacionDocumento.css';
 
@@ -10,6 +11,14 @@ export default function DocumentosVinculados({tipo,id}){
  const [documentos,setDocumentos]=useState([]);
  const [cargando,setCargando]=useState(true);
  const [error,setError]=useState('');
+ const [descargando,setDescargando]=useState('');
+ async function descargar(d){
+  if(descargando)return;
+  setDescargando(d.id);setError('');
+  try{await descargarPdfPropuestaArchivado(d.pdfArchivado);}
+  catch(e){setError('No se pudo descargar el PDF: '+(e?.message||''));}
+  finally{setDescargando('');}
+ }
  const columna=tipo==='comunidad'?'comunidad_id':'prospecto_id';
  const idValido=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id||'');
  useEffect(()=>{
@@ -23,7 +32,7 @@ export default function DocumentosVinculados({tipo,id}){
    // La propuesta Nova Vida está vinculada por prospecto_id aunque antes
    // no apareciera en esta ficha por consultar solo documentos_gestion.
    tipo==='prospecto'
-    ?supabase.from('propuestas_comerciales').select('id,nombre,prospecto_id,actualizado_en')
+    ?supabase.from('propuestas_comerciales').select('id,nombre,prospecto_id,actualizado_en,datos')
      .eq('prospecto_id',id).order('actualizado_en',{ascending:false}).limit(100)
     :Promise.resolve({data:[],error:null})
   ]).then(([genericos,comerciales])=>{
@@ -31,7 +40,7 @@ export default function DocumentosVinculados({tipo,id}){
    const generales=(genericos.data||[]).map(d=>({...d,origen:'gestor'}));
    const propuestas=(comerciales.data||[]).map(p=>({
     id:p.id,titulo:p.nombre,tipo:'propuesta_comercial',estado:'borrador',
-    version:1,actualizado_en:p.actualizado_en,origen:'propuestas'
+    version:1,actualizado_en:p.actualizado_en,origen:'propuestas',pdfArchivado:p.datos?.pdfArchivado||null
    }));
    setDocumentos([...generales,...propuestas].sort((a,b)=>
     String(b.actualizado_en||'').localeCompare(String(a.actualizado_en||''))));
@@ -55,8 +64,12 @@ export default function DocumentosVinculados({tipo,id}){
    {documentos.map(d=><li key={d.id}>
     <div><strong>{d.titulo}</strong>
      <small>{TIPOS_DOCUMENTO.find(t=>t.id===d.tipo)?.titulo||d.tipo} · {ETIQUETAS_ESTADO[d.estado]||d.estado} · v{d.version}</small>
+     {d.origen==='propuestas'&&<small>{d.pdfArchivado?'PDF archivado en Drive':'PDF pendiente de archivar'}</small>}
     </div>
-    <Link to={d.origen==='propuestas'?'/propuestas?documento='+encodeURIComponent(d.id):'/documentos/'+d.id}>Abrir documento</Link>
+    <div style={{display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}>
+     <Link to={d.origen==='propuestas'?'/propuestas?documento='+encodeURIComponent(d.id):'/documentos/'+d.id}>Abrir documento</Link>
+     {d.pdfArchivado&&<button type="button" className="boton boton-secundario" disabled={Boolean(descargando)} onClick={()=>descargar(d)}>{descargando===d.id?'Descargando…':'Descargar PDF'}</button>}
+    </div>
    </li>)}
   </ul>}
   <Link to={gestionar}>Ver documentos en el Gestor Documental</Link>
