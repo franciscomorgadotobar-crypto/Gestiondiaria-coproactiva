@@ -122,7 +122,7 @@ const drive=leer('src/lib/drive.js');
 const vinculados=leer('src/componentes/DocumentosVinculados.jsx');
 const correoArchivos=leer('../supabase/functions/correo-archivos/index.ts');
 test('Guardar propuesta archiva el PDF real y solo confirma cuando el vínculo persistió',()=>{
- assert.match(propuestas,/archivarPdfPropuesta\(await generarPdfPropuesta\(vista,cliente\)\)/);
+ assert.match(propuestas,/archivarPdfPropuesta\(await generarPdfPropuesta\(vista,cliente\),data\.id\)/);
  assert.match(propuestas,/pdfArchivado:\{id:archivo\.id/);
  assert.match(propuestas,/\.eq\('actualizado_en',data\.actualizado_en\)/);
  assert.match(propuestas,/PDF no quedó vinculado/);
@@ -130,7 +130,7 @@ test('Guardar propuesta archiva el PDF real y solo confirma cuando el vínculo p
  assert.match(pdfPropuesta,/doc\.output\('blob'\)/);
  assert.match(pdfPropuesta,/nombreArchivoDePlantilla\('propuesta_comercial',cliente\)/);
  assert.match(pdfPropuesta,/while\(offset<r\.lines\)/);
- assert.match(drive,/destino\.raiz\?\.id/);
+ assert.match(drive,/fd\.append\('propuesta_id',propuestaId\)/);
  assert.match(drive,/fd\.append\('archivo',archivo\)/);
 });
 test('El PDF archivado se descarga en la ficha del CRM sin crear enlace público',()=>{
@@ -141,4 +141,17 @@ test('El PDF archivado se descarga en la ficha del CRM sin crear enlace público
  assert.match(correoArchivos,/\.is\('eliminado_en',null\)/);
  assert.match(correoArchivos,/private, no-store/);
  assert.match(drive,/action:'descargar',id:archivo\.id/);
+});
+
+test('Carpeta CRM identificada por UUID y movida según etapa real, no por nombre',()=>{
+ assert.match(correoArchivos,/buscarPorPropiedad\(db,'coproactiva_prospecto_id',id\)/);
+ assert.match(correoArchivos,/ETAPAS_CRM\[p\.etapa\]/);
+ assert.match(correoArchivos,/params\.set\('addParents',destino\)/);
+ assert.match(correoArchivos,/params\.set\('removeParents',remover\.join\(','\)\)/);
+ assert.match(correoArchivos,/sincronizarCarpetaProspecto\(db,propuesta\.prospecto_id\)/);
+ assert.match(correoArchivos,/vigente\.etapa===p\.etapa/);
+ assert.match(propuestas,/await sincronizarCarpetaProspecto\(prospectoId\)/);
+ assert.match(pipeline,/setEtapa\(nuevaEtapa,\{replace:true\}\);\s*await sincronizarDriveProspecto\(p\.id\)/);
+ assert.match(pipeline,/if \(data\.comunidad_id\) prepararCarpetasDrive\(data\.comunidad_id\);\s*await sincronizarDriveProspecto\(p\.id\)/);
+ assert.match(pipeline,/Reintentar sincronización/);
 });
