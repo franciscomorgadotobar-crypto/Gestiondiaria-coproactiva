@@ -28,6 +28,7 @@ const cargarFuenteFirma = () => Promise.race([
 ]).catch(() => {});
 
 const clp = n => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
+const canonico=valor=>JSON.stringify(valor,(_k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);
 const datosPropuesta = valor => {
   const {urgencia, ...datos} = valor || {};
   return {...BLANK, ...datos};
@@ -277,11 +278,17 @@ export default function Propuestas() {
     const payload={
       nombre,datos:datosPropuesta({...d,plantillaContenido:plantillaVigente,pdfArchivado:null}),opciones:opts,
       prospecto_id:prospectoId||null,
-      actualizado_por:perfil?.id
+      actualizado_por:perfil?.id,actualizado_en:new Date().toISOString()
     };
+    if(guardadaActual?.datos?.pdfArchivado?.id&&guardadaActual.nombre===nombre&&
+      guardadaActual.prospecto_id===(prospectoId||null)&&
+      canonico(datosPropuesta({...guardadaActual.datos,pdfArchivado:null}))===canonico(payload.datos)&&
+      canonico({...OPCIONES_PROPUESTA,...guardadaActual.opciones})===canonico(opts)){
+      setAviso('La propuesta y su PDF ya están guardados en el CRM.');return;
+    }
     const consulta=supabase.from('propuestas_comerciales');
     const {data,error}=(guardadaActual?.id
-      ? await consulta.update(payload).eq('id',guardadaActual.id)
+      ? await consulta.update(payload).eq('id',guardadaActual.id).eq('actualizado_en',guardadaActual.actualizado_en)
           .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single()
       : await consulta.insert(payload)
           .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single());
@@ -305,7 +312,7 @@ export default function Propuestas() {
         const {generarPdfPropuesta}=await import('../../lib/propuestaPdf');
         const archivo=await archivarPdfPropuesta(await generarPdfPropuesta(vista,cliente));
         const datos={...data.datos,pdfArchivado:{id:archivo.id,nombre:archivo.nombre,mime:archivo.mime||'application/pdf',fecha:new Date().toISOString()}};
-        const {data:final,error:errorVinculo}=await supabase.from('propuestas_comerciales').update({datos})
+        const {data:final,error:errorVinculo}=await supabase.from('propuestas_comerciales').update({datos,actualizado_en:new Date().toISOString()})
           .eq('id',data.id).eq('actualizado_en',data.actualizado_en)
           .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single();
         if(errorVinculo||!final)throw new Error('El PDF está en la biblioteca, pero no se pudo vincular a esta versión. '+(errorVinculo?.message||''));
