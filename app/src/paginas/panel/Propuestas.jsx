@@ -5,6 +5,7 @@ import {useSesion} from '../../lib/sesion';
 import PropuestaDoc from '../../componentes/PropuestaDocumento';
 import {calcularHonorarios} from '../../lib/calculoHonorarios';
 import {fechaLocalInput} from '../../lib/plantillasDocumentales';
+import {modeloEditable} from '../../lib/plantillasDocumentalesEditables';
 import {nombreDocumentoDePlantilla,prepararTituloImpresion} from '../../lib/nombresDocumentales';
 import '../../lib/propuestaDocPage';
 import './Propuestas.css';
@@ -249,6 +250,7 @@ export default function Propuestas() {
 
   const guardar = async () => {
     if(guardando||cargando)return;
+    if(!prospectoId&&!sel){setAviso('Selecciona un prospecto del CRM antes de guardar.');return;}
     if(!sel&&!plantillaLista){setAviso('No se ha cargado la plantilla.');return;}
     const cliente=d.comunidad.trim();
     if (!cliente) { setAviso('Escribe el nombre del cliente o comunidad antes de guardar.'); return; }
@@ -265,7 +267,7 @@ export default function Propuestas() {
       return;
     }
     setGuardando(true);setAviso('');
-    const plantillaVigente=d.plantillaContenido??(sel?null:plantillaGlobal);
+    const plantillaVigente=d.plantillaContenido??(sel?null:{...modeloEditable('propuesta_comercial'),...(plantillaGlobal||{})});
     const payload={
       nombre,datos:datosPropuesta({...d,plantillaContenido:plantillaVigente}),opciones:opts,
       prospecto_id:prospectoId||null,
@@ -374,9 +376,9 @@ export default function Propuestas() {
         </div>
         <div style={{...p.group,border:'1px solid #e9e6e2',borderRadius:8,padding:12}}>
           <p style={{margin:'0 0 8px',fontSize:13}}><strong>{nombreDocumento}</strong></p>
-          <p style={{margin:'0 0 12px',fontSize:12,color:'#696969'}}>{prospectoId?'Vinculado automáticamente a la ficha comercial.':'Selecciona un prospecto para vincular el documento al CRM.'}</p>
+          <p style={{margin:'0 0 12px',fontSize:12,color:'#696969'}}>{prospectoId?'Se guarda automáticamente en la ficha comercial.':'Selecciona un prospecto para vincular el documento al CRM.'}</p>
           {opts.honorarios&&!calc.total&&<p style={p.warn}>Completa los honorarios si están disponibles. Si aún no los conoces, puedes guardar la propuesta como borrador.</p>}
-          <button style={{...p.btn,width:'100%'}} onClick={guardar} disabled={guardando||cargando||!d.comunidad.trim()||(!sel&&!plantillaLista)}>{guardando?'Guardando…':sel?'Guardar cambios':'Guardar documento en CRM'}</button>
+          <button style={{...p.btn,width:'100%'}} onClick={guardar} disabled={guardando||cargando||!d.comunidad.trim()||(!sel&&(!prospectoId||!plantillaLista))}>{guardando?'Guardando…':sel?'Guardar cambios':'Guardar documento en CRM'}</button>
           <button type="button" style={{...p.btnGhost,width:'100%',marginTop:8}} onClick={()=>{setVistaMovil('doc');document.querySelector('.propuesta-docwrap')?.scrollTo({top:0});}}>Vista previa</button>
           {sel&&prospectoId&&<Link style={{display:'block',marginTop:10,fontSize:13}} to={'/pipeline?prospecto='+encodeURIComponent(prospectoId)}>Ir a la ficha comercial →</Link>}
         </div>
@@ -503,7 +505,7 @@ export default function Propuestas() {
             <button style={p.btnGhost} onClick={nueva} disabled={guardando}>Nueva</button>
             <button style={p.btnGhost} onClick={eliminar} disabled={!sel||guardando}>Eliminar</button>
           </div>
-          {sel&&<button type="button" style={{...p.btnGhost,width:"100%",marginTop:10}} disabled={!plantillaLista||!plantillaGlobal||guardando} onClick={()=>{if(window.confirm("¿Actualizar esta propuesta con la plantilla vigente?")){setD(actual=>({...actual,plantillaContenido:plantillaGlobal}));setAviso("Plantilla aplicada. Guarda los cambios para conservarla.");}}}>Actualizar desde plantilla vigente</button>}
+          {sel&&<button type="button" style={{...p.btnGhost,width:"100%",marginTop:10}} disabled={!plantillaLista||guardando} onClick={()=>{if(window.confirm("¿Actualizar esta propuesta con la plantilla vigente?")){setD(actual=>({...actual,plantillaContenido:{...modeloEditable('propuesta_comercial'),...(plantillaGlobal||{})}}));setAviso("Plantilla aplicada. Guarda los cambios para conservarla.");}}}>Actualizar desde plantilla vigente</button>}
           <p style={{fontSize:12,color:"#696969"}}>Para editar la plantilla maestra, vuelve al Gestor documental.</p>
         </details>
       </aside>
