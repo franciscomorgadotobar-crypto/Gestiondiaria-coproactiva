@@ -197,16 +197,16 @@ export async function guardarPdfDocumentoDrive({
 /** La propuesta vive en propuestas_comerciales, no en documentos_gestion.
  * Se archiva como PDF privado en la biblioteca comercial y el ID devuelto
  * se conserva en los datos de la propia propuesta. No se publica el archivo. */
-export async function archivarPdfPropuesta(archivo){
+export const sincronizarCarpetaProspecto = prospectoId => llamarDrive('sincronizar_prospecto',{prospecto_id:prospectoId},'correo-archivos');
+
+export async function archivarPdfPropuesta(archivo,propuestaId){
  if(!archivo?.size||archivo.type!=='application/pdf')throw new Error('PDF de propuesta inválido.');
  if(archivo.size>8*1024*1024)throw new Error('El PDF supera el límite de 8 MB.');
- const destino=await llamarDrive('carpetas',{},'correo-archivos');
- const carpetaId=destino.raiz?.id||destino.carpeta?.id;
- if(!carpetaId)throw new Error('No se encontró la carpeta comercial.');
+ if(!propuestaId)throw new Error('La propuesta debe estar guardada antes de archivar el PDF.');
  const fd=new FormData();
  fd.append('action','upload');fd.append('archivo',archivo);
  fd.append('categoria','Propuestas comerciales');
- fd.append('carpeta_id',carpetaId);
+ fd.append('propuesta_id',propuestaId);
  const r=await fetch(BASE+'correo-archivos',{method:'POST',headers:await cabeceras(false),body:fd});
  const datos=await leerRespuesta(r);
  if(!datos.archivo?.id)throw new Error('Drive no devolvió el identificador del PDF.');
