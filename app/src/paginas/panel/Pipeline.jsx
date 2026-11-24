@@ -7,7 +7,7 @@ import './Pipeline.css';
 import { useVolverGlobal, volverPorJerarquia } from '../../lib/navegacion';
 import Confirmar from '../../componentes/Confirmar';
 import DialogoCampos from '../../componentes/DialogoCampos';
-import { prepararCarpetasDrive } from '../../lib/drive';
+import { prepararCarpetasDrive, sincronizarCarpetaProspecto } from '../../lib/drive';
 import {completarCorreo,validarBorradorCorreo} from '../../lib/plantillasCorreo';
 import AdjuntosCorreo from '../../componentes/AdjuntosCorreo';
 import CopiasCorreo from '../../componentes/CopiasCorreo';
@@ -96,6 +96,9 @@ export default function Pipeline() {
   const [diagnosticos, setDiagnosticos] = useState(new Map());   // prospecto_id → { control, resultado }
   const [equipo, setEquipo] = useState([]);
   const [error, setError] = useState(null);
+  const [drivePendiente,setDrivePendiente]=useState(null);
+  const [driveSincronizando,setDriveSincronizando]=useState(false);
+  const [driveResultado,setDriveResultado]=useState(null);
   const [etapa, setEtapa] = usePestanaHistorial('etapa', 'nuevo', ETAPAS.map(([clave]) => clave));
   const [abierto, setAbierto] = useState(null);   // id en edición, o 'nuevo'
   const [form, setForm] = useState(VACIO);
@@ -585,6 +588,17 @@ export default function Pipeline() {
     navegarPipeline(params,null,true);
   }
 
+  async function sincronizarDriveProspecto(id){
+    setDriveSincronizando(true);
+    try{
+      const resultado=await sincronizarCarpetaProspecto(id);
+      setDrivePendiente(null);
+      setDriveResultado({id,...resultado});
+    }catch(e){
+      setDrivePendiente({id,mensaje:'No se pudo sincronizar la carpeta comercial: '+(e?.message||'Error de Drive')});
+    }finally{setDriveSincronizando(false);}
+  }
+
   async function guardarEtapa(p, nuevaEtapa, motivo = null) {
     setGuardando(true);
     setError(null);
@@ -599,6 +613,7 @@ export default function Pipeline() {
     if (error || !data) return setError(error?.message || 'No se pudo actualizar el prospecto.');
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
     setEtapa(nuevaEtapa,{replace:true});
+    await sincronizarDriveProspecto(p.id);
   }
 
   async function cambiarEtapa(p, nuevaEtapa) {
@@ -642,6 +657,7 @@ export default function Pipeline() {
     setProspectos(xs => xs.map(x => x.id === p.id ? data : x));
     // Prospecto ganado → comunidad nueva: carpetas en Drive sin bloquear el CRM.
     if (data.comunidad_id) prepararCarpetasDrive(data.comunidad_id);
+    await sincronizarDriveProspecto(p.id);
   }
 
   return (
@@ -708,6 +724,7 @@ export default function Pipeline() {
         )}
         {error && <div className="aviso aviso-critico" style={{ marginBottom: 14 }} role="alert">{error}</div>}
         {avisoCorreo && <div className="aviso" role="status">{avisoCorreo}</div>}
+        {drivePendiente&&<div className="aviso aviso-critico" role="alert"><p>El CRM conserva su estado. {drivePendiente.mensaje}</p><button type="button" className="boton boton-secundario" disabled={driveSincronizando} onClick={()=>sincronizarDriveProspecto(drivePendiente.id)}>Reintentar sincronización</button></div>}
 
         {prospectoSeleccionado && (
           <section className="tarjeta pipeline-ficha" aria-label={'Ficha de gestión de '+prospectoSeleccionado.nombre_condominio}>
@@ -760,6 +777,10 @@ export default function Pipeline() {
                   </div>
                 </div>
                 <DocumentosVinculados tipo="prospecto" id={prospectoSeleccionado.id}/>
+                 <div style={{marginTop:12}}>
+                   <button type="button" className="boton boton-secundario" disabled={driveSincronizando||guardando} onClick={()=>sincronizarDriveProspecto(prospectoSeleccionado.id)}>{driveSincronizando?'Sincronizando Drive…':'Sincronizar carpeta comercial'}</button>
+                   {driveResultado?.id===prospectoSeleccionado.id&&<p className="micro apagado" role="status">{driveResultado.carpeta?'Drive / Documentos comerciales / Pipeline comercial / '+driveResultado.etiqueta+' / '+driveResultado.carpeta.name:'La carpeta se creará al guardar una propuesta.'}</p>}
+                 </div>
                 <details className="pipeline-historial-correos" defaultOpen={Boolean(correoDestacado)}>
                   <summary>
                     <strong>Historial de correos</strong>
