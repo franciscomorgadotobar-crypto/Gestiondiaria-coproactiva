@@ -6,6 +6,7 @@ import PropuestaDoc from '../../componentes/PropuestaDocumento';
 import {calcularHonorarios} from '../../lib/calculoHonorarios';
 import {fechaLocalInput} from '../../lib/plantillasDocumentales';
 import {modeloEditable} from '../../lib/plantillasDocumentalesEditables';
+import {archivarPdfPropuesta,descargarPdfPropuestaArchivado} from '../../lib/drive';
 import {nombreDocumentoDePlantilla,prepararTituloImpresion} from '../../lib/nombresDocumentales';
 import '../../lib/propuestaDocPage';
 import './Propuestas.css';
@@ -77,6 +78,8 @@ export default function Propuestas() {
   const [busqueda]=useSearchParams();
   const [cargando,setCargando]=React.useState(true);
   const [guardando,setGuardando]=React.useState(false);
+  const [descargando,setDescargando]=React.useState(false);
+  const bloqueoGuardado=React.useRef(false);
   const [aviso,setAviso]=React.useState('');
   const [vistaMovil,setVistaMovil]=React.useState('form');
   const [d,setD]=React.useState({...BLANK});
@@ -225,7 +228,7 @@ export default function Propuestas() {
     };
   },[vistaMovil,d,opts]);
 
-  const set = (k, v) => setD(p => ({ ...p, [k]: v }));
+  const set = (k, v) => setD(p => ({ ...p, [k]: v, pdfArchivado:null }));
   const calc = computeAll(d);
   const nombreDocumento=nombreDocumentoDePlantilla('propuesta_comercial',d.comunidad);
   React.useEffect(()=>{cargarFuenteFirma();},[]);
@@ -249,7 +252,7 @@ export default function Propuestas() {
   },[]);
 
   const guardar = async () => {
-    if(guardando||cargando)return;
+    if(bloqueoGuardado.current||guardando||cargando)return;
     if(!prospectoId&&!sel){setAviso('Selecciona un prospecto del CRM antes de guardar.');return;}
     if(!sel&&!plantillaLista){setAviso('No se ha cargado la plantilla.');return;}
     const cliente=d.comunidad.trim();
@@ -266,10 +269,13 @@ export default function Propuestas() {
       setAviso('Este documento pertenece a otro prospecto.');
       return;
     }
+    bloqueoGuardado.current=true;
     setGuardando(true);setAviso('');
+    try{
     const plantillaVigente=d.plantillaContenido??(sel?null:{...modeloEditable('propuesta_comercial'),...(plantillaGlobal||{})});
+    const vista=document.querySelector('.propuesta-docwrap doc-page')?.cloneNode(true);
     const payload={
-      nombre,datos:datosPropuesta({...d,plantillaContenido:plantillaVigente}),opciones:opts,
+      nombre,datos:datosPropuesta({...d,plantillaContenido:plantillaVigente,pdfArchivado:null}),opciones:opts,
       prospecto_id:prospectoId||null,
       actualizado_por:perfil?.id
     };
@@ -279,7 +285,7 @@ export default function Propuestas() {
           .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single()
       : await consulta.insert(payload)
           .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single());
-    if(error){setAviso('No se pudo guardar: '+error.message);}
+    if(error){setAviso('No se pudo guardar: '+error.message);return;}
     else{
       setClientes(actual=>{
         const siguiente={...actual};
@@ -293,10 +299,30 @@ export default function Propuestas() {
         siguiente[nombre]=data;
         return siguiente;
       });
-      setSel(nombre);setD(actual=>({...actual,plantillaContenido:plantillaVigente}));
-      setAviso(prospectoId?'Documento guardado y disponible en la ficha comercial.':'Documento guardado en el Gestor documental.');
+      setSel(nombre);setD(datosPropuesta(data.datos));
+      setAviso('Propuesta guardada. Generando y archivando PDF…');
+      try{
+        const {generarPdfPropuesta}=await import('../../lib/propuestaPdf');
+        const archivo=await archivarPdfPropuesta(await generarPdfPropuesta(vista,cliente));
+        const datos={...data.datos,pdfArchivado:{id:archivo.id,nombre:archivo.nombre,mime:archivo.mime||'application/pdf',fecha:new Date().toISOString()}};
+        const {data:final,error:errorVinculo}=await supabase.from('propuestas_comerciales').update({datos})
+          .eq('id',data.id).eq('actualizado_en',data.actualizado_en)
+          .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single();
+        if(errorVinculo||!final)throw new Error('El PDF está en la biblioteca, pero no se pudo vincular a esta versión. '+(errorVinculo?.message||''));
+        setClientes(actual=>({...actual,[nombre]:final.datos}));
+        setRegistros(actual=>({...actual,[nombre]:final}));
+        setD(datosPropuesta(final.datos));
+        setAviso('Documento guardado, PDF archivado en Drive y disponible en el CRM.');
+      }catch(e){setAviso('Propuesta guardada en el CRM, pero el PDF no quedó vinculado. Guarda de nuevo para reintentar. '+(e?.message||''));}
     }
-    setGuardando(false);
+    }catch(e){setAviso('No se pudo completar el guardado: '+(e?.message||''));}
+    finally{bloqueoGuardado.current=false;setGuardando(false);}
+  };
+  const descargarArchivado=async()=>{
+    setDescargando(true);
+    try{await descargarPdfPropuestaArchivado(registros[sel]?.datos?.pdfArchivado);}
+    catch(e){setAviso('No se pudo descargar el PDF archivado: '+(e?.message||''));}
+    finally{setDescargando(false);}
   };
   const cargar=nombre=>{
     setSel(nombre);
@@ -344,6 +370,7 @@ export default function Propuestas() {
         <button className={vistaMovil==='doc'?'activo':''} type="button" onClick={()=>setVistaMovil('doc')}>Vista previa</button>
       </div>
       <aside className="propuesta-panel">
+        <fieldset disabled={guardando} style={{border:0,margin:0,padding:0,minWidth:0}}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <img src={import.meta.env.BASE_URL+'brand/imagologo-horizontal-naranja.svg'} alt="Coproactiva" style={{height:28,width:'auto'}} />
         </div>
@@ -380,6 +407,8 @@ export default function Propuestas() {
           {opts.honorarios&&!calc.total&&<p style={p.warn}>Completa los honorarios si están disponibles. Si aún no los conoces, puedes guardar la propuesta como borrador.</p>}
           <button style={{...p.btn,width:'100%'}} onClick={guardar} disabled={guardando||cargando||!d.comunidad.trim()||(!sel&&(!prospectoId||!plantillaLista))}>{guardando?'Guardando…':sel?'Guardar cambios':'Guardar documento en CRM'}</button>
           <button type="button" style={{...p.btnGhost,width:'100%',marginTop:8}} onClick={()=>{setVistaMovil('doc');document.querySelector('.propuesta-docwrap')?.scrollTo({top:0});}}>Vista previa</button>
+          {registros[sel]?.datos?.pdfArchivado&&<button type="button" style={{...p.btnGhost,width:'100%',marginTop:8}} disabled={descargando||guardando} onClick={descargarArchivado}>{descargando?'Descargando…':'Descargar PDF guardado'}</button>}
+          {sel&&!registros[sel]?.datos?.pdfArchivado&&<small style={{display:'block',marginTop:8}}>PDF pendiente de archivar.</small>}
           {sel&&prospectoId&&<Link style={{display:'block',marginTop:10,fontSize:13}} to={'/pipeline?prospecto='+encodeURIComponent(prospectoId)}>Ir a la ficha comercial →</Link>}
         </div>
 
@@ -508,6 +537,7 @@ export default function Propuestas() {
           {sel&&<button type="button" style={{...p.btnGhost,width:"100%",marginTop:10}} disabled={!plantillaLista||guardando} onClick={()=>{if(window.confirm("¿Actualizar esta propuesta con la plantilla vigente?")){setD(actual=>({...actual,plantillaContenido:{...modeloEditable('propuesta_comercial'),...(plantillaGlobal||{})}}));setAviso("Plantilla aplicada. Guarda los cambios para conservarla.");}}}>Actualizar desde plantilla vigente</button>}
           <p style={{fontSize:12,color:"#696969"}}>Para editar la plantilla maestra, vuelve al Gestor documental.</p>
         </details>
+        </fieldset>
       </aside>
       <main className="propuesta-docwrap">
         <PropuestaDoc d={d} calc={calc} opts={opts}
