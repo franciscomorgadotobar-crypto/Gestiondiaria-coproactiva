@@ -193,3 +193,34 @@ export async function guardarPdfDocumentoDrive({
  });
  return leerRespuesta(response);
 }
+
+/** La propuesta vive en propuestas_comerciales, no en documentos_gestion.
+ * Se archiva como PDF privado en la biblioteca comercial y el ID devuelto
+ * se conserva en los datos de la propia propuesta. No se publica el archivo. */
+export async function archivarPdfPropuesta(archivo){
+ if(!archivo?.size||archivo.type!=='application/pdf')throw new Error('PDF de propuesta inválido.');
+ if(archivo.size>8*1024*1024)throw new Error('El PDF supera el límite de 8 MB.');
+ const destino=await llamarDrive('carpetas',{},'correo-archivos');
+ const carpetaId=destino.raiz?.id||destino.carpeta?.id;
+ if(!carpetaId)throw new Error('No se encontró la carpeta comercial.');
+ const fd=new FormData();
+ fd.append('action','upload');fd.append('archivo',archivo);
+ fd.append('categoria','Propuestas comerciales');
+ fd.append('carpeta_id',carpetaId);
+ const r=await fetch(BASE+'correo-archivos',{method:'POST',headers:await cabeceras(false),body:fd});
+ const datos=await leerRespuesta(r);
+ if(!datos.archivo?.id)throw new Error('Drive no devolvió el identificador del PDF.');
+ return datos.archivo;
+}
+
+export async function descargarPdfPropuestaArchivado(archivo){
+ if(!archivo?.id)throw new Error('No hay PDF archivado.');
+ const r=await fetch(BASE+'correo-archivos',{method:'POST',headers:await cabeceras(),body:JSON.stringify({action:'descargar',id:archivo.id})});
+ if(!r.ok)await leerRespuesta(r);
+ if(!r.headers.get('content-type')?.includes('application/pdf'))throw new Error('Drive no devolvió un PDF.');
+ const blob=await r.blob();
+ if(!blob.size)throw new Error('El PDF archivado está vacío.');
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download=archivo.nombre||'Propuesta comercial.pdf';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
