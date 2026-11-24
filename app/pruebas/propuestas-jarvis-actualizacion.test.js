@@ -18,7 +18,8 @@ test('Prospectos del Pipeline disponibles aunque no tengan propuestas guardadas'
   assert.match(propuestas,/select\('id,nombre_condominio,nombre_contacto,direccion,comuna,etapa'\)/);
   assert.match(propuestas,/prospectos\.map\(pr=><option key=\{pr\.id\} value=\{pr\.id\}>/);
   assert.match(propuestas,/Actualizar lista/);
-  assert.match(propuestas,/Propuestas guardadas/);
+  assert.match(propuestas,/Administrar propuestas existentes/);
+  assert.match(propuestas,/Guardar documento en CRM/);
   assert.match(propuestas,/Cargar propuesta/);
   assert.match(propuestas,/Ver ficha comercial/);
   assert.equal(etiquetaProspecto(prospecto),'Edificio Las Américas · Ernesto Meza · Diagnostico');
@@ -33,7 +34,7 @@ test('Seleccionar prospecto rellena datos sin trasladar honorarios ni correo emi
   assert.equal(datos.base,'');
   assert.equal(datos.email,'');
   assert.match(propuestas,/setProspectoId\(id\)/);
-  assert.match(propuestas,/setD\(datosDesdeProspecto\(p,BLANK\)\)/);
+  assert.match(propuestas,/setD\(datosDesdeProspecto\(p,\{\.\.\.BLANK,fecha:fechaLocalInput\(\)\}\)\)/);
 });
 
 test('La asociación se guarda por UUID y no se reasigna otra propuesta por mismo nombre',()=>{
@@ -47,7 +48,9 @@ test('La asociación se guarda por UUID y no se reasigna otra propuesta por mism
   assert.equal(conflictoAsociacion(registros,'Nova Vida','p1'),false);
   assert.match(propuestas,/prospecto_id:prospectoId\|\|null/);
   assert.match(propuestas,/conflictoAsociacion\(registros,nombre,prospectoId\)/);
-  assert.match(propuestas,/upsert\(payload,\{onConflict:'nombre'\}\)/);
+  assert.match(propuestas,/\.insert\(payload\)/);
+  assert.match(propuestas,/\.update\(payload\)\.eq\('id',guardadaActual\.id\)/);
+  assert.doesNotMatch(propuestas,/upsert\(payload/);
 });
 
 test('Jarvis usa la fecha real de Santiago y ordena prioridades desde agenda, no del texto histórico',()=>{
