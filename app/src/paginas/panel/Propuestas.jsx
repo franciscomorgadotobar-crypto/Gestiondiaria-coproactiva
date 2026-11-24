@@ -4,6 +4,7 @@ import {supabase} from '../../lib/supabase';
 import {useSesion} from '../../lib/sesion';
 import PropuestaDoc from '../../componentes/PropuestaDocumento';
 import {calcularHonorarios} from '../../lib/calculoHonorarios';
+import {fechaLocalInput} from '../../lib/plantillasDocumentales';
 import {nombreDocumentoDePlantilla,prepararTituloImpresion} from '../../lib/nombresDocumentales';
 import '../../lib/propuestaDocPage';
 import './Propuestas.css';
@@ -88,10 +89,15 @@ export default function Propuestas() {
   // La fuente de verdad es Supabase: la antigua API Netlify sigue operativa
   // únicamente durante la migración de las propuestas históricas.
   const [plantillaGlobal,setPlantillaGlobal]=React.useState(null);
+  const [plantillaLista,setPlantillaLista]=React.useState(false);
+  const [errorPlantilla,setErrorPlantilla]=React.useState('');
   React.useEffect(()=>{
     let vigente=true;
     const leer=()=>supabase.from('plantillas_documentales_app').select('contenido').eq('tipo','propuesta_comercial')
-     .maybeSingle().then(({data,error})=>{if(vigente&&!error)setPlantillaGlobal(data?.contenido||null);});
+     .maybeSingle().then(({data,error})=>{if(!vigente)return;
+       setErrorPlantilla(error?.message||'');
+       if(!error){setPlantillaGlobal(data?.contenido||null);setPlantillaLista(true);}
+     });
     leer();
     const actualizar=()=>{if(document.visibilityState==='visible')leer();};
     window.addEventListener('focus',actualizar);
@@ -150,7 +156,7 @@ export default function Propuestas() {
 
   function seleccionarProspecto(id){
     setProspectoId(id);
-    if(!id){setSel('');return;}
+    if(!id){setSel('');setD({...BLANK,fecha:fechaLocalInput()});setOpts({...OPCIONES_PROPUESTA});setAviso('');return;}
     const p=prospectos.find(item=>item.id===id);
     if(!p)return;
     const registro=propuestaDelProspecto(registros,id);
@@ -161,7 +167,7 @@ export default function Propuestas() {
       setAviso('');
     }else{
       setSel('');
-      setD(datosDesdeProspecto(p,BLANK));
+      setD(datosDesdeProspecto(p,{...BLANK,fecha:fechaLocalInput()}));
       setOpts({...OPCIONES_PROPUESTA});
       setAviso('');
     }
@@ -169,12 +175,12 @@ export default function Propuestas() {
 
   React.useEffect(()=>{
     const id=busqueda.get('prospecto');
-    if(!id||cargandoProspectos||cargando||abiertoDesdeUrl.current===id)return;
+    if(!id||busqueda.get('documento')||cargandoProspectos||cargando||!borradorListo||abiertoDesdeUrl.current===id)return;
     const p=prospectos.find(item=>item.id===id);
     if(!p)return;
     abiertoDesdeUrl.current=id;
     seleccionarProspecto(id);
-  },[busqueda,prospectos,cargandoProspectos,cargando,registros]);
+  },[busqueda,prospectos,cargandoProspectos,cargando,registros,borradorListo]);
 
   React.useEffect(()=>{
     let raf=0;
@@ -242,6 +248,8 @@ export default function Propuestas() {
   },[]);
 
   const guardar = async () => {
+    if(guardando||cargando)return;
+    if(!sel&&!plantillaLista){setAviso('No se ha cargado la plantilla.');return;}
     const cliente=d.comunidad.trim();
     if (!cliente) { setAviso('Escribe el nombre del cliente o comunidad antes de guardar.'); return; }
     const nombre=nombreDocumentoDePlantilla('propuesta_comercial',cliente);
@@ -267,7 +275,7 @@ export default function Propuestas() {
     const {data,error}=(guardadaActual?.id
       ? await consulta.update(payload).eq('id',guardadaActual.id)
           .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single()
-      : await consulta.upsert(payload,{onConflict:'nombre'})
+      : await consulta.insert(payload)
           .select('id,nombre,datos,opciones,prospecto_id,actualizado_en').single());
     if(error){setAviso('No se pudo guardar: '+error.message);}
     else{
@@ -284,7 +292,7 @@ export default function Propuestas() {
         return siguiente;
       });
       setSel(nombre);setD(actual=>({...actual,plantillaContenido:plantillaVigente}));
-      setAviso('Propuesta guardada en Gestión Diaria.');
+      setAviso(prospectoId?'Documento guardado y disponible en la ficha comercial.':'Documento guardado en el Gestor documental.');
     }
     setGuardando(false);
   };
@@ -294,18 +302,19 @@ export default function Propuestas() {
       setD(datosPropuesta(clientes[nombre]));
       setOpts({...OPCIONES_PROPUESTA,...registros[nombre]?.opciones});
       setProspectoId(registros[nombre]?.prospecto_id||'');
-    }else setProspectoId('');
+    }else {setProspectoId('');setD({...BLANK,fecha:fechaLocalInput()});setOpts({...OPCIONES_PROPUESTA});}
   };
   React.useEffect(()=>{
     const id=busqueda.get('documento');
-    if(!id || cargando)return;
+    if(!id || cargando||!borradorListo||abiertoDesdeUrl.current==='documento:'+id)return;
     const registro=Object.values(registros).find(r=>r.id===id);
     if(!registro)return;
+    abiertoDesdeUrl.current='documento:'+id;
     setSel(registro.nombre);
     setD(datosPropuesta(registro.datos));
     setOpts({...OPCIONES_PROPUESTA,...registro.opciones});
     setProspectoId(registro.prospecto_id||'');
-  },[busqueda,registros,cargando]);
+  },[busqueda,registros,cargando,borradorListo]);
   const eliminar=async ()=>{
     if(!sel||!registros[sel]||!window.confirm('¿Eliminar esta propuesta guardada?'))return;
     setGuardando(true);setAviso('');
@@ -314,12 +323,12 @@ export default function Propuestas() {
     else{
       const siguientes={...clientes};delete siguientes[sel];setClientes(siguientes);
       const siguienteIndice={...registros};delete siguienteIndice[sel];setRegistros(siguienteIndice);
-      setSel('');setProspectoId('');setAviso('Propuesta eliminada.');
+      setSel('');setProspectoId('');setD({...BLANK,fecha:fechaLocalInput()});setOpts({...OPCIONES_PROPUESTA});setAviso('Propuesta eliminada.');
     }
     setGuardando(false);
   };
   const nueva=()=>{
-    setD({...BLANK});setSel('');setProspectoId('');
+    setD({...BLANK,fecha:fechaLocalInput()});setSel('');setProspectoId('');
     setOpts({...OPCIONES_PROPUESTA});setAviso('');
   };
 
@@ -329,8 +338,8 @@ export default function Propuestas() {
   return (
     <div className={'propuesta-app'+(vistaMovil==='doc'?' show-doc':'')}>
       <div className="propuesta-mobile-tabs" role="group" aria-label="Vista de propuestas">
-        <button className={vistaMovil==='form'?'activo':''} type="button" onClick={()=>setVistaMovil('form')}>Formulario</button>
-        <button className={vistaMovil==='doc'?'activo':''} type="button" onClick={()=>setVistaMovil('doc')}>Documento</button>
+        <button className={vistaMovil==='form'?'activo':''} type="button" onClick={()=>setVistaMovil('form')}>Datos</button>
+        <button className={vistaMovil==='doc'?'activo':''} type="button" onClick={()=>setVistaMovil('doc')}>Vista previa</button>
       </div>
       <aside className="propuesta-panel">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -340,9 +349,12 @@ export default function Propuestas() {
         {aviso&&<p role="status" className="propuesta-aviso">{aviso}</p>}
 
         <div style={p.group}>
-          <h2 style={p.groupTitle}>Prospecto</h2>
+          <h2 style={{margin:"0 0 6px",fontSize:20,color:"#2b3138"}}>Propuesta comercial</h2>
+          <p style={{margin:"0 0 16px",fontSize:13,color:"#696969"}}>Plantilla seleccionada desde el Gestor documental. Los datos del CRM se completan automáticamente.</p>
+          {errorPlantilla&&<p role="alert" style={p.warn}>No se pudo cargar la plantilla: {errorPlantilla}</p>}
+          <h2 style={p.groupTitle}>Cliente del CRM</h2>
           <Field label="Seleccionar prospecto del Pipeline">
-            <select style={p.input} value={prospectoId} disabled={cargandoProspectos}
+            <select style={p.input} value={prospectoId} disabled={cargandoProspectos||cargando||guardando}
               onChange={e=>seleccionarProspecto(e.target.value)}
               aria-label="Seleccionar prospecto de Coproactiva">
               <option value="">{cargandoProspectos?'Cargando prospectos…':'- Selecciona un prospecto -'}</option>
@@ -352,7 +364,7 @@ export default function Propuestas() {
           <div className="propuesta-prospecto-acciones">
             <span>{cargandoProspectos ? 'Consultando Pipeline…' : ''}</span>
             <button type="button" onClick={()=>setRevisionProspectos(n=>n+1)}
-              disabled={cargandoProspectos}>Actualizar lista</button>
+              disabled={cargandoProspectos||guardando}>Actualizar lista</button>
           </div>
           {prospectoId&&<p className="propuesta-prospecto-asociado">
             <span aria-hidden="true">✓</span>
@@ -360,32 +372,17 @@ export default function Propuestas() {
             <Link to={'/pipeline?prospecto='+prospectoId}>Ver ficha comercial</Link>
           </p>}
         </div>
-        <div style={p.group}>
-          <h2 style={p.groupTitle}>Propuestas guardadas</h2>
-          <p className="propuesta-nombre-previo"><strong>Nombre del documento:</strong> {nombreDocumento}</p>
-          <Field label="Cargar propuesta">
-            <select style={p.input} value={sel} onChange={e => cargar(e.target.value)}>
-              <option value="">{cargando?'Cargando propuestas...':'- Selecciona una propuesta -'}</option>
-              {Object.keys(clientes).sort().map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </Field>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button style={p.btn} onClick={guardar} disabled={guardando||cargando}>{guardando?'Guardando...':'Guardar'}</button>
-            <button style={p.btnGhost} onClick={nueva}>Nueva</button>
-            <button style={p.btnGhost} onClick={eliminar} disabled={!sel||guardando}>Borrar</button>
-          </div>
-          <div className="propuesta-plantilla-acciones">
-            <Link to="/documentos/plantillas/propuesta_comercial">Editar todos los textos de la plantilla</Link>
-            {sel&&<button type="button" style={p.btnGhost} disabled={!plantillaGlobal||guardando}
-              onClick={()=>{setD(actual=>({...actual,plantillaContenido:plantillaGlobal}));setAviso('Plantilla actual aplicada a esta propuesta. Guarda para conservar los cambios.');}}>
-              Aplicar plantilla actual a esta propuesta
-            </button>}
-            {sel&&<small>Después de editar la plantilla, aplícala aquí y guarda la propuesta para actualizar su contenido.</small>}
-          </div>
+        <div style={{...p.group,border:'1px solid #e9e6e2',borderRadius:8,padding:12}}>
+          <p style={{margin:'0 0 8px',fontSize:13}}><strong>{nombreDocumento}</strong></p>
+          <p style={{margin:'0 0 12px',fontSize:12,color:'#696969'}}>{prospectoId?'Vinculado automáticamente a la ficha comercial.':'Selecciona un prospecto para vincular el documento al CRM.'}</p>
+          {opts.honorarios&&!calc.total&&<p style={p.warn}>Completa los honorarios si están disponibles. Si aún no los conoces, puedes guardar la propuesta como borrador.</p>}
+          <button style={{...p.btn,width:'100%'}} onClick={guardar} disabled={guardando||cargando||!d.comunidad.trim()||(!sel&&!plantillaLista)}>{guardando?'Guardando…':sel?'Guardar cambios':'Guardar documento en CRM'}</button>
+          <button type="button" style={{...p.btnGhost,width:'100%',marginTop:8}} onClick={()=>{setVistaMovil('doc');document.querySelector('.propuesta-docwrap')?.scrollTo({top:0});}}>Vista previa</button>
+          {sel&&prospectoId&&<Link style={{display:'block',marginTop:10,fontSize:13}} to={'/pipeline?prospecto='+encodeURIComponent(prospectoId)}>Ir a la ficha comercial →</Link>}
         </div>
 
-        <div style={p.group}>
-          <h2 style={p.groupTitle}>Comunidad</h2>
+        <details style={p.group}>
+          <summary style={{...p.groupTitle,cursor:"pointer"}}>Datos de la comunidad y fecha</summary>
           <Field label="Nombre del edificio o condominio">
             <input style={p.input} value={d.comunidad} onChange={e => set('comunidad', e.target.value)} placeholder="Edificio Parque Bustamante" />
           </Field>
@@ -411,10 +408,10 @@ export default function Propuestas() {
               <input type="number" min="1" style={p.input} value={d.vigencia} onChange={e => set('vigencia', e.target.value)} />
             </div>
           </div>
-        </div>
+        </details>
 
-        <div style={p.group}>
-          <h2 style={p.groupTitle}>Honorarios</h2>
+        <details style={p.group} open={!calc.total||undefined}>
+          <summary style={{...p.groupTitle,cursor:"pointer"}}>Honorarios y condiciones</summary>
           <Field label="Modalidad de cobro">
             <div className="propuesta-modalidades" role="group" aria-label="Modalidad de honorarios">
               <button type="button" aria-pressed={calc.tipoHonorarios==='porcentaje'}
@@ -468,10 +465,10 @@ export default function Propuestas() {
               <input type="number" min="1" style={p.input} value={d.mesesContrato} onChange={e => set('mesesContrato', e.target.value)} />
             </div>
           </div>
-        </div>
+        </details>
 
-        <div style={p.group}>
-          <h2 style={p.groupTitle}>Emisor</h2>
+        <details style={p.group}>
+          <summary style={{...p.groupTitle,cursor:"pointer"}}>Emisor</summary>
           <Field label="Correo de contacto">
             <input style={p.input} value={d.email} onChange={e => set('email', e.target.value)} placeholder="contacto@coproactiva.cl" />
           </Field>
@@ -481,10 +478,10 @@ export default function Propuestas() {
           <Field label="Cargo">
             <input style={p.input} value={d.cargo} onChange={e => set('cargo', e.target.value)} placeholder="Contador Auditor · Administrador Inscrito · Representante Legal" />
           </Field>
-        </div>
+        </details>
 
-        <div style={p.group}>
-          <h2 style={p.groupTitle}>Documento</h2>
+        <details style={p.group}>
+          <summary style={{...p.groupTitle,cursor:"pointer"}}>Opciones del documento</summary>
 
           {[['portada', 'Incluir portada'], ['numeros', 'Numerar secciones'], ['honorarios', 'Incluir honorarios']].map(([k, t]) => (
             <label key={k} style={p.toggleRow}>
@@ -492,8 +489,23 @@ export default function Propuestas() {
               <span>{t}</span>
             </label>
           ))}
-          <button style={{ ...p.btn, width: '100%', marginTop: 12 }} onClick={imprimirPdf}>Imprimir / PDF</button>
-        </div>
+        </details>
+        <button style={{ ...p.btnGhost, width: '100%', marginBottom: 12 }} onClick={imprimirPdf}>Imprimir / PDF</button>
+        <details style={p.group}>
+          <summary style={{...p.groupTitle,cursor:"pointer"}}>Administrar propuestas existentes</summary>
+          <Field label="Cargar propuesta guardada">
+            <select style={p.input} value={sel} disabled={guardando||cargando} onChange={e=>cargar(e.target.value)}>
+              <option value="">{cargando?'Cargando propuestas…':'Seleccionar propuesta'}</option>
+              {Object.keys(clientes).sort().map(n=><option key={n} value={n}>{n}</option>)}
+            </select>
+          </Field>
+          <div style={{display:"flex",gap:8}}>
+            <button style={p.btnGhost} onClick={nueva} disabled={guardando}>Nueva</button>
+            <button style={p.btnGhost} onClick={eliminar} disabled={!sel||guardando}>Eliminar</button>
+          </div>
+          {sel&&<button type="button" style={{...p.btnGhost,width:"100%",marginTop:10}} disabled={!plantillaLista||!plantillaGlobal||guardando} onClick={()=>{if(window.confirm("¿Actualizar esta propuesta con la plantilla vigente?")){setD(actual=>({...actual,plantillaContenido:plantillaGlobal}));setAviso("Plantilla aplicada. Guarda los cambios para conservarla.");}}}>Actualizar desde plantilla vigente</button>}
+          <p style={{fontSize:12,color:"#696969"}}>Para editar la plantilla maestra, vuelve al Gestor documental.</p>
+        </details>
       </aside>
       <main className="propuesta-docwrap">
         <PropuestaDoc d={d} calc={calc} opts={opts}
