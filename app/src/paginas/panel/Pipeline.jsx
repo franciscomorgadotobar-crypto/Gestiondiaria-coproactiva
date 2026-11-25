@@ -12,6 +12,7 @@ import {completarCorreo,validarBorradorCorreo} from '../../lib/plantillasCorreo'
 import AdjuntosCorreo from '../../componentes/AdjuntosCorreo';
 import CopiasCorreo from '../../componentes/CopiasCorreo';
 import DocumentosVinculados from '../../componentes/DocumentosVinculados';
+import GestionesProspecto from '../../componentes/GestionesProspecto';
 import {prepararCopias} from '../../lib/copiasCorreo';
 
 /* Pipeline comercial: leads y prospectos en un embudo hasta ganarse o perderse.
@@ -744,12 +745,13 @@ export default function Pipeline() {
                   <div><span className="etiqueta-campo">Correo</span><span>{prospectoSeleccionado.email||'Sin registrar'}</span></div>
                   <div><span className="etiqueta-campo">Teléfono</span><span>{prospectoSeleccionado.telefono||'Sin registrar'}</span></div>
                   <div><span className="etiqueta-campo">Responsable</span><span>{equipo.find(e=>e.id===prospectoSeleccionado.responsable_id)?.nombre||'Sin asignar'}</span></div>
-                  <div><span className="etiqueta-campo">Próxima acción</span><span>{prospectoSeleccionado.proxima_accion||'No definida'}</span></div>
-                  <div><span className="etiqueta-campo">Fecha próxima acción</span><span>{fechaCL(prospectoSeleccionado.fecha_proxima_accion,true)||'Sin fecha'}</span></div>
+
                 </div>
                 {prospectoSeleccionado.observaciones&&<div className="pipeline-ficha-notas">
                   <strong>Observaciones</strong><p>{prospectoSeleccionado.observaciones}</p>
                 </div>}
+                <GestionesProspecto key={prospectoSeleccionado.id} prospecto={prospectoSeleccionado} disabled={guardando}
+                  onActualizar={data=>setProspectos(xs=>xs.map(p=>p.id===data.id?data:p))}/>
                 <div className="pipeline-ficha-gestionar">
                   <h3 className="h4">Gestionar prospecto</h3>
                   <p className="chico apagado">Elige la acción que necesitas realizar.</p>
