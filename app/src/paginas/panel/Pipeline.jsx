@@ -296,6 +296,10 @@ export default function Pipeline() {
   },[prospectos,busquedaLista,filtroEtapaLista,filtroResumen]);
 
   const activos = (prospectos ?? []).filter(p => p.etapa !== 'ganado' && p.etapa !== 'perdido').length;
+  const accionesComerciales = useMemo(()=> (prospectos??[])
+    .filter(p=>!['ganado','perdido'].includes(p.etapa)&&(p.proxima_accion||p.fecha_proxima_accion))
+    .sort((a,b)=>(Date.parse(a.fecha_proxima_accion||'')||Number.MAX_SAFE_INTEGER)-(Date.parse(b.fecha_proxima_accion||'')||Number.MAX_SAFE_INTEGER)),[prospectos]);
+  const accionesVencidas=accionesComerciales.filter(p=>p.fecha_proxima_accion&&new Date(p.fecha_proxima_accion)<new Date()).length;
 
   // Diagnósticos por hacer (no enviados) de prospectos vivos, los más
   // próximos primero. También aparecen en "Por hacer" de Operación: se ven
@@ -937,6 +941,19 @@ export default function Pipeline() {
             <span className="pipeline-indicador-accion">Ver prospectos ›</span>
           </button>)}
         </div>
+
+        <details className="pipeline-historial-correos" style={{margin:'0 0 16px'}} open={accionesVencidas>0}>
+          <summary><strong>Agenda comercial ({accionesComerciales.length})</strong><span>{accionesVencidas} vencidas</span></summary>
+          <div className="pipeline-historial-contenido">
+            {!accionesComerciales.length&&<p className="chico apagado">No hay acciones comerciales pendientes.</p>}
+            {accionesComerciales.map(p=><div key={p.id} className="pipeline-correo-historial-item" style={{padding:'12px 0'}}>
+              <strong>{p.nombre_condominio}</strong>
+              <p className="chico" style={{overflowWrap:'anywhere'}}>{p.proxima_accion||'Acción sin descripción'}</p>
+              <p className="micro apagado">{fechaCL(p.fecha_proxima_accion,true)||'Sin fecha'}</p>
+              <button type="button" className="boton boton-secundario" onClick={()=>abrirGestion(p)}>Gestionar acción</button>
+            </div>)}
+          </div>
+        </details>
 
         {diagnosticosPendientes.length > 0 && (
           <section className="pipeline-pendientes" aria-label="Diagnósticos pendientes">
