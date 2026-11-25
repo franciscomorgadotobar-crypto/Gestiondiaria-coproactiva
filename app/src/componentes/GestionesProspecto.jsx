@@ -31,23 +31,23 @@ export default function GestionesProspecto({prospecto,onActualizar,disabled=fals
  },[prospecto.id,prospecto.editado_en,revision]);
  function abrir(tipo){
   setModo(tipo);setResultado('');setError('');setAviso('');
-  setAccion(tipo==='completar'?'':prospecto.proxima_accion||'');
-  setFecha(tipo==='completar'?'':local(prospecto.fecha_proxima_accion));
+  setAccion(['completar','eliminar'].includes(tipo)?'':prospecto.proxima_accion||'');
+  setFecha(['completar','eliminar'].includes(tipo)?'':local(prospecto.fecha_proxima_accion));
  }
  async function guardar(e){
   e.preventDefault();if(guardando||disabled)return;
-  if(!resultado.trim())return setError('Registra el resultado o motivo.');
+  if(modo!=='eliminar'&&!resultado.trim())return setError('Registra el resultado o motivo.');
   if(Boolean(accion.trim())!==Boolean(fecha))return setError('Completa la descripción y la fecha de la siguiente acción, o deja ambas vacías.');
   if(modo==='reagendar'&&(!fecha||new Date(fecha)<=new Date()))return setError('Indica una nueva fecha futura.');
   setGuardando(true);setError('');
   try{
    const {data,error}=await supabase.rpc('registrar_gestion_prospecto',{
     p_prospecto_id:prospecto.id,p_editado_en:prospecto.editado_en,
-    p_tipo:modo,p_resultado:resultado.trim(),p_proxima_accion:accion.trim()||null,
-    p_fecha_proxima_accion:fecha?new Date(fecha).toISOString():null
+    p_tipo:modo,p_resultado:resultado.trim()||(modo==='eliminar'?'Eliminada por el usuario':''),p_proxima_accion:modo==='eliminar'?null:accion.trim()||null,
+    p_fecha_proxima_accion:modo==='eliminar'?null:fecha?new Date(fecha).toISOString():null
    });
    if(error||!data)throw Error(error?.message||'No se pudo registrar la gestión.');
-   onActualizar(data);setModo('');setRevision(n=>n+1);setAviso('Gestión registrada. Agenda actualizada.');
+   onActualizar(data);setModo('');setRevision(n=>n+1);setAviso(modo==='eliminar'?'Acción eliminada de la agenda. Historial conservado.':'Gestión registrada. Agenda actualizada.');
   }catch(e){setError(e.message);}
   finally{setGuardando(false);}
  }
@@ -61,16 +61,18 @@ export default function GestionesProspecto({prospecto,onActualizar,disabled=fals
   {!modo&&<div className="pipeline-ficha-acciones">
    {pendiente&&<button className="boton" type="button" disabled={disabled} onClick={()=>abrir('completar')}>Completar acción</button>}
    {pendiente&&!cerrado&&<button className="boton boton-secundario" type="button" disabled={disabled} onClick={()=>abrir('reagendar')}>Reagendar</button>}
+   {pendiente&&<button className="boton boton-secundario pipeline-eliminar" type="button" disabled={disabled} onClick={()=>abrir('eliminar')}>Eliminar acción</button>}
    {!cerrado&&<button className="boton boton-secundario" type="button" disabled={disabled} onClick={()=>abrir('registrar')}>{pendiente?'Registrar gestión':'Agendar / registrar gestión'}</button>}
   </div>}
   {modo&&<form onSubmit={guardar} style={{display:'grid',gap:12,marginTop:12}}>
-   <label className="campo"><span className="etiqueta-campo">{modo==='reagendar'?'Motivo del cambio':'Resultado de la gestión'}</span>
-    <textarea required rows={3} value={resultado} onChange={e=>setResultado(e.target.value)} disabled={guardando||disabled}/></label>
-   {!cerrado&&<><label className="campo"><span className="etiqueta-campo">{modo==='reagendar'?'Acción pendiente':'Siguiente acción (opcional)'}</span>
+   {modo==='eliminar'&&<p className="chico" role="alert">¿Eliminar la acción pendiente? Se retirará de la agenda sin marcarla como realizada. El prospecto y su historial se conservarán.</p>}
+   <label className="campo"><span className="etiqueta-campo">{modo==='eliminar'?'Motivo (opcional)':modo==='reagendar'?'Motivo del cambio':'Resultado de la gestión'}</span>
+    <textarea required={modo!=='eliminar'} rows={3} value={resultado} onChange={e=>setResultado(e.target.value)} disabled={guardando||disabled}/></label>
+   {!cerrado&&modo!=='eliminar'&&<><label className="campo"><span className="etiqueta-campo">{modo==='reagendar'?'Acción pendiente':'Siguiente acción (opcional)'}</span>
     <input value={accion} readOnly={modo==='reagendar'} onChange={e=>setAccion(e.target.value)} disabled={guardando||disabled}/></label>
    <label className="campo"><span className="etiqueta-campo">Fecha y hora</span>
     <input type="datetime-local" value={fecha} onChange={e=>setFecha(e.target.value)} disabled={guardando||disabled}/></label></>}
-   <div className="pipeline-ficha-acciones"><button className="boton" type="submit" disabled={guardando||disabled}>{guardando?'Guardando…':'Guardar gestión'}</button><button className="boton boton-secundario" type="button" disabled={guardando} onClick={()=>setModo('')}>Cancelar</button></div>
+   <div className="pipeline-ficha-acciones"><button className={modo==='eliminar'?'boton boton-secundario pipeline-eliminar':'boton'} type="submit" disabled={guardando||disabled}>{guardando?'Guardando…':modo==='eliminar'?'Confirmar eliminación':'Guardar gestión'}</button><button className="boton boton-secundario" type="button" disabled={guardando} onClick={()=>setModo('')}>Cancelar</button></div>
   </form>}
   {error&&<p className="aviso aviso-critico" role="alert">{error}</p>}
   {aviso&&<p className="aviso" role="status">{aviso}</p>}
