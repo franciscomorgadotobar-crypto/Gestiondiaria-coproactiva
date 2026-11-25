@@ -155,3 +155,18 @@ test('Carpeta CRM identificada por UUID y movida según etapa real, no por nombr
  assert.match(pipeline,/if \(data\.comunidad_id\) prepararCarpetasDrive\(data\.comunidad_id\);\s*await sincronizarDriveProspecto\(p\.id\)/);
  assert.match(pipeline,/Reintentar sincronización/);
 });
+
+test('La ficha comercial permite completar y reagendar sin borrar el historial',()=>{
+ const gestiones=leer('src/componentes/GestionesProspecto.jsx');
+ const rpc=leer('../supabase/migrations/202611250001_registrar_gestion_prospecto.sql');
+ assert.match(pipeline,/<GestionesProspecto key=\{prospectoSeleccionado\.id\}/);
+ assert.match(gestiones,/Completar acción/);
+ assert.match(gestiones,/Reagendar/);
+ assert.match(gestiones,/Historial comercial/);
+ assert.match(gestiones,/\.from\('prospecto_historial'\)/);
+ assert.match(gestiones,/\.rpc\('registrar_gestion_prospecto'/);
+ assert.match(rpc,/security invoker/);
+ assert.match(rpc,/for update/);
+ assert.match(rpc,/anterior\.editado_en is distinct from p_editado_en/);
+ assert.match(rpc,/insert into public\.prospecto_historial/);
+});
