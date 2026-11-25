@@ -170,3 +170,15 @@ test('La ficha comercial permite completar y reagendar sin borrar el historial',
  assert.match(rpc,/anterior\.editado_en is distinct from p_editado_en/);
  assert.match(rpc,/insert into public\.prospecto_historial/);
 });
+
+test('Eliminar acción requiere confirmación y conserva prospecto e historial',()=>{
+ const gestiones=leer('src/componentes/GestionesProspecto.jsx');
+ const rpc=leer('../supabase/migrations/202611250002_eliminar_accion_prospecto.sql');
+ assert.match(gestiones,/Eliminar acción/);
+ assert.match(gestiones,/Confirmar eliminación/);
+ assert.match(gestiones,/p_proxima_accion:modo==='eliminar'\?null/);
+ assert.match(gestiones,/p_fecha_proxima_accion:modo==='eliminar'\?null/);
+ assert.match(rpc,/when 'eliminar' then 'Acción eliminada'/);
+ assert.match(rpc,/insert into public\.prospecto_historial/);
+ assert.doesNotMatch(rpc,/delete from public\.prospectos/i);
+});
