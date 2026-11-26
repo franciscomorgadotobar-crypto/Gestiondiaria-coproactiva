@@ -61,14 +61,14 @@ export default function Campana({ miId }) {
     async function cargar(){
       const [g,m,u,gn,mn]=await Promise.all([
         supabase.from('notificaciones').select('id',{count:'exact',head:true})
-          .eq('destinatario_id',miId).eq('leida',false),
+          .eq('destinatario_id',miId).eq('leida',false).neq('tipo','jarvis_resumen'),
         supabase.from('notificaciones_mantenimiento').select('id',{count:'exact',head:true})
           .eq('destinatario_id',miId).eq('leida',false),
         supabase.from('notificaciones').select('id',{count:'exact',head:true})
           .eq('destinatario_id',miId).eq('leida',false).eq('tipo','bitacora_urgente'),
         supabase.from('notificaciones')
           .select('id,tipo,titulo,mensaje,prospecto_id,proveedor_id,correo_origen,correo_registro_id,bitacora_id,creado_en,leida')
-          .eq('destinatario_id',miId).order('creado_en',{ascending:false}).limit(5),
+          .eq('destinatario_id',miId).neq('tipo','jarvis_resumen').order('creado_en',{ascending:false}).limit(5),
         supabase.from('notificaciones_mantenimiento')
           .select('id,tipo,titulo,mensaje,actividad_id,creado_en,leida')
           .eq('destinatario_id',miId).order('creado_en',{ascending:false}).limit(5)
@@ -76,7 +76,7 @@ export default function Campana({ miId }) {
       if(!vigente)return;
       setTotal((g.count||0)+(m.count||0));
       setUrgentes(u.count||0);
-      const comunes=(gn.data||[]).map(n=>({...n,tabla:'notificaciones'}));
+      const comunes=(gn.data||[]).filter(n=>n.tipo!=='jarvis_resumen').map(n=>({...n,tabla:'notificaciones'}));
       const mantenimiento=(mn.data||[]).map(n=>({...n,tabla:'notificaciones_mantenimiento'}));
       setUltimas([...comunes,...mantenimiento]
         .sort((a,b)=>String(b.creado_en).localeCompare(String(a.creado_en))).slice(0,5));
