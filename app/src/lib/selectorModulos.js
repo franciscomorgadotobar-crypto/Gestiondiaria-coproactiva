@@ -87,7 +87,7 @@ export function areasDisponibles(perfil) {
     {
       id:'jarvis',area:null,etiqueta:'ANTICIPACIÓN',titulo:'Jarvis',
       descripcion:'Lo que viene y lo que hay que hacer en toda la gestión.',
-      ruta:'/jarvis',icono:'jarvis',directo:true,visible:comercial,
+      ruta:'/jarvis',icono:'jarvis',directo:true,visible:false, // Oculto temporalmente por decisión de producto.
       enlaces:[
         {ruta:'/jarvis',etiqueta:'Lo que viene',visible:true}
       ]
