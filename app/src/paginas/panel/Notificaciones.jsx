@@ -28,7 +28,7 @@ export default function Notificaciones() {
       supabase.from('notificaciones')
         .select('id,tipo,titulo,mensaje,bitacora_id,prospecto_id,proveedor_id,correo_origen,correo_registro_id,leida,creado_en')
         .eq('destinatario_id', perfil.id)
-        .neq('tipo', 'jarvis_resumen')
+        .not('tipo','in','(jarvis_resumen,jarvis_correo_sin_asociar)')
         .order('creado_en', { ascending: false })
         .limit(100),
       supabase.from('notificaciones_mantenimiento')
@@ -40,7 +40,7 @@ export default function Notificaciones() {
 
     if (g.error) return setError(g.error.message);
     if (m.error) return setError(m.error.message);
-    setGenerales((g.data ?? []).filter(n=>n.tipo!=='jarvis_resumen'));
+    setGenerales((g.data ?? []).filter(n=>!['jarvis_resumen','jarvis_correo_sin_asociar'].includes(n.tipo)));
     setMantenciones(m.data ?? []);
   }
 
@@ -101,13 +101,14 @@ export default function Notificaciones() {
           {todas.map(n => {
             const urgente = n.tipo === 'bitacora_urgente';
             const esProspectoWeb = n.tipo === 'lead_web';
+            const esRespuestaProspecto = n.tipo === 'correo_prospecto_recibido';
             const esAperturaCorreo = n.tipo === 'correo_apertura';
             const esJarvis = n.tipo === 'jarvis_resumen';
             const contenido = (
               <>
                 <div className="notificacion-superior">
                   <span className={'notificacion-tipo ' + (urgente ? 'urgente' : n.origen)}>
-                    {urgente ? 'Urgente' : esJarvis ? 'Jarvis' : esAperturaCorreo ? 'Apertura de correo' : esProspectoWeb ? 'Comercial' : n.origen === 'bitacora' ? 'Bitácora' : 'Mantención'}
+                    {urgente ? 'Urgente' : esJarvis ? 'Jarvis' : esAperturaCorreo ? 'Apertura de correo' : (esProspectoWeb || esRespuestaProspecto) ? 'Comercial' : n.origen === 'bitacora' ? 'Bitácora' : 'Mantención'}
                   </span>
                   {!n.leida && <span className="notificacion-nueva">Nueva</span>}
                 </div>
@@ -140,6 +141,12 @@ export default function Notificaciones() {
                     {n.correo_origen==='proveedores'?'Ver comunicación en Proveedores ›':'Ver correo del prospecto ›'}
                   </span>
                 </Link>;
+            }
+            if (esRespuestaProspecto) {
+              const url=n.prospecto_id?'/pipeline?prospecto='+encodeURIComponent(n.prospecto_id)+(n.correo_registro_id?'&correo='+encodeURIComponent(n.correo_registro_id):''):'/pipeline';
+              return <Link key={n.tabla+n.id} to={url} className={'tarjeta notificacion-item'+(!n.leida?' no-leida':'')} onClick={()=>marcarLeida(n.tabla,n.id)}>
+                {contenido}<span className="notificacion-destino">Ver respuesta en ficha comercial ›</span>
+              </Link>;
             }
             if (esProspectoWeb) {
               return (
