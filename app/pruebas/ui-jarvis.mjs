@@ -1,7 +1,7 @@
 /**
  * JARVIS - Geometría de las cuatro vistas en Chromium real.
  * Datos simulados: no lee la base, no guarda y no envía comunicaciones.
- * Entra desde la tarjeta del Home para probar también el acceso al módulo.
+ * Comprueba que el Home no muestra Jarvis y prueba el módulo por su ruta interna.
  */
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
@@ -86,7 +86,8 @@ try{
   page.on('pageerror',e=>errores.push(e.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.getByRole('heading',{name:/Hola/}).first().waitFor({timeout:16000});
-  await page.locator('.seleccion-home__tarjeta').filter({hasText:'Jarvis'}).first().click();
+  assert.equal(await page.locator('.seleccion-home__tarjeta').filter({hasText:'Jarvis'}).count(),0);
+  await page.goto(base+'/jarvis',{waitUntil:'domcontentloaded'});
   await page.waitForURL(u=>u.pathname==='/jarvis',{timeout:15000});
   await page.getByRole('heading',{name:'Jarvis',exact:true}).waitFor({timeout:16000});
   await page.locator('.jarvis-indicador').first().waitFor();
