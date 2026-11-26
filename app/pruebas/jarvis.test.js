@@ -107,6 +107,6 @@ test('Jarvis se conserva pero sus avisos no se muestran ni cuentan',()=>{
  const selector=leer('src/lib/selectorModulos.js');
  assert.match(selector,/ruta:'\/jarvis',icono:'jarvis',directo:true,visible:false/);
  for(const archivo of ['src/componentes/Campana.jsx','src/componentes/PanelEscritorio.jsx','src/paginas/panel/Notificaciones.jsx']){
-  assert.match(leer(archivo),/\.neq\('tipo',\s*'jarvis_resumen'\)/,archivo);
+  assert.match(leer(archivo),/\.not\('tipo',\s*'in',\s*'\(jarvis_resumen,jarvis_correo_sin_asociar\)'\)/,archivo);
  }
 });
