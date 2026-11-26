@@ -86,14 +86,14 @@ try {
   {
     const {ctx,page}=await crear();
     assert.equal(await page.locator('.seleccion-home').count(),1);
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),6);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     assert.deepEqual(await page.locator('.seleccion-home__titulo').allInnerTexts(),
-      ['Jarvis','Comercial','Operaciones de comunidades','Gestión contable / Finanzas','Gestión documental','Base de conocimientos']);
+      ['Comercial','Operaciones de comunidades','Gestión contable / Finanzas','Gestión documental','Base de conocimientos']);
     assert.equal(await page.getByRole('button',{name:'Cambiar vista'}).count(),0);
     assert.equal(await page.locator('.seleccion-home__administracion').count(),1);
     await page.reload({waitUntil:'domcontentloaded'});
     await page.locator('.seleccion-home__tarjeta').first().waitFor({timeout:20000});
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),6);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     // Primer mockup aprobado: sin flecha, con descripción visible y sin vacío.
     const tarjetas=await page.locator('.seleccion-home__tarjeta').evaluateAll(els=>els.map(el=>{
       const b=el.getBoundingClientRect();
@@ -153,7 +153,7 @@ try {
         flecha:!!el.querySelector('.seleccion-home__flecha')
       };
     }));
-    assert.equal(tarjetasCompactas.length,6);
+    assert.equal(tarjetasCompactas.length,5);
     for (const tarjeta of tarjetasCompactas) {
       assert.ok(tarjeta.altura>=44,'Área táctil insuficiente a '+ancho+'px: '+JSON.stringify(tarjeta));
       assert.ok(tarjeta.vacio<=3,'Altura vacía reservada a '+ancho+'px: '+JSON.stringify(tarjeta));
@@ -184,7 +184,7 @@ try {
         textoDentro:!!texto&&texto.right<=box.right-8
       };
     }));
-    assert.equal(medidas.length,6,'Home debe conservar Jarvis y las cinco áreas');
+    assert.equal(medidas.length,5,'Home debe conservar las cinco áreas sin Jarvis');
     for(const card of medidas){
       assert.ok(card.altura<=160,'Tarjeta web demasiado alta a '+ancho+'px: '+JSON.stringify(card));
       assert.ok(card.desfaseIcono<=6,'Icono descentrado a '+ancho+'px: '+JSON.stringify(card));
@@ -209,7 +209,7 @@ try {
     await page.getByRole('dialog',{name:'Más opciones'})
       .getByRole('button',{name:'Home principal'}).first().click();
     await page.waitForURL(u=>u.pathname==='/',{timeout:20000});
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),6);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     console.log('Comercial → Home principal: OK');
     await ctx.close();
   }
@@ -335,7 +335,7 @@ try {
   {
     const {ctx,page}=await crear({rol:'jefatura'});
     const titulos=await page.locator('.seleccion-home__titulo').allInnerTexts();
-    assert.deepEqual(titulos,['Jarvis','Comercial','Operaciones de comunidades','Gestión documental','Base de conocimientos']);
+    assert.deepEqual(titulos,['Comercial','Operaciones de comunidades','Gestión documental','Base de conocimientos']);
     assert.equal(await page.getByRole('button',{name:'Mostrar opciones de Gestión contable / Finanzas'}).count(),0);
     await page.getByRole('button',{name:'Mostrar opciones de Comercial'}).click();
     await page.getByRole('button',{name:'Leads y prospectos'}).click();
@@ -379,14 +379,14 @@ try {
     assert.equal(await lateral.getByRole('link',{name:'Vista Cliente'}).getAttribute('aria-current'),'page');
     await lateral.getByRole('link',{name:'Home principal'}).click();
     await page.waitForURL(u=>u.pathname==='/',{timeout:20000});
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),6);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     console.log('Lateral · 5 áreas navegables e independientes, Home principal: OK');
     await ctx.close();
   }
 
   {
     const {ctx,page}=await crear({ancho:1280,alto:850});
-    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),6);
+    assert.equal(await page.locator('.seleccion-home__tarjeta').count(),5);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
     await page.getByRole('button',{name:'Mostrar opciones de Operaciones de comunidades'}).click();
     await page.getByRole('button',{name:'Panel de operaciones'}).click();
