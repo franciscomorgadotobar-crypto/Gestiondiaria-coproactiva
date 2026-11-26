@@ -5,13 +5,11 @@ import {areasDisponibles,enlacesAdministracion} from '../src/lib/selectorModulos
 import {grupoDeRuta} from '../src/lib/area.js';
 const leer=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('Home principal y lateral reciben Jarvis y las mismas cinco áreas, sin duplicación',()=>{
+test('Home principal y lateral ocultan Jarvis y conservan las cinco áreas, sin duplicación',()=>{
   const areas=areasDisponibles({id:'admin-qa',rol:'superadmin',activo:true});
-  assert.deepEqual(areas.map(x=>x.id),['jarvis','comercial','operacion','finanzas','documental','aprendizaje']);
-  assert.equal(new Set(areas.map(x=>x.id)).size,6);
-  const jarvis=areas.find(x=>x.id==='jarvis');
-  assert.equal(jarvis.ruta,'/jarvis');
-  assert.equal(jarvis.directo,true,'Jarvis entra directo, sin submenú');
+  assert.deepEqual(areas.map(x=>x.id),['comercial','operacion','finanzas','documental','aprendizaje']);
+  assert.equal(new Set(areas.map(x=>x.id)).size,5);
+  assert.ok(!areas.some(x=>x.id==='jarvis'),'Jarvis oculto en navegación');
   assert.equal(grupoDeRuta('/jarvis'),null,'Jarvis es transversal: conserva el área de contexto');
   const rutas=areas.flatMap(x=>x.enlaces.map(e=>e.ruta));
   assert.equal(new Set(rutas).size,rutas.length,'Una ruta pertenece a una sola área');
@@ -25,7 +23,7 @@ test('Home principal y lateral reciben Jarvis y las mismas cinco áreas, sin dup
 test('Permisos: ninguna opción se eleva de rol en la navegación unificada',()=>{
   const areas=rol=>areasDisponibles({id:rol,rol,activo:true});
   const nombres=rol=>areas(rol).map(x=>x.id);
-  assert.deepEqual(nombres('jefatura'),['jarvis','comercial','operacion','documental','aprendizaje']);
+  assert.deepEqual(nombres('jefatura'),['comercial','operacion','documental','aprendizaje']);
   assert.deepEqual(nombres('terreno'),['operacion','aprendizaje']);
   assert.deepEqual(nombres('cliente'),[]);
   assert.deepEqual(areasDisponibles({rol:'superadmin',activo:false}),[]);
@@ -59,7 +57,7 @@ test('La biblioteca conserva 202 fichas con referencias y 160 cápsulas automát
   }
 });
 
-test('Home aprobado: Jarvis y cinco tarjetas por área, ajustes superiores y destinos desplegables accesibles',()=>{
+test('Home aprobado: cinco tarjetas por área, ajustes superiores y destinos desplegables accesibles',()=>{
   const home=leer('src/paginas/SeleccionArea.jsx');
   const estilos=leer('src/paginas/SeleccionArea.css');
   // Los enlaces y permisos son los del mismo catálogo del menú lateral.
