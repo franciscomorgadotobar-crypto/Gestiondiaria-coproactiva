@@ -28,6 +28,7 @@ export default function Notificaciones() {
       supabase.from('notificaciones')
         .select('id,tipo,titulo,mensaje,bitacora_id,prospecto_id,proveedor_id,correo_origen,correo_registro_id,leida,creado_en')
         .eq('destinatario_id', perfil.id)
+        .neq('tipo', 'jarvis_resumen')
         .order('creado_en', { ascending: false })
         .limit(100),
       supabase.from('notificaciones_mantenimiento')
@@ -39,7 +40,7 @@ export default function Notificaciones() {
 
     if (g.error) return setError(g.error.message);
     if (m.error) return setError(m.error.message);
-    setGenerales(g.data ?? []);
+    setGenerales((g.data ?? []).filter(n=>n.tipo!=='jarvis_resumen'));
     setMantenciones(m.data ?? []);
   }
 
