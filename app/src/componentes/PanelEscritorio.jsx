@@ -214,6 +214,7 @@ export default function PanelEscritorio({ children, anchoCompleto = false, vista
           .select('id', { count: 'exact', head: true })
           .eq('destinatario_id', perfil.id)
           .eq('leida', false)
+          .neq('tipo', 'jarvis_resumen')
       ]);
       if (!vigente) return;
       setAlertasMantencion(m.count ?? 0);
