@@ -102,3 +102,11 @@ test('Motor: agenda con permisos del usuario y aviso diario solo por cron', () =
     assert.match(sql, new RegExp('alter table public\\.' + tabla + ' enable row level security'));
   assert.doesNotMatch(sql, /drop table|truncate|delete from/i, 'Migración aditiva');
 });
+
+test('Jarvis se conserva pero sus avisos no se muestran ni cuentan',()=>{
+ const selector=leer('src/lib/selectorModulos.js');
+ assert.match(selector,/ruta:'\/jarvis',icono:'jarvis',directo:true,visible:false/);
+ for(const archivo of ['src/componentes/Campana.jsx','src/componentes/PanelEscritorio.jsx','src/paginas/panel/Notificaciones.jsx']){
+  assert.match(leer(archivo),/\.neq\('tipo',\s*'jarvis_resumen'\)/,archivo);
+ }
+});
